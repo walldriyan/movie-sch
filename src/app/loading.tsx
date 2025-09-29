@@ -5,10 +5,12 @@ export default function Loading() {
   return (
     <div className="min-h-screen w-full bg-background">
       <Header />
-      <main className="container mx-auto px-4 py-8">
-        <section className="relative -mt-8 mb-12 flex flex-col items-center overflow-hidden rounded-3xl border md:flex-row">
-           <Skeleton className="absolute inset-0 h-full w-full" />
-           <div className="z-10 flex w-full flex-col p-8 md:w-1/2 md:p-12 lg:p-16 space-y-4">
+      <div className="relative -mt-16 h-[560px] w-full">
+        <Skeleton className="h-full w-full" />
+      </div>
+      <main className="container mx-auto -mt-64 px-4 pb-8">
+        <section className="relative z-10 mb-12 flex items-center">
+           <div className="w-full max-w-3xl space-y-4 p-4 md:p-8">
               <Skeleton className="h-16 w-3/4" />
               <div className="flex items-center space-x-4">
                 <Skeleton className="h-6 w-16" />
