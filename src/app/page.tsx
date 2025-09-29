@@ -55,7 +55,7 @@ export default function MoviePage() {
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent" />
       </div>
       
       <main className="container relative mx-auto -mt-[490px] px-4 pb-8">
@@ -100,7 +100,7 @@ export default function MoviePage() {
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary/20 to-accent/10 blur-2xl opacity-70"></div>
+              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-background to-secondary/20 blur-2xl opacity-80"></div>
               <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide whitespace-pre-line">
                 <p className="mb-4">ඩොම් කොබ් යනු අති දක්ෂ සොරෙකි, ඔහු සිහින බෙදාගැනීමේ තාක්‍ෂණය භාවිතා කරමින් ආයතනික රහස් සොරකම් කරයි. "ඔබේ මනස තමයි අපරාධයේ තිප්පොළ." නමුත් මෙවර ඔහුට ලැබෙන්නේ සොරකමකට වඩා භයානක, ප්‍රතිවිරුද්ධ කාර්යයකි: ප්‍රධාන විධායක නිලධියෙකුගේ මනසෙහි අදහසක් පැලපදියම් කිරීම.</p>
                 <p className="mb-4">මෙම භයානක මෙහෙයුම අතරතුර, ඔහුගේ ශෝකජනක අතීතය නැවතත් මතුවී, මෙම ව්‍යාපෘතිය සහ ඔහුගේ කණ්ඩායමම විනාශයේ අද්දරට ගෙන යයි. ඔවුන් සිහින ලෝකයේ ගැඹුරට, සිහිනයක් තුළ තවත් සිහිනයක් වෙත ගමන් කරන විට, යථාර්ථය සහ මායාව අතර සීමාවන් බොඳ වී යයි. "අපි බිය විය යුත්තේ කාගෙන්දැයි ඔබ මගෙන් ඇසුවොත්, මම කියන්නේ අපටම කියාය."</p>
