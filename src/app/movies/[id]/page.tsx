@@ -100,7 +100,8 @@ export default function MoviePage({ params }: { params: { id: string } }) {
             />
         </div>
 
-        <section className="relative z-10 mb-12 flex flex-col md:flex-row items-start gap-8 -mt-20">
+        <section className="relative z-10 mb-12 flex flex-col md:flex-row items-start gap-8 -mt-20 p-4 md:p-8">
+            <div className="absolute inset-0 -z-10 bg-black/60 backdrop-blur-lg rounded-xl"></div>
           <div className="w-full md:w-[200px] flex-shrink-0 mx-auto">
               <div className="relative mx-auto h-[300px] w-[200px] overflow-hidden rounded-lg shadow-2xl md:mx-0">
                   {moviePoster && (
@@ -152,7 +153,6 @@ export default function MoviePage({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-background to-secondary/20 blur-2xl opacity-80"></div>
               <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide whitespace-pre-line"
                 dangerouslySetInnerHTML={{ __html: movie.description.replace(/\n/g, '<br />') }}
               />
