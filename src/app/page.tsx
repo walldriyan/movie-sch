@@ -59,9 +59,9 @@ export default function MoviePage() {
       </div>
 
       <main className="container mx-auto -mt-[340px] px-4 pb-8">
-        <section className="relative z-10 mb-12 flex justify-center -mt-20">
+        <section className="relative z-10 mb-12 flex -mt-20">
           <div className="w-full max-w-3xl space-y-4 pt-0 text-center md:pt-8 md:text-left">
-            <div className="relative mx-auto mb-4 h-[100px] w-[100px] overflow-hidden rounded-lg shadow-2xl md:mx-0">
+            <div className="relative mx-auto mb-4 h-[250px] w-[200px] overflow-hidden rounded-lg shadow-2xl md:mx-0">
                 {moviePoster && (
                     <Image
                     src={moviePoster.imageUrl}
