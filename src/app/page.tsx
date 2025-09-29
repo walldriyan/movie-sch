@@ -58,7 +58,7 @@ export default function MoviePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent" />
       </div>
       
-      <main className="container relative mx-auto -mt-[490px] px-4 pb-8">
+      <main className="container relative mx-auto -mt-[490px] px-4 sm:px-6 md:px-8 pb-8">
         {/* Background decorative blobs */}
         <div aria-hidden="true" className="absolute inset-0 -top-96 -z-10 overflow-hidden transform-gpu blur-3xl">
             <div
