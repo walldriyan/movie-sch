@@ -5,12 +5,23 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useEffect, useState } from 'react';
 
 export default function Header() {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return null; // or a placeholder/skeleton header
+  }
+
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-background/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-50 w-full">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
         <div className="flex gap-6 md:gap-10">
           <Link href="/" className="flex items-center space-x-2">
