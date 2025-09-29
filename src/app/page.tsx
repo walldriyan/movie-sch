@@ -33,7 +33,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="min-h-screen w-full bg-background">
+    <div className="w-full bg-background text-foreground">
       <Header />
       <main>
         {/* Hero Section */}
