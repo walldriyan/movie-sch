@@ -148,7 +148,9 @@ export default function MoviePage({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="relative">
-              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-background to-secondary/20 blur-2xl opacity-80" />
+               <div
+                  className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary/30 to-accent/20 blur-2xl opacity-50"
+                />
               <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide">
                 {movie.description.map((paragraph, index) => (
                   <p key={index} className="mb-4">
