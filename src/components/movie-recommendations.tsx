@@ -65,16 +65,16 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
     return <p>No recommendations found.</p>;
   }
 
-  const placeholderImageIds = ['movie-poster-interstellar', 'movie-poster-dune', 'movie-poster-blade-runner'];
+  const placeholderImageIds = ['movie-poster-interstellar', 'movie-poster-dune', 'movie-poster-blade-runner', 'movie-poster-inception'];
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
       {recommendations.recommendations.map((rec, index) => (
         <MovieCard
           key={rec.title}
+          id={(index + 1) * 100} // Temporary unique ID
           title={rec.title}
           description={rec.description}
-          reason={rec.reason}
           posterUrlId={placeholderImageIds[index % placeholderImageIds.length]}
         />
       ))}

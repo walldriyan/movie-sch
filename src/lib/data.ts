@@ -4,6 +4,7 @@ const users: User[] = [
   { id: 1, name: 'Alice', avatarUrlId: 'avatar-1' },
   { id: 2, name: 'Bob', avatarUrlId: 'avatar-2' },
   { id: 3, name: 'Charlie', avatarUrlId: 'avatar-3' },
+  { id: 4, name: 'David', avatarUrlId: 'avatar-4' },
 ];
 
 const reviews: Review[] = [
@@ -41,12 +42,9 @@ const movies: Movie[] = [
   {
     id: 1,
     title: 'Inception',
-    description: `ඩොම් කොබ් යනු අති දක්ෂ සොරෙකි, ඔහු සිහින බෙදාගැනීමේ තාක්‍ෂණය භාවිතා කරමින් ආයතනික රහස් සොරකම් කරයි. "ඔබේ මනස තමයි අපරාධයේ තිප්පොළ." නමුත් මෙවර ඔහුට ලැබෙන්නේ සොරකමකට වඩා භයානක, ප්‍රතිවිරුද්ධ කාර්යයකි: ප්‍රධාන විධායක නිලධියෙකුගේ මනසෙහි අදහසක් පැලපදියම් කිරීම.
-
-මෙම භයානක මෙහෙයුම අතරතුර, ඔහුගේ ශෝකජනක අතීතය නැවතත් මතුවී, මෙම ව්‍යාපෘතිය සහ ඔහුගේ කණ්ඩායමම විනාශයේ අද්දරට ගෙන යයි. ඔවුන් සිහින ලෝකයේ ගැඹුරට, සිහිනයක් තුළ තවත් සිහිනයක් වෙත ගමන් කරන විට, යථාර්ථය සහ මායාව අතර සීමාවන් බොඳ වී යයි. "අපි බිය විය යුත්තේ කාගෙන්දැයි ඔබ මගෙන් ඇසුවොත්, මම කියන්නේ අපටම කියාය."
-
-ඔහුගේ ශෝකජනක අතීතයේ සෙවණැලි ඔහුව හොල්මන් කරන අතර, ඔහුගේ කණ්ඩායමේ ආරක්ෂාව සහ මෙහෙයුමේ සාර්ථකත්වය අතර තෝරා ගැනීමකට ඔහුට බල කෙරෙයි. යථාර්ථය කුමක්ද? සිහිනය කුමක්ද? අවසානයේදී, ඔවුන්ගේ පැවැත්ම පවා ප්‍රශ්නාර්ථයක් බවට පත් වේ.`,
+    description: `Dom Cobb is a skilled thief, the absolute best in the dangerous art of extraction, stealing valuable secrets from deep within the subconscious during the dream state, when the mind is at its most vulnerable. Cobb's rare ability has made him a coveted player in this treacherous new world of corporate espionage, but it has also made him an international fugitive and cost him everything he has ever loved. Now Cobb is being offered a chance at redemption. One last job could give him his life back but only if he can accomplish the impossible, inception. Instead of the perfect heist, Cobb and his team of specialists have to pull off the reverse: their task is not to steal an idea, but to plant one. If they succeed, it could be the perfect crime. But no amount of careful planning or expertise can prepare the team for the dangerous enemy that seems to predict their every move. An enemy that only Cobb could have seen coming.`,
     posterUrlId: 'movie-poster-inception',
+    galleryImageIds: ['gallery-inception-1', 'gallery-inception-2'],
     year: 2010,
     genres: ['Sci-Fi', 'Action', 'Thriller'],
     duration: '2h 28m',
@@ -54,6 +52,58 @@ const movies: Movie[] = [
     viewCount: 2300000,
     likes: 120000,
     reviews,
+    subtitles,
+  },
+  {
+    id: 2,
+    title: 'The Dark Knight',
+    description: `When the menace known as the Joker wreaks havoc and chaos on the people of Gotham, Batman must accept one of the greatest psychological and physical tests of his ability to fight injustice.`,
+    posterUrlId: 'movie-poster-dark-knight',
+    galleryImageIds: ['gallery-dark-knight-1', 'gallery-dark-knight-2'],
+    year: 2008,
+    genres: ['Action', 'Crime', 'Drama'],
+    duration: '2h 32m',
+    imdbRating: 9.0,
+    viewCount: 2700000,
+    likes: 150000,
+    reviews: [
+      { id: 4, user: users[0], rating: 5, comment: "A cinematic triumph. Heath Ledger's Joker is iconic." },
+      { id: 5, user: users[3], rating: 5, comment: "The best superhero movie ever made. A dark, complex, and unforgettable film." }
+    ],
+    subtitles,
+  },
+  {
+    id: 3,
+    title: 'Interstellar',
+    description: `A team of explorers travel through a wormhole in space in an attempt to ensure humanity's survival.`,
+    posterUrlId: 'movie-poster-interstellar',
+    galleryImageIds: ['gallery-interstellar-1', 'gallery-interstellar-2'],
+    year: 2014,
+    genres: ['Sci-Fi', 'Drama', 'Adventure'],
+    duration: '2h 49m',
+    imdbRating: 8.6,
+    viewCount: 1900000,
+    likes: 110000,
+    reviews: [
+      { id: 6, user: users[1], rating: 5, comment: "Visually stunning and emotionally powerful. A true sci-fi epic." },
+    ],
+    subtitles,
+  },
+  {
+    id: 4,
+    title: 'Parasite',
+    description: `Greed and class discrimination threaten the newly formed symbiotic relationship between the wealthy Park family and the destitute Kim clan.`,
+    posterUrlId: 'movie-poster-parasite',
+    galleryImageIds: ['gallery-parasite-1', 'gallery-parasite-2'],
+    year: 2019,
+    genres: ['Thriller', 'Comedy', 'Drama'],
+    duration: '2h 12m',
+    imdbRating: 8.5,
+    viewCount: 850000,
+    likes: 95000,
+    reviews: [
+       { id: 7, user: users[2], rating: 5, comment: "A masterpiece of modern cinema. Perfectly crafted and deeply unsettling." },
+    ],
     subtitles,
   },
 ];
