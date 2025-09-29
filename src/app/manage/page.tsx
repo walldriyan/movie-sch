@@ -1,5 +1,8 @@
 'use client';
 
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -25,13 +28,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Header from '@/components/header';
 import { getAllMovies } from '@/lib/data';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 import type { Movie } from '@/lib/types';
-import MovieForm from '@/components/movie-form';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,26 +44,58 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
+
+const movieSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  year: z.coerce.number().min(1800, 'Invalid year'),
+  duration: z.string().min(1, 'Duration is required'),
+  genres: z.string().min(1, 'Genres are required'),
+  description: z.string().min(10, 'Description is required'),
+  posterUrlId: z.string().min(1, 'Poster URL ID is required'),
+  imdbRating: z.coerce.number().min(0).max(10),
+});
+
+type MovieFormValues = z.infer<typeof movieSchema>;
 
 export default function ManageMoviesPage() {
   const [movies, setMovies] = useState<Movie[]>([]);
   const [isMounted, setIsMounted] = useState(false);
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [view, setView] = useState<'list' | 'form'>('list');
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
+  
+  const form = useForm<MovieFormValues>({
+    resolver: zodResolver(movieSchema),
+  });
 
   useEffect(() => {
     setIsMounted(true);
-    const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (storedMovies) {
-      setMovies(JSON.parse(storedMovies));
-    } else {
+    try {
+      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedMovies) {
+        setMovies(JSON.parse(storedMovies));
+      } else {
+        const initialMovies = getAllMovies();
+        setMovies(initialMovies);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialMovies));
+      }
+    } catch (error) {
+      console.error("Could not parse movies from localStorage", error);
       const initialMovies = getAllMovies();
       setMovies(initialMovies);
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialMovies));
     }
   }, []);
 
@@ -73,12 +107,30 @@ export default function ManageMoviesPage() {
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
-    setDialogOpen(true);
+    form.reset({
+      title: '',
+      year: new Date().getFullYear(),
+      duration: '',
+      genres: '',
+      description: '',
+      posterUrlId: 'movie-poster-inception',
+      imdbRating: 0,
+    });
+    setView('form');
   };
 
   const handleEditMovie = (movie: Movie) => {
     setEditingMovie(movie);
-    setDialogOpen(true);
+    form.reset({
+      title: movie.title,
+      year: movie.year,
+      duration: movie.duration,
+      genres: movie.genres.join(', '),
+      description: Array.isArray(movie.description) ? movie.description.join('\n\n') : movie.description,
+      posterUrlId: movie.posterUrlId,
+      imdbRating: movie.imdbRating,
+    });
+    setView('form');
   };
 
   const handleDeleteMovie = (movie: Movie) => {
@@ -94,20 +146,32 @@ export default function ManageMoviesPage() {
     setDeleteAlertOpen(false);
   };
 
-  const handleFormSubmit = (movieData: Movie) => {
+  const handleFormSubmit = (values: MovieFormValues) => {
+    const processedMovie = {
+      ...(editingMovie || {}),
+      id: editingMovie?.id || Date.now(),
+      title: values.title,
+      year: values.year,
+      duration: values.duration,
+      genres: values.genres.split(',').map((g) => g.trim()),
+      description: values.description.split('\n\n'),
+      posterUrlId: values.posterUrlId,
+      imdbRating: values.imdbRating,
+      galleryImageIds: editingMovie?.galleryImageIds || [],
+      viewCount: editingMovie?.viewCount || 0,
+      likes: editingMovie?.likes || 0,
+      reviews: editingMovie?.reviews || [],
+      subtitles: editingMovie?.subtitles || [],
+    };
+    
     if (editingMovie) {
-      // Edit
       setMovies(
-        movies.map((m) => (m.id === movieData.id ? movieData : m))
+        movies.map((m) => (m.id === processedMovie.id ? processedMovie : m))
       );
     } else {
-      // Add
-      setMovies([
-        { ...movieData, id: movies.length + 1 * 100 },
-        ...movies,
-      ]);
+      setMovies([processedMovie, ...movies]);
     }
-    setDialogOpen(false);
+    setView('list');
   };
 
   if (!isMounted) {
@@ -115,15 +179,12 @@ export default function ManageMoviesPage() {
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <div className="flex items-center">
-            <h1 className="font-semibold text-lg md:text-2xl">Manage Movies</h1>
-          </div>
           <Card>
             <CardHeader>
-              <CardTitle>Loading Movies...</CardTitle>
+              <CardTitle>Loading...</CardTitle>
             </CardHeader>
             <CardContent>
-              <p>Please wait...</p>
+              <p>Please wait while we load the movie management console.</p>
             </CardContent>
           </Card>
         </main>
@@ -136,111 +197,240 @@ export default function ManageMoviesPage() {
       <div className="flex min-h-screen w-full flex-col bg-background">
         <Header />
         <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <div className="flex items-center">
-            <h1 className="font-semibold text-lg md:text-2xl">Manage Movies</h1>
-            <Button className="ml-auto" size="sm" onClick={handleAddNewMovie}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Add New Movie
-            </Button>
-          </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Movies</CardTitle>
-              <CardDescription>
-                A list of all movies in the catalog.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="hidden w-[100px] sm:table-cell">
-                      <span className="sr-only">Image</span>
-                    </TableHead>
-                    <TableHead>Title</TableHead>
-                    <TableHead>Genres</TableHead>
-                    <TableHead className="hidden md:table-cell">Year</TableHead>
-                    <TableHead>
-                      <span className="sr-only">Actions</span>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {movies.map((movie) => {
-                    const poster = PlaceHolderImages.find(
-                      (p) => p.id === movie.posterUrlId
-                    );
-                    return (
-                      <TableRow key={movie.id}>
-                        <TableCell className="hidden sm:table-cell">
-                          {poster && (
-                            <Image
-                              alt={movie.title}
-                              className="aspect-square rounded-md object-cover"
-                              height="64"
-                              src={poster.imageUrl}
-                              width="64"
-                              data-ai-hint={poster.imageHint}
-                            />
-                          )}
-                        </TableCell>
-                        <TableCell className="font-medium">
-                          {movie.title}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-wrap gap-1">
-                            {movie.genres.map((genre) => (
-                              <Badge key={genre} variant="outline">
-                                {genre}
-                              </Badge>
-                            ))}
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {movie.year}
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button
-                                aria-haspopup="true"
-                                size="icon"
-                                variant="ghost"
-                              >
-                                <MoreHorizontal className="h-4 w-4" />
-                                <span className="sr-only">Toggle menu</span>
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                              <DropdownMenuItem onClick={() => handleEditMovie(movie)}>
-                                Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem
-                                onClick={() => handleDeleteMovie(movie)}
-                                className="text-destructive"
-                              >
-                                Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
+          {view === 'list' ? (
+            <>
+              <div className="flex items-center">
+                <h1 className="font-semibold text-lg md:text-2xl">Manage Movies</h1>
+                <Button className="ml-auto" size="sm" onClick={handleAddNewMovie}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add New Movie
+                </Button>
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Movies</CardTitle>
+                  <CardDescription>
+                    A list of all movies in the catalog.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="hidden w-[100px] sm:table-cell">
+                          <span className="sr-only">Image</span>
+                        </TableHead>
+                        <TableHead>Title</TableHead>
+                        <TableHead>Genres</TableHead>
+                        <TableHead className="hidden md:table-cell">Year</TableHead>
+                        <TableHead>
+                          <span className="sr-only">Actions</span>
+                        </TableHead>
                       </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {movies.map((movie) => {
+                        const poster = PlaceHolderImages.find(
+                          (p) => p.id === movie.posterUrlId
+                        );
+                        return (
+                          <TableRow key={movie.id}>
+                            <TableCell className="hidden sm:table-cell">
+                              {poster && (
+                                <Image
+                                  alt={movie.title}
+                                  className="aspect-square rounded-md object-cover"
+                                  height="64"
+                                  src={poster.imageUrl}
+                                  width="64"
+                                  data-ai-hint={poster.imageHint}
+                                />
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {movie.title}
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex flex-wrap gap-1">
+                                {movie.genres.map((genre) => (
+                                  <Badge key={genre} variant="outline">
+                                    {genre}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              {movie.year}
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button
+                                    aria-haspopup="true"
+                                    size="icon"
+                                    variant="ghost"
+                                  >
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Toggle menu</span>
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                  <DropdownMenuItem onClick={() => handleEditMovie(movie)}>
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteMovie(movie)}
+                                    className="text-destructive"
+                                  >
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+            </>
+          ) : (
+            <Card>
+              <CardHeader>
+                 <div className="flex items-center gap-4">
+                  <Button variant="outline" size="icon" onClick={() => setView('list')}>
+                    <ArrowLeft className="h-4 w-4" />
+                  </Button>
+                  <div>
+                    <CardTitle>{editingMovie ? 'Edit Movie' : 'Add New Movie'}</CardTitle>
+                    <CardDescription>
+                      {editingMovie
+                        ? 'Make changes to the movie details below.'
+                        : 'Fill in the details to add a new movie to the catalog.'}
+                    </CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Form {...form}>
+                  <form
+                    onSubmit={form.handleSubmit(handleFormSubmit)}
+                    className="space-y-4 py-4"
+                  >
+                    <FormField
+                      control={form.control}
+                      name="title"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Title</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Inception" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="year"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Year</FormLabel>
+                            <FormControl>
+                              <Input type="number" placeholder="2010" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="duration"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Duration</FormLabel>
+                            <FormControl>
+                              <Input placeholder="2h 28m" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="genres"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Genres</FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Sci-Fi, Action, Thriller (comma-separated)"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="imdbRating"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>IMDb Rating</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.1" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    <FormField
+                      control={form.control}
+                      name="description"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Description</FormLabel>
+                          <FormControl>
+                            <Textarea
+                              placeholder="A mind-bending thriller... (Use two newlines for paragraphs)"
+                              className="min-h-[100px]"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                     <FormField
+                      control={form.control}
+                      name="posterUrlId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Poster URL ID</FormLabel>
+                          <FormControl>
+                            <Input placeholder="movie-poster-inception" {...field} />
+                          </FormControl>
+                           <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end pt-4">
+                      <Button type="submit">
+                        {editingMovie ? 'Save Changes' : 'Add Movie'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </CardContent>
+            </Card>
+          )}
         </main>
       </div>
-
-      <MovieForm
-        isOpen={dialogOpen}
-        setIsOpen={setDialogOpen}
-        onSubmit={handleFormSubmit}
-        movie={editingMovie}
-      />
 
       <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
         <AlertDialogContent>
@@ -253,7 +443,7 @@ export default function ManageMoviesPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction onClick={confirmDelete} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
