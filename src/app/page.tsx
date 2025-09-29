@@ -43,21 +43,20 @@ export default function MoviePage() {
     <div className="min-h-screen w-full bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <section className="relative -mt-8 mb-12 flex flex-col items-center overflow-hidden rounded-3xl border md:flex-row">
-          <div className="absolute inset-0 z-0 h-full w-full bg-gradient-to-r from-background via-background/80 to-transparent"></div>
+        <section className="relative -mt-8 mb-12 flex flex-col items-center justify-center overflow-hidden rounded-3xl border text-center">
           {moviePoster && (
             <Image
               src={moviePoster.imageUrl}
               alt={`Poster for ${movie.title}`}
-              width={1200}
-              height={675}
-              className="absolute right-0 top-1/2 -z-10 h-auto w-full -translate-y-1/2 opacity-20 md:w-3/4"
+              fill
+              className="-z-10 object-cover opacity-30 blur-sm"
               data-ai-hint={moviePoster.imageHint}
               priority
             />
           )}
-
-          <div className="z-10 flex w-full flex-col p-8 md:w-1/2 md:p-12 lg:p-16">
+          <div className="absolute inset-0 z-0 h-full w-full bg-gradient-to-t from-background via-background/50 to-transparent"></div>
+          
+          <div className="z-10 flex w-full flex-col items-center p-8 md:p-12 lg:p-16">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
@@ -74,7 +73,7 @@ export default function MoviePage() {
                 ))}
               </div>
             </div>
-            <p className="mb-6 text-foreground/80">{movie.description}</p>
+            <p className="mb-6 max-w-2xl text-foreground/80">{movie.description}</p>
             <div className="flex items-center space-x-6">
               <div className="flex items-center space-x-2">
                 <Star className="text-yellow-400" />
