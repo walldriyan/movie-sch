@@ -65,9 +65,11 @@ export default function HomePage() {
                   Watch Now
                 </Button>
               </Link>
-              <Button size="lg" variant="outline">
-                More Info
-              </Button>
+              <Link href={`/movies/${featuredMovie.id}`} passHref>
+                <Button size="lg" variant="outline">
+                  More Info
+                </Button>
+              </Link>
             </div>
           </div>
         </section>
