@@ -1,3 +1,4 @@
+'use client';
 
 import Image from 'next/image';
 import {
@@ -19,7 +20,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { getMovieById } from '@/lib/data';
+import { getAllMovies } from '@/lib/data';
 import Header from '@/components/header';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
@@ -27,16 +28,38 @@ import SubtitleRequestForm from '@/components/subtitle-request-form';
 import MovieRecommendations from '@/components/movie-recommendations';
 import UploadSubtitleDialog from '@/components/upload-subtitle-dialog';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useEffect, useState } from 'react';
+import type { Movie } from '@/lib/types';
+import Loading from './loading';
+
+const LOCAL_STORAGE_KEY = 'movies_data';
 
 export default function MoviePage({ params }: { params: { id: string } }) {
-  const movie = getMovieById(Number(params.id));
-  if (!movie) {
-    return <div>Movie not found</div>;
+  const [movie, setMovie] = useState<Movie | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
+      const allMovies = storedMovies ? JSON.parse(storedMovies) : getAllMovies();
+      const currentMovie = allMovies.find((m: Movie) => m.id === Number(params.id));
+      setMovie(currentMovie || null);
+    } catch (error) {
+      console.error("Could not parse movies from localStorage", error);
+      const allMovies = getAllMovies();
+      const currentMovie = allMovies.find((m: Movie) => m.id === Number(params.id));
+      setMovie(currentMovie || null);
+    }
+  }, [params.id]);
+
+  if (!isMounted || !movie) {
+    return <Loading />;
   }
 
   const moviePoster = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
-  const heroImage = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
-  const galleryImages = movie.galleryImageIds.map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean);
+  const heroImage = PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0]) || moviePoster;
+  const galleryImages = movie.galleryImageIds.slice(0, 2).map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean);
 
 
   return (
@@ -148,11 +171,11 @@ export default function MoviePage({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide">
-              {movie.description.map((paragraph, index) => (
+              {Array.isArray(movie.description) ? movie.description.map((paragraph, index) => (
                 <p key={index} className="mb-4">
                   {paragraph}
                 </p>
-              ))}
+              )) : <p>{movie.description}</p>}
             </div>
             <div className="pt-4 flex justify-start space-x-4">
               <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90">
