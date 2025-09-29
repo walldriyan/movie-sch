@@ -60,18 +60,17 @@ export default function MoviePage() {
 
       <main className="container mx-auto -mt-[340px] px-4 pb-8">
         <section className="relative z-10 mb-12 flex justify-center -mt-20">
-          <div className="flex-grow space-y-4 pt-0 md:pt-8 w-full md:w-2/3 text-center md:text-left">
-             {moviePoster && (
-                <div className="relative w-[100px] h-[150px] rounded-lg overflow-hidden shadow-2xl mx-auto md:mx-0 mb-4">
-                    <Image
-                        src={moviePoster.imageUrl}
-                        alt={`Poster for ${movie.title}`}
-                        width={100}
-                        height={150}
-                        className="object-cover"
-                        data-ai-hint={moviePoster.imageHint}
-                    />
-                </div>
+          <div className="w-full flex-grow space-y-4 pt-0 text-center md:w-2/3 md:pt-8 md:text-left">
+            {moviePoster && (
+              <div className="relative mx-auto mb-4 h-[100px] w-[100px] overflow-hidden rounded-lg shadow-2xl md:mx-0">
+                <Image
+                  src={moviePoster.imageUrl}
+                  alt={`Poster for ${movie.title}`}
+                  fill
+                  className="object-cover"
+                  data-ai-hint={moviePoster.imageHint}
+                />
+              </div>
             )}
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
