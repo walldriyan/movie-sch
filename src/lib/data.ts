@@ -42,7 +42,7 @@ const movies: Movie[] = [
     id: 1,
     title: 'Inception',
     description:
-      'A thief who steals corporate secrets through the use of dream-sharing technology is given the inverse task of planting an idea into the mind of a C.E.O., but his tragic past may doom the project and his team to disaster.',
+      'ඩොම් කොබ් යනු අති දක්ෂ සොරෙකි, ඔහු සිහින බෙදාගැනීමේ තාක්‍ෂණය භාවිතා කරමින් ආයතනික රහස් සොරකම් කරයි. නමුත් මෙවර ඔහුට ලැබෙන්නේ ප්‍රතිවිරුද්ධ කාර්යයකි: ප්‍රධාන විධායක නිලධාරියෙකුගේ මනසෙහි අදහසක් පැලපදියම් කිරීම. මෙම භයානක මෙහෙයුම අතරතුර, ඔහුගේ ශෝකජනක අතීතය නැවතත් මතුවී, මෙම ව්‍යාපෘතිය සහ ඔහුගේ කණ්ඩායමම විනාශයේ අද්දරට ගෙන යයි. ඔවුන් සිහින ලෝකයේ ගැඹුරට ගමන් කරන විට, යථාර්ථය සහ මායාව අතර සීමාවන් බොඳ වී යයි, ඔවුන්ගේ පැවැත්ම පවා ප්‍රශ්නාර්ථයක් බවට පත් කරයි.',
     posterUrlId: 'movie-poster-inception',
     year: 2010,
     genres: ['Sci-Fi', 'Action', 'Thriller'],
