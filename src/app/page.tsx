@@ -59,22 +59,20 @@ export default function MoviePage() {
       </div>
 
       <main className="container mx-auto -mt-[340px] px-4 pb-8">
-        <section className="relative z-10 mb-12 flex flex-col items-center gap-8 text-center md:flex-row md:items-start md:gap-12 md:text-left -mt-20">
-          <div className="w-full max-w-[300px] flex-shrink-0">
-            {moviePoster && (
-                <div className="aspect-[3/4] relative rounded-lg overflow-hidden shadow-2xl">
+        <section className="relative z-10 mb-12 flex justify-center -mt-20">
+          <div className="flex-grow space-y-4 pt-0 md:pt-8 w-full md:w-2/3 text-center md:text-left">
+             {moviePoster && (
+                <div className="relative w-[100px] h-[150px] rounded-lg overflow-hidden shadow-2xl mx-auto md:mx-0 mb-4">
                     <Image
                         src={moviePoster.imageUrl}
                         alt={`Poster for ${movie.title}`}
-                        fill
+                        width={100}
+                        height={150}
                         className="object-cover"
                         data-ai-hint={moviePoster.imageHint}
                     />
                 </div>
             )}
-          </div>
-          
-          <div className="flex-grow space-y-4 pt-0 md:pt-16">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
@@ -83,7 +81,7 @@ export default function MoviePage() {
               <Separator orientation="vertical" className="h-4" />
               <span>{movie.duration}</span>
               <Separator orientation="vertical" className="h-4" />
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
                 {movie.genres.map((genre) => (
                   <Badge key={genre} variant="secondary">
                     {genre}
