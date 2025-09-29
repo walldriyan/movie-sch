@@ -35,7 +35,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-foreground">
       <Header />
-      <main>
+      <main className="flex-1">
         {/* Hero Section */}
         <section className="relative w-full h-[60vh] min-h-[500px]">
           <div className="absolute inset-0">
