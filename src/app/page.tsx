@@ -58,7 +58,7 @@ export default function MoviePage() {
       </div>
 
       <main className="container mx-auto -mt-[340px] px-4 pb-8">
-        <section className="relative z-10 -mt-20 mb-12 flex">
+        <section className="relative z-10 mb-12 flex items-center justify-start -mt-40">
           <div className="w-full max-w-3xl space-y-4 p-4 md:p-8">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
@@ -76,7 +76,11 @@ export default function MoviePage() {
                 ))}
               </div>
             </div>
-            <p className="max-w-none whitespace-pre-line text-foreground/80 leading-relaxed tracking-wide">{movie.description}</p>
+            <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide whitespace-pre-line">
+              <p className="mb-4">ඩොම් කොබ් යනු අති දක්ෂ සොරෙකි, ඔහු සිහින බෙදාගැනීමේ තාක්‍ෂණය භාවිතා කරමින් ආයතනික රහස් සොරකම් කරයි. "ඔබේ මනස තමයි අපරාධයේ තිප්පොළ." නමුත් මෙවර ඔහුට ලැබෙන්නේ සොරකමකට වඩා භයානක, ප්‍රතිවිරුද්ධ කාර්යයකි: ප්‍රධාන විධායක නිලධියෙකුගේ මනසෙහි අදහසක් පැලපදියම් කිරීම.</p>
+              <p className="mb-4">මෙම භයානක මෙහෙයුම අතරතුර, ඔහුගේ ශෝකජනක අතීතය නැවතත් මතුවී, මෙම ව්‍යාපෘතිය සහ ඔහුගේ කණ්ඩායමම විනාශයේ අද්දරට ගෙන යයි. ඔවුන් සිහින ලෝකයේ ගැඹුරට, සිහිනයක් තුළ තවත් සිහිනයක් වෙත ගමන් කරන විට, යථාර්ථය සහ මායාව අතර සීමාවන් බොඳ වී යයි. "අපි බිය විය යුත්තේ කාගෙන්දැයි ඔබ මගෙන් ඇසුවොත්, මම කියන්නේ අපටම කියාය."</p>
+              <p>ඔහුගේ ශෝකජනක අතීතයේ සෙවණැලි ඔහුව හොල්මන් කරන අතර, ඔහුගේ කණ්ඩායමේ ආරක්ෂාව සහ මෙහෙයුමේ සාර්ථකත්වය අතර තෝරා ගැනීමකට ඔහුට බල කෙරෙයි. යථාර්ථය කුමක්ද? සිහිනය කුමක්ද? අවසානයේදී, ඔවුන්ගේ පැවැත්ම පවා ප්‍රශ්නාර්ථයක් බවට පත් වේ.</p>
+            </div>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center space-x-2">
                 <Star className="text-yellow-400" />
