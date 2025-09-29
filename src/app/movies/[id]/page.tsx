@@ -4,9 +4,7 @@ import {
   Star,
   Heart,
   Eye,
-  MessageCircle,
   Download,
-  Upload,
   Clapperboard,
   Bot,
 } from 'lucide-react';
@@ -22,9 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { getMovieById } from '@/lib/data';
-import type { Review, Subtitle } from '@/lib/types';
 import Header from '@/components/header';
-import RatingStars from '@/components/rating-stars';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import SubtitleRequestForm from '@/components/subtitle-request-form';
@@ -100,7 +96,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
             />
         </div>
 
-        <section className="relative z-10 mb-12 flex flex-col md:flex-row items-start gap-8 -mt-20 p-4 md:p-8">
+        <section className="relative z-10 mb-12 flex flex-col md:flex-row items-start gap-8 -mt-20">
           <div className="w-full md:w-[200px] flex-shrink-0 mx-auto">
               <div className="relative mx-auto h-[300px] w-[200px] overflow-hidden rounded-lg shadow-2xl md:mx-0">
                   {moviePoster && (
@@ -134,7 +130,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
               </div>
           </div>
 
-          <div className="w-full space-y-4 pt-0 md:pt-8">
+          <div className="w-full space-y-4 pt-0 md:pt-8 p-4 md:p-8">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
@@ -152,9 +148,14 @@ export default function MoviePage({ params }: { params: { id: string } }) {
               </div>
             </div>
             <div className="relative">
-              <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide whitespace-pre-line"
-                dangerouslySetInnerHTML={{ __html: movie.description.replace(/\n/g, '<br />') }}
-              />
+              <div className="absolute inset-0 -z-10 bg-gradient-to-tr from-background to-secondary/20 blur-2xl opacity-80" />
+              <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide">
+                {movie.description.map((paragraph, index) => (
+                  <p key={index} className="mb-4">
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
             </div>
             <div className="pt-4 flex justify-start space-x-4">
               <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90">
@@ -166,7 +167,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                 Favorite
               </Button>
             </div>
-            </div>
+          </div>
         </section>
 
         <Tabs defaultValue="reviews" className="w-full">
