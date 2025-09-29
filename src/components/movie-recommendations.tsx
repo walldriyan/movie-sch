@@ -24,7 +24,7 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
         setError(null);
         const result = await getMovieRecommendations({
           movieTitle: currentMovie.title,
-          movieDescription: currentMovie.description,
+          movieDescription: currentMovie.description.join(' '),
         });
         setRecommendations(result);
       } catch (e) {

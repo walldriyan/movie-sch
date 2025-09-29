@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -55,7 +56,7 @@ export default function HomePage() {
               {featuredMovie.title}
             </h1>
             <p className="mt-4 max-w-2xl text-lg text-foreground/80">
-              {featuredMovie.description.split('\n')[0]}
+              {featuredMovie.description[0]}
             </p>
             <div className="mt-6 flex items-center space-x-4">
               <Link href={`/movies/${featuredMovie.id}`} passHref>
@@ -88,7 +89,7 @@ export default function HomePage() {
                 key={movie.id}
                 id={movie.id}
                 title={movie.title}
-                description={movie.description}
+                description={movie.description[0]}
                 posterUrlId={movie.posterUrlId}
               />
             ))}
