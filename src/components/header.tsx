@@ -1,10 +1,18 @@
 'use client';
 
-import { Film, Search } from 'lucide-react';
+import { Film, Search, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { useEffect, useState } from 'react';
 
 export default function Header() {
@@ -16,14 +24,12 @@ export default function Header() {
   }, []);
 
   if (!isClient) {
-    // Return a placeholder or skeleton to prevent layout shift
     return (
-        <header className="sticky top-0 z-50 w-full">
-            <div className="container flex h-16 items-center" />
-        </header>
+      <header className="sticky top-0 z-50 w-full">
+        <div className="container flex h-16 items-center" />
+      </header>
     );
   }
-
 
   return (
     <header className="sticky top-0 z-50 w-full">
@@ -45,10 +51,24 @@ export default function Header() {
               className="pl-9"
             />
           </div>
-          <Avatar>
-            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="cursor-pointer">
+                {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/manage">
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  <span>Manage Movies</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>
