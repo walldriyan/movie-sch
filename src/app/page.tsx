@@ -57,9 +57,9 @@ export default function MoviePage() {
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
       </div>
 
-      <main className="container mx-auto -mt-[440px] px-4 pb-8">
+      <main className="container mx-auto -mt-[340px] px-4 pb-8">
         <section className="relative z-10 mb-12 flex">
-          <div className="w-full max-w-3xl space-y-4 p-4 md:p-8">
+          <div className="w-full max-w-3xl space-y-4 rounded-lg bg-background/50 p-4 shadow-2xl shadow-background/50 backdrop-blur-sm md:p-8">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
