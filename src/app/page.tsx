@@ -1,3 +1,4 @@
+'use client';
 
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
@@ -5,14 +6,40 @@ import Header from '@/components/header';
 import MovieCard from '@/components/movie-card';
 import { getAllMovies } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Badge } from '@/components/ui/badge';
 import { Star, Clapperboard } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import type { Movie } from '@/lib/types';
+import Loading from './loading';
+
+const LOCAL_STORAGE_KEY = 'movies_data';
 
 export default function HomePage() {
-  const allMovies = getAllMovies();
-  const featuredMovie = allMovies.find(m => m.id === 1); // Inception
-  const trendingMovies = allMovies.filter(m => m.id !== 1).slice(0, 4);
-  const popularMovies = allMovies.filter(m => ![1, 2, 3, 4].includes(m.id));
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedMovies) {
+        setAllMovies(JSON.parse(storedMovies));
+      } else {
+        const initialMovies = getAllMovies();
+        setAllMovies(initialMovies);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialMovies));
+      }
+    } catch (error) {
+      console.error("Could not parse movies from localStorage", error);
+      const initialMovies = getAllMovies();
+      setAllMovies(initialMovies);
+    }
+  }, []);
+
+  if (!isMounted || allMovies.length === 0) {
+    return <Loading />;
+  }
+  
+  const featuredMovie = allMovies.find(m => m.id === 1) || allMovies[0];
 
   const featuredMoviePoster = PlaceHolderImages.find(
     (p) => p.id === featuredMovie?.posterUrlId
@@ -23,10 +50,10 @@ export default function HomePage() {
 
   if (!featuredMovie) {
     return (
-      <div className="min-h-screen bg-background text-foreground">
+      <div className="w-full bg-background text-foreground">
         <Header />
-        <main className="container mx-auto px-4 py-8">
-          <p>No movies found.</p>
+        <main className="container mx-auto px-4 py-8 text-center">
+          <p>No movies found. Please add some in the manage page.</p>
         </main>
       </div>
     );
@@ -66,7 +93,7 @@ export default function HomePage() {
                 <span>{featuredMovie.duration}</span>
               </div>
               <p className="text-foreground/80 line-clamp-3 leading-relaxed">
-                {featuredMovie.description[0]}
+                {Array.isArray(featuredMovie.description) ? featuredMovie.description[0] : featuredMovie.description}
               </p>
               <div className="pt-4">
                 <Button size="lg">
@@ -92,7 +119,7 @@ export default function HomePage() {
                   id={movie.id}
                   title={movie.title}
                   posterUrlId={movie.posterUrlId}
-                  description={movie.description.join(' ')}
+                  description={Array.isArray(movie.description) ? movie.description.join(' ') : movie.description}
                 />
               ))}
             </div>
@@ -104,13 +131,13 @@ export default function HomePage() {
               Popular Movies
             </h2>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {allMovies.slice(0, 6).map((movie) => (
+              {allMovies.slice(7, 13).map((movie) => (
                 <MovieCard
                   key={movie.id}
                   id={movie.id}
                   title={movie.title}
                   posterUrlId={movie.posterUrlId}
-                  description={movie.description.join(' ')}
+                  description={Array.isArray(movie.description) ? movie.description.join(' ') : movie.description}
                 />
               ))}
             </div>
