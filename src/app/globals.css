@@ -4,33 +4,33 @@
 
 @layer base {
   :root {
-    --background: 240 33% 14%; /* #1A1A2E */
-    --foreground: 240 5% 80%;
+    --background: 0 0% 8%; /* Near black */
+    --foreground: 0 0% 98%;
 
-    --card: 240 30% 18%;
-    --card-foreground: 240 5% 90%;
+    --card: 0 0% 10%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 240 30% 18%;
-    --popover-foreground: 240 5% 90%;
+    --popover: 0 0% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 256 39% 52%; /* #624CAB */
-    --primary-foreground: 256 40% 95%;
+    --primary: 142 76% 40%; /* Spotify green */
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 240 20% 25%;
-    --secondary-foreground: 240 5% 90%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 240 20% 25%;
-    --muted-foreground: 240 5% 65%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 60%;
 
-    --accent: 177 100% 36%; /* #00B9AE */
-    --accent-foreground: 240 5% 95%;
+    --accent: 142 76% 40%; /* Spotify green */
+    --accent-foreground: 0 0% 98%;
 
     --destructive: 0 63% 40%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 20% 25%;
-    --input: 240 20% 22%;
-    --ring: 177 100% 40%;
+    --border: 0 0% 15%;
+    --input: 0 0% 12%;
+    --ring: 142 76% 45%;
     
     --radius: 0.5rem;
 
