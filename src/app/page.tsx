@@ -35,7 +35,7 @@ export default function HomePage() {
   return (
     <div className="flex min-h-screen w-full flex-col bg-background text-foreground">
       <Header />
-      <main className="flex-grow">
+      <main>
         <section className="relative h-[60vh] min-h-[500px] w-full">
           <div className="absolute inset-0">
             {featuredMovieImage && (
