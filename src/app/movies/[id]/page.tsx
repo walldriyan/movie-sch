@@ -88,7 +88,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       <main className="container relative mx-auto -mt-[490px] px-4 sm:px-6 md:px-12 pb-8">
         <div aria-hidden="true" className="absolute inset-0 -top-96 -z-10 overflow-hidden transform-gpu blur-3xl">
             <div
-              className="relative left-[calc(50%-15rem)] aspect-[1155/678] w-[72.125rem] -translate-x-1/4 rotate-[30deg] bg-gradient-to-tr from-primary/40 to-accent/20 opacity-50 sm:left-[calc(50%-40rem)] sm:w-[90.1875rem]"
+              className="relative left-[calc(50%-15rem)] aspect-[1155/678] w-[72.125rem] -translate-x-1/4 rotate-[30deg] bg-gradient-to-tr from-primary/90 to-accent/60 opacity-50 sm:left-[calc(50%-40rem)] sm:w-[90.1875rem]"
               style={{
                 clipPath:
                   'polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)',
@@ -149,7 +149,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
             </div>
             <div className="relative">
                <div
-                  className="absolute inset-0 -z-10 bg-gradient-to-tr from-primary/30 to-accent/20 blur-2xl opacity-50"
+                  className="absolute inset-0 -z-10 bg-gradient-to-tr from-background to-secondary/20 blur-2xl opacity-80"
                 />
               <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide">
                 {movie.description.map((paragraph, index) => (
