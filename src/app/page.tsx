@@ -33,9 +33,9 @@ export default function HomePage() {
   const featuredMovieImage = PlaceHolderImages.find(p => p.id === featuredMovie.posterUrlId);
 
   return (
-    <div className="min-h-screen w-full bg-background text-foreground">
+    <div className="flex min-h-screen w-full flex-col bg-background text-foreground">
       <Header />
-      <main>
+      <main className="flex-grow">
         <section className="relative h-[60vh] min-h-[500px] w-full">
           <div className="absolute inset-0">
             {featuredMovieImage && (
