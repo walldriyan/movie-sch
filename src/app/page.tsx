@@ -57,10 +57,15 @@ export default function MoviePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background/80 via-transparent to-background/80" />
       </div>
+      
+      <main className="container relative mx-auto -mt-[490px] px-4 pb-8">
+        {/* Background decorative blobs */}
+        <div aria-hidden="true" className="absolute inset-0 top-20 -z-10 overflow-hidden">
+            <div className="absolute left-[max(50%,25rem)] top-0 h-[38rem] w-[58rem] -translate-x-1/2 rounded-full bg-gradient-to-tr from-primary/30 to-accent/20 blur-3xl" />
+        </div>
 
-      <main className="container mx-auto -mt-[340px] px-4 pb-8">
-        <section className="relative z-10 mb-12 flex -mt-20">
-          <div className="w-full max-w-3xl space-y-4 pt-0 text-center md:pt-8 md:text-left">
+        <section className="relative z-10 mb-12 flex justify-start">
+           <div className="w-full max-w-3xl space-y-4 pt-0 text-left md:pt-8">
             <div className="relative mx-auto mb-4 h-[250px] w-[200px] overflow-hidden rounded-lg shadow-2xl md:mx-0">
                 {moviePoster && (
                     <Image
@@ -75,12 +80,12 @@ export default function MoviePage() {
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
-            <div className="flex items-center justify-center md:justify-start space-x-4 text-sm text-muted-foreground">
+            <div className="flex items-center justify-start space-x-4 text-sm text-muted-foreground">
               <span>{movie.year}</span>
               <Separator orientation="vertical" className="h-4" />
               <span>{movie.duration}</span>
               <Separator orientation="vertical" className="h-4" />
-              <div className="flex flex-wrap gap-2 justify-center md:justify-start">
+              <div className="flex flex-wrap gap-2 justify-start">
                 {movie.genres.map((genre) => (
                   <Badge key={genre} variant="secondary">
                     {genre}
@@ -93,7 +98,7 @@ export default function MoviePage() {
               <p className="mb-4">මෙම භයානක මෙහෙයුම අතරතුර, ඔහුගේ ශෝකජනක අතීතය නැවතත් මතුවී, මෙම ව්‍යාපෘතිය සහ ඔහුගේ කණ්ඩායමම විනාශයේ අද්දරට ගෙන යයි. ඔවුන් සිහින ලෝකයේ ගැඹුරට, සිහිනයක් තුළ තවත් සිහිනයක් වෙත ගමන් කරන විට, යථාර්ථය සහ මායාව අතර සීමාවන් බොඳ වී යයි. "අපි බිය විය යුත්තේ කාගෙන්දැයි ඔබ මගෙන් ඇසුවොත්, මම කියන්නේ අපටම කියාය."</p>
               <p>ඔහුගේ ශෝකජනක අතීතයේ සෙවණැලි ඔහුව හොල්මන් කරන අතර, ඔහුගේ කණ්ඩායමේ ආරක්ෂාව සහ මෙහෙයුමේ සාර්ථකත්වය අතර තෝරා ගැනීමකට ඔහුට බල කෙරෙයි. යථාර්ථය කුමක්ද? සිහිනය කුමක්ද? අවසානයේදී, ඔවුන්ගේ පැවැත්ම පවා ප්‍රශ්නාර්ථයක් බවට පත් වේ.</p>
             </div>
-            <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2">
+            <div className="flex flex-wrap items-center justify-start gap-x-6 gap-y-2">
               <div className="flex items-center space-x-2">
                 <Star className="text-yellow-400" />
                 <span className="font-bold">{movie.imdbRating.toFixed(1)}</span>
@@ -112,7 +117,7 @@ export default function MoviePage() {
                 </span>
               </div>
             </div>
-            <div className="pt-4 flex justify-center md:justify-start space-x-4">
+            <div className="pt-4 flex justify-start space-x-4">
               <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90">
                 <Clapperboard className="mr-2 h-5 w-5" />
                 Watch Now
