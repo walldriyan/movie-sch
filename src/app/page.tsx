@@ -76,7 +76,7 @@ export default function MoviePage() {
                 ))}
               </div>
             </div>
-            <p className="max-w-2xl text-foreground/80">{movie.description}</p>
+            <p className="max-w-2xl text-foreground/80 leading-relaxed tracking-wide">{movie.description}</p>
             <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center space-x-2">
                 <Star className="text-yellow-400" />
