@@ -147,17 +147,12 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                 ))}
               </div>
             </div>
-            <div className="relative">
-               <div
-                  className="absolute inset-0 -z-10 bg-gradient-to-tr from-background to-secondary/20 blur-3xl opacity-80"
-                />
-              <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide">
-                {movie.description.map((paragraph, index) => (
-                  <p key={index} className="mb-4">
-                    {paragraph}
-                  </p>
-                ))}
-              </div>
+            <div className="max-w-none text-foreground/80 leading-relaxed tracking-wide bg-black/60 backdrop-blur-lg rounded-xl p-6">
+              {movie.description.map((paragraph, index) => (
+                <p key={index} className="mb-4">
+                  {paragraph}
+                </p>
+              ))}
             </div>
             <div className="pt-4 flex justify-start space-x-4">
               <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90">
