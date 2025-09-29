@@ -31,7 +31,7 @@ import MovieRecommendations from '@/components/movie-recommendations';
 import UploadSubtitleDialog from '@/components/upload-subtitle-dialog';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Sidebar, SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
-import RightSidebar from '@/components/right-sidebar';
+import LeftSidebar from '@/components/left-sidebar';
 
 export default function MoviePage() {
   const movie = getMovieById(1);
@@ -45,9 +45,12 @@ export default function MoviePage() {
   return (
     <SidebarProvider>
       <div className="min-h-screen w-full bg-background">
-        <Header />
         <div className="flex">
+          <Sidebar side="left" collapsible="icon">
+            <LeftSidebar />
+          </Sidebar>
           <SidebarInset className="flex-1">
+             <Header />
             <div className="relative -mt-16 h-[560px] w-full overflow-hidden">
               {heroImage && (
                 <Image
@@ -248,9 +251,6 @@ export default function MoviePage() {
               </Tabs>
             </main>
           </SidebarInset>
-          <Sidebar side="right" collapsible="icon">
-            <RightSidebar />
-          </Sidebar>
         </div>
       </div>
     </SidebarProvider>

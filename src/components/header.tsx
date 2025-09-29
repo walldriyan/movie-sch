@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { SidebarTrigger } from './ui/sidebar';
 
 export default function Header() {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
@@ -13,7 +14,10 @@ export default function Header() {
     <header className="sticky top-0 z-50 w-full bg-transparent">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
         <div className="flex gap-6 md:gap-10">
-          <Link href="/" className="flex items-center space-x-2">
+          <div className="md:hidden">
+            <SidebarTrigger />
+          </div>
+          <Link href="/" className="hidden items-center space-x-2 md:flex">
             <Film className="h-6 w-6 text-primary" />
             <span className="inline-block font-bold font-headline text-lg">
               CineVerse Captions
