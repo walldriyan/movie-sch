@@ -43,20 +43,21 @@ export default function MoviePage() {
     <div className="min-h-screen w-full bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <section className="relative -mt-8 mb-12 flex aspect-[16/9] flex-col justify-end overflow-hidden rounded-3xl border p-8 md:p-12 lg:p-16">
+        <section className="relative -mt-8 mb-12 flex aspect-[16/9] flex-col justify-end overflow-hidden rounded-3xl border">
           {moviePoster && (
             <Image
               src={moviePoster.imageUrl}
               alt={`Poster for ${movie.title}`}
               fill
-              className="-z-20 object-cover opacity-30 blur-md"
+              className="object-cover"
               data-ai-hint={moviePoster.imageHint}
               priority
             />
           )}
-          <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-t from-background/90 via-background/50 to-transparent"></div>
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-lg" />
           
-          <div className="z-10 w-full max-w-3xl">
+          <div className="relative z-10 p-8 md:p-12 lg:p-16 w-full max-w-3xl">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
