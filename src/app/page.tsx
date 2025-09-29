@@ -36,7 +36,7 @@ export default function HomePage() {
     <div className="min-h-screen w-full bg-background text-foreground">
       <Header />
       <main>
-        <section className="relative h-[60vh] min-h-[500px] w-full -mt-16">
+        <section className="relative h-[60vh] min-h-[500px] w-full">
           <div className="absolute inset-0">
             {featuredMovieImage && (
                <Image
