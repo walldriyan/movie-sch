@@ -36,10 +36,11 @@ export default function HomePage() {
     <div className="flex min-h-screen w-full flex-col bg-background text-foreground">
       <Header />
       <main>
-        <section className="relative h-[60vh] min-h-[500px] w-full">
+        {/* Hero Section */}
+        <section className="relative w-full h-[60vh] min-h-[500px]">
           <div className="absolute inset-0">
             {featuredMovieImage && (
-               <Image
+              <Image
                 src={featuredMovieImage.imageUrl}
                 alt={`Poster for ${featuredMovie.title}`}
                 fill
@@ -74,6 +75,7 @@ export default function HomePage() {
           </div>
         </section>
 
+        {/* Movies Grid Section */}
         <section className="container py-12">
           <Tabs value={activeGenre} onValueChange={handleGenreChange} className="mb-8">
             <TabsList>
