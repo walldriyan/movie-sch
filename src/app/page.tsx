@@ -38,18 +38,19 @@ export default function MoviePage() {
   }
 
   const moviePoster = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
+  const heroImage = PlaceHolderImages.find((img) => img.id === 'movie-poster-inception');
 
   return (
     <div className="min-h-screen w-full bg-background">
       <Header />
       <div className="relative -mt-16 h-[560px] w-full overflow-hidden">
-        {moviePoster && (
+        {heroImage && (
           <Image
-            src={moviePoster.imageUrl}
+            src={heroImage.imageUrl}
             alt={`Poster for ${movie.title}`}
             fill
             className="object-cover"
-            data-ai-hint={moviePoster.imageHint}
+            data-ai-hint={heroImage.imageHint}
             priority
           />
         )}
@@ -58,8 +59,24 @@ export default function MoviePage() {
       </div>
 
       <main className="container mx-auto -mt-[340px] px-4 pb-8">
-        <section className="relative z-10 mb-12 flex items-center justify-start -mt-40">
-          <div className="w-full max-w-3xl space-y-4 p-4 md:p-8">
+        <section className="relative z-10 mb-12 flex flex-col md:flex-row items-start gap-8 md:gap-12 -mt-20">
+          <div className="w-full md:w-[300px] flex-shrink-0">
+            {moviePoster && (
+                <div className="aspect-[3/4] relative rounded-lg overflow-hidden shadow-2xl">
+                    <Image
+                        src={moviePoster.imageUrl}
+                        alt={`Poster for ${movie.title}`}
+                        fill
+                        className="object-cover"
+                        width={300}
+                        height={400}
+                        data-ai-hint={moviePoster.imageHint}
+                    />
+                </div>
+            )}
+          </div>
+          
+          <div className="flex-grow space-y-4 pt-0 md:pt-16">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
@@ -68,7 +85,7 @@ export default function MoviePage() {
               <Separator orientation="vertical" className="h-4" />
               <span>{movie.duration}</span>
               <Separator orientation="vertical" className="h-4" />
-              <div className="flex space-x-2">
+              <div className="flex flex-wrap gap-2">
                 {movie.genres.map((genre) => (
                   <Badge key={genre} variant="secondary">
                     {genre}
