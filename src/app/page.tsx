@@ -43,20 +43,20 @@ export default function MoviePage() {
     <div className="min-h-screen w-full bg-background">
       <Header />
       <main className="container mx-auto px-4 py-8">
-        <section className="relative -mt-8 mb-12 flex flex-col items-center justify-center overflow-hidden rounded-3xl border text-center">
+        <section className="relative -mt-8 mb-12 flex flex-col items-center overflow-hidden rounded-3xl border md:flex-row">
           {moviePoster && (
             <Image
               src={moviePoster.imageUrl}
               alt={`Poster for ${movie.title}`}
               fill
-              className="-z-10 object-cover opacity-30 blur-sm"
+              className="-z-20 object-cover opacity-20 blur-lg"
               data-ai-hint={moviePoster.imageHint}
               priority
             />
           )}
-          <div className="absolute inset-0 z-0 h-full w-full bg-gradient-to-t from-background via-background/50 to-transparent"></div>
+          <div className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-br from-background/80 via-background/40 to-transparent"></div>
           
-          <div className="z-10 flex w-full flex-col items-center p-8 md:p-12 lg:p-16">
+          <div className="z-10 flex w-full flex-col p-8 md:w-1/2 md:p-12 lg:p-16">
             <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
               {movie.title}
             </h1>
@@ -103,6 +103,18 @@ export default function MoviePage() {
                 Favorite
               </Button>
             </div>
+          </div>
+          <div className="relative hidden h-full w-1/2 p-8 md:block">
+            {moviePoster && (
+              <Image
+                src={moviePoster.imageUrl}
+                alt={`Poster for ${movie.title}`}
+                width={600}
+                height={900}
+                className="mx-auto rounded-xl shadow-2xl shadow-black/50"
+                data-ai-hint={moviePoster.imageHint}
+              />
+            )}
           </div>
         </section>
 
