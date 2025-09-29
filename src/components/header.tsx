@@ -16,7 +16,12 @@ export default function Header() {
   }, []);
 
   if (!isClient) {
-    return null; // or a placeholder/skeleton header
+    // Return a placeholder or skeleton to prevent layout shift
+    return (
+        <header className="sticky top-0 z-50 w-full">
+            <div className="container flex h-16 items-center" />
+        </header>
+    );
   }
 
 
