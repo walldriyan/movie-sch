@@ -37,21 +37,22 @@ const LOCAL_STORAGE_KEY = 'movies_data';
 export default function MoviePage({ params }: { params: { id: string } }) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const { id: movieId } = params;
 
   useEffect(() => {
     setIsMounted(true);
     try {
       const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
       const allMovies = storedMovies ? JSON.parse(storedMovies) : getAllMovies();
-      const currentMovie = allMovies.find((m: Movie) => m.id === Number(params.id));
+      const currentMovie = allMovies.find((m: Movie) => m.id === Number(movieId));
       setMovie(currentMovie || null);
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);
       const allMovies = getAllMovies();
-      const currentMovie = allMovies.find((m: Movie) => m.id === Number(params.id));
+      const currentMovie = allMovies.find((m: Movie) => m.id === Number(movieId));
       setMovie(currentMovie || null);
     }
-  }, [params.id]);
+  }, [movieId]);
 
   if (!isMounted || !movie) {
     return <Loading />;
