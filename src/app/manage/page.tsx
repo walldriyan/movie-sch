@@ -89,7 +89,6 @@ export default function ManageMoviesPage() {
       } else {
         const initialMovies: Movie[] = [];
         setMovies(initialMovies);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialMovies));
       }
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);
@@ -111,7 +110,7 @@ export default function ManageMoviesPage() {
       duration: '',
       genres: '',
       description: '',
-      posterUrlId: 'movie-poster-placeholder',
+      posterUrlId: '',
       imdbRating: 0,
     });
     setView('form');
