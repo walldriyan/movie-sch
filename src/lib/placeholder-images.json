@@ -1,33 +1,9 @@
 {
   "placeholderImages": [
     {
-      "id": "movie-poster-inception",
-      "description": "Movie poster for Inception",
-      "imageUrl": "https://images.unsplash.com/photo-1655006852875-7912caa28e8e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzY2ktZmklMjBtb3ZpZXxlbnwwfHx8fDE3NTkwNzI3Mzl8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "sci-fi movie"
-    },
-    {
-      "id": "movie-poster-interstellar",
-      "description": "Movie poster for Interstellar",
-      "imageUrl": "https://images.unsplash.com/photo-1749952564892-78ca504aa9c6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxzcGFjZSUyMG1vdmllfGVufDB8fHx8MTc1OTEzMDEwM3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "space movie"
-    },
-    {
-      "id": "movie-poster-dune",
-      "description": "Movie poster for Dune",
-      "imageUrl": "https://images.unsplash.com/photo-1687639650341-398e3565990e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxkZXNlcnQlMjBwbGFuZXR8ZW58MHx8fHwxNzU5MDY2NTUzfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "desert planet"
-    },
-    {
-      "id": "movie-poster-blade-runner",
-      "description": "Movie poster for Blade Runner 2049",
-      "imageUrl": "https://images.unsplash.com/photo-1675326570919-946d728e9a25?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxmdXR1cmlzdGljJTIwY2l0eXxlbnwwfHx8fDE3NTkwOTAxMDN8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "futuristic city"
-    },
-    {
       "id": "avatar-1",
       "description": "User avatar 1",
-      "imageUrl": "https://images.unsplash.com/photo-1725028748781-7adb1df9a943?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1OTA0Mzc5Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwZXJzb24lMjBmYWNlfGVufDB8fHx8MTc1OTA0Mzc5Nnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "person face"
     },
     {
@@ -39,14 +15,20 @@
     {
       "id": "avatar-3",
       "description": "User avatar 3",
-      "imageUrl": "https://images.unsplash.com/photo-1715029005043-e88d219a3c48?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bWFuJTIwcG9ydHJhaXR8ZW58MHx8fHwxNzU5MDc5OTE3fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1607031542107-f6f46b5d54e9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxtYW4lMjBwb3J0cmFpdHxlbnwwfHx8fDE3NTkwNzk5MTd8MA&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "man portrait"
     },
     {
       "id": "avatar-4",
       "description": "User avatar 4",
-      "imageUrl": "https://images.unsplash.com/photo-1635131902146-6957477a4ff4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxwZXJzb24lMjBzbWlsaW5nfGVufDB8fHx8MTc1OTEyNDY1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageUrl": "https://images.unsplash.com/photo-1656338997878-279d71d48f6e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxwZXJzb24lMjBzbWlsaW5nfGVufDB8fHx8MTc1OTEyNDY1Nnww&ixlib=rb-4.1.0&q=80&w=1080",
       "imageHint": "person smiling"
+    },
+    {
+      "id": "movie-poster-placeholder",
+      "description": "Generic movie poster placeholder",
+      "imageUrl": "https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtb3ZpZSUyMHBvc3RlcnxlbnwwfHx8fDE3NTkyMDg4NDV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "movie poster"
     }
   ]
 }

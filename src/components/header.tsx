@@ -1,38 +1,79 @@
 'use client';
 
-import { Film, Search } from 'lucide-react';
+import { Film, Search, LayoutGrid } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useEffect, useState } from 'react';
+import { Button } from './ui/button';
 
 export default function Header() {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
+        <div className="max-w-7xl mx-auto px-4 flex h-16 items-center" />
+      </header>
+    );
+  }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
-        <div className="flex gap-6 md:gap-10">
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between gap-8">
+        <div className="flex items-center gap-4">
           <Link href="/" className="flex items-center space-x-2">
-            <Film className="h-6 w-6 text-primary" />
-            <span className="inline-block font-bold font-headline text-lg">
-              CineVerse Captions
+            <Film className="h-7 w-7 text-primary" />
+            <span className="inline-block font-bold font-serif text-2xl">
+              CineVerse
             </span>
           </Link>
-        </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <div className="relative w-full max-w-sm">
+          <div className="relative hidden sm:block">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               type="search"
-              placeholder="Search movies..."
-              className="pl-9"
+              placeholder="Search..."
+              className="pl-9 bg-muted/50 w-64"
             />
           </div>
-          <Avatar>
-            {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
-            <AvatarFallback>U</AvatarFallback>
-          </Avatar>
+        </div>
+
+        <div className="flex items-center justify-end space-x-4">
+          <Button variant="ghost" className="hidden sm:inline-flex">
+            Write
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="cursor-pointer h-8 w-8">
+                {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
+                <AvatarFallback>U</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href="/manage">
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  <span>Manage Movies</span>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
     </header>

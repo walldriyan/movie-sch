@@ -1,217 +1,120 @@
-import Image from 'next/image';
-import {
-  Star,
-  Heart,
-  Eye,
-  MessageCircle,
-  Download,
-  Upload,
-  Clapperboard,
-  Bot,
-} from 'lucide-react';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
-import { getMovieById } from '@/lib/data';
-import type { Review, Subtitle } from '@/lib/types';
-import Header from '@/components/header';
-import RatingStars from '@/components/rating-stars';
-import ReviewCard from '@/components/review-card';
-import ReviewForm from '@/components/review-form';
-import SubtitleRequestForm from '@/components/subtitle-request-form';
-import MovieRecommendations from '@/components/movie-recommendations';
-import UploadSubtitleDialog from '@/components/upload-subtitle-dialog';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
+'use client';
 
-export default function MoviePage() {
-  const movie = getMovieById(1);
-  if (!movie) {
-    return <div>Movie not found</div>;
+import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import Header from '@/components/header';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Star } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import type { Movie } from '@/lib/types';
+import Loading from './loading';
+import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
+const LOCAL_STORAGE_KEY = 'movies_data';
+
+export default function HomePage() {
+  const [allMovies, setAllMovies] = useState<Movie[]>([]);
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+    try {
+      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (storedMovies) {
+        setAllMovies(JSON.parse(storedMovies));
+      } else {
+        setAllMovies([]);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+      }
+    } catch (error) {
+      console.error("Could not parse movies from localStorage", error);
+      setAllMovies([]);
+    }
+  }, []);
+
+  if (!isMounted) {
+    return <Loading />;
+  }
+  
+  if (allMovies.length === 0) {
+    return (
+      <div className="w-full bg-background text-foreground">
+        <Header />
+        <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center">
+          <div className='max-w-md'>
+            <h1 className="font-serif text-4xl font-bold">Your Catalog is Empty</h1>
+            <p className="mt-4 text-lg text-muted-foreground">Start by adding your favorite movies to build your personal CineVerse.</p>
+             <Button asChild className="mt-6" size="lg">
+              <Link href="/manage">Add Your First Movie</Link>
+            </Button>
+          </div>
+        </main>
+      </div>
+    );
   }
 
-  const moviePoster = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
+  const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
   return (
-    <div className="min-h-screen w-full bg-background">
+    <div className="w-full bg-background text-foreground">
       <Header />
-      <div className="relative -mt-16 h-[560px] w-full overflow-hidden">
-        {moviePoster && (
-          <Image
-            src={moviePoster.imageUrl}
-            alt={`Poster for ${movie.title}`}
-            fill
-            className="object-cover"
-            data-ai-hint={moviePoster.imageHint}
-            priority
-          />
-        )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
-      </div>
+      <main className='max-w-4xl mx-auto px-4 py-8'>
+        <div className='space-y-12'>
+          {allMovies.map(movie => {
+            const movieImageUrl = movie.posterUrl ||
+              (movie.galleryImageIds.length > 0 
+                ? PlaceHolderImages.find(p => p.id === movie.galleryImageIds[0])?.imageUrl
+                : null);
 
-      <main className="container mx-auto -mt-64 px-4 pb-8">
-        <section className="relative z-10 mb-12 flex items-center">
-          <div className="w-full max-w-3xl space-y-4 p-4 md:p-8">
-            <h1 className="font-headline text-4xl font-bold text-foreground md:text-5xl lg:text-6xl">
-              {movie.title}
-            </h1>
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-              <span>{movie.year}</span>
-              <Separator orientation="vertical" className="h-4" />
-              <span>{movie.duration}</span>
-              <Separator orientation="vertical" className="h-4" />
-              <div className="flex space-x-2">
-                {movie.genres.map((genre) => (
-                  <Badge key={genre} variant="secondary">
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-            <p className="max-w-2xl text-foreground/80">{movie.description}</p>
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <div className="flex items-center space-x-2">
-                <Star className="text-yellow-400" />
-                <span className="font-bold">{movie.imdbRating.toFixed(1)}</span>
-                <span className="text-xs text-muted-foreground">/ 10</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Eye className="text-accent" />
-                <span className="font-bold">
-                  {(movie.viewCount / 1000000).toFixed(1)}M
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Heart className="text-red-500" />
-                <span className="font-bold">
-                  {(movie.likes / 1000).toFixed(1)}k
-                </span>
-              </div>
-            </div>
-            <div className="pt-4 flex space-x-4">
-              <Button size="lg" variant="default" className="bg-primary hover:bg-primary/90">
-                <Clapperboard className="mr-2 h-5 w-5" />
-                Watch Now
-              </Button>
-              <Button size="lg" variant="outline">
-                <Heart className="mr-2 h-5 w-5" />
-                Favorite
-              </Button>
-            </div>
-          </div>
-        </section>
-
-        <Tabs defaultValue="reviews" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 md:w-1/2 lg:w-1/3">
-            <TabsTrigger value="reviews">Reviews</TabsTrigger>
-            <TabsTrigger value="subtitles">Subtitles</TabsTrigger>
-            <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="reviews">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Reviews</CardTitle>
-                <CardDescription>
-                  What others are saying about {movie.title}.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-4">
-                  {movie.reviews.map((review) => (
-                    <ReviewCard key={review.id} review={review} />
-                  ))}
+            return (
+              <article key={movie.id}>
+                <div className="flex items-center space-x-3 mb-4 text-sm">
+                  <Avatar className='w-6 h-6'>
+                      {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt="Author" data-ai-hint={authorAvatar.imageHint} />}
+                      <AvatarFallback>U</AvatarFallback>
+                  </Avatar>
+                  <span className='font-medium text-foreground'>CineVerse Editor</span>
+                  <span className='text-muted-foreground'>{movie.year}</span>
                 </div>
-                <Separator />
-                <ReviewForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
 
-          <TabsContent value="subtitles">
-            <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-              <div className="lg:col-span-2">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Available Subtitles</CardTitle>
-                    <CardDescription>
-                      Download subtitles in your preferred language.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      {movie.subtitles.map((subtitle) => (
-                        <div
-                          key={subtitle.id}
-                          className="flex items-center justify-between rounded-lg border p-4"
-                        >
-                          <div>
-                            <p className="font-semibold">{subtitle.language}</p>
-                            <p className="text-sm text-muted-foreground">
-                              by {subtitle.uploader}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            <span className="text-sm font-semibold text-accent">
-                              {subtitle.price === 0
-                                ? 'Free'
-                                : `$${subtitle.price.toFixed(2)}`}
-                            </span>
-                            <Button variant="ghost" size="icon">
-                              <Download className="h-5 w-5" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-6 flex justify-end">
-                      <UploadSubtitleDialog />
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-              <div>
-                <Card className="bg-card/50 sticky top-24">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bot className="h-6 w-6 text-primary" />
-                      Request Subtitles
-                    </CardTitle>
-                    <CardDescription>
-                      Can't find your language? Let our AI check if we can generate it
-                      for you.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <SubtitleRequestForm movieTitle={movie.title} />
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          </TabsContent>
+                <div className="grid grid-cols-12 gap-8">
+                  <div className="col-span-8">
+                    <Link href={`/movies/${movie.id}`} className="group">
+                      <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
+                        {movie.title}
+                      </h2>
+                      <p className="text-muted-foreground mt-2 line-clamp-2 text-base">
+                        {movie.description}
+                      </p>
+                    </Link>
+                  </div>
+                  <div className="col-span-4">
+                    {movieImageUrl && (
+                      <Link href={`/movies/${movie.id}`} className="block aspect-video relative overflow-hidden rounded-md">
+                        <Image
+                          src={movieImageUrl}
+                          alt={movie.title}
+                          fill
+                          className="object-cover"
+                        />
+                      </Link>
+                    )}
+                  </div>
+                </div>
 
-          <TabsContent value="recommendations">
-            <Card>
-              <CardHeader>
-                <CardTitle>AI-Powered Recommendations</CardTitle>
-                <CardDescription>
-                  Movies you might like based on {movie.title}.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <MovieRecommendations currentMovie={movie} />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <Star className="w-4 h-4 text-yellow-400" />
+                    <span>{movie.imdbRating.toFixed(1)}</span>
+                  </div>
+                  <span>&middot;</span>
+                  <span>{movie.duration}</span>
+                </div>
+              </article>
+            )
+          })}
+        </div>
       </main>
     </div>
   );
