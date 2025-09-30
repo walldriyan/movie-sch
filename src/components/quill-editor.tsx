@@ -20,7 +20,7 @@ const ImageComponentWithResize = ({ node, updateAttributes, deleteNode }: NodeVi
   }
 
   return (
-    <NodeViewWrapper className="block group/image-wrapper w-max max-w-full">
+    <NodeViewWrapper className="block group/image-wrapper">
        <div className="relative">
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
@@ -29,7 +29,7 @@ const ImageComponentWithResize = ({ node, updateAttributes, deleteNode }: NodeVi
               alt={node.attrs.alt} 
               width={node.attrs.width}
               data-size={node.attrs['data-size']}
-              className={cn('max-w-full h-auto cursor-pointer transition-all', {
+              className={cn('max-w-full h-auto cursor-pointer transition-all inline-block', {
                 'ring-2 ring-primary ring-offset-2 ring-offset-background': popoverOpen
               })}
             />
