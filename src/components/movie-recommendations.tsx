@@ -3,10 +3,13 @@
 import { useState, useEffect } from 'react';
 import type { Movie } from '@/lib/types';
 import { getMovieRecommendations, MovieRecommendationOutput } from '@/ai/flows/ai-movie-recommendation';
-import MovieCard from './movie-card';
 import { Skeleton } from './ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
-import { XCircle } from 'lucide-react';
+import { XCircle, Star } from 'lucide-react';
+import Image from 'next/image';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+
 
 interface MovieRecommendationsProps {
   currentMovie: Movie;
@@ -16,6 +19,9 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
   const [recommendations, setRecommendations] = useState<MovieRecommendationOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-2');
+
 
   useEffect(() => {
     async function fetchRecommendations() {
@@ -39,13 +45,17 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
 
   if (loading) {
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-        {[...Array(4)].map((_, i) => (
-          <div key={i} className="space-y-2">
-            <Skeleton className="h-[250px] w-full rounded-lg" />
-            <Skeleton className="h-4 w-3/4" />
-            <Skeleton className="h-4 w-1/2" />
-          </div>
+      <div className="space-y-8">
+        {[...Array(3)].map((_, i) => (
+           <div key={i} className="flex items-center gap-8">
+              <div className="flex-grow space-y-2">
+                <Skeleton className="h-4 w-1/4" />
+                <Skeleton className="h-6 w-3/4" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+              <Skeleton className="h-24 w-32 flex-shrink-0" />
+           </div>
         ))}
       </div>
     );
@@ -62,22 +72,34 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
   }
 
   if (!recommendations || recommendations.recommendations.length === 0) {
-    return <p>No recommendations found.</p>;
+    return <p className="text-muted-foreground">No recommendations available.</p>;
   }
 
-  // This component will now only show AI recommendations.
-  // We cannot link to real movies as they may not exist in localStorage.
-  // The MovieCard requires a valid movie ID to link to.
-  // Since we cannot guarantee this, we will display the recommendation details without making them cards.
-
   return (
-    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="space-y-12">
       {recommendations.recommendations.map((rec) => (
-        <div key={rec.title} className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
-          <h3 className="font-semibold">{rec.title}</h3>
-          <p className="mt-2 text-sm text-muted-foreground">{rec.description}</p>
-          <p className="mt-4 text-xs italic text-muted-foreground/80">Reason: {rec.reason}</p>
-        </div>
+        <article key={rec.title}>
+            <div className="flex items-center space-x-3 mb-4 text-sm">
+                <Avatar className='w-6 h-6'>
+                    {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt="Author" data-ai-hint={authorAvatar.imageHint} />}
+                    <AvatarFallback>A</AvatarFallback>
+                </Avatar>
+                <span className='font-medium text-foreground'>AI Recommender</span>
+            </div>
+            <div className="grid grid-cols-12 gap-8">
+                <div className="col-span-8">
+                    <h3 className="font-serif text-2xl font-bold leading-snug">
+                        {rec.title}
+                    </h3>
+                    <p className="text-muted-foreground mt-2 line-clamp-2 text-base">
+                       {rec.description}
+                    </p>
+                    <p className="mt-2 text-sm text-foreground/50 italic line-clamp-2">
+                       Reason: {rec.reason}
+                    </p>
+                </div>
+            </div>
+        </article>
       ))}
     </div>
   );
