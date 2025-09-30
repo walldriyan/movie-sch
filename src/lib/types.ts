@@ -21,7 +21,7 @@ export interface Subtitle {
 export interface Movie {
   id: number;
   title: string;
-  description: string[];
+  description: string;
   posterUrl: string;
   galleryImageIds: string[];
   year: number;

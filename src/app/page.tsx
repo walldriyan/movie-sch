@@ -62,9 +62,10 @@ export default function HomePage() {
       <main className='max-w-4xl mx-auto px-4 py-8'>
         <div className='space-y-12'>
           {allMovies.map(movie => {
-            const movieImageUrl = movie.galleryImageIds.length > 0 
-              ? PlaceHolderImages.find(p => p.id === movie.galleryImageIds[0])?.imageUrl
-              : movie.posterUrl;
+            const movieImageUrl = movie.posterUrl ||
+              (movie.galleryImageIds.length > 0 
+                ? PlaceHolderImages.find(p => p.id === movie.galleryImageIds[0])?.imageUrl
+                : null);
 
             return (
               <article key={movie.id}>
@@ -84,7 +85,7 @@ export default function HomePage() {
                         {movie.title}
                       </h2>
                       <p className="text-muted-foreground mt-2 line-clamp-2 text-base">
-                        {Array.isArray(movie.description) ? movie.description[0] : movie.description}
+                        {movie.description}
                       </p>
                     </Link>
                   </div>

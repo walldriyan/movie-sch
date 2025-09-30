@@ -30,6 +30,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { marked } from 'marked';
+
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
@@ -69,13 +71,13 @@ export default function MoviePage({ params }: { params: { id: string } }) {
     )
   }
   
-  const heroImageUrl = 
+  const heroImage = movie.posterUrl || 
     (movie.galleryImageIds && movie.galleryImageIds.length > 0
       ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0])?.imageUrl
-      : movie.posterUrl)
-    || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
+      : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl);
 
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
+  const parsedDescription = movie.description ? marked.parse(movie.description) : '';
 
 
   return (
@@ -84,10 +86,10 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <article>
           <header className="mb-8">
-            {heroImageUrl && (
+            {heroImage && (
               <div className="relative w-full h-96 mb-8 rounded-lg overflow-hidden">
                 <Image
-                    src={heroImageUrl}
+                    src={heroImage}
                     alt={`Poster for ${movie.title}`}
                     fill
                     className="object-cover"
@@ -138,13 +140,10 @@ export default function MoviePage({ params }: { params: { id: string } }) {
 
           </header>
 
-          <div className="prose prose-invert prose-lg max-w-none mx-auto text-foreground/80">
-             {Array.isArray(movie.description) ? movie.description.map((paragraph, index) => (
-                <p key={index} className="mb-4">
-                  {paragraph}
-                </p>
-              )) : <p>{movie.description}</p>}
-          </div>
+          <div
+            className="prose prose-invert prose-lg max-w-none mx-auto text-foreground/80"
+            dangerouslySetInnerHTML={{ __html: parsedDescription }}
+          />
 
           <div className="my-8 flex flex-wrap gap-2">
             {movie.genres.map((genre) => (

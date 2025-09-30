@@ -45,6 +45,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -95,6 +96,8 @@ export default function ManageMoviesPage() {
       if (storedMovies) {
         setMovies(JSON.parse(storedMovies));
       } else {
+        // Initialize with an empty array if nothing is in storage
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
         setMovies([]);
       }
     } catch (error) {
@@ -130,7 +133,7 @@ export default function ManageMoviesPage() {
       year: movie.year,
       duration: movie.duration,
       genres: movie.genres.join(', '),
-      description: Array.isArray(movie.description) ? movie.description.join('\n\n') : movie.description,
+      description: movie.description,
       posterUrl: movie.posterUrl || '',
       imdbRating: movie.imdbRating,
     });
@@ -155,13 +158,8 @@ export default function ManageMoviesPage() {
       // This is an edit
       const updatedMovie: Movie = {
         ...editingMovie,
-        title: values.title,
-        year: values.year,
-        duration: values.duration,
+        ...values,
         genres: values.genres.split(',').map((g) => g.trim()),
-        description: values.description.split('\n\n'),
-        posterUrl: values.posterUrl,
-        imdbRating: values.imdbRating,
       };
       setMovies(
         movies.map((m) => (m.id === updatedMovie.id ? updatedMovie : m))
@@ -170,13 +168,8 @@ export default function ManageMoviesPage() {
       // This is a new movie
       const newMovie: Movie = {
         id: Date.now(),
-        title: values.title,
-        year: values.year,
-        duration: values.duration,
+        ...values,
         genres: values.genres.split(',').map((g) => g.trim()),
-        description: values.description.split('\n\n'),
-        posterUrl: values.posterUrl,
-        imdbRating: values.imdbRating,
         galleryImageIds: [],
         viewCount: 0,
         likes: 0,
@@ -363,6 +356,9 @@ export default function ManageMoviesPage() {
                             {...field}
                           />
                         </FormControl>
+                        <FormDescription>
+                          You can use Markdown for styling.
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
@@ -435,7 +431,7 @@ export default function ManageMoviesPage() {
                         <FormItem>
                           <FormLabel className="text-muted-foreground">Poster Image URL</FormLabel>
                           <FormControl>
-                            <Input placeholder="https://example.com/image.png" {...field} className="bg-transparent border-input" />
+                            <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} className="bg-transparent border-input" />
                           </FormControl>
                            <FormMessage />
                         </FormItem>
