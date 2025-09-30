@@ -5,12 +5,8 @@ import {
   Star,
   MessageCircle,
   Download,
-  Clapperboard,
   Bot,
-  Heart,
-  Eye,
   Bookmark,
-  Upload,
   MoreHorizontal,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
