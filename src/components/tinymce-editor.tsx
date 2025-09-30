@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef } from 'react';
+import React from 'react';
 import { Editor } from '@tinymce/tinymce-react';
 
 interface TinyMCEEditorProps {
@@ -9,19 +9,8 @@ interface TinyMCEEditorProps {
 }
 
 const TinyMCEEditor = ({ value, onChange }: TinyMCEEditorProps) => {
-  const editorRef = useRef<any>(null);
-  
-  // Note: This is a free-tier API key. For production use, you should get your own from tiny.cloud
-  const apiKey = 'YOUR_TINYMCE_API_KEY';
-
   return (
     <Editor
-      apiKey={apiKey}
-      onInit={(evt, editor) => editorRef.current = editor}
-      initialValue={value}
-      onEditorChange={(newValue, editor) => {
-        onChange(newValue);
-      }}
       init={{
         height: 500,
         menubar: false,
@@ -43,8 +32,12 @@ const TinyMCEEditor = ({ value, onChange }: TinyMCEEditorProps) => {
           }
         `,
         skin: 'oxide-dark',
-        content_css: 'dark'
+        content_css: 'dark',
+        readonly: false,
       }}
+      disabled={false}
+      initialValue={value}
+      onEditorChange={(content, editor) => onChange(content)}
     />
   );
 };
