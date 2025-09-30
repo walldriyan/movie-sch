@@ -1,0 +1,13 @@
+diff --git a/node_modules/react-quill/lib/index.js b/node_modules/react-quill/lib/index.js
+index 29759d4..fc5334c 100644
+--- a/node_modules/react-quill/lib/index.js
++++ b/node_modules/react-quill/lib/index.js
+@@ -4,7 +4,7 @@
+ 	['react', 'Quill', 'lodash/isEqual', 'lodash/isFunction', 'lodash/debounce', 'prop-types', 'react-dom'],
+ 	function(React, Quill, isEqual, isFunction, debounce, PropTypes, ReactDOM) {
+ 
+-	var findDOMNode = ReactDOM.findDOMNode;
++	var findDOMNode = ReactDOM.findDOMNode ? ReactDOM.findDOMNode : function() {};
+ 
+ 	var QuillComponent = React.createClass({
+ 
