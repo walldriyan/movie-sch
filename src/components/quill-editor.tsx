@@ -1,30 +1,77 @@
 'use client';
 
-import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
+import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer, NodeViewProps } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
-import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading, X } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading, X, Smile, Film, Notebook, ImageUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Button } from './ui/button';
 
-// Custom Image Component with a remove button
-const ImageComponent = ({ node, deleteNode }: { node: any; deleteNode: () => void; }) => (
-  <NodeViewWrapper className="block">
-    <div className="relative group">
-      <img src={node.attrs.src} alt={node.attrs.alt} className="max-w-full h-auto" />
-      <button
-        onClick={deleteNode}
-        className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-        aria-label="Remove image"
-        type="button"
-      >
-        <X className="w-4 h-4" />
-      </button>
-    </div>
-  </NodeViewWrapper>
-);
 
+const ImageComponentWithResize = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
+  const [popoverOpen, setPopoverOpen] = React.useState(false);
+
+  const setSize = (size: 'sm' | 'md' | 'lg' | null, width: number | null) => {
+    updateAttributes({ 'data-size': size, width });
+    setPopoverOpen(false);
+  }
+
+  return (
+    <NodeViewWrapper className="block group/image-wrapper w-max max-w-full">
+       <div className="relative">
+        <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+          <PopoverTrigger asChild>
+            <img 
+              src={node.attrs.src} 
+              alt={node.attrs.alt} 
+              width={node.attrs.width}
+              data-size={node.attrs['data-size']}
+              className={cn('max-w-full h-auto cursor-pointer transition-all', {
+                'ring-2 ring-primary ring-offset-2 ring-offset-background': popoverOpen
+              })}
+            />
+          </PopoverTrigger>
+          <PopoverContent className="w-auto p-1">
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" onClick={() => setSize('sm', 24)} title="Emoji"
+                className={cn({'bg-muted': node.attrs['data-size'] === 'sm'})}
+              >
+                <Smile className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setSize('md', 200)} title="Small"
+                className={cn({'bg-muted': node.attrs['data-size'] === 'md'})}
+              >
+                <Film className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setSize('lg', 500)} title="Medium"
+                className={cn({'bg-muted': node.attrs['data-size'] === 'lg'})}
+              >
+                <Notebook className="w-4 h-4" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setSize(null, null)} title="Original"
+                className={cn({'bg-muted': !node.attrs['data-size']})}
+              >
+                <ImageUp className="w-4 h-4" />
+              </Button>
+            </div>
+          </PopoverContent>
+        </Popover>
+
+        <button
+          onClick={deleteNode}
+          className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover/image-wrapper:opacity-100 transition-opacity"
+          aria-label="Remove image"
+          type="button"
+        >
+          <X className="w-4 h-4" />
+        </button>
+      </div>
+    </NodeViewWrapper>
+  );
+};
 
 interface QuillEditorProps {
   value: string;
@@ -34,15 +81,23 @@ interface QuillEditorProps {
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        // No need to configure history here as it's default
-      }),
+      StarterKit.configure({}),
       Image.extend({
+        addAttributes() {
+          return {
+            ...this.parent?.(),
+            width: {
+              default: null,
+            },
+            'data-size': {
+              default: null,
+            },
+          }
+        },
         addNodeView() {
-          return ReactNodeViewRenderer(ImageComponent);
+          return ReactNodeViewRenderer(ImageComponentWithResize);
         },
       }).configure({
-        inline: true,
         allowBase64: true,
       }),
       Link.configure({
@@ -146,7 +201,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
         </button>
         <button
           onClick={addImage}
-          className="p-2 rounded hover:bg-muted"
+          className={cn('p-2 rounded hover:bg-muted')}
           type="button"
         >
           <ImageIcon className="w-4 h-4" />
