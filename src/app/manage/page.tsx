@@ -52,8 +52,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import 'react-quill/dist/quill.snow.css';
-import QuillEditor from '@/components/quill-editor';
+import TinyMCEEditor from '@/components/tinymce-editor';
+
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
@@ -350,7 +350,7 @@ export default function ManageMoviesPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <QuillEditor {...field} />
+                          <TinyMCEEditor {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
