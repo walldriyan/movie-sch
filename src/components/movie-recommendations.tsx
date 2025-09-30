@@ -28,9 +28,15 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
       try {
         setLoading(true);
         setError(null);
+
+        // Ensure movie description is a string
+        const movieDescription = Array.isArray(currentMovie.description)
+          ? currentMovie.description.join('\n')
+          : currentMovie.description;
+
         const result = await getMovieRecommendations({
           movieTitle: currentMovie.title,
-          movieDescription: currentMovie.description,
+          movieDescription: movieDescription,
         });
         setRecommendations(result);
       } catch (e) {
