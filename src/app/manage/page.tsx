@@ -53,6 +53,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import QuillEditor from '@/components/quill-editor';
+import Link from 'next/link';
 
 
 const LOCAL_STORAGE_KEY = 'movies_data';
@@ -256,7 +257,9 @@ export default function ManageMoviesPage() {
                                 ) }
                               </TableCell>
                               <TableCell className="font-medium">
-                                {movie.title}
+                                <Link href={`/movies/${movie.id}`} className="hover:underline">
+                                  {movie.title}
+                                </Link>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-wrap gap-1">
