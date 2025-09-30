@@ -5,45 +5,34 @@ export default function Loading() {
   return (
     <div className="min-h-screen w-full bg-background">
       <Header />
-      <div className="relative -mt-16 h-[560px] w-full">
-        <Skeleton className="h-full w-full" />
-      </div>
-      <main className="container mx-auto -mt-64 px-4 pb-8">
-        <section className="relative z-10 mb-12 flex flex-col md:flex-row items-start gap-8">
-          <div className="w-full md:w-[200px] flex-shrink-0 mx-auto">
-              <Skeleton className="h-[300px] w-[200px] rounded-lg" />
-              <div className="mt-4 space-y-2">
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-8 w-full" />
-                  <Skeleton className="h-8 w-full" />
-              </div>
-          </div>
+      <main className="max-w-4xl mx-auto px-4 py-8">
+        <div className="space-y-12">
+            {[...Array(3)].map((_, i) => (
+              <article key={i}>
+                <div className="flex items-center space-x-3 mb-4">
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
 
-          <div className="w-full space-y-4">
-              <Skeleton className="h-16 w-3/4" />
-              <div className="flex items-center space-x-4">
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-16" />
-                <Skeleton className="h-6 w-24" />
-              </div>
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-2/3" />
-              <div className="flex items-center space-x-6 pt-4">
-                <Skeleton className="h-12 w-36" />
-                <Skeleton className="h-12 w-36" />
-              </div>
-          </div>
-        </section>
+                <div className="grid grid-cols-12 gap-8">
+                  <div className="col-span-8 space-y-2">
+                    <Skeleton className="h-6 w-3/4" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-5/6" />
+                  </div>
+                  <div className="col-span-4">
+                    <Skeleton className="aspect-video w-full rounded-md" />
+                  </div>
+                </div>
 
-        <div className="w-full">
-            <div className="flex space-x-1 rounded-md bg-muted p-1 w-full md:w-1/2 lg:w-1/3 mb-4">
-                <Skeleton className="h-8 flex-1" />
-                <Skeleton className="h-8 flex-1" />
-                <Skeleton className="h-8 flex-1" />
-            </div>
-
-            <Skeleton className="h-[400px] w-full rounded-lg" />
+                 <div className="flex items-center space-x-4 mt-4">
+                    <Skeleton className="h-4 w-12" />
+                    <Skeleton className="h-4 w-12" />
+                  </div>
+              </article>
+            ))}
         </div>
       </main>
     </div>
