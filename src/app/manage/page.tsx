@@ -111,7 +111,7 @@ export default function ManageMoviesPage() {
       duration: '',
       genres: '',
       description: '',
-      posterUrlId: 'movie-poster-inception',
+      posterUrlId: 'movie-poster-placeholder',
       imdbRating: 0,
     });
     setView('form');
@@ -154,7 +154,7 @@ export default function ManageMoviesPage() {
       description: values.description.split('\n\n'),
       posterUrlId: values.posterUrlId,
       imdbRating: values.imdbRating,
-      galleryImageIds: editingMovie?.galleryImageIds || ['gallery-inception-1', 'gallery-inception-2'],
+      galleryImageIds: editingMovie?.galleryImageIds || [],
       viewCount: editingMovie?.viewCount || 0,
       likes: editingMovie?.likes || 0,
       reviews: editingMovie?.reviews || [],
@@ -234,7 +234,7 @@ export default function ManageMoviesPage() {
                           return (
                             <TableRow key={movie.id}>
                               <TableCell className="hidden sm:table-cell">
-                                {poster && (
+                                {poster ? (
                                   <Image
                                     alt={movie.title}
                                     className="aspect-square rounded-md object-cover"
@@ -243,7 +243,11 @@ export default function ManageMoviesPage() {
                                     width="64"
                                     data-ai-hint={poster.imageHint}
                                   />
-                                )}
+                                ) : (
+                                  <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                                    <PlusCircle/>
+                                  </div>
+                                ) }
                               </TableCell>
                               <TableCell className="font-medium">
                                 {movie.title}
@@ -418,7 +422,7 @@ export default function ManageMoviesPage() {
                         <FormItem>
                           <FormLabel className="text-muted-foreground">Poster URL ID</FormLabel>
                           <FormControl>
-                            <Input placeholder="movie-poster-inception" {...field} className="bg-transparent border-input" />
+                            <Input placeholder="An ID from placeholder-images.json" {...field} className="bg-transparent border-input" />
                           </FormControl>
                            <FormMessage />
                         </FormItem>

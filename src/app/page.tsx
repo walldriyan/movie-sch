@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import type { Movie } from '@/lib/types';
 import Loading from './loading';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
@@ -55,6 +56,9 @@ export default function HomePage() {
           <div>
             <h1 className="font-headline text-3xl font-bold">No movies found.</h1>
             <p className="mt-2 text-muted-foreground">Please add some movies from the 'Manage Movies' page.</p>
+             <Button asChild className="mt-4">
+              <Link href="/manage">Go to Manage Movies</Link>
+            </Button>
           </div>
         </main>
       </div>
@@ -99,9 +103,11 @@ export default function HomePage() {
                 {Array.isArray(featuredMovie.description) ? featuredMovie.description[0] : featuredMovie.description}
               </p>
               <div className="pt-4">
-                <Button size="lg">
-                  <Clapperboard className="mr-2 h-5 w-5" />
-                  Watch Now
+                 <Button size="lg" asChild>
+                  <Link href={`/movies/${featuredMovie.id}`}>
+                    <Clapperboard className="mr-2 h-5 w-5" />
+                    Watch Now
+                  </Link>
                 </Button>
               </div>
             </div>
