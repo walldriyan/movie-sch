@@ -34,7 +34,7 @@ import {
 const LOCAL_STORAGE_KEY = 'movies_data';
 
 export default function MoviePage({ params }: { params: { id: string } }) {
-  const { id: movieId } = params;
+  const { id: movieId } = React.use(params);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -68,12 +68,13 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       </div>
     )
   }
+  
+  const heroImage = 
+    (movie.galleryImageIds && movie.galleryImageIds.length > 0
+      ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0])
+      : PlaceHolderImages.find((img) => img.id === movie.posterUrlId))
+    || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder');
 
-  const galleryImage = movie.galleryImageIds && movie.galleryImageIds.length > 0
-    ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0])
-    : null;
-  const posterImage = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
-  const heroImage = galleryImage || posterImage;
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
 
