@@ -30,8 +30,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { marked } from 'marked';
-
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
@@ -77,13 +75,6 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl);
 
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
-  
-  // Handle both string and string[] for backward compatibility
-  const descriptionString = Array.isArray(movie.description)
-    ? movie.description.join('\n')
-    : movie.description;
-  const parsedDescription = descriptionString ? marked.parse(descriptionString) : '';
-
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -147,7 +138,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
 
           <div
             className="prose prose-invert prose-lg max-w-none mx-auto text-foreground/80"
-            dangerouslySetInnerHTML={{ __html: parsedDescription }}
+            dangerouslySetInnerHTML={{ __html: movie.description }}
           />
 
           <div className="my-8 flex flex-wrap gap-2">

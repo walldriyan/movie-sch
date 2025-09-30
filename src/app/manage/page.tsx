@@ -52,8 +52,8 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { marked } from 'marked';
+import 'react-quill/dist/quill.snow.css';
+import QuillEditor from '@/components/quill-editor';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
@@ -128,17 +128,12 @@ export default function ManageMoviesPage() {
 
   const handleEditMovie = (movie: Movie) => {
     setEditingMovie(movie);
-    // Handle both string and string[] for description for backward compatibility
-    const description = Array.isArray(movie.description)
-      ? movie.description.join('\n')
-      : movie.description;
-
     form.reset({
       title: movie.title,
       year: movie.year,
       duration: movie.duration,
       genres: movie.genres.join(', '),
-      description: description,
+      description: movie.description,
       posterUrl: movie.posterUrl || '',
       imdbRating: movie.imdbRating,
     });
@@ -164,7 +159,6 @@ export default function ManageMoviesPage() {
       const updatedMovie: Movie = {
         ...editingMovie,
         ...values,
-        description: values.description,
         genres: values.genres.split(',').map((g) => g.trim()),
       };
       setMovies(
@@ -175,7 +169,6 @@ export default function ManageMoviesPage() {
       const newMovie: Movie = {
         id: Date.now(),
         ...values,
-        description: values.description,
         genres: values.genres.split(',').map((g) => g.trim()),
         galleryImageIds: [],
         viewCount: 0,
@@ -357,15 +350,8 @@ export default function ManageMoviesPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
-                          <Textarea
-                            placeholder="Tell your story..."
-                            className="border-0 p-0 bg-transparent focus-visible:ring-0 text-lg min-h-[200px] shadow-none"
-                            {...field}
-                          />
+                          <QuillEditor {...field} />
                         </FormControl>
-                        <FormDescription>
-                          You can use Markdown for styling.
-                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
