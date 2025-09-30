@@ -4,15 +4,18 @@ import React, { useMemo } from 'react';
 import 'react-quill/dist/quill.snow.css';
 import dynamic from 'next/dynamic';
 
-// Dynamically import ReactQuill to avoid SSR issues with React 18
-const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
-
 interface QuillEditorProps {
   value: string;
   onChange: (value: string) => void;
 }
 
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
+  // Dynamically import ReactQuill ONLY on the client-side.
+  // The use of useMemo ensures this component is not re-created on every render.
+  const ReactQuill = useMemo(
+    () => dynamic(() => import('react-quill'), { ssr: false }),
+    []
+  );
 
   const modules = useMemo(() => {
     // A custom handler for the image upload button on the toolbar
@@ -43,7 +46,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       };
       */
     };
-    
+
     return {
       toolbar: {
         container: [
