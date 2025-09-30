@@ -73,4 +73,8 @@
   .tiptap > *:last-child {
     margin-bottom: 0;
   }
+
+  .prose img {
+    display: inline-block;
+  }
 }
