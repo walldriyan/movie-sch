@@ -19,7 +19,7 @@ import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import SubtitleRequestForm from '@/components/subtitle-request-form';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Movie } from '@/lib/types';
 import Loading from './loading';
 import { Button } from '@/components/ui/button';
@@ -38,9 +38,10 @@ import {
 const LOCAL_STORAGE_KEY = 'movies_data';
 
 export default function MoviePage({ params }: { params: { id: string } }) {
+  const resolvedParams = React.use(params);
+  const movieId = resolvedParams.id;
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const movieId = params.id;
 
   useEffect(() => {
     setIsMounted(true);
@@ -65,7 +66,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
         <Header />
         <main className="container mx-auto flex h-[calc(100vh-4rem)] items-center justify-center text-center">
             <div>
-              <h1 className="text-3xl font-bold font-serif">Movie not found</h1>
+              <h1 className="font-serif text-3xl font-bold">Movie not found</h1>
               <p className="mt-2 text-muted-foreground">The movie you are looking for does not exist.</p>
             </div>
         </main>
