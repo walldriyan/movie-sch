@@ -36,19 +36,20 @@ const LOCAL_STORAGE_KEY = 'movies_data';
 export default function MoviePage({ params }: { params: { id: string } }) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const movieId = params.id;
 
   useEffect(() => {
     setIsMounted(true);
     try {
       const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
       const allMovies = storedMovies ? JSON.parse(storedMovies) : [];
-      const currentMovie = allMovies.find((m: Movie) => m.id === Number(params.id));
+      const currentMovie = allMovies.find((m: Movie) => m.id === Number(movieId));
       setMovie(currentMovie || null);
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);
       setMovie(null);
     }
-  }, [params]);
+  }, [movieId]);
 
   if (!isMounted) {
     return <Loading />;
@@ -69,7 +70,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
   }
 
   const moviePoster = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
-  const heroImage = PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0]) || moviePoster;
+  const heroImage = movie.galleryImageIds.length > 0 ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0]) : moviePoster;
   const galleryImages = movie.galleryImageIds.slice(0, 2).map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean);
 
 
@@ -308,3 +309,5 @@ export default function MoviePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+    
