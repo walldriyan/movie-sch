@@ -29,7 +29,6 @@ import {
 import Header from '@/components/header';
 import { MoreHorizontal, PlusCircle, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState } from 'react';
 import type { Movie } from '@/lib/types';
@@ -62,7 +61,7 @@ const movieSchema = z.object({
   duration: z.string().min(1, 'Duration is required'),
   genres: z.string().min(1, 'Genres are required'),
   description: z.string().min(10, 'Description is required'),
-  posterUrl: z.string().url('Please enter a valid URL'),
+  posterUrl: z.string().url('Please enter a valid URL').or(z.literal('')),
   imdbRating: z.coerce.number().min(0).max(10),
 });
 
@@ -78,6 +77,15 @@ export default function ManageMoviesPage() {
 
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema),
+    defaultValues: {
+      title: '',
+      year: new Date().getFullYear(),
+      duration: '',
+      genres: '',
+      description: '',
+      posterUrl: '',
+      imdbRating: 0,
+    }
   });
 
   useEffect(() => {
@@ -123,7 +131,7 @@ export default function ManageMoviesPage() {
       duration: movie.duration,
       genres: movie.genres.join(', '),
       description: Array.isArray(movie.description) ? movie.description.join('\n\n') : movie.description,
-      posterUrl: movie.posterUrl,
+      posterUrl: movie.posterUrl || '',
       imdbRating: movie.imdbRating,
     });
     setView('form');
