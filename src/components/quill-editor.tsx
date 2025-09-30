@@ -2,10 +2,10 @@
 
 import React, { useMemo } from 'react';
 import 'react-quill/dist/quill.snow.css';
+import dynamic from 'next/dynamic';
 
-// Dynamically import ReactQuill to avoid SSR issues
-const ReactQuill =
-  typeof window === 'object' ? require('react-quill') : () => false;
+// Dynamically import ReactQuill to avoid SSR issues with React 18
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 interface QuillEditorProps {
   value: string;
@@ -63,10 +63,6 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
     }
   }), []);
 
-
-  if (!ReactQuill) {
-    return <div>Loading Editor...</div>;
-  }
 
   return (
     <div className="bg-background text-foreground rounded-lg">
