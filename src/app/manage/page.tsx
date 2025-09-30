@@ -27,7 +27,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Header from '@/components/header';
-import { getAllMovies } from '@/lib/data';
 import { MoreHorizontal, PlusCircle, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -88,14 +87,12 @@ export default function ManageMoviesPage() {
       if (storedMovies) {
         setMovies(JSON.parse(storedMovies));
       } else {
-        const initialMovies = getAllMovies();
-        setMovies(initialMovies);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialMovies));
+        setMovies([]);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
       }
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);
-      const initialMovies = getAllMovies();
-      setMovies(initialMovies);
+      setMovies([]);
     }
   }, []);
 
@@ -147,8 +144,7 @@ export default function ManageMoviesPage() {
   };
 
   const handleFormSubmit = (values: MovieFormValues) => {
-    const processedMovie = {
-      ...(editingMovie || {}),
+    const processedMovie: Movie = {
       id: editingMovie?.id || Date.now(),
       title: values.title,
       year: values.year,
@@ -157,7 +153,7 @@ export default function ManageMoviesPage() {
       description: values.description.split('\n\n'),
       posterUrlId: values.posterUrlId,
       imdbRating: values.imdbRating,
-      galleryImageIds: editingMovie?.galleryImageIds || [],
+      galleryImageIds: editingMovie?.galleryImageIds || ['gallery-inception-1', 'gallery-inception-2'],
       viewCount: editingMovie?.viewCount || 0,
       likes: editingMovie?.likes || 0,
       reviews: editingMovie?.reviews || [],
@@ -229,68 +225,76 @@ export default function ManageMoviesPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {movies.map((movie) => {
-                        const poster = PlaceHolderImages.find(
-                          (p) => p.id === movie.posterUrlId
-                        );
-                        return (
-                          <TableRow key={movie.id}>
-                            <TableCell className="hidden sm:table-cell">
-                              {poster && (
-                                <Image
-                                  alt={movie.title}
-                                  className="aspect-square rounded-md object-cover"
-                                  height="64"
-                                  src={poster.imageUrl}
-                                  width="64"
-                                  data-ai-hint={poster.imageHint}
-                                />
-                              )}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {movie.title}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex flex-wrap gap-1">
-                                {movie.genres.map((genre) => (
-                                  <Badge key={genre} variant="outline">
-                                    {genre}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </TableCell>
-                            <TableCell className="hidden md:table-cell">
-                              {movie.year}
-                            </TableCell>
-                            <TableCell>
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button
-                                    aria-haspopup="true"
-                                    size="icon"
-                                    variant="ghost"
-                                  >
-                                    <MoreHorizontal className="h-4 w-4" />
-                                    <span className="sr-only">Toggle menu</span>
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                  <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                  <DropdownMenuItem onClick={() => handleEditMovie(movie)}>
-                                    Edit
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() => handleDeleteMovie(movie)}
-                                    className="text-destructive"
-                                  >
-                                    Delete
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
+                      {movies.length > 0 ? (
+                        movies.map((movie) => {
+                          const poster = PlaceHolderImages.find(
+                            (p) => p.id === movie.posterUrlId
+                          );
+                          return (
+                            <TableRow key={movie.id}>
+                              <TableCell className="hidden sm:table-cell">
+                                {poster && (
+                                  <Image
+                                    alt={movie.title}
+                                    className="aspect-square rounded-md object-cover"
+                                    height="64"
+                                    src={poster.imageUrl}
+                                    width="64"
+                                    data-ai-hint={poster.imageHint}
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {movie.title}
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-wrap gap-1">
+                                  {movie.genres.map((genre) => (
+                                    <Badge key={genre} variant="outline">
+                                      {genre}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden md:table-cell">
+                                {movie.year}
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button
+                                      aria-haspopup="true"
+                                      size="icon"
+                                      variant="ghost"
+                                    >
+                                      <MoreHorizontal className="h-4 w-4" />
+                                      <span className="sr-only">Toggle menu</span>
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => handleEditMovie(movie)}>
+                                      Edit
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleDeleteMovie(movie)}
+                                      className="text-destructive"
+                                    >
+                                      Delete
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })
+                      ) : (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-24 text-center">
+                            No movies found. Add one to get started.
+                          </TableCell>
+                        </TableRow>
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>

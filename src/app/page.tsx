@@ -4,12 +4,12 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import MovieCard from '@/components/movie-card';
-import { getAllMovies } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star, Clapperboard } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import type { Movie } from '@/lib/types';
 import Loading from './loading';
+import { Separator } from '@/components/ui/separator';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
@@ -24,40 +24,43 @@ export default function HomePage() {
       if (storedMovies) {
         setAllMovies(JSON.parse(storedMovies));
       } else {
-        const initialMovies = getAllMovies();
-        setAllMovies(initialMovies);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialMovies));
+        // If no movies in storage, start with an empty array
+        setAllMovies([]);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
       }
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);
-      const initialMovies = getAllMovies();
-      setAllMovies(initialMovies);
+      // Fallback to an empty array in case of error
+      setAllMovies([]);
     }
   }, []);
 
-  if (!isMounted || allMovies.length === 0) {
+  if (!isMounted) {
     return <Loading />;
   }
+
+  const featuredMovie = allMovies.length > 0 ? allMovies[0] : null;
+  const trendingMovies = allMovies.slice(1, 7);
+  const popularMovies = allMovies.slice(7, 13);
   
-  const featuredMovie = allMovies.find(m => m.id === 1) || allMovies[0];
+  const featuredMovieHero = featuredMovie ? PlaceHolderImages.find(
+    (p) => p.id === featuredMovie.galleryImageIds[0]
+  ) : null;
 
-  const featuredMoviePoster = PlaceHolderImages.find(
-    (p) => p.id === featuredMovie?.posterUrlId
-  );
-  const featuredMovieHero = PlaceHolderImages.find(
-    (p) => p.id === featuredMovie?.galleryImageIds[0]
-  );
-
-  if (!featuredMovie) {
+  if (allMovies.length === 0 || !featuredMovie) {
     return (
       <div className="w-full bg-background text-foreground">
         <Header />
-        <main className="container mx-auto px-4 py-8 text-center">
-          <p>No movies found. Please add some in the manage page.</p>
+        <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center">
+          <div>
+            <h1 className="font-headline text-3xl font-bold">No movies found.</h1>
+            <p className="mt-2 text-muted-foreground">Please add some movies from the 'Manage Movies' page.</p>
+          </div>
         </main>
       </div>
     );
   }
+
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -108,56 +111,46 @@ export default function HomePage() {
         {/* Movie Lists Section */}
         <section className="container space-y-12 py-12 md:py-16">
           {/* Now Trending Section */}
-          <div>
-            <h2 className="mb-6 font-headline text-2xl font-bold md:text-3xl">
-              Now Trending
-            </h2>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {allMovies.slice(1, 7).map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  id={movie.id}
-                  title={movie.title}
-                  posterUrlId={movie.posterUrlId}
-                  description={Array.isArray(movie.description) ? movie.description.join(' ') : movie.description}
-                />
-              ))}
+          {trendingMovies.length > 0 && (
+            <div>
+              <h2 className="mb-6 font-headline text-2xl font-bold md:text-3xl">
+                Now Trending
+              </h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {trendingMovies.map((movie) => (
+                  <MovieCard
+                    key={movie.id}
+                    id={movie.id}
+                    title={movie.title}
+                    posterUrlId={movie.posterUrlId}
+                    description={Array.isArray(movie.description) ? movie.description.join(' ') : movie.description}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Popular Section */}
-          <div>
-            <h2 className="mb-6 font-headline text-2xl font-bold md:text-3xl">
-              Popular Movies
-            </h2>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
-              {allMovies.slice(7, 13).map((movie) => (
-                <MovieCard
-                  key={movie.id}
-                  id={movie.id}
-                  title={movie.title}
-                  posterUrlId={movie.posterUrlId}
-                  description={Array.isArray(movie.description) ? movie.description.join(' ') : movie.description}
-                />
-              ))}
+          {popularMovies.length > 0 && (
+            <div>
+              <h2 className="mb-6 font-headline text-2xl font-bold md:text-3xl">
+                Popular Movies
+              </h2>
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6">
+                {popularMovies.map((movie) => (
+                  <MovieCard
+                    key={movie.id}
+                    id={movie.id}
+                    title={movie.title}
+                    posterUrlId={movie.posterUrlId}
+                    description={Array.isArray(movie.description) ? movie.description.join(' ') : movie.description}
+                  />
+                ))}
+              </div>
             </div>
-          </div>
+          )}
         </section>
       </main>
     </div>
   );
 }
-
-const Separator = ({
-  orientation,
-  className,
-}: {
-  orientation: 'vertical' | 'horizontal';
-  className?: string;
-}) => (
-  <div
-    className={`bg-border ${
-      orientation === 'vertical' ? 'w-px h-full' : 'h-px w-full'
-    } ${className}`}
-  />
-);

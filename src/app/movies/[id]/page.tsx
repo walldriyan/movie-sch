@@ -20,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { getAllMovies } from '@/lib/data';
 import Header from '@/components/header';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
@@ -43,19 +42,31 @@ export default function MoviePage({ params }: { params: { id: string } }) {
     setIsMounted(true);
     try {
       const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
-      const allMovies = storedMovies ? JSON.parse(storedMovies) : getAllMovies();
+      const allMovies = storedMovies ? JSON.parse(storedMovies) : [];
       const currentMovie = allMovies.find((m: Movie) => m.id === Number(movieId));
       setMovie(currentMovie || null);
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);
-      const allMovies = getAllMovies();
-      const currentMovie = allMovies.find((m: Movie) => m.id === Number(movieId));
-      setMovie(currentMovie || null);
+      setMovie(null);
     }
   }, [movieId]);
 
-  if (!isMounted || !movie) {
+  if (!isMounted) {
     return <Loading />;
+  }
+
+  if (!movie) {
+    return (
+       <div className="min-h-screen w-full bg-background">
+        <Header />
+        <main className="container mx-auto flex h-[calc(100vh-4rem)] items-center justify-center text-center">
+            <div>
+              <h1 className="text-3xl font-bold">Movie not found</h1>
+              <p className="mt-2 text-muted-foreground">The movie you are looking for does not exist.</p>
+            </div>
+        </main>
+      </div>
+    )
   }
 
   const moviePoster = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
@@ -208,9 +219,9 @@ export default function MoviePage({ params }: { params: { id: string } }) {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
-                  {movie.reviews.map((review) => (
+                  {movie.reviews.length > 0 ? movie.reviews.map((review) => (
                     <ReviewCard key={review.id} review={review} />
-                  ))}
+                  )) : <p className="text-muted-foreground">No reviews yet.</p>}
                 </div>
                 <Separator />
                 <ReviewForm />
@@ -230,7 +241,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {movie.subtitles.map((subtitle) => (
+                      {movie.subtitles.length > 0 ? movie.subtitles.map((subtitle) => (
                         <div
                           key={subtitle.id}
                           className="flex items-center justify-between rounded-lg border p-4"
@@ -252,7 +263,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                             </Button>
                           </div>
                         </div>
-                      ))}
+                      )) : <p className="text-muted-foreground">No subtitles available for this movie yet.</p>}
                     </div>
                     <div className="mt-6 flex justify-end">
                       <UploadSubtitleDialog />
