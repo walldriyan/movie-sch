@@ -5,6 +5,7 @@ import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface QuillEditorProps {
   value: string;
@@ -14,8 +15,13 @@ interface QuillEditorProps {
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Image,
+      StarterKit.configure({
+        history: false,
+      }),
+      Image.configure({
+        inline: true,
+        allowBase64: true,
+      }),
       Link.configure({
         openOnClick: false,
       }),
@@ -38,7 +44,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const addImage = () => {
     const url = window.prompt('Image URL:');
     if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
+      editor.chain().setImage({ src: url }).run();
     }
   };
 
@@ -55,49 +61,49 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       <div className="flex flex-wrap gap-1 p-2 border-b bg-muted/50">
         <button
           onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={`p-2 rounded hover:bg-muted ${editor.isActive('heading', { level: 2 }) ? 'bg-muted' : ''}`}
+          className={cn('p-2 rounded hover:bg-muted', { 'bg-muted': editor.isActive('heading', { level: 2 }) })}
           type="button"
         >
           <Heading className="w-4 h-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleBold().run()}
-          className={`p-2 rounded hover:bg-muted ${editor.isActive('bold') ? 'bg-muted' : ''}`}
+          className={cn('p-2 rounded hover:bg-muted', { 'bg-muted': editor.isActive('bold') })}
           type="button"
         >
           <Bold className="w-4 h-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleItalic().run()}
-          className={`p-2 rounded hover:bg-muted ${editor.isActive('italic') ? 'bg-muted' : ''}`}
+          className={cn('p-2 rounded hover:bg-muted', { 'bg-muted': editor.isActive('italic') })}
           type="button"
         >
           <Italic className="w-4 h-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleStrike().run()}
-          className={`p-2 rounded hover:bg-muted ${editor.isActive('strike') ? 'bg-muted' : ''}`}
+          className={cn('p-2 rounded hover:bg-muted', { 'bg-muted': editor.isActive('strike') })}
           type="button"
         >
           <Strikethrough className="w-4 h-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={`p-2 rounded hover:bg-muted ${editor.isActive('bulletList') ? 'bg-muted' : ''}`}
+          className={cn('p-2 rounded hover:bg-muted', { 'bg-muted': editor.isActive('bulletList') })}
           type="button"
         >
           <List className="w-4 h-4" />
         </button>
         <button
           onClick={() => editor.chain().focus().toggleOrderedList().run()}
-          className={`p-2 rounded hover:bg-muted ${editor.isActive('orderedList') ? 'bg-muted' : ''}`}
+          className={cn('p-2 rounded hover:bg-muted', { 'bg-muted': editor.isActive('orderedList') })}
           type="button"
         >
           <ListOrdered className="w-4 h-4" />
         </button>
         <button
           onClick={addLink}
-          className={`p-2 rounded hover:bg-muted ${editor.isActive('link') ? 'bg-muted' : ''}`}
+          className={cn('p-2 rounded hover:bg-muted', { 'bg-muted': editor.isActive('link') })}
           type="button"
         >
           <Link2 className="w-4 h-4" />
@@ -112,7 +118,9 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       </div>
 
       {/* Editor */}
-      <EditorContent editor={editor} />
+      <EditorContent 
+        editor={editor}
+      />
     </div>
   );
 };
