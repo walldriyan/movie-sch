@@ -87,8 +87,9 @@ export default function ManageMoviesPage() {
       if (storedMovies) {
         setMovies(JSON.parse(storedMovies));
       } else {
-        setMovies([]);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
+        const initialMovies: Movie[] = [];
+        setMovies(initialMovies);
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(initialMovies));
       }
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);
@@ -301,50 +302,66 @@ export default function ManageMoviesPage() {
               </Card>
             </>
           ) : (
-            <Card>
-              <CardHeader>
-                 <div className="flex items-center gap-4">
-                  <Button variant="outline" size="icon" onClick={() => setView('list')}>
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div>
-                    <CardTitle>{editingMovie ? 'Edit Movie' : 'Add New Movie'}</CardTitle>
-                    <CardDescription>
-                      {editingMovie
-                        ? 'Make changes to the movie details below.'
-                        : 'Fill in the details to add a new movie to the catalog.'}
-                    </CardDescription>
-                  </div>
+            <div className="max-w-3xl mx-auto">
+               <div className="flex items-center gap-4 mb-8">
+                <Button variant="ghost" size="icon" onClick={() => setView('list')}>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
+                <div>
+                  <h1 className="text-2xl font-bold">{editingMovie ? 'Edit Movie' : 'Add New Movie'}</h1>
                 </div>
-              </CardHeader>
-              <CardContent>
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(handleFormSubmit)}
-                    className="space-y-4 py-4"
-                  >
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Title</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Inception" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="grid grid-cols-2 gap-4">
+              </div>
+              
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleFormSubmit)}
+                  className="space-y-8"
+                >
+                  <FormField
+                    control={form.control}
+                    name="title"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Input 
+                            placeholder="Title" 
+                            {...field} 
+                            className="border-0 border-b-2 border-gray-700 rounded-none text-4xl font-bold p-0 bg-transparent focus-visible:ring-0 focus:border-primary shadow-none"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Tell your story..."
+                            className="border-0 p-0 bg-transparent focus-visible:ring-0 text-lg min-h-[200px] shadow-none"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
+                    <h3 className="text-lg font-semibold text-muted-foreground">Movie Details</h3>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       <FormField
                         control={form.control}
                         name="year"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Year</FormLabel>
+                            <FormLabel className="text-muted-foreground">Year</FormLabel>
                             <FormControl>
-                              <Input type="number" placeholder="2010" {...field} />
+                              <Input type="number" placeholder="2024" {...field} className="bg-transparent border-input" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -355,9 +372,22 @@ export default function ManageMoviesPage() {
                         name="duration"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel>Duration</FormLabel>
+                            <FormLabel className="text-muted-foreground">Duration</FormLabel>
                             <FormControl>
-                              <Input placeholder="2h 28m" {...field} />
+                              <Input placeholder="2h 28m" {...field} className="bg-transparent border-input" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                        control={form.control}
+                        name="imdbRating"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-muted-foreground">IMDb Rating</FormLabel>
+                            <FormControl>
+                              <Input type="number" step="0.1" {...field} className="bg-transparent border-input"/>
                             </FormControl>
                             <FormMessage />
                           </FormItem>
@@ -369,41 +399,12 @@ export default function ManageMoviesPage() {
                       name="genres"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Genres</FormLabel>
+                          <FormLabel className="text-muted-foreground">Genres (comma-separated)</FormLabel>
                           <FormControl>
                             <Input
-                              placeholder="Sci-Fi, Action, Thriller (comma-separated)"
+                              placeholder="Sci-Fi, Action, Thriller"
                               {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                        control={form.control}
-                        name="imdbRating"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>IMDb Rating</FormLabel>
-                            <FormControl>
-                              <Input type="number" step="0.1" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description</FormLabel>
-                          <FormControl>
-                            <Textarea
-                              placeholder="A mind-bending thriller... (Use two newlines for paragraphs)"
-                              className="min-h-[100px]"
-                              {...field}
+                              className="bg-transparent border-input"
                             />
                           </FormControl>
                           <FormMessage />
@@ -415,23 +416,23 @@ export default function ManageMoviesPage() {
                       name="posterUrlId"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Poster URL ID</FormLabel>
+                          <FormLabel className="text-muted-foreground">Poster URL ID</FormLabel>
                           <FormControl>
-                            <Input placeholder="movie-poster-inception" {...field} />
+                            <Input placeholder="movie-poster-inception" {...field} className="bg-transparent border-input" />
                           </FormControl>
                            <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div className="flex justify-end pt-4">
-                      <Button type="submit">
-                        {editingMovie ? 'Save Changes' : 'Add Movie'}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+                  </div>
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit" size="lg">
+                      {editingMovie ? 'Save Changes' : 'Publish'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </div>
           )}
         </main>
       </div>
