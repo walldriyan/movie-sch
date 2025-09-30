@@ -74,10 +74,11 @@ export default function MoviePage({ params }: { params: { id: string } }) {
     )
   }
 
-  const moviePoster = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
-  const heroImage = movie.galleryImageIds && movie.galleryImageIds.length > 0 
-    ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0]) 
-    : moviePoster;
+  const galleryImage = movie.galleryImageIds && movie.galleryImageIds.length > 0
+    ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0])
+    : null;
+  const posterImage = PlaceHolderImages.find((img) => img.id === movie.posterUrlId);
+  const heroImage = galleryImage || posterImage;
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
 
