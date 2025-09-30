@@ -96,7 +96,6 @@ export default function ManageMoviesPage() {
       if (storedMovies) {
         setMovies(JSON.parse(storedMovies));
       } else {
-        // Initialize with an empty array if nothing is in storage
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
         setMovies([]);
       }
@@ -128,12 +127,17 @@ export default function ManageMoviesPage() {
 
   const handleEditMovie = (movie: Movie) => {
     setEditingMovie(movie);
+    // Handle both string and string[] for description for backward compatibility
+    const description = Array.isArray(movie.description)
+      ? movie.description.join('\n')
+      : movie.description;
+
     form.reset({
       title: movie.title,
       year: movie.year,
       duration: movie.duration,
       genres: movie.genres.join(', '),
-      description: movie.description,
+      description: description,
       posterUrl: movie.posterUrl || '',
       imdbRating: movie.imdbRating,
     });
@@ -159,6 +163,7 @@ export default function ManageMoviesPage() {
       const updatedMovie: Movie = {
         ...editingMovie,
         ...values,
+        description: values.description,
         genres: values.genres.split(',').map((g) => g.trim()),
       };
       setMovies(
@@ -169,6 +174,7 @@ export default function ManageMoviesPage() {
       const newMovie: Movie = {
         id: Date.now(),
         ...values,
+        description: values.description,
         genres: values.genres.split(',').map((g) => g.trim()),
         galleryImageIds: [],
         viewCount: 0,

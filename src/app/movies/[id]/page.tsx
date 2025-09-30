@@ -77,7 +77,12 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl);
 
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
-  const parsedDescription = movie.description ? marked.parse(movie.description) : '';
+  
+  // Handle both string and string[] for backward compatibility
+  const descriptionString = Array.isArray(movie.description)
+    ? movie.description.join('\n')
+    : movie.description;
+  const parsedDescription = descriptionString ? marked.parse(descriptionString) : '';
 
 
   return (
