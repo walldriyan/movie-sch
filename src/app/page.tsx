@@ -84,9 +84,10 @@ export default function HomePage() {
                       <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
                         {movie.title}
                       </h2>
-                      <p className="text-muted-foreground mt-2 line-clamp-2 text-base">
-                        {movie.description}
-                      </p>
+                      <div
+                        className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2"
+                        dangerouslySetInnerHTML={{ __html: movie.description }}
+                      />
                     </Link>
                   </div>
                   <div className="col-span-4">
