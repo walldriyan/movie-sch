@@ -143,28 +143,39 @@ export default function ManageMoviesPage() {
   };
 
   const handleFormSubmit = (values: MovieFormValues) => {
-    const processedMovie: Movie = {
-      id: editingMovie?.id || Date.now(),
-      title: values.title,
-      year: values.year,
-      duration: values.duration,
-      genres: values.genres.split(',').map((g) => g.trim()),
-      description: values.description.split('\n\n'),
-      posterUrlId: values.posterUrlId,
-      imdbRating: values.imdbRating,
-      galleryImageIds: editingMovie?.galleryImageIds || [],
-      viewCount: editingMovie?.viewCount || 0,
-      likes: editingMovie?.likes || 0,
-      reviews: editingMovie?.reviews || [],
-      subtitles: editingMovie?.subtitles || [],
-    };
-    
     if (editingMovie) {
+      // This is an edit
+      const updatedMovie: Movie = {
+        ...editingMovie,
+        title: values.title,
+        year: values.year,
+        duration: values.duration,
+        genres: values.genres.split(',').map((g) => g.trim()),
+        description: values.description.split('\n\n'),
+        posterUrlId: values.posterUrlId,
+        imdbRating: values.imdbRating,
+      };
       setMovies(
-        movies.map((m) => (m.id === processedMovie.id ? processedMovie : m))
+        movies.map((m) => (m.id === updatedMovie.id ? updatedMovie : m))
       );
     } else {
-      setMovies([processedMovie, ...movies]);
+      // This is a new movie
+      const newMovie: Movie = {
+        id: Date.now(),
+        title: values.title,
+        year: values.year,
+        duration: values.duration,
+        genres: values.genres.split(',').map((g) => g.trim()),
+        description: values.description.split('\n\n'),
+        posterUrlId: values.posterUrlId,
+        imdbRating: values.imdbRating,
+        galleryImageIds: [],
+        viewCount: 0,
+        likes: 0,
+        reviews: [],
+        subtitles: [],
+      };
+      setMovies([newMovie, ...movies]);
     }
     setView('list');
   };
