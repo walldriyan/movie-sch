@@ -27,7 +27,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import Header from '@/components/header';
-import { MoreHorizontal, PlusCircle, ArrowLeft } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, ArrowLeft, Upload, Image as ImageIcon } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState } from 'react';
@@ -35,7 +35,7 @@ import type { Movie } from '@/lib/types';
 import {
   AlertDialog,
   AlertDialogAction,
-  AlertDialogCancel,
+ AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogFooter,
@@ -60,11 +60,11 @@ const LOCAL_STORAGE_KEY = 'movies_data';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
+  posterUrl: z.string(),
+  description: z.string().min(10, 'Description is required'),
   year: z.coerce.number().min(1800, 'Invalid year'),
   duration: z.string().min(1, 'Duration is required'),
   genres: z.string().min(1, 'Genres are required'),
-  description: z.string().min(10, 'Description is required'),
-  posterUrl: z.string().url('Please enter a valid URL').or(z.literal('')),
   imdbRating: z.coerce.number().min(0).max(10),
 });
 
@@ -77,19 +77,22 @@ export default function ManageMoviesPage() {
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema),
     defaultValues: {
       title: '',
+      posterUrl: '',
+      description: '',
       year: new Date().getFullYear(),
       duration: '',
       genres: '',
-      description: '',
-      posterUrl: '',
       imdbRating: 0,
     }
   });
+
+  const posterUrlValue = form.watch('posterUrl');
 
   useEffect(() => {
     setIsMounted(true);
@@ -117,11 +120,11 @@ export default function ManageMoviesPage() {
     setEditingMovie(null);
     form.reset({
       title: '',
+      posterUrl: '',
+      description: '',
       year: new Date().getFullYear(),
       duration: '',
       genres: '',
-      description: '',
-      posterUrl: '',
       imdbRating: 0,
     });
     setView('form');
@@ -131,11 +134,11 @@ export default function ManageMoviesPage() {
     setEditingMovie(movie);
     form.reset({
       title: movie.title,
+      posterUrl: movie.posterUrl || '',
+      description: movie.description,
       year: movie.year,
       duration: movie.duration,
       genres: movie.genres.join(', '),
-      description: movie.description,
-      posterUrl: movie.posterUrl || '',
       imdbRating: movie.imdbRating,
     });
     setView('form');
@@ -181,6 +184,21 @@ export default function ManageMoviesPage() {
     }
     setView('list');
   };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const src = e.target?.result as string;
+        if (src) {
+          form.setValue('posterUrl', src, { shouldValidate: true, shouldDirty: true });
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
 
   if (!isMounted) {
     return (
@@ -349,6 +367,49 @@ export default function ManageMoviesPage() {
 
                   <FormField
                     control={form.control}
+                    name="posterUrl"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">Poster Image</FormLabel>
+                        <div className="flex items-center gap-8">
+                          <div className="w-32 h-44 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                            {posterUrlValue ? (
+                              <Image 
+                                src={posterUrlValue} 
+                                alt="Poster Preview"
+                                width={128}
+                                height={176}
+                                className="object-cover w-full h-full"
+                              />
+                            ) : (
+                              <ImageIcon className="w-10 h-10 text-muted-foreground" />
+                            )}
+                          </div>
+                          <div className="flex-grow space-y-2">
+                             <FormControl>
+                                <Input placeholder="Paste image URL" {...field} value={field.value || ''} className="bg-transparent border-input" />
+                             </FormControl>
+                             <FormDescription>Or</FormDescription>
+                             <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload an image
+                             </Button>
+                             <input 
+                                type="file" 
+                                ref={fileInputRef}
+                                onChange={handleFileChange}
+                                style={{ display: 'none' }}
+                                accept="image/*"
+                             />
+                          </div>
+                        </div>
+                         <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
                     name="description"
                     render={({ field }) => (
                       <FormItem>
@@ -420,19 +481,6 @@ export default function ManageMoviesPage() {
                         </FormItem>
                       )}
                     />
-                     <FormField
-                      control={form.control}
-                      name="posterUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-muted-foreground">Poster Image URL</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://example.com/image.png" {...field} value={field.value || ''} className="bg-transparent border-input" />
-                          </FormControl>
-                           <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
                   <div className="flex justify-end pt-4">
                     <Button type="submit" size="lg">
@@ -464,3 +512,5 @@ export default function ManageMoviesPage() {
     </>
   );
 }
+
+    
