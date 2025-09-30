@@ -10,7 +10,7 @@ import React from 'react';
 
 // Custom Image Component with a remove button
 const ImageComponent = ({ node, deleteNode }: { node: any; deleteNode: () => void; }) => (
-  <NodeViewWrapper className="inline-block">
+  <NodeViewWrapper className="block">
     <div className="relative group">
       <img src={node.attrs.src} alt={node.attrs.alt} className="max-w-full h-auto" />
       <button
