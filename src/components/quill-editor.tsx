@@ -14,54 +14,58 @@ interface QuillEditorProps {
 
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
 
-  // A custom handler for the image upload button on the toolbar
-  const imageHandler = () => {
-    // This is a placeholder.
-    // In a real application, you would implement logic to:
-    // 1. Open a file picker dialog.
-    // 2. Upload the selected image to a storage service (like Firebase Storage).
-    // 3. Get the public URL of the uploaded image.
-    // 4. Insert the image URL into the editor.
-    alert('Image upload functionality is not yet implemented.');
+  const modules = useMemo(() => {
+    // A custom handler for the image upload button on the toolbar
+    const imageHandler = () => {
+      // This is a placeholder.
+      // In a real application, you would implement logic to:
+      // 1. Open a file picker dialog.
+      // 2. Upload the selected image to a storage service (like Firebase Storage).
+      // 3. Get the public URL of the uploaded image.
+      // 4. Insert the image URL into the editor.
+      alert('Image upload functionality is not yet implemented.');
 
-    // Example of what the logic might look like:
-    /*
-    const input = document.createElement('input');
-    input.setAttribute('type', 'file');
-    input.setAttribute('accept', 'image/*');
-    input.click();
+      // Example of what the logic might look like:
+      /*
+      const input = document.createElement('input');
+      input.setAttribute('type', 'file');
+      input.setAttribute('accept', 'image/*');
+      input.click();
 
-    input.onchange = async () => {
-      const file = input.files[0];
-      // const imageUrl = await uploadToFirebaseStorage(file); // Your upload function
-      // const quill = this.quill.getEditor();
-      // const range = quill.getSelection();
-      // quill.insertEmbed(range.index, 'image', imageUrl);
+      input.onchange = async () => {
+        if (input.files) {
+            const file = input.files[0];
+            // const imageUrl = await uploadToFirebaseStorage(file); // Your upload function
+            // const quill = this.quill.getEditor();
+            // const range = quill.getSelection();
+            // quill.insertEmbed(range.index, 'image', imageUrl);
+        }
+      };
+      */
     };
-    */
-  };
-  
-  const modules = useMemo(() => ({
-    toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        ['blockquote', 'code-block'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        ['link', 'image', 'video'],
-        ['clean']
-      ],
-      handlers: {
-        image: imageHandler,
+    
+    return {
+      toolbar: {
+        container: [
+          [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+          ['bold', 'italic', 'underline', 'strike'],
+          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+          ['blockquote', 'code-block'],
+          [{ 'color': [] }, { 'background': [] }],
+          [{ 'align': [] }],
+          ['link', 'image', 'video'],
+          ['clean']
+        ],
+        handlers: {
+          image: imageHandler,
+        },
       },
-    },
-    clipboard: {
-      // Prevent pasting images as base64
-      matchVisual: false,
-    }
-  }), []);
+      clipboard: {
+        // Prevent pasting images as base64
+        matchVisual: false,
+      }
+    };
+  }, []);
 
 
   return (
