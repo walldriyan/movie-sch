@@ -36,7 +36,7 @@ const LOCAL_STORAGE_KEY = 'movies_data';
 export default function MoviePage({ params }: { params: { id: string } }) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const { id: movieId } = params;
+  const movieId = params.id;
 
   useEffect(() => {
     setIsMounted(true);
