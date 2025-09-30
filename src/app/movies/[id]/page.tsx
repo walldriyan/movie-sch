@@ -33,10 +33,9 @@ import Loading from './loading';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
-export default function MoviePage({ params }: { params: { id: string } }) {
+export default function MoviePage({ params: { id: movieId } }: { params: { id: string } }) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
-  const movieId = params.id;
 
   useEffect(() => {
     setIsMounted(true);
@@ -309,5 +308,3 @@ export default function MoviePage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    
