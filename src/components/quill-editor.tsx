@@ -1,8 +1,8 @@
 'use client';
 
 import 'react-quill/dist/quill.snow.css';
-import { useMemo } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useRef, useState } from 'react';
+import type ReactQuill from 'react-quill';
 
 interface QuillEditorProps {
   value: string;
@@ -10,10 +10,14 @@ interface QuillEditorProps {
 }
 
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
-  const ReactQuill = useMemo(
-    () => dynamic(() => import('react-quill'), { ssr: false }),
-    []
-  );
+  const [Quill, setQuill] = useState<typeof ReactQuill | null>(null);
+  const quillRef = useRef<ReactQuill>(null);
+
+  useEffect(() => {
+    import('react-quill').then((mod) => {
+      setQuill(() => mod.default);
+    });
+  }, []);
 
   const modules = {
     toolbar: [
@@ -25,9 +29,18 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
     ],
   };
 
+  if (!Quill) {
+    return (
+      <div className="bg-background text-foreground rounded-lg h-[200px] flex items-center justify-center">
+        Loading editor...
+      </div>
+    );
+  }
+
   return (
     <div className="bg-background text-foreground rounded-lg">
-      <ReactQuill
+      <Quill
+        ref={quillRef}
         theme="snow"
         value={value}
         onChange={onChange}
