@@ -69,11 +69,11 @@ export default function MoviePage({ params }: { params: { id: string } }) {
     )
   }
   
-  const heroImage = 
+  const heroImageUrl = 
     (movie.galleryImageIds && movie.galleryImageIds.length > 0
-      ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0])
-      : PlaceHolderImages.find((img) => img.id === movie.posterUrlId))
-    || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder');
+      ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0])?.imageUrl
+      : movie.posterUrl)
+    || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
 
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
@@ -84,14 +84,13 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       <main className="max-w-4xl mx-auto px-4 py-8">
         <article>
           <header className="mb-8">
-            {heroImage && (
+            {heroImageUrl && (
               <div className="relative w-full h-96 mb-8 rounded-lg overflow-hidden">
                 <Image
-                    src={heroImage.imageUrl}
+                    src={heroImageUrl}
                     alt={`Poster for ${movie.title}`}
                     fill
                     className="object-cover"
-                    data-ai-hint={heroImage.imageHint}
                     priority
                 />
               </div>

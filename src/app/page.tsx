@@ -4,11 +4,10 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Clapperboard } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { Star } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
 import type { Movie } from '@/lib/types';
 import Loading from './loading';
-import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
@@ -63,9 +62,9 @@ export default function HomePage() {
       <main className='max-w-4xl mx-auto px-4 py-8'>
         <div className='space-y-12'>
           {allMovies.map(movie => {
-            const movieImage = movie.galleryImageIds.length > 0 
-              ? PlaceHolderImages.find(p => p.id === movie.galleryImageIds[0])
-              : PlaceHolderImages.find(p => p.id === movie.posterUrlId);
+            const movieImageUrl = movie.galleryImageIds.length > 0 
+              ? PlaceHolderImages.find(p => p.id === movie.galleryImageIds[0])?.imageUrl
+              : movie.posterUrl;
 
             return (
               <article key={movie.id}>
@@ -90,14 +89,13 @@ export default function HomePage() {
                     </Link>
                   </div>
                   <div className="col-span-4">
-                    {movieImage && (
+                    {movieImageUrl && (
                       <Link href={`/movies/${movie.id}`} className="block aspect-video relative overflow-hidden rounded-md">
                         <Image
-                          src={movieImage.imageUrl}
+                          src={movieImageUrl}
                           alt={movie.title}
                           fill
                           className="object-cover"
-                          data-ai-hint={movieImage.imageHint}
                         />
                       </Link>
                     )}

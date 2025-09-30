@@ -31,7 +31,7 @@ import { MoreHorizontal, PlusCircle, ArrowLeft } from 'lucide-react';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import type { Movie } from '@/lib/types';
 import {
   AlertDialog,
@@ -62,7 +62,7 @@ const movieSchema = z.object({
   duration: z.string().min(1, 'Duration is required'),
   genres: z.string().min(1, 'Genres are required'),
   description: z.string().min(10, 'Description is required'),
-  posterUrlId: z.string().min(1, 'Poster URL ID is required'),
+  posterUrl: z.string().url('Please enter a valid URL'),
   imdbRating: z.coerce.number().min(0).max(10),
 });
 
@@ -75,7 +75,7 @@ export default function ManageMoviesPage() {
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
-  
+
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema),
   });
@@ -109,7 +109,7 @@ export default function ManageMoviesPage() {
       duration: '',
       genres: '',
       description: '',
-      posterUrlId: '',
+      posterUrl: '',
       imdbRating: 0,
     });
     setView('form');
@@ -123,7 +123,7 @@ export default function ManageMoviesPage() {
       duration: movie.duration,
       genres: movie.genres.join(', '),
       description: Array.isArray(movie.description) ? movie.description.join('\n\n') : movie.description,
-      posterUrlId: movie.posterUrlId,
+      posterUrl: movie.posterUrl,
       imdbRating: movie.imdbRating,
     });
     setView('form');
@@ -152,7 +152,7 @@ export default function ManageMoviesPage() {
         duration: values.duration,
         genres: values.genres.split(',').map((g) => g.trim()),
         description: values.description.split('\n\n'),
-        posterUrlId: values.posterUrlId,
+        posterUrl: values.posterUrl,
         imdbRating: values.imdbRating,
       };
       setMovies(
@@ -167,7 +167,7 @@ export default function ManageMoviesPage() {
         duration: values.duration,
         genres: values.genres.split(',').map((g) => g.trim()),
         description: values.description.split('\n\n'),
-        posterUrlId: values.posterUrlId,
+        posterUrl: values.posterUrl,
         imdbRating: values.imdbRating,
         galleryImageIds: [],
         viewCount: 0,
@@ -237,20 +237,16 @@ export default function ManageMoviesPage() {
                     <TableBody>
                       {movies.length > 0 ? (
                         movies.map((movie) => {
-                          const poster = PlaceHolderImages.find(
-                            (p) => p.id === movie.posterUrlId
-                          );
                           return (
                             <TableRow key={movie.id}>
                               <TableCell className="hidden sm:table-cell">
-                                {poster ? (
+                                {movie.posterUrl ? (
                                   <Image
                                     alt={movie.title}
                                     className="aspect-square rounded-md object-cover"
                                     height="64"
-                                    src={poster.imageUrl}
+                                    src={movie.posterUrl}
                                     width="64"
-                                    data-ai-hint={poster.imageHint}
                                   />
                                 ) : (
                                   <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
@@ -426,12 +422,12 @@ export default function ManageMoviesPage() {
                     />
                      <FormField
                       control={form.control}
-                      name="posterUrlId"
+                      name="posterUrl"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-muted-foreground">Poster URL ID</FormLabel>
+                          <FormLabel className="text-muted-foreground">Poster Image URL</FormLabel>
                           <FormControl>
-                            <Input placeholder="An ID from placeholder-images.json" {...field} className="bg-transparent border-input" />
+                            <Input placeholder="https://example.com/image.png" {...field} className="bg-transparent border-input" />
                           </FormControl>
                            <FormMessage />
                         </FormItem>

@@ -22,7 +22,7 @@ export interface Movie {
   id: number;
   title: string;
   description: string[];
-  posterUrlId: string;
+  posterUrl: string;
   galleryImageIds: string[];
   year: number;
   genres: string[];
