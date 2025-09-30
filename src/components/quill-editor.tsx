@@ -1,12 +1,30 @@
 'use client';
 
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
-import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
+
+// Custom Image Component with a remove button
+const ImageComponent = ({ node, deleteNode }: { node: any; deleteNode: () => void; }) => (
+  <NodeViewWrapper className="inline-block">
+    <div className="relative group">
+      <img src={node.attrs.src} alt={node.attrs.alt} className="max-w-full h-auto" />
+      <button
+        onClick={deleteNode}
+        className="absolute top-2 right-2 p-1 bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+        aria-label="Remove image"
+        type="button"
+      >
+        <X className="w-4 h-4" />
+      </button>
+    </div>
+  </NodeViewWrapper>
+);
+
 
 interface QuillEditorProps {
   value: string;
@@ -17,9 +35,13 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        history: false,
+        // No need to configure history here as it's default
       }),
-      Image.configure({
+      Image.extend({
+        addNodeView() {
+          return ReactNodeViewRenderer(ImageComponent);
+        },
+      }).configure({
         inline: true,
         allowBase64: true,
       }),
