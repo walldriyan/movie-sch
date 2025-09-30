@@ -137,7 +137,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
           </header>
 
           <div
-            className="prose prose-invert prose-lg max-w-none mx-auto text-foreground/80"
+            className="prose prose-invert max-w-none mx-auto text-foreground/80"
             dangerouslySetInnerHTML={{ __html: movie.description }}
           />
 
