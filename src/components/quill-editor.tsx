@@ -6,6 +6,7 @@ import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
 import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import React from 'react';
 
 interface QuillEditorProps {
   value: string;
@@ -37,15 +38,28 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
     },
   });
 
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
   if (!editor) {
     return null;
   }
+  
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const src = e.target?.result as string;
+        if (src) {
+          editor.chain().focus().setImage({ src }).run();
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const addImage = () => {
-    const url = window.prompt('Image URL:');
-    if (url) {
-      editor.chain().setImage({ src: url }).run();
-    }
+    fileInputRef.current?.click();
   };
 
   const addLink = () => {
@@ -120,6 +134,13 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       {/* Editor */}
       <EditorContent 
         editor={editor}
+      />
+      <input 
+        type="file" 
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        style={{ display: 'none' }}
+        accept="image/*"
       />
     </div>
   );
