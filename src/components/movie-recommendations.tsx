@@ -24,7 +24,7 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
         setError(null);
         const result = await getMovieRecommendations({
           movieTitle: currentMovie.title,
-          movieDescription: currentMovie.description.join(' '),
+          movieDescription: Array.isArray(currentMovie.description) ? currentMovie.description.join(' ') : currentMovie.description,
         });
         setRecommendations(result);
       } catch (e) {
@@ -65,18 +65,19 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
     return <p>No recommendations found.</p>;
   }
 
-  const placeholderImageIds = ['movie-poster-interstellar', 'movie-poster-dune', 'movie-poster-blade-runner', 'movie-poster-inception'];
+  // This component will now only show AI recommendations.
+  // We cannot link to real movies as they may not exist in localStorage.
+  // The MovieCard requires a valid movie ID to link to.
+  // Since we cannot guarantee this, we will display the recommendation details without making them cards.
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {recommendations.recommendations.map((rec, index) => (
-        <MovieCard
-          key={rec.title}
-          id={(index + 1) * 100} // Temporary unique ID
-          title={rec.title}
-          description={rec.description}
-          posterUrlId={placeholderImageIds[index % placeholderImageIds.length]}
-        />
+    <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      {recommendations.recommendations.map((rec) => (
+        <div key={rec.title} className="rounded-lg border bg-card p-4 text-card-foreground shadow-sm">
+          <h3 className="font-semibold">{rec.title}</h3>
+          <p className="mt-2 text-sm text-muted-foreground">{rec.description}</p>
+          <p className="mt-4 text-xs italic text-muted-foreground/80">Reason: {rec.reason}</p>
+        </div>
       ))}
     </div>
   );
