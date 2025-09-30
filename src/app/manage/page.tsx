@@ -87,8 +87,7 @@ export default function ManageMoviesPage() {
       if (storedMovies) {
         setMovies(JSON.parse(storedMovies));
       } else {
-        const initialMovies: Movie[] = [];
-        setMovies(initialMovies);
+        setMovies([]);
       }
     } catch (error) {
       console.error("Could not parse movies from localStorage", error);

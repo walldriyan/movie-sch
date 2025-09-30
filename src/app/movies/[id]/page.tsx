@@ -38,8 +38,7 @@ import {
 const LOCAL_STORAGE_KEY = 'movies_data';
 
 export default function MoviePage({ params }: { params: { id: string } }) {
-  const resolvedParams = React.use(params);
-  const movieId = resolvedParams.id;
+  const { id: movieId } = params;
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
 
