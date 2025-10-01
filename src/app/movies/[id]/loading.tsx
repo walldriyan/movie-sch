@@ -6,9 +6,9 @@ export default function Loading() {
        <main className="container mx-auto px-4 pb-8 py-8">
         <div className="mb-8">
             <div className="flex flex-wrap gap-2">
-                <Skeleton className="h-6 w-20 rounded-full" />
-                <Skeleton className="h-6 w-24 rounded-full" />
-                <Skeleton className="h-6 w-16 rounded-full" />
+                <Skeleton className="h-9 w-24 rounded-full" />
+                <Skeleton className="h-9 w-28 rounded-full" />
+                <Skeleton className="h-9 w-20 rounded-full" />
             </div>
         </div>
         <div className="relative h-[500px] w-full">

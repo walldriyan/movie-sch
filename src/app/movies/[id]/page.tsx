@@ -16,11 +16,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bot, Download } from 'lucide-react';
+import { Bot, Download, Tag } from 'lucide-react';
 import React from 'react';
 
+const TagsSection = ({ genres }: { genres: string[] }) => (
+  <div className="flex flex-wrap gap-2">
+    {genres.map((genre: string) => (
+      <Button key={genre} variant="outline" size="sm" className="rounded-full">
+        <Tag className="mr-2 h-4 w-4" />
+        {genre}
+      </Button>
+    ))}
+  </div>
+);
 
 export default async function MoviePage({
   params,
@@ -42,13 +51,7 @@ export default async function MoviePage({
     <div className="min-h-screen w-full bg-background">
       <main className="max-w-6xl mx-auto py-8">
         <div className="px-4 md:px-8 mb-8">
-            <div className="flex flex-wrap gap-2">
-                {movie.genres.map((genre: string) => (
-                    <Badge key={genre} variant="outline" className="text-sm">
-                    {genre}
-                    </Badge>
-                ))}
-            </div>
+          <TagsSection genres={movie.genres} />
         </div>
         <article>
           <MovieDetailClient movie={movie}>
