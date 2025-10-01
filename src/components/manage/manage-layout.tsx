@@ -81,9 +81,11 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-              <SidebarMenuButton className="text-base">
-                <User />
-                <span>Profile</span>
+              <SidebarMenuButton asChild className="text-base">
+                <Link href={user ? `/profile/${user.id}` : '#'}>
+                  <User />
+                  <span>Profile</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

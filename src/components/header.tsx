@@ -1,6 +1,6 @@
 'use server';
 
-import { Film, LayoutGrid, LogIn, User } from 'lucide-react';
+import { Film, LayoutGrid, LogIn, User, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -16,6 +16,7 @@ import React from 'react';
 import { auth } from '@/auth';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
+import { ROLES } from '@/lib/permissions';
 
 export default async function Header({
   children,
@@ -71,13 +72,21 @@ export default async function Header({
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
-          {user.role === 'SUPER_ADMIN' && (
-            <DropdownMenuItem asChild>
-              <Link href="/manage">
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                <span>Manage Movies</span>
-              </Link>
-            </DropdownMenuItem>
+          {user.role === ROLES.SUPER_ADMIN && (
+            <>
+              <DropdownMenuItem asChild>
+                <Link href="/manage">
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  <span>Manage Movies</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/users">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Manage Users</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
           )}
           <DropdownMenuSeparator />
           <LogoutButton />

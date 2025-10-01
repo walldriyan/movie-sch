@@ -8,36 +8,41 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ProfileHeader from '@/components/profile-header';
 import { getMovies } from '@/lib/actions';
+import { auth } from '@/auth';
+import { notFound } from 'next/navigation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-const userProfile = {
-  name: 'CineVerse Editor',
-  username: 'cineverse-editor',
-  avatarId: 'avatar-1',
+const staticProfileData = {
   bio: 'Bringing you the latest and greatest in the world of cinema. I curate movie lists, write reviews, and help you discover your next favorite film. Join me on this cinematic journey!',
-  followers: '1.2K',
   website: 'https://cineverse.example.com',
   twitter: 'https://twitter.com/cineverse',
   linkedin: 'https://linkedin.com/in/cineverse',
 };
 
 export default async function ProfilePage() {
-  
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user) {
+    notFound();
+  }
+
   const allMovies = (await getMovies()) as Movie[];
-  const authorAvatar = PlaceHolderImages.find(
-    (img) => img.id === userProfile.avatarId
-  );
+  const userAvatar =
+    user.image ||
+    PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <ProfileHeader username={userProfile.name} />
+        <ProfileHeader username={user.name || 'User'} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">
             {allMovies.map((movie) => {
               const movieImageUrl =
                 (movie.galleryImageIds &&
-                (movie.galleryImageids as any).length > 0
+                (movie.galleryImageIds as any).length > 0
                   ? (movie.galleryImageIds as any)[0]
                   : movie.posterUrl) ||
                 PlaceHolderImages.find(
@@ -96,21 +101,21 @@ export default async function ProfilePage() {
           <div className="md:col-span-1">
             <div className="sticky top-24 space-y-6">
               <Avatar className="w-16 h-16">
-                {authorAvatar && (
-                  <AvatarImage
-                    src={authorAvatar.imageUrl}
-                    alt={userProfile.name}
-                    data-ai-hint={authorAvatar.imageHint}
-                  />
+                {userAvatar && (
+                  <AvatarImage src={userAvatar} alt={user.name || 'User'} />
                 )}
-                <AvatarFallback>{userProfile.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>
+                  {user.name?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
               </Avatar>
-              <h3 className="text-xl font-semibold">{userProfile.name}</h3>
-              <p className="text-muted-foreground text-sm">{userProfile.bio}</p>
+              <h3 className="text-xl font-semibold">{user.name}</h3>
+              <p className="text-muted-foreground text-sm">
+                {staticProfileData.bio}
+              </p>
               <Separator />
               <div className="flex items-center gap-4 text-muted-foreground">
                 <Link
-                  href={userProfile.website}
+                  href={staticProfileData.website}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary"
@@ -118,7 +123,7 @@ export default async function ProfilePage() {
                   <LinkIcon className="w-5 h-5" />
                 </Link>
                 <Link
-                  href={userProfile.twitter}
+                  href={staticProfileData.twitter}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary"
@@ -126,7 +131,7 @@ export default async function ProfilePage() {
                   <Twitter className="w-5 h-5" />
                 </Link>
                 <Link
-                  href={userProfile.linkedin}
+                  href={staticProfileData.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="hover:text-primary"
@@ -134,6 +139,17 @@ export default async function ProfilePage() {
                   <Linkedin className="w-5 h-5" />
                 </Link>
               </div>
+              <Separator />
+              <Card>
+                <CardHeader>
+                  <CardTitle>Session Details</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+                    {JSON.stringify(session, null, 2)}
+                  </pre>
+                </CardContent>
+              </Card>
             </div>
           </div>
         </div>
