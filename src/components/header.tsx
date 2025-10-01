@@ -1,6 +1,6 @@
 'use client';
 
-import { Film, Search, LayoutGrid } from 'lucide-react';
+import { Film, Search } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
@@ -15,8 +15,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useEffect, useState } from 'react';
 import { Button } from './ui/button';
+import React from 'react';
 
-export default function Header() {
+export default function Header({ children }: { children?: React.ReactNode }) {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   const [isClient, setIsClient] = useState(false);
 
@@ -26,31 +27,34 @@ export default function Header() {
 
   if (!isClient) {
     return (
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 flex h-16 items-center" />
+      <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm">
+        <div className="container mx-auto flex h-16 items-center" />
       </header>
     );
   }
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 w-full bg-background/95 backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center space-x-2">
-            <Film className="h-7 w-7 text-primary" />
-            <span className="inline-block font-bold font-serif text-2xl">
-              CineVerse
-            </span>
-          </Link>
-          <div className="relative hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="pl-9 bg-muted/50 w-64"
-            />
+        {children || (
+           <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center space-x-2">
+              <Film className="h-7 w-7 text-primary" />
+              <span className="inline-block font-bold font-serif text-2xl">
+                CineVerse
+              </span>
+            </Link>
+            <div className="relative hidden sm:block">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="pl-9 bg-muted/50 w-64"
+              />
+            </div>
           </div>
-        </div>
+        )}
+
 
         <div className="flex items-center justify-end space-x-4">
           <Button variant="ghost" className="hidden sm:inline-flex">
