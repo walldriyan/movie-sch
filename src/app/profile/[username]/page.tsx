@@ -151,7 +151,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
               {isOwnProfile && loggedInUser && (
                 <>
                   <Separator />
-                  <Card className='border-l rounded-none'>
+                  <Card className='border-0 shadow-none'>
                     <CardHeader>
                       <CardTitle className="text-lg">My Details</CardTitle>
                     </CardHeader>
