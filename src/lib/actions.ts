@@ -9,6 +9,13 @@ import { AuthError } from 'next-auth';
 
 const prisma = new PrismaClient();
 
+export async function getSuperAdminEmailForDebug() {
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.SUPER_ADMIN_EMAIL || null;
+  }
+  return null;
+}
+
 export async function authenticate(
   prevState: string | undefined,
   formData: FormData,

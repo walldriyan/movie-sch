@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +17,8 @@ import Link from 'next/link';
 import { Film } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signIn } from 'next-auth/react';
+import { getSuperAdminEmailForDebug } from '@/lib/actions';
+
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,14 +27,20 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  // State for debugging
   const [debugInfo, setDebugInfo] = useState<object | null>(null);
+  const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchDebugEnv = async () => {
+      const adminEmail = await getSuperAdminEmailForDebug();
+      setSuperAdminEmail(adminEmail);
+    };
+    fetchDebugEnv();
+  }, []);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setDebugInfo(null);
 
     const submittedData = { name, email, password };
     let serverResponse = {};
@@ -45,7 +53,7 @@ export default function RegisterPage() {
         },
         body: JSON.stringify(submittedData),
       });
-      
+
       const resClone = response.clone();
       let responseBody;
       try {
@@ -66,6 +74,12 @@ export default function RegisterPage() {
             : typeof responseBody === 'string' ? responseBody : 'Registration failed';
         throw new Error(errorMessage);
       }
+
+      setDebugInfo({
+          step: 'Registration API Call Success',
+          submittedData,
+          serverResponse,
+      });
 
       // Automatically sign in the user after successful registration
       const signInResult = await signIn('credentials', {
@@ -172,7 +186,7 @@ export default function RegisterPage() {
         </Card>
         
         {/* Debug Information Box */}
-        {(debugInfo) && (
+        {(process.env.NODE_ENV === 'development') && (
           <Card className="mt-4 bg-muted/50">
             <CardHeader>
               <CardTitle className="text-lg text-destructive">Debug Information</CardTitle>
@@ -180,7 +194,16 @@ export default function RegisterPage() {
             <CardContent>
               <div className="space-y-2 text-xs">
                 <div>
-                  <h4 className="font-bold">Live Input Data:</h4>
+                  <h4 className="font-bold">Environment Variable Check (DEV ONLY):</h4>
+                   <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
+                    {JSON.stringify({ 
+                        'process.env.SUPER_ADMIN_EMAIL (from server)': superAdminEmail || 'Loading or not found...',
+                        'Is Match?': superAdminEmail ? (email === superAdminEmail).toString() : 'N/A'
+                    }, null, 2)}
+                  </pre>
+                </div>
+                <div>
+                  <h4 className="font-bold mt-4">Live Input Data:</h4>
                   <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
                     {JSON.stringify({ name, email, password: password.replace(/./g, '*') }, null, 2)}
                   </pre>
