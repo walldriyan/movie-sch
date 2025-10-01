@@ -14,10 +14,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film, AlertCircle } from 'lucide-react';
+import { Film } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signIn } from 'next-auth/react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -26,12 +25,17 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  
+  // State for debugging
+  const [debugInfo, setDebugInfo] = useState<object | null>(null);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setError(null);
+    setDebugInfo(null);
+
+    const submittedData = { name, email, password };
+    let serverResponse = {};
 
     try {
       const response = await fetch('/api/register', {
@@ -39,12 +43,25 @@ export default function RegisterPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify(submittedData),
       });
+      
+      let responseBody;
+      try {
+        responseBody = await response.json();
+      } catch (jsonError) {
+        // If response is not JSON, read it as text
+        responseBody = await response.text();
+      }
+      
+      serverResponse = {
+        status: response.status,
+        statusText: response.statusText,
+        body: responseBody,
+      };
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(typeof responseBody === 'object' && responseBody.message ? responseBody.message : 'Registration failed');
       }
 
       // Automatically sign in the user after successful registration
@@ -65,7 +82,16 @@ export default function RegisterPage() {
       }
 
     } catch (err: any) {
-      setError(err.message || 'An unexpected error occurred.');
+       setDebugInfo({
+          step: 'Error caught',
+          submittedData,
+          serverResponse,
+          error: {
+            name: err.name,
+            message: err.message,
+            stack: err.stack
+          },
+       });
     } finally {
         setLoading(false);
     }
@@ -84,21 +110,14 @@ export default function RegisterPage() {
              <p className="mt-2 text-muted-foreground">Create your account to get started.</p>
         </div>
         <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Register</CardTitle>
-            <CardDescription>
-              Enter your details to create a new account
-            </CardDescription>
-          </CardHeader>
           <form onSubmit={handleRegister}>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl">Register</CardTitle>
+              <CardDescription>
+                Enter your details to create a new account
+              </CardDescription>
+            </CardHeader>
             <CardContent className="grid gap-4">
-               {error && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Registration Error</AlertTitle>
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
               <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
                 <Input 
@@ -148,6 +167,32 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
+        
+        {/* Debug Information Box */}
+        <Card className="mt-4 bg-muted/50">
+          <CardHeader>
+            <CardTitle className="text-lg">Debug Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-2 text-xs">
+              <div>
+                <h4 className="font-bold">Live Input Data:</h4>
+                <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
+                  {JSON.stringify({ name, email, password: password.replace(/./g, '*') }, null, 2)}
+                </pre>
+              </div>
+              {debugInfo && (
+                <div>
+                  <h4 className="font-bold mt-4">Last Action Trace:</h4>
+                  <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
+                    {JSON.stringify(debugInfo, null, 2)}
+                  </pre>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
       </div>
     </div>
   );
