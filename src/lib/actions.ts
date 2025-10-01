@@ -9,6 +9,8 @@ import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { ROLES } from './permissions';
 import { redirect } from 'next/navigation';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
 
 const prisma = new PrismaClient();
 
@@ -79,7 +81,7 @@ export async function registerUser(prevState: any, formData: FormData) {
       },
     });
   } catch (error: any) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+    if (error instanceof prisma.PrismaClientKnownRequestError) {
       // Handle potential database errors, e.g., unique constraint failed again
       return redirect(
         `/register?error=Could%20not%20create%20user:%20${error.code}`
@@ -180,6 +182,24 @@ export async function getUsers(): Promise<User[]> {
   });
   return users;
 }
+
+export async function uploadProfileImage(formData: FormData) {
+  const file = formData.get('image') as File;
+  if (!file || file.size === 0) {
+    return null;
+  }
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  const filename = `${Date.now()}-${file.name}`;
+  const path = join(process.cwd(), 'public/uploads/avatars', filename);
+
+  await writeFile(path, buffer);
+
+  return `/uploads/avatars/${filename}`;
+}
+
 
 export async function updateUserProfile(
   userId: string,

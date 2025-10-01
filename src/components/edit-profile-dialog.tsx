@@ -26,16 +26,16 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile } from '@/lib/actions';
+import { updateUserProfile, uploadProfileImage } from '@/lib/actions';
 import type { User } from '@prisma/client';
-import { Pencil, User as UserIcon } from 'lucide-react';
+import { Pencil, User as UserIcon, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-
+import Image from 'next/image';
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   bio: z.string().max(160, 'Bio must not be longer than 160 characters.').optional(),
-  image: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
+  image: z.any(), // Accept file or string
   website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   twitter: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   linkedin: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
@@ -50,6 +50,7 @@ interface EditProfileDialogProps {
 export default function EditProfileDialog({ user }: EditProfileDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
+  const [previewImage, setPreviewImage] = React.useState<string | null>(user.image);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -62,23 +63,58 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
       linkedin: user.linkedin || '',
     },
   });
-  
-  const imageValue = form.watch('image');
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      await updateUserProfile(user.id, data);
+      let imageUrl = user.image; // Keep old image by default
+
+      // Check if a new file is selected
+      if (data.image && typeof data.image === 'object' && data.image.size > 0) {
+        const formData = new FormData();
+        formData.append('image', data.image);
+        const newImageUrl = await uploadProfileImage(formData);
+        if (newImageUrl) {
+          imageUrl = newImageUrl;
+        }
+      }
+
+      const updateData = {
+        name: data.name,
+        bio: data.bio,
+        website: data.website,
+        twitter: data.twitter,
+        linkedin: data.linkedin,
+        image: imageUrl, // Use the new or old URL
+      };
+
+      await updateUserProfile(user.id, updateData);
+      
       toast({
         title: 'Profile updated',
         description: 'Your changes have been saved successfully.',
       });
       setIsOpen(false);
     } catch (error) {
+      console.error(error);
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to update profile.',
       });
+    }
+  };
+
+  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // For preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+      // Set the file object in the form
+      form.setValue('image', file);
     }
   };
 
@@ -112,34 +148,48 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
               )}
             />
             
-             <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Avatar URL</FormLabel>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="w-16 h-16">
-                      {imageValue ? (
-                        <AvatarImage src={imageValue} alt={user.name || 'User'} />
-                      ) : (
-                        <UserIcon className="w-8 h-8 text-muted-foreground" />
-                      )}
-                      <AvatarFallback>
-                        {user.name?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-
-                    <div className="flex-grow space-y-2">
-                       <FormControl>
-                          <Input placeholder="Paste image URL" {...field} value={field.value || ''}/>
-                       </FormControl>
-                    </div>
-                  </div>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            <FormItem>
+              <FormLabel>Avatar</FormLabel>
+              <div className="flex items-center gap-4">
+                <Avatar className="w-16 h-16">
+                  {previewImage ? (
+                    <AvatarImage src={previewImage} alt={user.name || 'User'} />
+                  ) : (
+                    <UserIcon className="w-8 h-8 text-muted-foreground" />
+                  )}
+                  <AvatarFallback>
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                <FormField
+                  control={form.control}
+                  name="image"
+                  render={({ field: { onChange, value, ...rest } }) => (
+                    <FormItem className="flex-grow">
+                      <FormControl>
+                        <>
+                          <Input
+                            id="picture"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleImageChange(e)}
+                            {...rest}
+                          />
+                          <Button asChild variant="outline">
+                            <label htmlFor="picture" className="cursor-pointer">
+                              <Upload className="mr-2 h-4 w-4" />
+                              Upload Image
+                            </label>
+                          </Button>
+                        </>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </FormItem>
 
             <FormField
               control={form.control}
@@ -166,7 +216,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                 <FormItem>
                   <FormLabel>Website</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://your-website.com" {...field} />
+                    <Input placeholder="https://your-website.com" {...field} value={field.value || ''}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -179,7 +229,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                 <FormItem>
                   <FormLabel>Twitter URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://twitter.com/your-handle" {...field} />
+                    <Input placeholder="https://twitter.com/your-handle" {...field} value={field.value || ''}/>
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -192,7 +242,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                 <FormItem>
                   <FormLabel>LinkedIn URL</FormLabel>
                   <FormControl>
-                    <Input placeholder="https://linkedin.com/in/your-profile" {...field} />
+                    <Input placeholder="https://linkedin.com/in/your-profile" {...field} value={field.value || ''} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
