@@ -1,4 +1,3 @@
-
 'use client';
 
 import React from 'react';
@@ -74,7 +73,7 @@ export default function MovieDetailClient({
           <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-8">
             <Link
               href={`/profile/${movie.author.id}`}
-              className="flex items-center gap-4 group"
+              className="flex items-center gap-4 group mt-2.5"
             >
               <Avatar>
                 {authorAvatarUrl && (
