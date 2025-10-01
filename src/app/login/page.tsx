@@ -40,10 +40,6 @@ export default function LoginPage() {
       });
   
       if (result?.error) {
-        const errorMessage = result.error === 'CredentialsSignin' 
-          ? 'Invalid email or password' 
-          : result.error;
-        
         // This is a workaround to get the full error object
         let errorObject;
         try {
@@ -51,7 +47,13 @@ export default function LoginPage() {
           errorObject = JSON.parse(result.error);
         } catch (e) {
           // Or just plain strings
-          errorObject = { message: errorMessage, name: result.error, stack: 'N/A' };
+          errorObject = { 
+              message: result.error === 'CredentialsSignin' 
+                ? 'Invalid email or password' 
+                : result.error, 
+              name: result.error, 
+              stack: 'N/A' 
+          };
         }
 
         setError(errorObject);
@@ -59,7 +61,7 @@ export default function LoginPage() {
         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: errorObject.message || errorMessage,
+          description: errorObject.message,
         });
       } else if (result?.ok) {
         toast({
@@ -68,6 +70,15 @@ export default function LoginPage() {
         });
         router.push('/');
         router.refresh(); 
+      } else {
+        // Handle cases where result is null or not ok without an error
+         const unknownError = { message: 'An unexpected error occurred during login.', name: 'UnknownError', stack: 'N/A' };
+         setError(unknownError);
+         toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: unknownError.message,
+        });
       }
     } catch (error: any) {
       setError(error);
@@ -149,7 +160,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify({ message: error.message, stack: error.stack, name: error.name, cause: error.cause }, null, 2)}
+                        {JSON.stringify({ message: error.message, name: error.name }, null, 2)}
                     </pre>
                 </CardContent>
             </Card>
