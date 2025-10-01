@@ -21,32 +21,16 @@ export const authConfig = {
         const password = credentials.password as string;
 
         // Step 1: Check if the user is the Super Admin from .env
-        if (email === process.env.SUPER_ADMIN_EMAIL) {
-          if (password === process.env.SUPER_ADMIN_PASSWORD) {
-            // For the super admin, we find or create them to have a DB record, but the role is supreme.
-            let user = await prisma.user.findUnique({ where: { email } });
-            if (!user) {
-              user = await prisma.user.create({
-                data: {
-                  email,
-                  name: 'Super Admin',
-                  // We don't store the plaintext password in the DB
-                  // A hashed version could be stored, but for this logic, it's not used for auth.
-                  password: await bcrypt.hash(password, 12),
-                  role: ROLES.SUPER_ADMIN,
-                }
-              });
-            } else if (user.role !== ROLES.SUPER_ADMIN) {
-              user = await prisma.user.update({
-                where: { id: user.id },
-                data: { role: ROLES.SUPER_ADMIN }
-              });
-            }
-             return { ...user, id: user.id, role: ROLES.SUPER_ADMIN };
-          } else {
-            // Email matches super admin, but password doesn't. Deny access immediately.
-            return null;
-          }
+        if (email === process.env.SUPER_ADMIN_EMAIL && password === process.env.SUPER_ADMIN_PASSWORD) {
+            // This is a special user that doesn't exist in the database.
+            // We return a user object with the Super Admin role.
+            // The `id` can be the email itself as it's unique.
+            return { 
+                id: email, 
+                email: email, 
+                name: 'Super Admin', 
+                role: ROLES.SUPER_ADMIN 
+            };
         }
 
         // Step 2: If not Super Admin, check the database for a regular user
@@ -94,7 +78,7 @@ export const authConfig = {
       name: `__Host-next-auth.csrf-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         secure: true,
       },
