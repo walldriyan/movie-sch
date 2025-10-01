@@ -3,7 +3,6 @@ import { PrismaAdapter } from '@auth/prisma-adapter';
 import { PrismaClient } from '@prisma/client';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-
 import { permissions, ROLES } from '@/lib/permissions';
 import type { NextAuthConfig } from 'next-auth';
 
@@ -41,6 +40,16 @@ export const authConfig = {
   ],
   session: {
     strategy: 'jwt',
+  },
+  cookies: {
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        secure: true,
+      },
+    },
   },
   callbacks: {
     async jwt({ token, user }) {
