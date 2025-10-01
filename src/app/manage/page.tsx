@@ -85,45 +85,8 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 import AuthGuard from '@/components/auth/auth-guard';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-// These functions would ideally be server actions
-async function getMovies() {
-  const movies = await prisma.movie.findMany({
-    orderBy: { updatedAt: 'desc' },
-  });
-  return movies.map(movie => ({
-    ...movie,
-    galleryImageIds: JSON.parse(movie.galleryImageIds || '[]'),
-    genres: JSON.parse(movie.genres || '[]'),
-  }));
-}
-
-async function saveMovie(movieData: Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'viewCount' | 'likes'>, id?: number) {
-    const data = {
-        ...movieData,
-        galleryImageIds: JSON.stringify(movieData.galleryImageIds),
-        genres: JSON.stringify(movieData.genres),
-    };
-    if (id) {
-        return await prisma.movie.update({ where: { id }, data });
-    } else {
-        return await prisma.movie.create({ data: data as any});
-    }
-}
-
-async function deleteMovie(id: number, permanent: boolean) {
-    if (permanent) {
-        return await prisma.movie.delete({ where: { id } });
-    } else {
-        return await prisma.movie.update({
-            where: { id },
-            data: { status: 'PENDING_DELETION' },
-        });
-    }
-}
+import { getMovies, saveMovie, deleteMovie } from '@/lib/actions';
+import type { MovieFormData } from '@/lib/types';
 
 
 const movieSchema = z.object({
@@ -232,17 +195,16 @@ export default function ManageMoviesPage() {
   };
 
   const handleFormSubmit = async (values: MovieFormValues) => {
-    const movieData = {
+    const movieData: MovieFormData = {
         title: values.title,
         description: values.description,
-        posterUrl: values.posterUrl || '',
+        posterUrl: values.posterUrl || null,
         galleryImageIds: values.galleryImageIds || [],
         year: values.year,
         duration: values.duration,
         genres: values.genres.split(',').map((g) => g.trim()) as any,
         imdbRating: values.imdbRating,
         status: 'PUBLISHED',
-         // These fields are not in the form
         viewCount: editingMovie?.viewCount || 0,
         likes: editingMovie?.likes || 0,
     };

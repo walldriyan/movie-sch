@@ -3,40 +3,22 @@
 // A future refactor could involve using tools like 'zod-prisma' to generate
 // Zod schemas from the Prisma schema, and inferring types from those.
 
-export interface User {
-  id: string; // Changed to string to match cuid()
-  name: string;
-  avatarUrlId: string;
-}
+import type { Movie as PrismaMovie, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser } from "@prisma/client";
 
-export interface Review {
-  id: number;
+export type User = PrismaUser;
+
+export type Review = PrismaReview & {
   user: User;
-  rating: number;
-  comment: string;
-}
+};
 
-export interface Subtitle {
-  id: number;
-  language: string;
-  uploader: string;
-  price: number;
-}
+export type Subtitle = PrismaSubtitle;
 
 // This is now redundant with the Prisma model, but kept for client-side compatibility
-export interface Movie {
-  id: number;
-  title: string;
-  description: string;
-  posterUrl: string | null;
+export type Movie = Omit<PrismaMovie, 'galleryImageIds' | 'genres'> & {
   galleryImageIds: string[];
-  year: number;
   genres: string[];
-  duration: string;
-  imdbRating: number;
-  viewCount: number;
-  likes: number;
   reviews: Review[];
   subtitles: Subtitle[];
-  status?: 'PUBLISHED' | 'PENDING_DELETION' | 'DELETED';
-}
+};
+
+export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles'>;
