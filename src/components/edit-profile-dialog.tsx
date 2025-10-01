@@ -167,7 +167,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                   render={({ field: { onChange, value, ...rest } }) => (
                     <FormItem className="flex-grow">
                       <FormControl>
-                        <>
+                        <div>
                           <Input
                             id="picture"
                             type="file"
@@ -182,7 +182,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                               Upload Image
                             </label>
                           </Button>
-                        </>
+                        </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
