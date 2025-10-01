@@ -39,19 +39,17 @@ export default function LoginPage() {
       });
   
       if (result?.error) {
-        // In this new setup, the full debug JSON is the error message itself.
-        // We will try to parse it to display it nicely.
         let errorObject;
         try {
-          // The custom error from `authorize` is a JSON string.
+          // The custom error from `authorize` should be a JSON string.
           errorObject = JSON.parse(result.error);
         } catch (e) {
-          // For other generic errors like 'CredentialsSignin'.
+          // For other generic errors like 'CredentialsSignin' or 'Failed to fetch'.
           errorObject = { 
               message: result.error === 'CredentialsSignin' 
                 ? 'Invalid email or password' 
                 : result.error, 
-              name: 'SignInError',
+              name: result.error === 'CredentialsSignin' ? 'CredentialsSignin' : 'SignInError',
           };
         }
 
@@ -83,7 +81,7 @@ export default function LoginPage() {
         });
       }
     } catch (error: any) {
-        // This catch block handles errors thrown by next-auth, including our custom AuthError
+        // This catch block handles network errors or errors thrown by next-auth itself
         let errorObject = { message: 'An unexpected error occurred.', name: 'CatchAllError' };
         
         // The detailed message from our `authorize` function will be in `error.cause.err.message`
