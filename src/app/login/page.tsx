@@ -1,7 +1,7 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
-import { authenticate } from '@/lib/actions';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Film, AlertCircle } from 'lucide-react';
 import { signIn } from 'next-auth/react';
+import { useToast } from '@/hooks/use-toast';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -38,21 +39,55 @@ const GoogleIcon = () => (
     </svg>
 );
 
-function LoginButton() {
-  const { pending } = useFormStatus();
- 
-  return (
-    <Button className="w-full" type="submit" aria-disabled={pending}>
-      {pending ? 'Signing in...' : 'Login'}
-    </Button>
-  );
-}
 
 export default function LoginPage() {
-  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
+  const router = useRouter();
+  const { toast } = useToast();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleGoogleLogin = async () => {
     await signIn('google', { callbackUrl: '/' });
+  };
+  
+  const handleCredentialsLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+        callbackUrl: '/',
+      });
+  
+      if (result?.error) {
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: result.error === 'CredentialsSignin' 
+            ? 'Invalid email or password' 
+            : result.error,
+        });
+      } else if (result?.ok) {
+        toast({
+          title: 'Success',
+          description: 'Login successful!',
+        });
+        router.push('/');
+        router.refresh(); 
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Something went wrong. Please try again.',
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
 
@@ -69,7 +104,7 @@ export default function LoginPage() {
              <p className="mt-2 text-muted-foreground">Welcome back! Please sign in to your account.</p>
         </div>
         <Card>
-          <form action={dispatch}>
+          <form onSubmit={handleCredentialsLogin}>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl">Login</CardTitle>
               <CardDescription>
@@ -99,6 +134,9 @@ export default function LoginPage() {
                     type="email" 
                     placeholder="m@example.com" 
                     required 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -108,23 +146,16 @@ export default function LoginPage() {
                     name="password"
                     type="password" 
                     required 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
                 />
-              </div>
-              <div
-                className="flex h-8 items-end space-x-1"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                {errorMessage && (
-                  <>
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <p className="text-sm text-destructive">{errorMessage}</p>
-                  </>
-                )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <LoginButton />
+               <Button className="w-full" type="submit" disabled={loading}>
+                {loading ? 'Signing in...' : 'Login'}
+              </Button>
                 <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <Link href="/register" className="font-semibold text-primary hover:underline">

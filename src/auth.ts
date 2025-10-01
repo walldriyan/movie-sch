@@ -4,7 +4,6 @@ import { PrismaClient } from '@prisma/client';
 import GoogleProvider from 'next-auth/providers/google';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
-import { AuthError } from 'next-auth';
 
 import { permissions, ROLES } from '@/lib/permissions';
 import type { NextAuthConfig } from 'next-auth';
@@ -71,6 +70,7 @@ export const authConfig = {
     signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  trustHost: true,
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
