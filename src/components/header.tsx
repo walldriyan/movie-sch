@@ -1,9 +1,8 @@
 'use client';
 
-import { Film, LayoutGrid, Search } from 'lucide-react';
+import { Film, LayoutGrid, LogIn, LogOut, User } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Input } from './ui/input';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
@@ -13,24 +12,68 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useEffect, useState } from 'react';
-import { Button } from './ui/button';
 import React from 'react';
+import { useSession, signOut } from 'next-auth/react';
+import { Skeleton } from './ui/skeleton';
 
 export default function Header({ children }: { children?: React.ReactNode }) {
-  const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
-  const [isClient, setIsClient] = useState(false);
+  const { data: session, status } = useSession();
+  const user = session?.user;
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const userAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-4');
 
-  if (!isClient) {
-    return (
-      <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
-        <div className="container mx-auto flex h-16 items-center" />
-      </header>
-    );
+  const renderUserMenu = () => {
+    if (status === 'loading') {
+      return <Skeleton className="h-8 w-8 rounded-full" />;
+    }
+
+    if (status === 'unauthenticated') {
+      return (
+         <Link href="/login" className='flex items-center gap-2'>
+            <LogIn className="h-5 w-5" />
+            <span>Login</span>
+        </Link>
+      );
+    }
+    
+    if (status === 'authenticated' && user) {
+      return (
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Avatar className="cursor-pointer h-8 w-8">
+                 <AvatarImage src={user.image || userAvatarPlaceholder?.imageUrl} alt={user.name || "User"} data-ai-hint="person face" />
+                <AvatarFallback>{user.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>
+                <p>My Account</p>
+                <p className="text-xs text-muted-foreground font-normal truncate">{user.email}</p>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link href={`/profile/${user.id}`}>
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/manage">
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  <span>Manage Movies</span>
+                </Link>
+              </DropdownMenuItem>
+               <DropdownMenuSeparator />
+               <DropdownMenuItem onClick={() => signOut()}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+      );
+    }
+
+    return null;
   }
 
   return (
@@ -44,40 +87,10 @@ export default function Header({ children }: { children?: React.ReactNode }) {
                 CineVerse
               </span>
             </Link>
-            <div className="relative hidden sm:block">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="search"
-                placeholder="Search..."
-                className="pl-9 bg-muted/50 w-64"
-              />
-            </div>
           </div>
         )}
-
-
         <div className="flex items-center justify-end space-x-4">
-          <Button variant="ghost" className="hidden sm:inline-flex">
-            Write
-          </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Avatar className="cursor-pointer h-8 w-8">
-                {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/manage">
-                  <LayoutGrid className="mr-2 h-4 w-4" />
-                  <span>Manage Movies</span>
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+         {renderUserMenu()}
         </div>
       </div>
     </header>

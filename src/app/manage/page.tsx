@@ -39,6 +39,8 @@ import {
   Settings,
   Home,
   Film,
+  Trash,
+  X,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -80,12 +82,18 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { PERMISSIONS } from '@/lib/permissions';
+import { useToast } from '@/hooks/use-toast';
+import AuthGuard from '@/components/auth/auth-guard';
+
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  posterUrl: z.string(),
+  posterUrl: z.string().optional(),
+  galleryImageIds: z.array(z.string()).optional().default([]),
   description: z.string().min(10, 'Description is required'),
   year: z.coerce.number().min(1800, 'Invalid year'),
   duration: z.string().min(1, 'Duration is required'),
@@ -102,7 +110,11 @@ export default function ManageMoviesPage() {
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const posterFileInputRef = React.useRef<HTMLInputElement>(null);
+  const galleryFileInputRef = React.useRef<HTMLInputElement>(null);
+  const user = useCurrentUser();
+  const { toast } = useToast();
+
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
 
 
@@ -111,6 +123,7 @@ export default function ManageMoviesPage() {
     defaultValues: {
       title: '',
       posterUrl: '',
+      galleryImageIds: [],
       description: '',
       year: new Date().getFullYear(),
       duration: '',
@@ -120,6 +133,7 @@ export default function ManageMoviesPage() {
   });
 
   const posterUrlValue = form.watch('posterUrl');
+  const galleryImageIdsValue = form.watch('galleryImageIds');
 
   useEffect(() => {
     setIsMounted(true);
@@ -148,6 +162,7 @@ export default function ManageMoviesPage() {
     form.reset({
       title: '',
       posterUrl: '',
+      galleryImageIds: [],
       description: '',
       year: new Date().getFullYear(),
       duration: '',
@@ -162,6 +177,7 @@ export default function ManageMoviesPage() {
     form.reset({
       title: movie.title,
       posterUrl: movie.posterUrl || '',
+      galleryImageIds: movie.galleryImageIds || [],
       description: movie.description,
       year: movie.year,
       duration: movie.duration,
@@ -177,8 +193,21 @@ export default function ManageMoviesPage() {
   };
 
   const confirmDelete = () => {
-    if (movieToDelete) {
-      setMovies(movies.filter((m) => m.id !== movieToDelete.id));
+    if (movieToDelete && user?.permissions) {
+      if (user.permissions.includes(PERMISSIONS['post.hard_delete'])) {
+         // Super admin: permanent delete
+        setMovies(movies.filter((m) => m.id !== movieToDelete.id));
+        toast({ title: 'Movie Deleted', description: `"${movieToDelete.title}" has been permanently deleted.` });
+      } else if (user.permissions.includes(PERMISSIONS['post.delete'])) {
+        // User admin: soft delete (set status)
+        const updatedMovies = movies.map((m) =>
+          m.id === movieToDelete.id ? { ...m, status: 'PENDING_DELETION' } : m
+        );
+        setMovies(updatedMovies);
+        toast({ title: 'Deletion Requested', description: `"${movieToDelete.title}" is pending approval for deletion.` });
+      } else {
+        toast({ variant: 'destructive', title: 'Unauthorized', description: 'You do not have permission to delete movies.' });
+      }
       setMovieToDelete(null);
     }
     setDeleteAlertOpen(false);
@@ -190,6 +219,8 @@ export default function ManageMoviesPage() {
       const updatedMovie: Movie = {
         ...editingMovie,
         ...values,
+        posterUrl: values.posterUrl || '',
+        galleryImageIds: values.galleryImageIds || [],
         genres: values.genres.split(',').map((g) => g.trim()),
       };
       setMovies(
@@ -200,34 +231,61 @@ export default function ManageMoviesPage() {
       const newMovie: Movie = {
         id: Date.now(),
         ...values,
+        posterUrl: values.posterUrl || '',
+        galleryImageIds: values.galleryImageIds || [],
         genres: values.genres.split(',').map((g) => g.trim()),
-        galleryImageIds: [],
         viewCount: 0,
         likes: 0,
         reviews: [],
         subtitles: [],
+        status: 'PUBLISHED' // Add status field
       };
       setMovies([newMovie, ...movies]);
     }
     setView('list');
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const src = e.target?.result as string;
-        if (src) {
-          form.setValue('posterUrl', src, {
-            shouldValidate: true,
-            shouldDirty: true,
-          });
-        }
-      };
-      reader.readAsDataURL(file);
-    }
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, isGallery: boolean) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    const fileArray = Array.from(files);
+
+    fileArray.forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const src = e.target?.result as string;
+            if (src) {
+                if (isGallery) {
+                    form.setValue('galleryImageIds', [...(form.getValues('galleryImageIds') || []), src], {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                    });
+                } else {
+                    form.setValue('posterUrl', src, {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                    });
+                }
+            }
+        };
+        reader.readAsDataURL(file);
+    });
   };
+
+  const removeGalleryImage = (index: number) => {
+    const currentImages = form.getValues('galleryImageIds') || [];
+    const newImages = currentImages.filter((_, i) => i !== index);
+    form.setValue('galleryImageIds', newImages, {
+        shouldValidate: true,
+        shouldDirty: true,
+    });
+  }
+
+  const visibleMovies = user?.permissions?.includes(PERMISSIONS['post.approve_deletion'])
+    ? movies
+    : movies.filter(m => m.status !== 'PENDING_DELETION');
+
 
   if (!isMounted) {
     return (
@@ -270,12 +328,14 @@ export default function ManageMoviesPage() {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton isActive className="text-base">
-                  <LayoutGrid />
-                  <span>My Movies</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <AuthGuard requiredRole='USER_ADMIN'>
+                <SidebarMenuItem>
+                  <SidebarMenuButton isActive className="text-base">
+                    <LayoutGrid />
+                    <span>My Movies</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </AuthGuard>
               <SidebarMenuItem>
                 <SidebarMenuButton className="text-base">
                   <Bookmark />
@@ -298,21 +358,18 @@ export default function ManageMoviesPage() {
             <div className="flex-grow" />
           </SidebarContent>
           <SidebarFooter>
-            <SidebarMenuButton asChild>
+            {user && <SidebarMenuButton asChild>
               <Link href="#">
                  <Avatar className="h-8 w-8">
-                  {userAvatar && (
                     <AvatarImage
-                      src={userAvatar.imageUrl}
+                      src={user.image || userAvatar?.imageUrl}
                       alt="User avatar"
-                      data-ai-hint={userAvatar.imageHint}
                     />
-                  )}
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
-                <span className='w-full'>User</span>
+                <span className='w-full'>{user.name}</span>
               </Link>
-            </SidebarMenuButton>
+            </SidebarMenuButton>}
           </SidebarFooter>
         </Sidebar>
 
@@ -330,14 +387,16 @@ export default function ManageMoviesPage() {
               <>
                 <div className="flex items-center">
                   <h1 className="font-semibold text-lg md:text-2xl sr-only">Manage Movies</h1>
-                  <Button
-                    className="ml-auto"
-                    size="sm"
-                    onClick={handleAddNewMovie}
-                  >
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Add New Movie
-                  </Button>
+                  <AuthGuard requiredPermissions={[PERMISSIONS['post.create']]}>
+                    <Button
+                      className="ml-auto"
+                      size="sm"
+                      onClick={handleAddNewMovie}
+                    >
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add New Movie
+                    </Button>
+                  </AuthGuard>
                 </div>
                 <Card>
                   <CardHeader>
@@ -354,7 +413,7 @@ export default function ManageMoviesPage() {
                             <span className="sr-only">Image</span>
                           </TableHead>
                           <TableHead>Title</TableHead>
-                          <TableHead>Genres</TableHead>
+                          <TableHead>Status</TableHead>
                           <TableHead className="hidden md:table-cell">
                             Year
                           </TableHead>
@@ -364,10 +423,10 @@ export default function ManageMoviesPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {movies.length > 0 ? (
-                          movies.map((movie) => {
+                        {visibleMovies.length > 0 ? (
+                          visibleMovies.map((movie) => {
                             return (
-                              <TableRow key={movie.id}>
+                              <TableRow key={movie.id} className={movie.status === 'PENDING_DELETION' ? 'opacity-50' : ''}>
                                 <TableCell className="hidden sm:table-cell">
                                   {movie.posterUrl ? (
                                     <Image
@@ -392,13 +451,7 @@ export default function ManageMoviesPage() {
                                   </Link>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex flex-wrap gap-1">
-                                    {movie.genres.map((genre) => (
-                                      <Badge key={genre} variant="outline">
-                                        {genre}
-                                      </Badge>
-                                    ))}
-                                  </div>
+                                    <Badge variant={movie.status === 'PUBLISHED' ? 'default' : 'destructive'}>{movie.status || 'PUBLISHED'}</Badge>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">
                                   {movie.year}
@@ -421,17 +474,21 @@ export default function ManageMoviesPage() {
                                       <DropdownMenuLabel>
                                         Actions
                                       </DropdownMenuLabel>
-                                      <DropdownMenuItem
-                                        onClick={() => handleEditMovie(movie)}
-                                      >
-                                        Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem
-                                        onClick={() => handleDeleteMovie(movie)}
-                                        className="text-destructive"
-                                      >
-                                        Delete
-                                      </DropdownMenuItem>
+                                       <AuthGuard requiredPermissions={[PERMISSIONS['post.update']]}>
+                                        <DropdownMenuItem
+                                            onClick={() => handleEditMovie(movie)}
+                                        >
+                                            Edit
+                                        </DropdownMenuItem>
+                                       </AuthGuard>
+                                       <AuthGuard requiredPermissions={[PERMISSIONS['post.delete']]}>
+                                        <DropdownMenuItem
+                                            onClick={() => handleDeleteMovie(movie)}
+                                            className="text-destructive"
+                                        >
+                                            Delete
+                                        </DropdownMenuItem>
+                                      </AuthGuard>
                                     </DropdownMenuContent>
                                   </DropdownMenu>
                                 </TableCell>
@@ -527,15 +584,15 @@ export default function ManageMoviesPage() {
                               <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
+                                onClick={() => posterFileInputRef.current?.click()}
                               >
                                 <Upload className="mr-2 h-4 w-4" />
                                 Upload an image
                               </Button>
                               <input
                                 type="file"
-                                ref={fileInputRef}
-                                onChange={handleFileChange}
+                                ref={posterFileInputRef}
+                                onChange={(e) => handleFileChange(e, false)}
                                 style={{ display: 'none' }}
                                 accept="image/*"
                               />
@@ -545,6 +602,50 @@ export default function ManageMoviesPage() {
                         </FormItem>
                       )}
                     />
+                    <FormField
+                        control={form.control}
+                        name="galleryImageIds"
+                        render={() => (
+                            <FormItem>
+                                <FormLabel className="text-muted-foreground">Gallery Images</FormLabel>
+                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                                    {galleryImageIdsValue?.map((src, index) => (
+                                        <div key={index} className="relative group aspect-square">
+                                            <Image src={src} alt={`Gallery image ${index + 1}`} fill className="object-cover rounded-md" />
+                                            <Button
+                                                type="button"
+                                                variant="destructive"
+                                                size="icon"
+                                                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => removeGalleryImage(index)}
+                                            >
+                                                <X className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                     <Button
+                                        type="button"
+                                        variant="outline"
+                                        className='aspect-square w-full h-full flex-col'
+                                        onClick={() => galleryFileInputRef.current?.click()}
+                                    >
+                                        <Upload className="h-6 w-6" />
+                                        <span>Upload</span>
+                                    </Button>
+                                </div>
+                                <input
+                                    type="file"
+                                    ref={galleryFileInputRef}
+                                    onChange={(e) => handleFileChange(e, true)}
+                                    style={{ display: 'none' }}
+                                    accept="image/*"
+                                    multiple
+                                />
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+
 
                     <FormField
                       control={form.control}

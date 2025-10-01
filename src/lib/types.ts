@@ -22,7 +22,7 @@ export interface Movie {
   id: number;
   title: string;
   description: string;
-  posterUrl: string;
+  posterUrl: string | null;
   galleryImageIds: string[];
   year: number;
   genres: string[];
@@ -32,4 +32,5 @@ export interface Movie {
   likes: number;
   reviews: Review[];
   subtitles: Subtitle[];
+  status?: 'PUBLISHED' | 'PENDING_DELETION' | 'DELETED';
 }
