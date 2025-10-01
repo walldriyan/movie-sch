@@ -24,18 +24,21 @@ const PermissionStatusIndicator = ({ status }: { status: string | null }) => {
   const statusMap = {
     PENDING: {
       icon: <Hourglass className="h-4 w-4" />,
-      text: 'Pending Approval',
+      text: 'Permission request is pending approval.',
       className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+      description: null,
     },
     APPROVED: {
       icon: <CheckCircle2 className="h-4 w-4" />,
       text: 'Request Approved',
       className: 'bg-green-500/10 text-green-400 border-green-500/20',
+      description: 'Your role has been updated. Please log out and log back in to see the changes.',
     },
     REJECTED: {
       icon: <XCircle className="h-4 w-4" />,
       text: 'Request Rejected',
       className: 'bg-red-500/10 text-red-400 border-red-500/20',
+      description: 'Your request was not approved. You can submit another request if needed.',
     },
   };
 
@@ -43,9 +46,14 @@ const PermissionStatusIndicator = ({ status }: { status: string | null }) => {
   if (!currentStatus) return null;
 
   return (
-    <div className={`mt-4 rounded-lg p-3 text-sm flex items-center gap-3 border ${currentStatus.className}`}>
-      {currentStatus.icon}
-      <span>{currentStatus.text}</span>
+    <div className={`mt-4 rounded-lg p-3 text-sm border ${currentStatus.className}`}>
+      <div className="flex items-center gap-3 font-semibold">
+        {currentStatus.icon}
+        <span>{currentStatus.text}</span>
+      </div>
+      {currentStatus.description && (
+        <p className="text-xs mt-2 ml-1">{currentStatus.description}</p>
+      )}
     </div>
   );
 };
@@ -71,6 +79,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
   const userAvatar =
     profileUser.image ||
     PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
+
+  const showRequestAccess = loggedInUser?.role === ROLES.USER && profileUser.permissionRequestStatus !== 'APPROVED';
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -230,7 +240,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
                           <p className="text-xs text-muted-foreground">No special permissions.</p>
                         )}
                       </div>
-                       {loggedInUser.role === ROLES.USER && (
+                       {showRequestAccess && (
                         <div>
                           <Separator className="my-4" />
                           <h4 className="text-sm font-semibold text-muted-foreground mb-2">
@@ -240,9 +250,9 @@ export default async function ProfilePage({ params }: { params: { username: stri
                             Want to add or manage movies? Request admin access to become a contributor.
                           </p>
                           <RequestAccessDialog user={profileUser} />
-                           <PermissionStatusIndicator status={profileUser.permissionRequestStatus} />
                         </div>
                        )}
+                       <PermissionStatusIndicator status={profileUser.permissionRequestStatus} />
                     </CardContent>
                   </Card>
                 </>
