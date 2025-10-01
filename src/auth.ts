@@ -18,7 +18,7 @@ export const authConfig = {
 
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
         const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
-        
+
         const debugInfo: any = {
             step: 'Start Authorization',
             userInput: {
@@ -88,6 +88,7 @@ export const authConfig = {
   session: {
     strategy: 'jwt',
   },
+  secret: process.env.AUTH_SECRET,
   cookies: {
      sessionToken: {
       name: `next-auth.session-token`,
