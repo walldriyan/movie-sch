@@ -265,7 +265,7 @@ export default function MoviePage() {
           <Tabs value={activeTab} className="mt-12 max-w-4xl mx-auto">
             <TabsContent value="about">
               <div
-                className="prose prose-invert max-w-none mx-auto text-foreground/80 mt-6"
+                className="prose prose-invert max-w-none text-foreground/80 mt-6"
                 dangerouslySetInnerHTML={{ __html: movie.description }}
               />
               <div className="my-8 flex flex-wrap gap-2">
