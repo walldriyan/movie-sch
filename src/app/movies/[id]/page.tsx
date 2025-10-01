@@ -145,10 +145,6 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                         <ListVideo className="w-5 h-5" />
                         <span>Subtitles</span>
                     </button>
-                    <button onClick={() => setActiveTab('recommendations')} className={cn(tabButtonStyle, activeTab === 'recommendations' && activeTabButtonStyle)}>
-                        <ThumbsUp className="w-5 h-5" />
-                        <span>Recommendations</span>
-                    </button>
                 </div>
                 <div className='flex items-center gap-2'>
                     <Button variant="ghost" size="icon"><Bookmark className='w-5 h-5' /></Button>
@@ -173,6 +169,11 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                   </Badge>
                 ))}
               </div>
+              <Separator className="my-8" />
+              <section id="recommendations">
+                <h2 className="font-serif text-3xl font-bold mb-8">More Like This</h2>
+                <MovieRecommendations currentMovie={movie} />
+              </section>
             </TabsContent>
             <TabsContent value="reviews">
               <section id="reviews" className="my-12">
@@ -237,12 +238,6 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                       </Card>
                     </div>
                   </div>
-              </section>
-            </TabsContent>
-            <TabsContent value="recommendations">
-              <section id="recommendations" className="my-12">
-                <h2 className="font-serif text-3xl font-bold mb-6">More from CineVerse</h2>
-                <MovieRecommendations currentMovie={movie} />
               </section>
             </TabsContent>
           </Tabs>
