@@ -10,24 +10,6 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Movie {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String
-  posterUrl   String?
-  year        Int
-  duration    String
-  imdbRating  Float
-  genres      String   // Storing genres as a JSON string
-  viewCount   Int      @default(0)
-  likes       Int      @default(0)
-  status      String   @default("PUBLISHED") // e.g., PUBLISHED, PENDING_DELETION
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  reviews     Review[]
-  subtitles Subtitle[]
-}
-
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -35,38 +17,56 @@ model User {
   emailVerified DateTime?
   password      String?
   image         String?
-  role          String    @default("USER")
-  status        String    @default("ACTIVE")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  role          String?
+  status        String?   @default("active")
   accounts      Account[]
   sessions      Session[]
-  reviews       Review[]
+  movies        Movie[] // Relation to Movie model
+}
+
+model Movie {
+  id          Int      @id @default(autoincrement())
+  title       String
+  posterUrl   String?
+  description String
+  year        Int
+  duration    String
+  genres      String
+  imdbRating  Float
+  viewCount   Int
+  likes       Int
+  status      String   @default("PUBLISHED")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  reviews     Review[]
+  subtitles   Subtitle[]
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    String
 }
 
 model Review {
-  id        Int      @id @default(autoincrement())
+  id        Int      @id @default(autoincreint())
   rating    Int
   comment   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  movie     Movie    @relation(fields: [movieId], references: [id])
   movieId   Int
+  movie     Movie    @relation(fields: [movieId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
 }
 
 model Subtitle {
   id           Int      @id @default(autoincrement())
   language     String
-  downloadUrl  String
   uploaderName String
+  url          String
   createdAt    DateTime @default(now())
-  Movie        Movie?   @relation(fields: [movieId], references: [id])
-  movieId      Int?
+  updatedAt    DateTime @updatedAt
+  movieId      Int
+  movie        Movie    @relation(fields: [movieId], references: [id])
 }
 
-// Next-Auth specific models
 model Account {
   id                String  @id @default(cuid())
   userId            String
