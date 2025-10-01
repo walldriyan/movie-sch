@@ -2,7 +2,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck } from 'lucide-react';
 import React from 'react';
-import type { Movie } from '@prisma/client';
+import type { Movie, User } from '@prisma/client';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -12,7 +12,6 @@ import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { User } from '@/lib/types';
 
 
 const staticProfileData = {
@@ -28,7 +27,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   // Fetch the user whose profile is being viewed
   const allUsers = await getUsers();
-  const profileUser = allUsers.find(u => u.id === params.username) as User | undefined;
+  const profileUser = allUsers.find(u => u.id === params.username);
 
   if (!profileUser) {
     notFound();
