@@ -38,7 +38,7 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
-         let errorObject;
+        let errorObject;
         // The error can be a stringified JSON object or a simple string like 'CredentialsSignin'
         try {
           // Attempt to parse the error message as JSON (our custom debug info)
@@ -53,13 +53,12 @@ export default function LoginPage() {
                 : 'An authentication error occurred. Please try again.',
           };
         }
-         setError(errorObject);
-         toast({
+        setError(errorObject);
+        toast({
           variant: 'destructive',
           title: 'Login Failed',
           description: errorObject.message,
         });
-
       } else if (result?.ok) {
         toast({
           title: 'Success',
@@ -68,7 +67,13 @@ export default function LoginPage() {
         router.push('/');
         router.refresh();
       } else {
-        const unknownError = { message: 'An unknown error occurred. The sign-in result was not "ok" and had no error property.', name: 'UnknownSignInError' };
+        // Handle cases where the sign-in result is neither "ok" nor has an error.
+        // This could happen with network issues that don't throw an exception.
+        const unknownError = {
+          name: 'UnknownSignInError',
+          message: 'An unknown error occurred. The sign-in result was not "ok" and had no error property.',
+          signInResult: result, // include the full result for debugging
+        };
         setError(unknownError);
         toast({
             variant: 'destructive',
@@ -79,9 +84,9 @@ export default function LoginPage() {
     } catch (err: any) {
         // This catch block will handle network errors like "Failed to fetch"
         let errorObject = { 
-            message: err.message || 'An unexpected network or client-side error occurred.', 
             name: err.name || 'CatchAllError',
-            cause: err.cause,
+            message: err.message || 'An unexpected network or client-side error occurred.', 
+            cause: err.cause, // Include cause if available
         };
         setError(errorObject);
         toast({
