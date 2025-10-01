@@ -18,6 +18,7 @@ export type Movie = Omit<PrismaMovie, 'genres'> & {
   genres: string[];
   reviews: Review[];
   subtitles: Subtitle[];
+  author: User;
 };
 
-export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles'>;
+export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId'>;

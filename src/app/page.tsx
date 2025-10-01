@@ -5,7 +5,7 @@ import { Film, Globe, Star, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
-import type { Movie } from '@prisma/client';
+import type { Movie } from '@/lib/types';
 import { auth } from '@/auth';
 import { Separator } from '@/components/ui/separator';
 
@@ -36,7 +36,7 @@ export default async function HomePage() {
     );
   }
 
-  const authorAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-1');
+  const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -65,26 +65,28 @@ export default async function HomePage() {
               PlaceHolderImages.find(
                 (p) => p.id === 'movie-poster-placeholder'
               )?.imageUrl;
+            
+            const authorAvatarUrl = movie.author?.image || authorAvatarPlaceholder?.imageUrl;
 
             return (
               <article key={movie.id}>
                 <div className="flex items-center space-x-3 mb-4 text-sm">
                   <Link
-                    href="/profile/cineverse-editor"
+                    href={`/profile/${movie.author.id}`}
                     className="flex items-center gap-3 group"
                   >
                     <Avatar className="w-6 h-6">
-                      {authorAvatar && (
+                      {authorAvatarUrl && (
                         <AvatarImage
-                          src={authorAvatar.imageUrl}
-                          alt="Author"
-                          data-ai-hint={authorAvatar.imageHint}
+                          src={authorAvatarUrl}
+                          alt={movie.author.name || 'Author'}
+                          data-ai-hint="person face"
                         />
                       )}
-                      <AvatarFallback>U</AvatarFallback>
+                      <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
                     </Avatar>
                     <span className="font-medium text-foreground group-hover:text-primary">
-                      CineVerse Editor
+                      {movie.author.name}
                     </span>
                   </Link>
                   <span className="text-muted-foreground">{movie.year}</span>

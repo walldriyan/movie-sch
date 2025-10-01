@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { MovieFormData } from './types';
-import { signIn, signOut } from '@/auth';
+import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { ROLES } from './permissions';
@@ -104,6 +104,9 @@ export async function registerUser(prevState: any, formData: FormData) {
 export async function getMovies() {
   const movies = await prisma.movie.findMany({
     orderBy: { updatedAt: 'desc' },
+    include: {
+      author: true,
+    },
   });
   return movies.map((movie) => ({
     ...movie,
@@ -121,6 +124,7 @@ export async function getMovie(movieId: number) {
             }
         },
         subtitles: true,
+        author: true,
     }
   });
   if (!movie) return null;
@@ -135,9 +139,15 @@ export async function saveMovie(
   movieData: MovieFormData,
   id?: number
 ) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('User not authenticated');
+  }
+
   const data = {
     ...movieData,
     genres: JSON.stringify(movieData.genres),
+    authorId: session.user.id,
   };
   
   if (id) {

@@ -33,7 +33,7 @@ export default function MovieDetailClient({
       : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')
           ?.imageUrl;
 
-  const authorAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-1');
+  const authorAvatarUrl = movie.author.image || PlaceHolderImages.find((img) => img.id === 'avatar-1')?.imageUrl;
 
   const tabButtonStyle =
     'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2';
@@ -62,22 +62,22 @@ export default function MovieDetailClient({
 
           <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-8">
             <Link
-              href="/profile/cineverse-editor"
+              href={`/profile/${movie.author.id}`}
               className="flex items-center gap-4 group"
             >
               <Avatar>
-                {authorAvatar && (
+                {authorAvatarUrl && (
                   <AvatarImage
-                    src={authorAvatar.imageUrl}
-                    alt="Author"
-                    data-ai-hint={authorAvatar.imageHint}
+                    src={authorAvatarUrl}
+                    alt={movie.author.name || 'Author'}
+                    data-ai-hint="person face"
                   />
                 )}
-                <AvatarFallback>U</AvatarFallback>
+                <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="text-foreground group-hover:text-primary">
-                  CineVerse Editor
+                  {movie.author.name}
                 </p>
                 <div className="flex items-center gap-2">
                   <span>{movie.year}</span>
