@@ -13,41 +13,73 @@ export const authConfig = {
   providers: [
     CredentialsProvider({
       async authorize(credentials) {
-
         const email = credentials.email as string;
         const password = credentials.password as string;
 
-        // Step 1: Check if the user is the Super Admin from .env
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
         const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+        
+        const debugInfo = {
+            step: 'Start Authorization',
+            userInput: {
+                email,
+                password: password ? '******' : 'Not Provided',
+            },
+            envValues: {
+                SUPER_ADMIN_EMAIL: superAdminEmail || 'Not Found in .env',
+                SUPER_ADMIN_PASSWORD: superAdminPassword ? '******' : 'Not Found in .env',
+            },
+            isSuperAdminCheck: {},
+            databaseCheck: {},
+            result: ''
+        };
 
-        if (email === superAdminEmail && password === superAdminPassword) {
-            return { 
-                id: email, 
-                email: email, 
-                name: 'Super Admin', 
-                role: ROLES.SUPER_ADMIN 
+        if (email === superAdminEmail) {
+            debugInfo.step = 'Super Admin Email Match';
+            const isPasswordMatch = password === superAdminPassword;
+            debugInfo.isSuperAdminCheck = {
+                emailMatch: true,
+                passwordMatch: isPasswordMatch,
             };
+            if (isPasswordMatch) {
+              debugInfo.result = 'Success: Super Admin Login';
+              return { 
+                  id: email, 
+                  email: email, 
+                  name: 'Super Admin', 
+                  role: ROLES.SUPER_ADMIN 
+              };
+            } else {
+              debugInfo.result = 'Failure: Super Admin Password Mismatch';
+              throw new Error(JSON.stringify(debugInfo));
+            }
         }
-
-        // Step 2: If not Super Admin, check the database for a regular user
+        
+        debugInfo.step = 'Not Super Admin, Checking Database';
         const user = await prisma.user.findUnique({
           where: { email },
         });
+        
+        debugInfo.databaseCheck = {
+            userFound: !!user,
+        };
 
         if (!user || !user.password) {
-          return null;
+          debugInfo.result = 'Failure: User not found in DB or no password set.';
+          throw new Error(JSON.stringify(debugInfo));
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
+        debugInfo.databaseCheck = { ...debugInfo.databaseCheck, passwordMatch: isValidPassword };
 
         if (!isValidPassword) {
-          return null;
+          debugInfo.result = 'Failure: DB user password mismatch.';
+          throw new Error(JSON.stringify(debugInfo));
         }
         
-        // Ensure regular users are not accidentally assigned SUPER_ADMIN role from DB
         const userRole = user.role === ROLES.SUPER_ADMIN ? ROLES.USER : user.role || ROLES.USER;
-
+        debugInfo.result = 'Success: Database User Login';
+        
         return { ...user, id: user.id, role: userRole };
       },
     }),

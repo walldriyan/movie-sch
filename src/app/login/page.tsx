@@ -43,16 +43,15 @@ export default function LoginPage() {
         // This is a workaround to get the full error object
         let errorObject;
         try {
-          // Errors from next-auth are sometimes JSON strings
+          // Errors from next-auth are sometimes JSON strings with our debug info
           errorObject = JSON.parse(result.error);
         } catch (e) {
-          // Or just plain strings
+          // Or just plain strings for other errors
           errorObject = { 
               message: result.error === 'CredentialsSignin' 
                 ? 'Invalid email or password' 
                 : result.error, 
               name: result.error, 
-              stack: 'N/A' 
           };
         }
 
@@ -61,7 +60,7 @@ export default function LoginPage() {
         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: errorObject.message,
+          description: typeof errorObject.message === 'string' ? errorObject.message : 'Detailed debug info available below.',
         });
       } else if (result?.ok) {
         toast({
@@ -72,7 +71,7 @@ export default function LoginPage() {
         router.refresh(); 
       } else {
         // Handle cases where result is null or not ok without an error
-         const unknownError = { message: 'An unexpected error occurred during login.', name: 'UnknownError', stack: 'N/A' };
+         const unknownError = { message: 'An unexpected error occurred during login.', name: 'UnknownError' };
          setError(unknownError);
          toast({
             variant: 'destructive',
@@ -160,7 +159,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify({ message: error.message, name: error.name }, null, 2)}
+                        {JSON.stringify(error, null, 2)}
                     </pre>
                 </CardContent>
             </Card>
