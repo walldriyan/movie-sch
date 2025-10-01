@@ -13,18 +13,15 @@ export const authConfig = {
   providers: [
     CredentialsProvider({
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          return null;
-        }
 
         const email = credentials.email as string;
         const password = credentials.password as string;
 
         // Step 1: Check if the user is the Super Admin from .env
-        if (email === process.env.SUPER_ADMIN_EMAIL && password === process.env.SUPER_ADMIN_PASSWORD) {
-            // This is a special user that doesn't exist in the database.
-            // We return a user object with the Super Admin role.
-            // The `id` can be the email itself as it's unique.
+        const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
+        const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
+
+        if (email === superAdminEmail && password === superAdminPassword) {
             return { 
                 id: email, 
                 email: email, 
