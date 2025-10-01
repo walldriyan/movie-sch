@@ -2,7 +2,6 @@
 
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
-import Loading from '@/app/loading';
 import ManageLayout from '@/components/manage/manage-layout';
 import { ROLES } from '@/lib/permissions';
 
