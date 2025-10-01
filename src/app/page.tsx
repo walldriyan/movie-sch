@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -11,7 +12,7 @@ import { Separator } from '@/components/ui/separator';
 
 export default async function HomePage() {
   const session = await auth();
-  const allMovies = (await getMovies()) as Movie[];
+  const { movies: allMovies } = await getMovies();
 
   if (allMovies.length === 0) {
     return (
