@@ -46,23 +46,26 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     const result = await signIn('credentials', {
       redirect: false,
       email,
       password,
     });
 
+    setLoading(false);
     if (result?.error) {
+      setError(result.error);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
         description: result.error,
       });
-      setLoading(false);
     } else if (result?.ok) {
       router.push('/');
     }
@@ -70,6 +73,7 @@ export default function LoginPage() {
 
   const handleGoogleLogin = async () => {
     setLoading(true);
+    setError(null);
     await signIn('google', { callbackUrl: '/' });
   };
 
@@ -146,6 +150,18 @@ export default function LoginPage() {
             </CardFooter>
           </form>
         </Card>
+        {error && (
+            <Card className="mt-4 bg-destructive/10 border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive text-lg">Debug Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
+                        {JSON.stringify({ message: error }, null, 2)}
+                    </pre>
+                </CardContent>
+            </Card>
+        )}
       </div>
     </div>
   );
