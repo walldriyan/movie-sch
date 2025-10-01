@@ -8,6 +8,7 @@ import {
   Bot,
   Bookmark,
   MoreHorizontal,
+  Share2,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/components/header';
@@ -118,9 +119,12 @@ export default function MoviePage({ params }: { params: { id: string } }) {
             <Separator />
             <div className='flex items-center justify-between py-2 text-muted-foreground'>
                 <div className='flex items-center gap-4'>
-                    <div className="flex items-center gap-1">
-                        <Star className="w-5 h-5 text-yellow-400" />
-                        <span>{movie.imdbRating.toFixed(1)}</span>
+                    <div className='flex items-center gap-2'>
+                      <Image src="/imdb.png" alt="IMDb" width={40} height={20} />
+                      <div className="flex items-center gap-1">
+                          <Star className="w-5 h-5 text-yellow-400" />
+                          <span>{movie.imdbRating.toFixed(1)}</span>
+                      </div>
                     </div>
                      <div className="flex items-center gap-1">
                         <MessageCircle className="w-5 h-5" />
@@ -129,6 +133,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                 </div>
                 <div className='flex items-center gap-2'>
                     <Button variant="ghost" size="icon"><Bookmark className='w-5 h-5' /></Button>
+                    <Button variant="ghost" size="icon"><Share2 className='w-5 h-5' /></Button>
                     <Button variant="ghost" size="icon"><MoreHorizontal className='w-5 h-5' /></Button>
                 </div>
             </div>
