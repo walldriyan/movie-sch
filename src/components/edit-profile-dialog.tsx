@@ -28,7 +28,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile } from '@/lib/actions';
 import type { User } from '@prisma/client';
-import { Pencil, Upload, User as UserIcon } from 'lucide-react';
+import { Pencil, User as UserIcon } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 
