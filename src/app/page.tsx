@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
 import type { Movie } from '@prisma/client';
-import { auth } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/auth.config';
 
 export default async function HomePage() {
   const allMovies = (await getMovies()) as Movie[];
