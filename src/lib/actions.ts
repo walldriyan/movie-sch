@@ -94,26 +94,8 @@ export async function registerUser(
     return { message: 'An unexpected error occurred during registration.', input: formInput };
   }
 
-  // After successful registration, attempt to sign in
-  try {
-    await signIn('credentials', { email, password, redirectTo: '/' });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      // Don't redirect here, just show an error on the login page.
-      // The user is created, they can try to log in manually.
-      redirect(
-        '/login?error=Registration%20successful,%20but%20automatic%20login%20failed.'
-      );
-    }
-    // For other errors, we might want to return a message instead of throwing
-     if (error instanceof Error) {
-        return { message: error.message, input: formInput };
-    }
-    throw error;
-  }
-   // This part is unreachable if signIn is successful because it redirects.
-   // But needed for type safety.
-  return { message: 'Success' };
+  // Redirect to login page after successful registration
+  redirect('/login');
 }
 
 export async function getMovies() {
