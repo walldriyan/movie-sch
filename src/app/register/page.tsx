@@ -25,10 +25,12 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const response = await fetch('/api/register', {
@@ -40,8 +42,13 @@ export default function RegisterPage() {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Something went wrong');
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch (e) {
+            errorData = { message: await response.text() };
+        }
+        throw errorData;
       }
 
       // Automatically sign in the user after successful registration
@@ -62,10 +69,11 @@ export default function RegisterPage() {
       }
 
     } catch (error: any) {
+      setError(error);
       toast({
         variant: 'destructive',
         title: 'Registration Failed',
-        description: error.message,
+        description: error.message || 'An unexpected error occurred.',
       });
       setLoading(false);
     }
@@ -141,6 +149,18 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
+        {error && (
+            <Card className="mt-4 bg-destructive/10 border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive text-lg">Debug Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
+                        {JSON.stringify(error, null, 2)}
+                    </pre>
+                </CardContent>
+            </Card>
+        )}
       </div>
     </div>
   );
