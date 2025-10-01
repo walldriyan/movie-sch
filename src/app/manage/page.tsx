@@ -263,23 +263,14 @@ export default function ManageMoviesPage() {
 
 
   if (!isMounted) {
-    return (
-      <div className="flex min-h-screen w-full flex-col bg-background">
-        <Header />
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Loading...</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>Please wait while we load the movie management console.</p>
-            </CardContent>
-          </Card>
-        </main>
-      </div>
-    );
+    return null; // Don't render anything on the server, or until the page is mounted
   }
   
+  if (!user) {
+    // This can happen briefly on the client while session is loading
+    return null; // Or a loading spinner
+  }
+
   if (user?.role !== ROLES.SUPER_ADMIN) {
     notFound();
   }

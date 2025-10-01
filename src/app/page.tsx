@@ -34,7 +34,7 @@ export default async function HomePage() {
               Start by adding your favorite movies to build your personal
               CineVerse.
             </p>
-            {session?.user && (
+            {session?.user?.role === 'SUPER_ADMIN' && (
               <Button asChild className="mt-6" size="lg">
                 <Link href="/manage">Add Your First Movie</Link>
               </Button>
