@@ -1,9 +1,8 @@
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
-import { getMovies } from '@/lib/actions';
 import { ROLES } from '@/lib/permissions';
 import ManageMoviesClient from '@/app/manage/client';
-import { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 

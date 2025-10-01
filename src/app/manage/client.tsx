@@ -19,7 +19,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Prisma } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -95,7 +95,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   
   useEffect(() => {
     fetchMovies(currentPage);
-  }, [currentPage]);
+  }, [currentPage, user]);
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
