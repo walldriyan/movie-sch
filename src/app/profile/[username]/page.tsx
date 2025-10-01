@@ -4,17 +4,32 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import Header from '@/components/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, MoreHorizontal, Link as LinkIcon, Twitter, Linkedin } from 'lucide-react';
+import { Star, Link as LinkIcon, Twitter, Linkedin } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import type { Movie } from '@/lib/types';
+import type { Movie } from '@prisma/client';
 import Loading from '../../loading';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ProfileHeader from '@/components/profile-header';
 import { useParams } from 'next/navigation';
+import { PrismaClient } from '@prisma/client';
 
-const LOCAL_STORAGE_KEY = 'movies_data';
+const prisma = new PrismaClient();
+
+async function getMovies() {
+  const allMovies = await prisma.movie.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+  return allMovies.map(movie => ({
+    ...movie,
+    galleryImageIds: JSON.parse(movie.galleryImageIds || '[]'),
+    genres: JSON.parse(movie.genres || '[]'),
+  }));
+}
+
 
 const userProfile = {
   name: 'CineVerse Editor',
@@ -36,17 +51,16 @@ export default function ProfilePage() {
 
   useEffect(() => {
     setIsMounted(true);
-    try {
-      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedMovies) {
-        setAllMovies(JSON.parse(storedMovies));
-      } else {
-        setAllMovies([]);
-      }
-    } catch (error) {
-      console.error("Could not parse movies from localStorage", error);
-      setAllMovies([]);
+    async function fetchData() {
+        try {
+            const movies = await getMovies();
+            setAllMovies(movies as any);
+        } catch (error) {
+            console.error("Could not fetch movies", error);
+            setAllMovies([]);
+        }
     }
+    fetchData();
   }, []);
 
   if (!isMounted) {
@@ -66,7 +80,7 @@ export default function ProfilePage() {
             <div className='md:col-span-2 space-y-12'>
                  {allMovies.map(movie => {
                     const movieImageUrl = 
-                    (movie.galleryImageIds && movie.galleryImageIds.length > 0 ? movie.galleryImageIds[0] : movie.posterUrl) ||
+                    (movie.galleryImageIds && (movie.galleryImageIds as any).length > 0 ? (movie.galleryImageIds as any)[0] : movie.posterUrl) ||
                     PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
 
                     return (

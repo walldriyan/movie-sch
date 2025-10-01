@@ -39,13 +39,12 @@ import {
   Settings,
   Home,
   Film,
-  Trash,
   X,
 } from 'lucide-react';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState } from 'react';
-import type { Movie } from '@/lib/types';
+import type { Movie } from '@prisma/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -86,9 +85,46 @@ import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { PERMISSIONS } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 import AuthGuard from '@/components/auth/auth-guard';
+import { PrismaClient } from '@prisma/client';
 
+const prisma = new PrismaClient();
 
-const LOCAL_STORAGE_KEY = 'movies_data';
+// These functions would ideally be server actions
+async function getMovies() {
+  const movies = await prisma.movie.findMany({
+    orderBy: { updatedAt: 'desc' },
+  });
+  return movies.map(movie => ({
+    ...movie,
+    galleryImageIds: JSON.parse(movie.galleryImageIds || '[]'),
+    genres: JSON.parse(movie.genres || '[]'),
+  }));
+}
+
+async function saveMovie(movieData: Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'viewCount' | 'likes'>, id?: number) {
+    const data = {
+        ...movieData,
+        galleryImageIds: JSON.stringify(movieData.galleryImageIds),
+        genres: JSON.stringify(movieData.genres),
+    };
+    if (id) {
+        return await prisma.movie.update({ where: { id }, data });
+    } else {
+        return await prisma.movie.create({ data: data as any});
+    }
+}
+
+async function deleteMovie(id: number, permanent: boolean) {
+    if (permanent) {
+        return await prisma.movie.delete({ where: { id } });
+    } else {
+        return await prisma.movie.update({
+            where: { id },
+            data: { status: 'PENDING_DELETION' },
+        });
+    }
+}
+
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -117,7 +153,6 @@ export default function ManageMoviesPage() {
 
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
 
-
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema),
     defaultValues: {
@@ -131,31 +166,19 @@ export default function ManageMoviesPage() {
       imdbRating: 0,
     },
   });
-
+  
   const posterUrlValue = form.watch('posterUrl');
   const galleryImageIdsValue = form.watch('galleryImageIds');
 
-  useEffect(() => {
-    setIsMounted(true);
-    try {
-      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedMovies) {
-        setMovies(JSON.parse(storedMovies));
-      } else {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
-        setMovies([]);
-      }
-    } catch (error) {
-      console.error('Could not parse movies from localStorage', error);
-      setMovies([]);
-    }
-  }, []);
+  const fetchMovies = async () => {
+    const moviesFromDb = await getMovies();
+    setMovies(moviesFromDb as any);
+  };
 
   useEffect(() => {
-    if (isMounted) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(movies));
-    }
-  }, [movies, isMounted]);
+    setIsMounted(true);
+    fetchMovies();
+  }, []);
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
@@ -177,11 +200,11 @@ export default function ManageMoviesPage() {
     form.reset({
       title: movie.title,
       posterUrl: movie.posterUrl || '',
-      galleryImageIds: movie.galleryImageIds || [],
+      galleryImageIds: movie.galleryImageIds as any || [],
       description: movie.description,
       year: movie.year,
       duration: movie.duration,
-      genres: movie.genres.join(', '),
+      genres: (movie.genres as any).join(', '),
       imdbRating: movie.imdbRating,
     });
     setView('form');
@@ -192,57 +215,46 @@ export default function ManageMoviesPage() {
     setDeleteAlertOpen(true);
   };
 
-  const confirmDelete = () => {
+  const confirmDelete = async () => {
     if (movieToDelete && user?.permissions) {
-      if (user.permissions.includes(PERMISSIONS['post.hard_delete'])) {
-         // Super admin: permanent delete
-        setMovies(movies.filter((m) => m.id !== movieToDelete.id));
-        toast({ title: 'Movie Deleted', description: `"${movieToDelete.title}" has been permanently deleted.` });
-      } else if (user.permissions.includes(PERMISSIONS['post.delete'])) {
-        // User admin: soft delete (set status)
-        const updatedMovies = movies.map((m) =>
-          m.id === movieToDelete.id ? { ...m, status: 'PENDING_DELETION' } : m
-        );
-        setMovies(updatedMovies);
-        toast({ title: 'Deletion Requested', description: `"${movieToDelete.title}" is pending approval for deletion.` });
-      } else {
-        toast({ variant: 'destructive', title: 'Unauthorized', description: 'You do not have permission to delete movies.' });
+       const isPermanent = user.permissions.includes(PERMISSIONS['post.hard_delete']);
+       try {
+        await deleteMovie(movieToDelete.id, isPermanent);
+        await fetchMovies(); // Refetch movies
+        toast({ title: 'Success', description: `Movie "${movieToDelete.title}" has been ${isPermanent ? 'permanently deleted' : 'marked for deletion'}.` });
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete movie.' });
       }
+      
       setMovieToDelete(null);
     }
     setDeleteAlertOpen(false);
   };
 
-  const handleFormSubmit = (values: MovieFormValues) => {
-    if (editingMovie) {
-      // This is an edit
-      const updatedMovie: Movie = {
-        ...editingMovie,
-        ...values,
+  const handleFormSubmit = async (values: MovieFormValues) => {
+    const movieData = {
+        title: values.title,
+        description: values.description,
         posterUrl: values.posterUrl || '',
         galleryImageIds: values.galleryImageIds || [],
-        genres: values.genres.split(',').map((g) => g.trim()),
-      };
-      setMovies(
-        movies.map((m) => (m.id === updatedMovie.id ? updatedMovie : m))
-      );
-    } else {
-      // This is a new movie
-      const newMovie: Movie = {
-        id: Date.now(),
-        ...values,
-        posterUrl: values.posterUrl || '',
-        galleryImageIds: values.galleryImageIds || [],
-        genres: values.genres.split(',').map((g) => g.trim()),
-        viewCount: 0,
-        likes: 0,
-        reviews: [],
-        subtitles: [],
-        status: 'PUBLISHED' // Add status field
-      };
-      setMovies([newMovie, ...movies]);
+        year: values.year,
+        duration: values.duration,
+        genres: values.genres.split(',').map((g) => g.trim()) as any,
+        imdbRating: values.imdbRating,
+        status: 'PUBLISHED',
+         // These fields are not in the form
+        viewCount: editingMovie?.viewCount || 0,
+        likes: editingMovie?.likes || 0,
+    };
+
+    try {
+        await saveMovie(movieData, editingMovie?.id);
+        await fetchMovies(); // Refetch movies
+        setView('list');
+        toast({ title: 'Success', description: `Movie "${values.title}" has been saved.` });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save movie.' });
     }
-    setView('list');
   };
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, isGallery: boolean) => {

@@ -20,7 +20,7 @@ export const PERMISSIONS = {
   'post.approve_deletion': 'post.approve_deletion',
 };
 
-export const permissions = {
+export const permissions: Record<string, string[]> = {
   [ROLES.SUPER_ADMIN]: [
     PERMISSIONS['user.create'],
     PERMISSIONS['user.read'],

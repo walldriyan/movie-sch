@@ -9,9 +9,7 @@ import {
   Bookmark,
   MoreHorizontal,
   Share2,
-  BookText,
   ListVideo,
-  ThumbsUp,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/components/header';
@@ -20,7 +18,7 @@ import ReviewForm from '@/components/review-form';
 import SubtitleRequestForm from '@/components/subtitle-request-form';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import React, { useEffect, useState } from 'react';
-import type { Movie } from '@/lib/types';
+import type { Movie, Review, Subtitle } from '@/lib/types';
 import Loading from './loading';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -45,28 +43,49 @@ import {
 } from '@/components/ui/carousel';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
+import { PrismaClient } from '@prisma/client';
 
-const LOCAL_STORAGE_KEY = 'movies_data';
+const prisma = new PrismaClient();
+
+// This is not a proper server action, but it simulates fetching data
+// for a specific movie for this client component.
+async function getMovie(movieId: number) {
+    const movie = await prisma.movie.findUnique({
+        where: { id: movieId },
+    });
+    if (!movie) return null;
+
+    return {
+        ...movie,
+        galleryImageIds: JSON.parse(movie.galleryImageIds || '[]'),
+        genres: JSON.parse(movie.genres || '[]'),
+        // These are empty for now as we don't have review/subtitle models fully integrated
+        reviews: [],
+        subtitles: [],
+    };
+}
+
 
 export default function MoviePage() {
   const params = useParams();
   const movieId = params.id as string;
-  const [movie, setMovie] = useState<Movie | null>(null);
+  const [movie, setMovie] = useState<any | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
 
   useEffect(() => {
     setIsMounted(true);
-    try {
-      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
-      const allMovies = storedMovies ? JSON.parse(storedMovies) : [];
-      const currentMovie = allMovies.find(
-        (m: Movie) => m.id === Number(movieId)
-      );
-      setMovie(currentMovie || null);
-    } catch (error) {
-      console.error('Could not parse movies from localStorage', error);
-      setMovie(null);
+    async function fetchData() {
+        try {
+            const currentMovie = await getMovie(Number(movieId));
+            setMovie(currentMovie);
+        } catch (error) {
+            console.error('Could not fetch movie', error);
+            setMovie(null);
+        }
+    }
+    if (movieId) {
+        fetchData();
     }
   }, [movieId]);
 
@@ -119,7 +138,7 @@ export default function MoviePage() {
             {hasGallery ? (
               <Carousel className="w-full h-full">
                 <CarouselContent>
-                  {movie.galleryImageIds.map((src, index) => (
+                  {movie.galleryImageIds.map((src: string, index: number) => (
                     <CarouselItem key={index}>
                       <Image
                         src={src}
@@ -269,7 +288,7 @@ export default function MoviePage() {
                 dangerouslySetInnerHTML={{ __html: movie.description }}
               />
               <div className="my-8 flex flex-wrap gap-2">
-                {movie.genres.map((genre) => (
+                {movie.genres.map((genre: string) => (
                   <Badge key={genre} variant="outline" className="text-sm">
                     {genre}
                   </Badge>
@@ -280,7 +299,7 @@ export default function MoviePage() {
                 <h2 className="font-serif text-3xl font-bold mb-8">
                   More Like This
                 </h2>
-                <MovieRecommendations currentMovie={movie} />
+                <MovieRecommendations currentMovie={movie as any} />
               </section>
             </TabsContent>
             <TabsContent value="reviews">
@@ -290,7 +309,7 @@ export default function MoviePage() {
                 </h2>
                 <div className="space-y-8">
                   {movie.reviews.length > 0 ? (
-                    movie.reviews.map((review) => (
+                    movie.reviews.map((review: Review) => (
                       <ReviewCard key={review.id} review={review} />
                     ))
                   ) : (
@@ -312,7 +331,7 @@ export default function MoviePage() {
                   <div className="lg:col-span-2">
                     <div className="space-y-4">
                       {movie.subtitles.length > 0 ? (
-                        movie.subtitles.map((subtitle) => (
+                        movie.subtitles.map((subtitle: Subtitle) => (
                           <div
                             key={subtitle.id}
                             className="flex items-center justify-between rounded-lg border p-4"

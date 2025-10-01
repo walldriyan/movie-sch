@@ -4,9 +4,8 @@ import { PrismaClient } from "@prisma/client"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcrypt"
-import { UserRole } from "@prisma/client"
 
-import { permissions } from "@/lib/permissions"
+import { permissions, ROLES } from "@/lib/permissions"
 
 const prisma = new PrismaClient()
 
@@ -61,7 +60,7 @@ export const authOptions = {
     async jwt({ token, user }: { token: any, user?: any }) {
       if (user) {
         token.id = user.id
-        const userRole = user.role || UserRole.USER;
+        const userRole = user.role || ROLES.USER;
         token.role = userRole;
         token.permissions = permissions[userRole] || [];
       }

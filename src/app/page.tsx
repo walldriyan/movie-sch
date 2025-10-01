@@ -6,31 +6,47 @@ import Header from '@/components/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star } from 'lucide-react';
 import React, { useEffect, useState } from 'react';
-import type { Movie } from '@/lib/types';
+import type { Movie } from '@prisma/client';
 import Loading from './loading';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { PrismaClient } from '@prisma/client';
 
-const LOCAL_STORAGE_KEY = 'movies_data';
+const prisma = new PrismaClient();
+
+async function getMovies() {
+  const allMovies = await prisma.movie.findMany({
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+  return allMovies.map(movie => ({
+    ...movie,
+    // Handle potential data inconsistencies if needed
+    galleryImageIds: JSON.parse(movie.galleryImageIds || '[]'),
+    genres: JSON.parse(movie.genres || '[]'),
+  }));
+}
+
 
 export default function HomePage() {
   const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    setIsMounted(true);
-    try {
-      const storedMovies = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (storedMovies) {
-        setAllMovies(JSON.parse(storedMovies));
-      } else {
+    async function fetchData() {
+      try {
+        // This is not ideal for production, but works for this example
+        // A better approach would be a server action or API route
+        const movies = await getMovies();
+        setAllMovies(movies as any);
+      } catch (error) {
+        console.error("Could not fetch movies", error);
         setAllMovies([]);
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([]));
       }
-    } catch (error) {
-      console.error("Could not parse movies from localStorage", error);
-      setAllMovies([]);
+      setIsMounted(true);
     }
+    fetchData();
   }, []);
 
   if (!isMounted) {
@@ -57,13 +73,13 @@ export default function HomePage() {
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
   return (
-    <div className="w-full bg-background text-foreground">
+    <div className="w-full bg.background text-foreground">
       <Header />
       <main className='max-w-4xl mx-auto px-4 py-8'>
         <div className='space-y-12'>
           {allMovies.map(movie => {
             const movieImageUrl = 
-              (movie.galleryImageIds && movie.galleryImageIds.length > 0 ? movie.galleryImageIds[0] : movie.posterUrl) ||
+              (movie.galleryImageIds && (movie.galleryImageIds as any).length > 0 ? (movie.galleryImageIds as any)[0] : movie.posterUrl) ||
               PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
 
             return (
