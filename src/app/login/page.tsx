@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film, AlertCircle } from 'lucide-react';
+import { Film } from 'lucide-react';
 import { signIn } from 'next-auth/react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,6 +46,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<any>(null);
 
   const handleGoogleLogin = async () => {
     await signIn('google', { callbackUrl: '/' });
@@ -54,6 +55,7 @@ export default function LoginPage() {
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
     
     try {
       const result = await signIn('credentials', {
@@ -64,12 +66,16 @@ export default function LoginPage() {
       });
   
       if (result?.error) {
+        const errorMessage = result.error === 'CredentialsSignin' 
+          ? 'Invalid email or password' 
+          : result.error;
+        
+        setError({ message: errorMessage, stack: 'N/A', name: result.error });
+
         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: result.error === 'CredentialsSignin' 
-            ? 'Invalid email or password' 
-            : result.error,
+          description: errorMessage,
         });
       } else if (result?.ok) {
         toast({
@@ -79,11 +85,12 @@ export default function LoginPage() {
         router.push('/');
         router.refresh(); 
       }
-    } catch (error) {
+    } catch (error: any) {
+      setError(error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Something went wrong. Please try again.',
+        description: error.message || 'Something went wrong. Please try again.',
       });
     } finally {
       setLoading(false);
@@ -165,6 +172,18 @@ export default function LoginPage() {
             </CardFooter>
           </form>
         </Card>
+        {error && (
+            <Card className="mt-4 bg-destructive/10 border-destructive">
+                <CardHeader>
+                    <CardTitle className="text-destructive text-lg">Debug Information</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
+                        {JSON.stringify({ message: error.message, stack: error.stack, name: error.name, cause: error.cause }, null, 2)}
+                    </pre>
+                </CardContent>
+            </Card>
+        )}
       </div>
     </div>
   );
