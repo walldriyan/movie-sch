@@ -40,7 +40,16 @@ export default async function MoviePage({
 
   return (
     <div className="min-h-screen w-full bg-background">
-      <main className="max-w-6xl mx-auto py-8 mt-16">
+      <main className="max-w-6xl mx-auto py-8">
+        <div className="px-4 md:px-8 mb-8">
+            <div className="flex flex-wrap gap-2">
+                {movie.genres.map((genre: string) => (
+                    <Badge key={genre} variant="outline" className="text-sm">
+                    {genre}
+                    </Badge>
+                ))}
+            </div>
+        </div>
         <article>
           <MovieDetailClient movie={movie}>
             <TabsContent value="about">
@@ -48,13 +57,6 @@ export default async function MoviePage({
                 className="prose prose-invert max-w-none text-foreground/80"
                 dangerouslySetInnerHTML={{ __html: movie.description }}
               />
-              <div className="my-8 flex flex-wrap gap-2">
-                {movie.genres.map((genre: string) => (
-                  <Badge key={genre} variant="outline" className="text-sm">
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
               <Separator className="my-8" />
               <section id="recommendations">
                 <h2 className="font-serif text-3xl font-bold mb-8">

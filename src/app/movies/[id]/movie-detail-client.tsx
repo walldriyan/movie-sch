@@ -42,7 +42,7 @@ export default function MovieDetailClient({
 
   return (
     <>
-      <header className="mb-8 relative h-[500px] rounded-2xl overflow-hidden flex items-end justify-between">
+      <header className="relative h-[500px] rounded-2xl overflow-hidden flex items-end justify-between">
         {heroImage && (
           <Image
             src={heroImage}
@@ -148,7 +148,7 @@ export default function MovieDetailClient({
         </div>
       </header>
 
-      <Tabs value={activeTab} className="mt-6 px-4 md:px-8 max-w-4xl">
+      <Tabs value={activeTab} className="mt-12 px-4 md:px-8 max-w-4xl">
         {children}
       </Tabs>
     </>
