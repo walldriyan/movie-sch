@@ -36,22 +36,22 @@ export default function LoginPage() {
         redirect: false,
         email,
         password,
-        callbackUrl: '/',
       });
   
       if (result?.error) {
-        // This is a workaround to get the full error object
+        // In this new setup, the full debug JSON is the error message itself.
+        // We will try to parse it to display it nicely.
         let errorObject;
         try {
-          // Errors from next-auth are sometimes JSON strings with our debug info
+          // The custom error from `authorize` is a JSON string.
           errorObject = JSON.parse(result.error);
         } catch (e) {
-          // Or just plain strings for other errors
+          // For other generic errors like 'CredentialsSignin'.
           errorObject = { 
               message: result.error === 'CredentialsSignin' 
                 ? 'Invalid email or password' 
                 : result.error, 
-              name: result.error, 
+              name: 'SignInError',
           };
         }
 
@@ -60,8 +60,11 @@ export default function LoginPage() {
         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: typeof errorObject.message === 'string' ? errorObject.message : 'Detailed debug info available below.',
+          description: typeof errorObject.message === 'string' 
+            ? errorObject.message 
+            : 'Detailed debug info available below.',
         });
+
       } else if (result?.ok) {
         toast({
           title: 'Success',
@@ -80,12 +83,26 @@ export default function LoginPage() {
         });
       }
     } catch (error: any) {
-      setError(error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Something went wrong. Please try again.',
-      });
+        // This catch block handles errors thrown by next-auth, including our custom AuthError
+        let errorObject = { message: 'An unexpected error occurred.', name: 'CatchAllError' };
+        
+        // The detailed message from our `authorize` function will be in `error.cause.err.message`
+        if (error.cause?.err?.message) {
+            try {
+                errorObject = JSON.parse(error.cause.err.message);
+            } catch (e) {
+                 errorObject = { message: error.cause.err.message, name: error.name || "AuthError" };
+            }
+        } else if (error.message) {
+            errorObject = { message: error.message, name: error.name || "GenericError" };
+        }
+
+        setError(errorObject);
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: typeof errorObject.message === 'string' ? errorObject.message : 'Detailed debug info available below.',
+        });
     } finally {
       setLoading(false);
     }

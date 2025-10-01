@@ -5,6 +5,8 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { permissions, ROLES } from '@/lib/permissions';
 import type { NextAuthConfig } from 'next-auth';
+import { AuthError } from 'next-auth';
+
 
 const prisma = new PrismaClient();
 
@@ -52,7 +54,7 @@ export const authConfig = {
               };
             } else {
               debugInfo.result = 'Failure: Super Admin Password Mismatch';
-              throw new Error(JSON.stringify(debugInfo));
+              throw new AuthError(JSON.stringify(debugInfo));
             }
         }
         
@@ -67,7 +69,7 @@ export const authConfig = {
 
         if (!user || !user.password) {
           debugInfo.result = 'Failure: User not found in DB or no password set.';
-          throw new Error(JSON.stringify(debugInfo));
+          throw new AuthError(JSON.stringify(debugInfo));
         }
 
         const isValidPassword = await bcrypt.compare(password, user.password);
@@ -75,7 +77,7 @@ export const authConfig = {
 
         if (!isValidPassword) {
           debugInfo.result = 'Failure: DB user password mismatch.';
-          throw new Error(JSON.stringify(debugInfo));
+          throw new AuthError(JSON.stringify(debugInfo));
         }
         
         const userRole = user.role === ROLES.SUPER_ADMIN ? ROLES.USER : user.role || ROLES.USER;
