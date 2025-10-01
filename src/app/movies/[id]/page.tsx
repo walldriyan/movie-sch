@@ -45,7 +45,7 @@ export default async function MoviePage({
           <MovieDetailClient movie={movie}>
             <TabsContent value="about">
               <div
-                className="prose prose-invert max-w-none text-foreground/80 mt-6"
+                className="prose prose-invert max-w-none text-foreground/80"
                 dangerouslySetInnerHTML={{ __html: movie.description }}
               />
               <div className="my-8 flex flex-wrap gap-2">
