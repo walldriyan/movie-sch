@@ -1,6 +1,6 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { MovieFormData } from './types';
@@ -81,7 +81,7 @@ export async function registerUser(prevState: any, formData: FormData) {
       },
     });
   } catch (error: any) {
-    if (error instanceof prisma.PrismaClientKnownRequestError) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // Handle potential database errors, e.g., unique constraint failed again
       return redirect(
         `/register?error=Could%20not%20create%20user:%20${error.code}`
