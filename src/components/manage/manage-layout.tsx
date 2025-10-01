@@ -18,10 +18,11 @@ import {
   Bookmark,
   User,
   Settings,
+  Users,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import AuthGuard from '@/components/auth/auth-guard';
-import { ROLES } from '@/lib/permissions';
+import { ROLES, PERMISSIONS } from '@/lib/permissions';
 import { Session } from 'next-auth';
 
 interface ManageLayoutProps {
@@ -55,9 +56,21 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
             </SidebarMenuItem>
             <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive className="text-base">
-                  <LayoutGrid />
-                  <span>My Movies</span>
+                <SidebarMenuButton asChild isActive className="text-base">
+                  <Link href="/manage">
+                    <LayoutGrid />
+                    <span>My Movies</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </AuthGuard>
+            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+               <SidebarMenuItem>
+                <SidebarMenuButton asChild className="text-base">
+                  <Link href="/admin/users">
+                    <Users />
+                    <span>Users</span>
+                  </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </AuthGuard>

@@ -1,7 +1,7 @@
 'use server';
 
 import { PrismaClient } from '@prisma/client';
-import type { Movie } from '@prisma/client';
+import type { Movie, User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { MovieFormData } from './types';
 import { signIn, signOut } from '@/auth';
@@ -78,20 +78,15 @@ export async function registerUser(prevState: any, formData: FormData) {
       },
     });
 
-    // Automatically sign in after registration
     await signIn('credentials', { email, password, redirectTo: '/' });
     
-    // This part is unlikely to be reached because signIn will redirect
     return { message: 'Success', input: inputData };
 
   } catch (error: any) {
-    // The `signIn` function can throw a specific error to signal a redirect.
-    // We must not catch this error, but let it bubble up to Next.js.
-    if (error instanceof AuthError && error.type === 'NEXT_REDIRECT') {
+    if (error.type === 'NEXT_REDIRECT') {
       throw error;
     }
     
-    // Handle other specific auth errors if needed
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
@@ -101,7 +96,6 @@ export async function registerUser(prevState: any, formData: FormData) {
       }
     }
     
-    // For any other errors, return a generic message
     return { message: `An unexpected error occurred: ${error.message || error}`, input: inputData };
   }
 }
@@ -172,4 +166,11 @@ export async function deleteMovie(id: number, permanent: boolean) {
   revalidatePath(`/manage`);
   revalidatePath(`/movies/${id}`);
   revalidatePath('/');
+}
+
+export async function getUsers(): Promise<User[]> {
+  const users = await prisma.user.findMany({
+    orderBy: { createdAt: 'desc' },
+  });
+  return users;
 }
