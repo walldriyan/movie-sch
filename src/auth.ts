@@ -20,22 +20,39 @@ export const authConfig = {
         const email = credentials.email as string;
         const password = credentials.password as string;
 
-        let user = await prisma.user.findUnique({
+        // Step 1: Check if the user is the Super Admin from .env
+        if (email === process.env.SUPER_ADMIN_EMAIL) {
+          if (password === process.env.SUPER_ADMIN_PASSWORD) {
+            // For the super admin, we find or create them to have a DB record, but the role is supreme.
+            let user = await prisma.user.findUnique({ where: { email } });
+            if (!user) {
+              user = await prisma.user.create({
+                data: {
+                  email,
+                  name: 'Super Admin',
+                  // We don't store the plaintext password in the DB
+                  // A hashed version could be stored, but for this logic, it's not used for auth.
+                  password: await bcrypt.hash(password, 12),
+                  role: ROLES.SUPER_ADMIN,
+                }
+              });
+            } else if (user.role !== ROLES.SUPER_ADMIN) {
+              user = await prisma.user.update({
+                where: { id: user.id },
+                data: { role: ROLES.SUPER_ADMIN }
+              });
+            }
+             return { ...user, id: user.id, role: ROLES.SUPER_ADMIN };
+          } else {
+            // Email matches super admin, but password doesn't. Deny access immediately.
+            return null;
+          }
+        }
+
+        // Step 2: If not Super Admin, check the database for a regular user
+        const user = await prisma.user.findUnique({
           where: { email },
         });
-
-        // If user doesn't exist and it's the super admin email, create them
-        if (!user && email === process.env.SUPER_ADMIN_EMAIL) {
-          const hashedPassword = await bcrypt.hash(password, 12);
-          user = await prisma.user.create({
-            data: {
-              email: process.env.SUPER_ADMIN_EMAIL,
-              name: 'Super Admin',
-              password: hashedPassword,
-              role: ROLES.SUPER_ADMIN,
-            },
-          });
-        }
 
         if (!user || !user.password) {
           return null;
@@ -47,18 +64,8 @@ export const authConfig = {
           return null;
         }
         
-        // Assign role based on email or existing role
-        const userRole = email === process.env.SUPER_ADMIN_EMAIL 
-          ? ROLES.SUPER_ADMIN 
-          : user.role || ROLES.USER;
-
-        // If the role in DB is different, update it.
-        if (user.role !== userRole) {
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { role: userRole }
-          });
-        }
+        // Ensure regular users are not accidentally assigned SUPER_ADMIN role from DB
+        const userRole = user.role === ROLES.SUPER_ADMIN ? ROLES.USER : user.role || ROLES.USER;
 
         return { ...user, id: user.id, role: userRole };
       },

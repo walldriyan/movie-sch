@@ -308,7 +308,7 @@ export default function ManageMoviesPage() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-                <AuthGuard requiredRole="USER_ADMIN">
+                <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
                   <SidebarMenuItem>
                     <SidebarMenuButton isActive className="text-base">
                       <LayoutGrid />
