@@ -51,13 +51,12 @@ export const authConfig = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // On sign in, populate token with user info
-        token.id = user.id
+        token.id = user.id;
         const userRole = (user as any).role || ROLES.USER;
         token.role = userRole;
         token.permissions = permissions[userRole] || [];
       }
-      return token
+      return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
@@ -65,7 +64,7 @@ export const authConfig = {
         session.user.role = token.role as string;
         session.user.permissions = token.permissions as string[];
       }
-      return session
+      return session;
     }
   },
   pages: {
