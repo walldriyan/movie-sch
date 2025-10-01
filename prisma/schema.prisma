@@ -10,42 +10,38 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  role          String?
-  status        String?   @default("active")
-  accounts      Account[]
-  sessions      Session[]
-  movies        Movie[] // Relation to Movie model
-}
-
 model Movie {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   posterUrl   String?
   description String
   year        Int
   duration    String
-  genres      String
+  genres      String // Stored as a JSON string
   imdbRating  Float
   viewCount   Int
   likes       Int
-  status      String   @default("PUBLISHED")
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  status      String    @default("PUBLISHED") // e.g., PUBLISHED, PENDING_DELETION
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
   reviews     Review[]
   subtitles   Subtitle[]
-  author      User     @relation(fields: [authorId], references: [id])
   authorId    String
+  author      User      @relation(fields: [authorId], references: [id])
+}
+
+model Subtitle {
+  id           Int      @id @default(autoincrement())
+  language     String
+  uploaderName String
+  downloadUrl  String
+  createdAt    DateTime @default(now())
+  movieId      Int
+  movie        Movie    @relation(fields: [movieId], references: [id])
 }
 
 model Review {
-  id        Int      @id @default(autoincreint())
+  id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
   createdAt DateTime @default(now())
@@ -56,15 +52,21 @@ model Review {
   user      User     @relation(fields: [userId], references: [id])
 }
 
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  uploaderName String
-  url          String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  movieId      Int
-  movie        Movie    @relation(fields: [movieId], references: [id])
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  role          String    @default("USER")
+  status        String    @default("ACTIVE")
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  movies        Movie[]
+  reviews       Review[]
 }
 
 model Account {
