@@ -42,13 +42,16 @@ export default function RegisterPage() {
       });
 
       if (!response.ok) {
+        const errorText = await response.text();
         let errorData;
         try {
-            errorData = await response.json();
+          // Try to parse it as JSON
+          errorData = JSON.parse(errorText);
         } catch (e) {
-            errorData = { message: await response.text() };
+          // If parsing fails, use the raw text
+          errorData = { message: errorText };
         }
-        throw errorData;
+        throw new Error(errorData.message || 'Registration failed');
       }
 
       // Automatically sign in the user after successful registration
@@ -75,7 +78,8 @@ export default function RegisterPage() {
         title: 'Registration Failed',
         description: error.message || 'An unexpected error occurred.',
       });
-      setLoading(false);
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -156,7 +160,7 @@ export default function RegisterPage() {
                 </CardHeader>
                 <CardContent>
                     <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify(error, null, 2)}
+                        {JSON.stringify({ message: error.message }, null, 2)}
                     </pre>
                 </CardContent>
             </Card>
