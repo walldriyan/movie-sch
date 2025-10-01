@@ -10,8 +10,8 @@ import type { Movie } from '@prisma/client';
 import { auth } from '@/auth';
 
 export default async function HomePage() {
-  const allMovies = (await getMovies()) as Movie[];
   const session = await auth();
+  const allMovies = (await getMovies()) as Movie[];
 
   if (allMovies.length === 0) {
     return (
@@ -19,6 +19,14 @@ export default async function HomePage() {
         <Header />
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center">
           <div className="max-w-md">
+            {session?.user && (
+              <div className="p-4 mb-8 border border-dashed rounded-lg text-left">
+                <h2 className="text-lg font-semibold mb-2">Session Debug Info</h2>
+                <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+                  {JSON.stringify(session, null, 2)}
+                </pre>
+              </div>
+            )}
             <h1 className="font-serif text-4xl font-bold">
               Your Catalog is Empty
             </h1>
@@ -43,6 +51,14 @@ export default async function HomePage() {
     <div className="w-full bg-background text-foreground">
       <Header />
       <main className="max-w-4xl mx-auto px-4 py-8">
+        {session?.user && (
+          <div className="p-4 mb-8 border border-dashed rounded-lg">
+            <h2 className="text-lg font-semibold mb-2">Session Debug Info</h2>
+            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+              {JSON.stringify(session, null, 2)}
+            </pre>
+          </div>
+        )}
         <div className="space-y-12">
           {allMovies.map((movie) => {
             const movieImageUrl =
