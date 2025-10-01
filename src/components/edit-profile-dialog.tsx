@@ -17,6 +17,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -27,7 +28,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile } from '@/lib/actions';
 import type { User } from '@prisma/client';
-import { Pencil } from 'lucide-react';
+import { Pencil, Upload, User as UserIcon } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+
 
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
@@ -47,6 +50,7 @@ interface EditProfileDialogProps {
 export default function EditProfileDialog({ user }: EditProfileDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
+  const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -59,6 +63,8 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
       linkedin: user.linkedin || '',
     },
   });
+  
+  const imageValue = form.watch('image');
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
@@ -76,6 +82,25 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
       });
     }
   };
+  
+  const handleFileChange = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (src) {
+        form.setValue('image', src, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -84,7 +109,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
           <Pencil className="mr-2 h-4 w-4" /> Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
           <DialogDescription>
@@ -106,6 +131,48 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                 </FormItem>
               )}
             />
+            
+             <FormField
+              control={form.control}
+              name="image"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Avatar</FormLabel>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16">
+                      {imageValue ? (
+                        <AvatarImage src={imageValue} alt={user.name || 'User'} />
+                      ) : (
+                        <UserIcon className="w-8 h-8 text-muted-foreground" />
+                      )}
+                      <AvatarFallback>
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    <div className="flex-grow space-y-2">
+                       <FormControl>
+                          <Input placeholder="Paste image URL" {...field} value={field.value || ''}/>
+                       </FormControl>
+                       <FormDescription className="text-center">Or</FormDescription>
+                       <Button type="button" variant="outline" className="w-full" onClick={() => avatarFileInputRef.current?.click()}>
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload an image
+                       </Button>
+                        <input
+                          type="file"
+                          ref={avatarFileInputRef}
+                          onChange={(e) => handleFileChange(e)}
+                          style={{ display: 'none' }}
+                          accept="image/*"
+                        />
+                    </div>
+                  </div>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="bio"
@@ -123,19 +190,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                 </FormItem>
               )}
             />
-             <FormField
-              control={form.control}
-              name="image"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Avatar URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://example.com/avatar.png" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+            
             <FormField
               control={form.control}
               name="website"
