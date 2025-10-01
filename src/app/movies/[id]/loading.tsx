@@ -5,7 +5,7 @@ export default function Loading() {
   return (
     <div className="min-h-screen w-full bg-background">
       <Header />
-      <div className="relative -mt-16 h-[560px] w-full">
+      <div className="relative -mt-16 h-[500px] w-full">
         <Skeleton className="h-full w-full" />
       </div>
       <main className="container mx-auto -mt-64 px-4 pb-8">
