@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck } from 'lucide-react';
+import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil } from 'lucide-react';
 import React from 'react';
 import type { User as PrismaUser } from '@prisma/client';
 import type { Movie } from '@/lib/types';
@@ -13,14 +13,9 @@ import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import EditProfileDialog from '@/components/edit-profile-dialog';
+import { Button } from '@/components/ui/button';
 
-
-const staticProfileData = {
-  bio: 'Bringing you the latest and greatest in the world of cinema. I curate movie lists, write reviews, and help you discover your next favorite film. Join me on this cinematic journey!',
-  website: 'https://cineverse.example.com',
-  twitter: 'https://twitter.com/cineverse',
-  linkedin: 'https://linkedin.com/in/cineverse',
-};
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const session = await auth();
@@ -108,44 +103,55 @@ export default async function ProfilePage({ params }: { params: { username: stri
           {/* Right side - Profile Info */}
           <div className="md:col-span-1">
             <div className="sticky top-24 space-y-6 border-l pl-6">
-              <Avatar className="w-16 h-16">
-                {userAvatar && (
-                  <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
-                )}
-                <AvatarFallback>
-                  {profileUser.name?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
+              <div className="flex justify-between items-start">
+                <Avatar className="w-16 h-16">
+                  {userAvatar && (
+                    <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
+                  )}
+                  <AvatarFallback>
+                    {profileUser.name?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                {isOwnProfile && <EditProfileDialog user={profileUser} />}
+              </div>
               <h3 className="text-xl font-semibold">{profileUser.name}</h3>
-              <p className="text-muted-foreground text-sm">
-                {staticProfileData.bio}
-              </p>
+              {profileUser.bio && (
+                <p className="text-muted-foreground text-sm">
+                  {profileUser.bio}
+                </p>
+              )}
               <Separator />
               <div className="flex items-center gap-4 text-muted-foreground">
-                <Link
-                  href={staticProfileData.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary"
-                >
-                  <LinkIcon className="w-5 h-5" />
-                </Link>
-                <Link
-                  href={staticProfileData.twitter}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary"
-                >
-                  <Twitter className="w-5 h-5" />
-                </Link>
-                <Link
-                  href={staticProfileData.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary"
-                >
-                  <Linkedin className="w-5 h-5" />
-                </Link>
+                {profileUser.website && (
+                  <Link
+                    href={profileUser.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary"
+                  >
+                    <LinkIcon className="w-5 h-5" />
+                  </Link>
+                )}
+                {profileUser.twitter && (
+                  <Link
+                    href={profileUser.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary"
+                  >
+                    <Twitter className="w-5 h-5" />
+                  </Link>
+                )}
+                {profileUser.linkedin && (
+                  <Link
+                    href={profileUser.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary"
+                  >
+                    <Linkedin className="w-5 h-5" />
+                  </Link>
+                )}
               </div>
 
               {isOwnProfile && loggedInUser && (
