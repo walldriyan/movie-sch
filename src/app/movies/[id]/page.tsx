@@ -115,7 +115,7 @@ export default function MoviePage() {
       <Header />
       <main className="max-w-6xl mx-auto px-4 py-8">
         <article>
-          <header className="mb-8 relative h-[500px] rounded-2xl overflow-hidden flex items-end justify-start">
+          <header className="mb-8 relative h-[500px] rounded-2xl overflow-hidden flex items-end justify-between">
             {hasGallery ? (
               <Carousel className="w-full h-full">
                 <CarouselContent>
@@ -167,7 +167,7 @@ export default function MoviePage() {
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
             <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
 
-            <div className="relative z-10 text-foreground flex flex-col items-start text-left p-8 max-w-4xl">
+            <div className="relative z-10 text-foreground flex flex-col items-start text-left p-8 max-w-4xl w-full">
               <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
                 {movie.title}
               </h1>
