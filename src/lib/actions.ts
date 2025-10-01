@@ -4,7 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import type { Movie } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { MovieFormData } from './types';
-import { signIn } from '@/auth';
+import { signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 
 const prisma = new PrismaClient();
@@ -27,6 +27,10 @@ export async function authenticate(
     }
     throw error;
   }
+}
+
+export async function doSignOut() {
+  await signOut();
 }
 
 export async function getMovies() {
