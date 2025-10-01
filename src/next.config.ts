@@ -35,8 +35,10 @@ const nextConfig: NextConfig = {
     ],
   },
   webpack: (config, { isServer }) => {
+    // This is a workaround for a bug in Next.js where it tries to bundle bcrypt
+    // which is a native Node.js module.
     if (isServer) {
-      config.externals.push('bcrypt');
+        config.externals.push('bcrypt');
     }
     return config;
   },
