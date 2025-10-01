@@ -7,16 +7,21 @@ interface AuthGuardProps {
   children: ReactNode;
   requiredPermissions?: string[];
   requiredRole?: string;
+  allowByDefault?: boolean;
 }
 
 export default function AuthGuard({
   children,
   requiredPermissions,
   requiredRole,
+  allowByDefault = false,
 }: AuthGuardProps) {
   const user = useCurrentUser();
 
   if (!user) {
+    if (allowByDefault) {
+      return <>{children}</>;
+    }
     return null; // Or a loading spinner, or a "not authenticated" message
   }
 
@@ -26,6 +31,10 @@ export default function AuthGuard({
     : true;
 
   if (hasRole && hasPermissions) {
+    return <>{children}</>;
+  }
+  
+  if (allowByDefault) {
     return <>{children}</>;
   }
 
