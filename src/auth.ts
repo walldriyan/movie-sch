@@ -80,7 +80,6 @@ export const authConfig = {
     signIn: '/login',
   },
   secret: process.env.NEXTAUTH_SECRET,
-  trustHost: true,
 } satisfies NextAuthConfig;
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);
