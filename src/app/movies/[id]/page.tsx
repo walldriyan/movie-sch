@@ -50,9 +50,6 @@ export default async function MoviePage({
   return (
     <div className="min-h-screen w-full bg-background">
       <main className="max-w-6xl mx-auto py-8">
-        <div className="px-4 md:px-8 mb-8">
-          <TagsSection genres={movie.genres} />
-        </div>
         <article>
           <MovieDetailClient movie={movie}>
             <TabsContent value="about">

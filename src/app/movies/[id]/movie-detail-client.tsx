@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   Share2,
   ListVideo,
+  Tag,
 } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -54,6 +55,15 @@ export default function MovieDetailClient({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
+
+        <div className="absolute top-4 left-4 z-10 flex flex-wrap gap-2">
+            {movie.genres.map((genre: string) => (
+            <Button key={genre} variant="outline" size="sm" className="rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20">
+                <Tag className="mr-2 h-4 w-4" />
+                {genre}
+            </Button>
+            ))}
+        </div>
 
         <div className="relative z-10 text-foreground flex flex-col items-start text-left px-4 md:px-8 pb-0 max-w-4xl w-full">
           <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
