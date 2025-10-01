@@ -1,8 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useFormState, useFormStatus } from 'react-dom';
+import { authenticate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,8 +14,8 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Film, AlertCircle } from 'lucide-react';
+import { signIn } from 'next-auth/react';
 
 const GoogleIcon = () => (
     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
@@ -39,51 +38,20 @@ const GoogleIcon = () => (
     </svg>
 );
 
+function LoginButton() {
+  const { pending } = useFormStatus();
+ 
+  return (
+    <Button className="w-full" type="submit" aria-disabled={pending}>
+      {pending ? 'Signing in...' : 'Login'}
+    </Button>
+  );
+}
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
-
-  const handleCredentialsLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (result?.error) {
-        // This path is taken if the server returns a specific error message,
-        // but next-auth credential errors often throw instead.
-        throw new Error(result.error);
-      } else if (result?.ok) {
-        router.push('/');
-      } else {
-        // Handle cases where result is null or not ok but has no error
-        throw new Error('An unknown error occurred during login.');
-      }
-    } catch (err: any) {
-        setError(err);
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: err.message || 'An unexpected error occurred.',
-        });
-    } finally {
-        setLoading(false);
-    }
-  };
+  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
 
   const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError(null);
     await signIn('google', { callbackUrl: '/' });
   };
 
@@ -101,15 +69,15 @@ export default function LoginPage() {
              <p className="mt-2 text-muted-foreground">Welcome back! Please sign in to your account.</p>
         </div>
         <Card>
-          <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl">Login</CardTitle>
-            <CardDescription>
-              Enter your email below to login to your account
-            </CardDescription>
-          </CardHeader>
-          <form onSubmit={handleCredentialsLogin}>
+          <form action={dispatch}>
+            <CardHeader className="space-y-1">
+              <CardTitle className="text-2xl">Login</CardTitle>
+              <CardDescription>
+                Enter your email below to login to your account
+              </CardDescription>
+            </CardHeader>
             <CardContent className="grid gap-4">
-               <Button variant="outline" className="w-full" type="button" onClick={handleGoogleLogin} disabled={loading}>
+               <Button variant="outline" className="w-full" type="button" onClick={handleGoogleLogin}>
                     <GoogleIcon />
                     Login with Google
                 </Button>
@@ -127,30 +95,36 @@ export default function LoginPage() {
                 <Label htmlFor="email">Email</Label>
                 <Input 
                     id="email" 
+                    name="email"
                     type="email" 
                     placeholder="m@example.com" 
                     required 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input 
                     id="password" 
+                    name="password"
                     type="password" 
                     required 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
                 />
+              </div>
+              <div
+                className="flex h-8 items-end space-x-1"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {errorMessage && (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm text-destructive">{errorMessage}</p>
+                  </>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button className="w-full" type="submit" disabled={loading}>
-                {loading ? 'Signing in...' : 'Login'}
-                </Button>
+              <LoginButton />
                 <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <Link href="/register" className="font-semibold text-primary hover:underline">
@@ -160,24 +134,6 @@ export default function LoginPage() {
             </CardFooter>
           </form>
         </Card>
-        {error && (
-            <Card className="mt-4 bg-destructive/10 border-destructive">
-                <CardHeader>
-                    <CardTitle className="text-destructive text-lg">Debug Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify({ 
-                            message: error.message, 
-                            stack: error.stack,
-                            type: error.type,
-                            name: error.name,
-                            cause: error.cause,
-                         }, null, 2)}
-                    </pre>
-                </CardContent>
-            </Card>
-        )}
       </div>
     </div>
   );

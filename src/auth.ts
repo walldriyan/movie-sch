@@ -19,15 +19,6 @@ export const authConfig = {
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     CredentialsProvider({
-      name: 'Credentials',
-      credentials: {
-        email: {
-          label: 'Email',
-          type: 'text',
-          placeholder: 'jsmith@example.com',
-        },
-        password: { label: 'Password', type: 'password' },
-      },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           return null;
@@ -38,7 +29,7 @@ export const authConfig = {
         });
 
         if (!user || !user.password) {
-          throw new AuthError('Invalid credentials');
+          return null;
         }
 
         const isValidPassword = await bcrypt.compare(
@@ -47,7 +38,7 @@ export const authConfig = {
         );
 
         if (!isValidPassword) {
-          throw new AuthError('Invalid credentials');
+            return null;
         }
 
         return user;
