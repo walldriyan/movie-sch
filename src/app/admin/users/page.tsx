@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import type { User } from '@prisma/client';
-import { getUsers } from '@/lib/actions';
+import { getUsers, updateUserRole } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -20,15 +20,29 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, PlusCircle } from 'lucide-react';
+import {
+  MoreHorizontal,
+  PlusCircle,
+  ShieldQuestion,
+  Check,
+  X,
+} from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
+import { ROLES } from '@/lib/permissions';
 
 export default function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -50,6 +64,31 @@ export default function ManageUsersPage() {
   useEffect(() => {
     fetchUsers();
   }, []);
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const user = users.find((u) => u.id === userId);
+      if (!user) return;
+
+      let newStatus = user.permissionRequestStatus;
+      if (user.permissionRequestStatus === 'PENDING') {
+        newStatus = newRole === ROLES.USER ? 'REJECTED' : 'APPROVED';
+      }
+
+      await updateUserRole(userId, newRole, newStatus);
+      await fetchUsers(); // Refetch users to update the list
+      toast({
+        title: 'Success',
+        description: `User role updated successfully.`,
+      });
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to update user role.',
+      });
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -83,19 +122,38 @@ export default function ManageUsersPage() {
               {users.length > 0 ? (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">{user.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span>{user.name}</span>
+                        {user.permissionRequestStatus === 'PENDING' && (
+                          <Badge variant="outline" className='border-yellow-500 text-yellow-500'>
+                            <ShieldQuestion className="mr-1 h-3 w-3" />
+                            Request
+                          </Badge>
+                        )}
+                      </div>
+                       {user.permissionRequestMessage && (
+                        <p className="text-xs text-muted-foreground mt-1 italic">
+                          &quot;{user.permissionRequestMessage}&quot;
+                        </p>
+                      )}
+                    </TableCell>
                     <TableCell>{user.email}</TableCell>
                     <TableCell>
                       <Badge
                         variant={
-                          user.role === 'SUPER_ADMIN' ? 'default' : 'secondary'
+                          user.role === 'SUPER_ADMIN'
+                            ? 'default'
+                            : user.role === 'USER_ADMIN'
+                            ? 'secondary'
+                            : 'outline'
                         }
                       >
                         {user.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                       <DropdownMenu>
+                      <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
                             aria-haspopup="true"
@@ -108,9 +166,34 @@ export default function ManageUsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>Edit</DropdownMenuItem>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>
+                              Change Role
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuRadioGroup
+                                  value={user.role}
+                                  onValueChange={(newRole) =>
+                                    handleRoleChange(user.id, newRole)
+                                  }
+                                >
+                                  {Object.values(ROLES).map((role) => (
+                                    <DropdownMenuRadioItem
+                                      key={role}
+                                      value={role}
+                                    >
+                                      {role}
+                                    </DropdownMenuRadioItem>
+                                  ))}
+                                </DropdownMenuRadioGroup>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem>Edit User</DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">
-                            Delete
+                            Delete User
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>

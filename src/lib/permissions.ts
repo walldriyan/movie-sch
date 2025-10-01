@@ -18,6 +18,7 @@ export const PERMISSIONS = {
   'post.delete': 'post.delete', // Soft delete for admins
   'post.hard_delete': 'post.hard_delete', // Permanent delete for super admins
   'post.approve_deletion': 'post.approve_deletion', // View posts pending deletion
+  'post.change_status': 'post.change_status', // Change status for super admins
 };
 
 export const permissions: Record<string, string[]> = {
@@ -32,4 +33,12 @@ export const permissions: Record<string, string[]> = {
   [ROLES.USER]: [
     PERMISSIONS['post.read'], // Can only read public posts
   ],
+};
+
+export const MovieStatus = {
+  PUBLISHED: 'PUBLISHED',
+  PENDING_APPROVAL: 'PENDING_APPROVAL',
+  PENDING_DELETION: 'PENDING_DELETION',
+  PRIVATE: 'PRIVATE',
+  DRAFT: 'DRAFT',
 };

@@ -1,18 +1,18 @@
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
-import { getMovies } from '@/lib/actions';
 import { ROLES } from '@/lib/permissions';
 import ManageMoviesClient from '@/app/manage/client';
+import { getMoviesForAdmin } from '@/lib/actions';
 
 export default async function ManageMoviesPage() {
   const session = await auth();
   const user = session?.user;
 
-  if (!user || user.role !== ROLES.SUPER_ADMIN) {
+  if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     notFound();
   }
 
-  const initialMovies = await getMovies();
+  const { movies, totalPages } = await getMoviesForAdmin({ page: 1, limit: 10, userId: user.id, userRole: user.role });
 
-  return <ManageMoviesClient initialMovies={initialMovies as any} user={user} />;
+  return <ManageMoviesClient initialMovies={movies as any} initialTotalPages={totalPages} user={user} />;
 }

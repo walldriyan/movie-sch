@@ -41,6 +41,8 @@ export default async function Header({
         </Button>
       );
     }
+    
+    const canManage = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
     return (
       <DropdownMenu>
@@ -72,21 +74,21 @@ export default async function Header({
               <span>Profile</span>
             </Link>
           </DropdownMenuItem>
-          {user.role === ROLES.SUPER_ADMIN && (
-            <>
+          {canManage && (
               <DropdownMenuItem asChild>
                 <Link href="/manage">
                   <LayoutGrid className="mr-2 h-4 w-4" />
                   <span>Manage Movies</span>
                 </Link>
               </DropdownMenuItem>
+          )}
+          {user.role === ROLES.SUPER_ADMIN && (
               <DropdownMenuItem asChild>
                 <Link href="/admin/users">
                   <Users className="mr-2 h-4 w-4" />
                   <span>Manage Users</span>
                 </Link>
               </DropdownMenuItem>
-            </>
           )}
           <DropdownMenuSeparator />
           <LogoutButton />

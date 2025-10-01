@@ -10,41 +10,21 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {
-  id            String          @id @default(cuid())
-  name          String?
-  email         String?         @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String          @default("USER")
-  bio           String?
-  website       String?
-  twitter       String?
-  linkedin      String?
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  movies        Movie[]
-  reviews       Review[]
-}
-
 model Movie {
-  id          Int      @id @default(autoincrement())
+  id          Int       @id @default(autoincrement())
   title       String
   description String
   posterUrl   String?
   year        Int
   duration    String
-  genres      String   // Storing genres as a JSON string
+  genres      String
   imdbRating  Float
-  viewCount   Int      @default(0)
-  likes       Int      @default(0)
-  status      String   @default("PUBLISHED") // PUBLISHED, PENDING_DELETION
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  author      User     @relation(fields: [authorId], references: [id])
+  viewCount   Int       @default(0)
+  likes       Int       @default(0)
+  status      String    @default("PUBLISHED") // e.g., PUBLISHED, DRAFT, PENDING_DELETION
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  author      User      @relation(fields: [authorId], references: [id])
   authorId    String
   reviews     Review[]
   subtitles   Subtitle[]
@@ -63,15 +43,39 @@ model Review {
 }
 
 model Subtitle {
-  id            Int      @id @default(autoincrement())
-  language      String
-  fileUrl       String
-  uploaderName  String
-  downloadCount Int      @default(0)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  movie         Movie    @relation(fields: [movieId], references: [id])
-  movieId       Int
+  id          Int      @id @default(autoincrement())
+  language    String
+  url         String
+  uploaderName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  movie       Movie    @relation(fields: [movieId], references: [id])
+  movieId     Int
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER") // e.g., USER, USER_ADMIN, SUPER_ADMIN
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  permissionRequestStatus  String?   @default("NONE") // e.g., NONE, PENDING, APPROVED, REJECTED
+  permissionRequestMessage String?
+
+  bio           String?
+  website       String?
+  twitter       String?
+  linkedin      String?
+  
+  accounts      Account[]
+  sessions      Session[]
+  movies        Movie[]
+  reviews       Review[]
 }
 
 model Account {
@@ -87,8 +91,9 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -100,15 +105,8 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

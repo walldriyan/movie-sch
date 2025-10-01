@@ -1,13 +1,16 @@
 'use server';
 
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { MovieFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
-import { ROLES } from './permissions';
+import { ROLES, MovieStatus } from './permissions';
+import { redirect } from 'next/navigation';
+import { writeFile, mkdir, unlink } from 'fs/promises';
+import { join, dirname } from 'path';
 
 const prisma = new PrismaClient();
 
@@ -20,11 +23,10 @@ export async function getSuperAdminEmailForDebug() {
 
 export async function authenticate(
   prevState: string | undefined,
-  formData: FormData,
+  formData: FormData
 ) {
   try {
     await signIn('credentials', formData);
-    return 'Success';
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -42,90 +44,109 @@ export async function doSignOut() {
   await signOut();
 }
 
-export async function registerUser(prevState: any, formData: FormData) {
+export async function registerUser(
+  prevState: { message: string | null; input?: any },
+  formData: FormData
+): Promise<{ message: string | null; input?: any }> {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  
-  const inputData = { name, email };
+  const formInput = { name, email };
+
+  if (!name || !email || !password) {
+    return { message: 'Missing name, email, or password', input: formInput };
+  }
 
   try {
-     if (!name || !email || !password) {
-      return { message: 'Missing name, email, or password', input: inputData };
-    }
-
     const existingUser = await prisma.user.findUnique({
-      where: { email: email as string },
+      where: { email },
     });
 
     if (existingUser) {
-      return { message: 'User with this email already exists', input: inputData };
+      return {
+        message: 'User with this email already exists',
+        input: formInput,
+      };
     }
 
-    const hashedPassword = await bcrypt.hash(password as string, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     let userRole = ROLES.USER;
-    if (process.env.SUPER_ADMIN_EMAIL && email === process.env.SUPER_ADMIN_EMAIL) {
+    if (
+      process.env.SUPER_ADMIN_EMAIL &&
+      email === process.env.SUPER_ADMIN_EMAIL
+    ) {
       userRole = ROLES.SUPER_ADMIN;
     }
 
     await prisma.user.create({
       data: {
-        name: name as string,
-        email: email as string,
+        name,
+        email,
         password: hashedPassword,
         role: userRole,
       },
     });
-
-    await signIn('credentials', { email, password, redirectTo: '/' });
-    
-    return { message: 'Success', input: inputData };
-
   } catch (error: any) {
-    if (error instanceof AuthError && error.type === 'NEXT_REDIRECT') {
-      throw error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      return {
+        message: `Could not create user: ${error.code}`,
+        input: formInput,
+      };
     }
-    
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return { message: 'Sign in after registration failed: Invalid credentials.', input: inputData };
-        default:
-           return { message: `An unexpected AuthError occurred: ${error.type}`, input: inputData };
-      }
-    }
-    
-    return { message: `An unexpected error occurred: ${error.message || error}`, input: inputData };
+    return {
+      message: 'An unexpected error occurred during registration.',
+      input: formInput,
+    };
   }
+
+  redirect('/login');
 }
 
 
-export async function getMovies() {
-  const movies = await prisma.movie.findMany({
-    orderBy: { updatedAt: 'desc' },
-    include: {
-      author: true,
-    },
-  });
-  return movies.map((movie) => ({
-    ...movie,
-    genres: JSON.parse(movie.genres || '[]'),
-  }));
+export async function getMovies(options: { page?: number; limit?: number } = {}) {
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+
+    const whereClause: Prisma.MovieWhereInput = {
+      status: MovieStatus.PUBLISHED
+    };
+
+    const movies = await prisma.movie.findMany({
+        where: whereClause,
+        skip: skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            author: true,
+        },
+    });
+
+    const totalMovies = await prisma.movie.count({ where: whereClause });
+    const totalPages = Math.ceil(totalMovies / limit);
+
+    return {
+        movies: movies.map((movie) => ({
+            ...movie,
+            genres: JSON.parse(movie.genres || '[]'),
+        })),
+        totalPages,
+        totalMovies,
+    };
 }
 
 export async function getMovie(movieId: number) {
   const movie = await prisma.movie.findUnique({
     where: { id: movieId },
     include: {
-        reviews: {
-            include: {
-                user: true
-            }
+      reviews: {
+        include: {
+          user: true,
         },
-        subtitles: true,
-        author: true,
-    }
+      },
+      subtitles: true,
+      author: true,
+    },
   });
   if (!movie) return null;
 
@@ -135,21 +156,36 @@ export async function getMovie(movieId: number) {
   };
 }
 
-export async function saveMovie(
-  movieData: MovieFormData,
-  id?: number
-) {
+export async function saveMovie(movieData: MovieFormData, id?: number) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
   }
 
+  let status;
+
+  if (id) {
+    // It's an update, always set to pending approval
+    status = MovieStatus.PENDING_APPROVAL;
+  } else {
+    // It's a creation
+    if (session.user.role === ROLES.USER_ADMIN) {
+      status = MovieStatus.PENDING_APPROVAL;
+    } else if (session.user.role === ROLES.SUPER_ADMIN) {
+      status = MovieStatus.PUBLISHED;
+    } else {
+       status = movieData.status; // fallback
+    }
+  }
+
+
   const data = {
     ...movieData,
+    status: status,
     genres: JSON.stringify(movieData.genres),
     authorId: session.user.id,
   };
-  
+
   if (id) {
     await prisma.movie.update({ where: { id }, data: data as any });
     revalidatePath(`/manage`);
@@ -182,6 +218,26 @@ export async function getUsers(): Promise<User[]> {
   return users;
 }
 
+export async function uploadProfileImage(formData: FormData) {
+  const file = formData.get('image') as File;
+  if (!file || file.size === 0) {
+    return null;
+  }
+
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+
+  const filename = `${Date.now()}-${file.name}`;
+  const path = join(process.cwd(), 'public/uploads/avatars', filename);
+
+  // Ensure the directory exists
+  await mkdir(dirname(path), { recursive: true });
+
+  await writeFile(path, buffer);
+
+  return `/uploads/avatars/${filename}`;
+}
+
 export async function updateUserProfile(
   userId: string,
   data: {
@@ -198,10 +254,153 @@ export async function updateUserProfile(
     throw new Error('Not authorized');
   }
 
+  // If a new image is being uploaded, delete the old one first.
+  if (data.image) {
+    try {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { image: true },
+      });
+
+      if (currentUser?.image && currentUser.image.startsWith('/uploads/')) {
+        const oldImagePath = join(process.cwd(), 'public', currentUser.image);
+        await unlink(oldImagePath);
+      }
+    } catch (error) {
+      // Log the error but don't block the update if deletion fails
+      console.error('Failed to delete old profile image:', error);
+    }
+  }
+
+  const updateData: { [key: string]: string | undefined } = {};
+
+  if (data.name !== undefined) {
+    updateData.name = data.name;
+  }
+  if (data.bio !== undefined) {
+    updateData.bio = data.bio;
+  }
+  if (data.website !== undefined) {
+    updateData.website = data.website;
+  }
+  if (data.twitter !== undefined) {
+    updateData.twitter = data.twitter;
+  }
+  if (data.linkedin !== undefined) {
+    updateData.linkedin = data.linkedin;
+  }
+  if (data.image !== undefined) {
+    updateData.image = data.image;
+  }
+
   await prisma.user.update({
     where: { id: userId },
-    data,
+    data: updateData as any,
   });
 
   revalidatePath(`/profile/${userId}`);
+}
+
+export async function requestAdminAccess(
+  userId: string,
+  message: string
+) {
+  const session = await auth();
+  if (!session?.user || session.user.id !== userId) {
+    throw new Error('Not authorized');
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      permissionRequestStatus: 'PENDING',
+      permissionRequestMessage: message,
+    },
+  });
+
+  revalidatePath(`/profile/${userId}`);
+  revalidatePath('/admin/users');
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: string,
+  status: string
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    throw new Error('Not authorized');
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      role: role,
+      permissionRequestStatus: status,
+    },
+  });
+
+  revalidatePath('/admin/users');
+  revalidatePath(`/profile/${userId}`);
+}
+
+export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string } = {}) {
+    const { page = 1, limit = 10, userId, userRole } = options;
+    
+    if (!userId || !userRole) {
+        return { movies: [], totalPages: 0, totalMovies: 0 };
+    }
+
+    const skip = (page - 1) * limit;
+
+    let whereClause: Prisma.MovieWhereInput = {};
+
+    if (userRole === ROLES.USER_ADMIN) {
+        whereClause = { authorId: userId };
+    } else if (userRole !== ROLES.SUPER_ADMIN) {
+      // For any other role, they shouldn't access this page. But as a safeguard:
+      return { movies: [], totalPages: 0, totalMovies: 0 };
+    }
+    // SUPER_ADMIN has an empty whereClause, fetching all movies.
+
+    const movies = await prisma.movie.findMany({
+        where: whereClause,
+        skip: skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            author: true,
+        },
+    });
+
+    const totalMovies = await prisma.movie.count({ where: whereClause });
+    const totalPages = Math.ceil(totalMovies / limit);
+
+    return {
+        movies: movies.map((movie) => ({
+            ...movie,
+            genres: JSON.parse(movie.genres || '[]'),
+        })),
+        totalPages,
+        totalMovies,
+    };
+}
+
+
+export async function updateMovieStatus(movieId: number, status: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    throw new Error('Not authorized to change movie status.');
+  }
+
+  if (!Object.values(MovieStatus).includes(status)) {
+    throw new Error(`Invalid status: ${status}`);
+  }
+
+  await prisma.movie.update({
+    where: { id: movieId },
+    data: { status },
+  });
+
+  revalidatePath('/manage');
 }

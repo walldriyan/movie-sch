@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Movie } from '@prisma/client';
 import type { MovieFormData } from '@/lib/types';
@@ -68,7 +68,8 @@ export default function MovieForm({
           imdbRating: 0,
         },
   });
-
+  
+  const { formState } = form;
   const posterUrlValue = form.watch('posterUrl');
 
   const handleSubmit = async (values: MovieFormValues) => {
@@ -80,7 +81,7 @@ export default function MovieForm({
       duration: values.duration,
       genres: values.genres.split(',').map((g) => g.trim()) as any,
       imdbRating: values.imdbRating,
-      status: 'PUBLISHED',
+      status: editingMovie?.status || 'DRAFT', // Preserve status or default to DRAFT
       viewCount: editingMovie?.viewCount || 0,
       likes: editingMovie?.likes || 0,
     };
@@ -289,8 +290,17 @@ export default function MovieForm({
             />
           </div>
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg">
-              {editingMovie ? 'Save Changes' : 'Publish'}
+            <Button type="submit" size="lg" disabled={formState.isSubmitting}>
+              {formState.isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {editingMovie ? 'Saving...' : 'Publishing...'}
+                </>
+              ) : editingMovie ? (
+                'Save Changes'
+              ) : (
+                'Publish'
+              )}
             </Button>
           </div>
         </form>
