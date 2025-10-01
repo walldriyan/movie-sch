@@ -163,11 +163,11 @@ export default async function ProfilePage({ params }: { params: { username: stri
                       </div>
                       <div>
                         <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
-                        <p className="text-sm">
+                        <div className="text-sm">
                           <Badge variant={loggedInUser.role === 'SUPER_ADMIN' ? 'default' : 'secondary'}>
                             {loggedInUser.role}
                           </Badge>
-                        </p>
+                        </div>
                       </div>
                        <div>
                         <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
@@ -193,5 +193,3 @@ export default async function ProfilePage({ params }: { params: { username: stri
     </div>
   );
 }
-
-    
