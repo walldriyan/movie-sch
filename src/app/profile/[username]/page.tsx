@@ -29,9 +29,9 @@ export default async function ProfilePage() {
 
   return (
     <div className="w-full bg-background text-foreground">
-      <main className="max-w-4xl mx-auto px-4 py-8 mt-16">
+      <main className="max-w-4xl mx-auto px-4 py-8">
         <ProfileHeader username={userProfile.name} />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">
             {allMovies.map((movie) => {
