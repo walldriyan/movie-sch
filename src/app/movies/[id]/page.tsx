@@ -82,81 +82,105 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       ? PlaceHolderImages.find((img) => img.id === movie.galleryImageIds[0])?.imageUrl
       : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl);
 
+  const sideImage1 = PlaceHolderImages.find(img => img.id === 'avatar-2');
+  const sideImage2 = PlaceHolderImages.find(img => img.id === 'avatar-3');
+
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
 
-  const tabButtonStyle = "flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground";
-  const activeTabButtonStyle = "text-primary font-semibold";
+  const tabButtonStyle = "flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2";
+  const activeTabButtonStyle = "text-primary font-semibold border-primary";
+  const inactiveTabButtonStyle = "border-transparent";
 
 
   return (
     <div className="min-h-screen w-full bg-background">
       <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-6xl mx-auto px-4 py-8">
         <article>
-          <header className="mb-8">
+          <header className="mb-8 relative h-[500px] rounded-2xl overflow-hidden flex items-center justify-center">
             {heroImage && (
-              <div className="relative w-full h-96 mb-8 rounded-lg overflow-hidden">
-                <Image
-                    src={heroImage}
-                    alt={`Poster for ${movie.title}`}
-                    fill
-                    className="object-cover"
-                    priority
-                />
-              </div>
+              <Image
+                  src={heroImage}
+                  alt={`Poster for ${movie.title}`}
+                  fill
+                  className="object-cover"
+                  priority
+              />
             )}
-            
-            <h1 className="font-serif text-4xl md:text-5xl font-bold text-foreground leading-tight mb-4">
-              {movie.title}
-            </h1>
+            {sideImage1 && (
+                <Image
+                    src={sideImage1.imageUrl}
+                    alt="Side image 1"
+                    fill
+                    className="object-cover absolute -left-1/2 -translate-x-1/2 opacity-50 blur-sm"
+                    data-ai-hint={sideImage1.imageHint}
+                />
+            )}
+            {sideImage2 && (
+                <Image
+                    src={sideImage2.imageUrl}
+                    alt="Side image 2"
+                    fill
+                    className="object-cover absolute -right-1/2 translate-x-1/2 opacity-50 blur-sm"
+                    data-ai-hint={sideImage2.imageHint}
+                />
+            )}
 
-            <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-8">
-                <div className='flex items-center gap-4'>
-                    <Avatar>
-                        {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt="Author" data-ai-hint={authorAvatar.imageHint} />}
-                        <AvatarFallback>U</AvatarFallback>
-                    </Avatar>
-                    <div>
-                        <p className="text-foreground">CineVerse Editor</p>
-                        <div className='flex items-center gap-2'>
-                           <span>{movie.year}</span>
-                           <span>&middot;</span>
-                           <span>{movie.duration}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+            <div className='absolute inset-0 bg-gradient-to-r from-background via-transparent to-background' />
 
-            <Separator />
-            <div className='flex items-center justify-between py-4 text-muted-foreground'>
-                <div className='flex items-center gap-6'>
-                    <button onClick={() => setActiveTab('about')} className={cn(tabButtonStyle, activeTab === 'about' && activeTabButtonStyle)}>
-                      <Image src="/imdb.png" alt="IMDb" width={40} height={20} />
-                      <div className="flex items-center gap-1">
-                          <Star className="w-5 h-5 text-yellow-400" />
-                          <span>{movie.imdbRating.toFixed(1)}</span>
+            <div className="relative z-10 text-center text-foreground flex flex-col items-center max-w-2xl">
+               <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight mb-4">
+                {movie.title}
+              </h1>
+
+              <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-8">
+                  <div className='flex items-center gap-4'>
+                      <Avatar>
+                          {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt="Author" data-ai-hint={authorAvatar.imageHint} />}
+                          <AvatarFallback>U</AvatarFallback>
+                      </Avatar>
+                      <div>
+                          <p className="text-foreground">CineVerse Editor</p>
+                          <div className='flex items-center gap-2'>
+                            <span>{movie.year}</span>
+                            <span>&middot;</span>
+                            <span>{movie.duration}</span>
+                          </div>
                       </div>
-                    </button>
-                     <button onClick={() => setActiveTab('reviews')} className={cn(tabButtonStyle, activeTab === 'reviews' && activeTabButtonStyle)}>
-                        <MessageCircle className="w-5 h-5" />
-                        <span>{movie.reviews.length}</span>
-                    </button>
-                    <button onClick={() => setActiveTab('subtitles')} className={cn(tabButtonStyle, activeTab === 'subtitles' && activeTabButtonStyle)}>
-                        <ListVideo className="w-5 h-5" />
-                        <span>Subtitles</span>
-                    </button>
-                </div>
-                <div className='flex items-center gap-2'>
-                    <Button variant="ghost" size="icon"><Bookmark className='w-5 h-5' /></Button>
-                    <Button variant="ghost" size="icon"><Share2 className='w-5 h-5' /></Button>
-                    <Button variant="ghost" size="icon"><MoreHorizontal className='w-5 h-5' /></Button>
-                </div>
-            </div>
-            <Separator />
+                  </div>
+              </div>
 
+               <Separator className="my-4 bg-border/20" />
+               <div className='flex items-center justify-between py-2 text-muted-foreground w-full'>
+                  <div className='flex items-center gap-6'>
+                      <button onClick={() => setActiveTab('about')} className={cn(tabButtonStyle, activeTab === 'about' ? activeTabButtonStyle : inactiveTabButtonStyle)}>
+                        <Image src="/imdb.png" alt="IMDb" width={40} height={20} />
+                        <div className="flex items-center gap-1">
+                            <Star className="w-5 h-5 text-yellow-400" />
+                            <span className='text-foreground'>{movie.imdbRating.toFixed(1)}</span>
+                        </div>
+                      </button>
+                      <button onClick={() => setActiveTab('reviews')} className={cn(tabButtonStyle, activeTab === 'reviews' ? activeTabButtonStyle : inactiveTabButtonStyle)}>
+                          <MessageCircle className="w-5 h-5" />
+                          <span className='text-foreground'>{movie.reviews.length}</span>
+                      </button>
+                      <button onClick={() => setActiveTab('subtitles')} className={cn(tabButtonStyle, activeTab === 'subtitles' ? activeTabButtonStyle : inactiveTabButtonStyle)}>
+                          <ListVideo className="w-5 h-5" />
+                          <span className='text-foreground'>Subtitles</span>
+                      </button>
+                  </div>
+                  <div className='flex items-center gap-2'>
+                      <Button variant="ghost" size="icon"><Bookmark className='w-5 h-5' /></Button>
+                      <Button variant="ghost" size="icon"><Share2 className='w-5 h-5' /></Button>
+                      <Button variant="ghost" size="icon"><MoreHorizontal className='w-5 h-5' /></Button>
+                  </div>
+              </div>
+
+            </div>
           </header>
 
-          <Tabs value={activeTab}>
+          <Tabs value={activeTab} className="mt-12 max-w-4xl mx-auto">
             <TabsContent value="about">
               <div
                 className="prose prose-invert max-w-none mx-auto text-foreground/80 mt-6"
