@@ -261,9 +261,9 @@ export default function ManageMoviesPage() {
               </Link>
             </div>
 
-            <SidebarMenu className="p-4">
+            <SidebarMenu className="p-4 gap-1.5">
               <SidebarMenuItem>
-                <SidebarMenuButton asChild>
+                <SidebarMenuButton asChild className="text-base">
                   <Link href="/">
                     <Home />
                     <span>Home</span>
@@ -271,25 +271,25 @@ export default function ManageMoviesPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive>
+                <SidebarMenuButton isActive className="text-base">
                   <LayoutGrid />
                   <span>My Movies</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton className="text-base">
                   <Bookmark />
                   <span>Favorites</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton className="text-base">
                   <User />
                   <span>Profile</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
                <SidebarMenuItem>
-                <SidebarMenuButton>
+                <SidebarMenuButton className="text-base">
                   <Settings />
                   <span>Settings</span>
                 </SidebarMenuButton>
