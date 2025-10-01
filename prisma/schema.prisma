@@ -1,4 +1,3 @@
-
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
@@ -11,8 +10,21 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?
+  image         String?
+  role          String?   @default("USER")
+  status        String?   @default("ACTIVE")
+  accounts      Account[]
+  sessions      Session[]
+  reviews       Review[]
+}
+
 model Account {
-  id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
@@ -25,53 +37,70 @@ model Account {
   id_token          String?
   session_state     String?
 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, providerAccountId])
+  @@id([provider, providerAccountId])
 }
 
 model Session {
-  id           String   @id @default(cuid())
   sessionToken String   @unique
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  role          String    @default("USER")
-  status        String    @default("FREE")
-  accounts      Account[]
-  sessions      Session[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updated-at
 }
 
 model VerificationToken {
   identifier String
-  token      String   @unique
+  token      String
   expires    DateTime
 
-  @@unique([identifier, token])
+  @@id([identifier, token])
 }
 
 model Movie {
-  id              Int      @id @default(autoincrement())
+  id              Int        @id @default(autoincrement())
   title           String
   description     String
   posterUrl       String?
-  galleryImageIds String?
+  galleryImageIds String? // JSON array of image URLs
   year            Int
   duration        String
-  genres          String?
   imdbRating      Float
-  viewCount       Int      @default(0)
-  likes           Int      @default(0)
-  status          String   @default("PUBLISHED")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  genres          String? // JSON array of strings
+  viewCount       Int
+  likes           Int
+  status          String     @default("PUBLISHED") // e.g., PUBLISHED, DRAFT, PENDING_DELETION
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  reviews         Review[]
+  subtitles       Subtitle[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  movieId   Int
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+}
+
+model Subtitle {
+  id           Int      @id @default(autoincrement())
+  language     String
+  fileUrl      String
+  uploaderName String
+  downloadCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  movieId      Int
+  movie        Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
 }
