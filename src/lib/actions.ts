@@ -181,3 +181,27 @@ export async function getUsers(): Promise<User[]> {
   });
   return users;
 }
+
+export async function updateUserProfile(
+  userId: string,
+  data: {
+    name?: string;
+    bio?: string;
+    website?: string;
+    twitter?: string;
+    linkedin?: string;
+    image?: string;
+  }
+) {
+  const session = await auth();
+  if (!session?.user || session.user.id !== userId) {
+    throw new Error('Not authorized');
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data,
+  });
+
+  revalidatePath(`/profile/${userId}`);
+}

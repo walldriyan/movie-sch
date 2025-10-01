@@ -10,34 +10,44 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Movie {
-  id          Int       @id @default(autoincrement())
-  title       String
-  posterUrl   String?
-  description String
-  year        Int
-  duration    String
-  genres      String // Stored as a JSON string
-  imdbRating  Float
-  viewCount   Int
-  likes       Int
-  status      String    @default("PUBLISHED") // e.g., PUBLISHED, PENDING_DELETION
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  reviews     Review[]
-  subtitles   Subtitle[]
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
+model User {
+  id            String          @id @default(cuid())
+  name          String?
+  email         String?         @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String          @default("USER")
+  bio           String?
+  website       String?
+  twitter       String?
+  linkedin      String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  accounts      Account[]
+  sessions      Session[]
+  movies        Movie[]
+  reviews       Review[]
 }
 
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  uploaderName String
-  downloadUrl  String
-  createdAt    DateTime @default(now())
-  movieId      Int
-  movie        Movie    @relation(fields: [movieId], references: [id])
+model Movie {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  posterUrl   String?
+  year        Int
+  duration    String
+  genres      String   // Storing genres as a JSON string
+  imdbRating  Float
+  viewCount   Int      @default(0)
+  likes       Int      @default(0)
+  status      String   @default("PUBLISHED") // PUBLISHED, PENDING_DELETION
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    String
+  reviews     Review[]
+  subtitles   Subtitle[]
 }
 
 model Review {
@@ -46,27 +56,22 @@ model Review {
   comment   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  movieId   Int
   movie     Movie    @relation(fields: [movieId], references: [id])
-  userId    String
+  movieId   Int
   user      User     @relation(fields: [userId], references: [id])
+  userId    String
 }
 
-model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  role          String    @default("USER")
-  status        String    @default("ACTIVE")
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  movies        Movie[]
-  reviews       Review[]
+model Subtitle {
+  id            Int      @id @default(autoincrement())
+  language      String
+  fileUrl       String
+  uploaderName  String
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  movie         Movie    @relation(fields: [movieId], references: [id])
+  movieId       Int
 }
 
 model Account {
@@ -82,6 +87,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -93,6 +100,8 @@ model Session {
   sessionToken String   @unique
   userId       String
   expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 

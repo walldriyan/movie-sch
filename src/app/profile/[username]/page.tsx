@@ -1,8 +1,9 @@
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck } from 'lucide-react';
+import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil } from 'lucide-react';
 import React from 'react';
-import type { Movie, User } from '@prisma/client';
+import type { User as PrismaUser } from '@prisma/client';
+import type { Movie } from '@/lib/types';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -12,14 +13,9 @@ import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import EditProfileDialog from '@/components/edit-profile-dialog';
+import { Button } from '@/components/ui/button';
 
-
-const staticProfileData = {
-  bio: 'Bringing you the latest and greatest in the world of cinema. I curate movie lists, write reviews, and help you discover your next favorite film. Join me on this cinematic journey!',
-  website: 'https://cineverse.example.com',
-  twitter: 'https://twitter.com/cineverse',
-  linkedin: 'https://linkedin.com/in/cineverse',
-};
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
   const session = await auth();
@@ -27,7 +23,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   // Fetch the user whose profile is being viewed
   const allUsers = await getUsers();
-  const profileUser = allUsers.find(u => u.id === params.username);
+  const profileUser = allUsers.find(u => u.id === params.username) as PrismaUser | undefined;
 
   if (!profileUser) {
     notFound();
@@ -36,6 +32,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
   const isOwnProfile = loggedInUser?.id === profileUser.id;
 
   const allMovies = (await getMovies()) as Movie[];
+  const userMovies = allMovies.filter(movie => movie.authorId === profileUser.id);
+  
   const userAvatar =
     profileUser.image ||
     PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
@@ -47,7 +45,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">
-            {allMovies.map((movie) => {
+            {userMovies.map((movie) => {
               const movieImageUrl =
                 movie.posterUrl ||
                 PlaceHolderImages.find(
@@ -104,51 +102,62 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
           {/* Right side - Profile Info */}
           <div className="md:col-span-1">
-            <div className="sticky top-24 space-y-6">
-              <Avatar className="w-16 h-16">
-                {userAvatar && (
-                  <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
-                )}
-                <AvatarFallback>
-                  {profileUser.name?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
+            <div className="sticky top-24 space-y-6 border-l pl-6">
+              <div className="flex justify-between items-start">
+                <Avatar className="w-16 h-16">
+                  {userAvatar && (
+                    <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
+                  )}
+                  <AvatarFallback>
+                    {profileUser.name?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+                {isOwnProfile && <EditProfileDialog user={profileUser} />}
+              </div>
               <h3 className="text-xl font-semibold">{profileUser.name}</h3>
-              <p className="text-muted-foreground text-sm">
-                {staticProfileData.bio}
-              </p>
+              {profileUser.bio && (
+                <p className="text-muted-foreground text-sm">
+                  {profileUser.bio}
+                </p>
+              )}
               <Separator />
               <div className="flex items-center gap-4 text-muted-foreground">
-                <Link
-                  href={staticProfileData.website}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary"
-                >
-                  <LinkIcon className="w-5 h-5" />
-                </Link>
-                <Link
-                  href={staticProfileData.twitter}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary"
-                >
-                  <Twitter className="w-5 h-5" />
-                </Link>
-                <Link
-                  href={staticProfileData.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-primary"
-                >
-                  <Linkedin className="w-5 h-5" />
-                </Link>
+                {profileUser.website && (
+                  <Link
+                    href={profileUser.website}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary"
+                  >
+                    <LinkIcon className="w-5 h-5" />
+                  </Link>
+                )}
+                {profileUser.twitter && (
+                  <Link
+                    href={profileUser.twitter}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary"
+                  >
+                    <Twitter className="w-5 h-5" />
+                  </Link>
+                )}
+                {profileUser.linkedin && (
+                  <Link
+                    href={profileUser.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-primary"
+                  >
+                    <Linkedin className="w-5 h-5" />
+                  </Link>
+                )}
               </div>
 
               {isOwnProfile && loggedInUser && (
                 <>
                   <Separator />
-                  <Card>
+                  <Card className='border-0 shadow-none'>
                     <CardHeader>
                       <CardTitle className="text-lg">My Details</CardTitle>
                     </CardHeader>
@@ -165,12 +174,12 @@ export default async function ProfilePage({ params }: { params: { username: stri
                           </Badge>
                         </div>
                       </div>
-                       <div>
-                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                       <div className="mt-4">
+                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
                           <ShieldCheck className="h-4 w-4"/>
                           Permissions
                         </h4>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2">
                           {loggedInUser.permissions?.map(permission => (
                             <Badge key={permission} variant="outline" className="font-mono text-xs">
                               {permission}
