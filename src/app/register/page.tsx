@@ -46,12 +46,12 @@ export default function RegisterPage() {
         body: JSON.stringify(submittedData),
       });
       
+      const resClone = response.clone();
       let responseBody;
       try {
         responseBody = await response.json();
       } catch (jsonError) {
-        // If response is not JSON, read it as text
-        responseBody = await response.text();
+        responseBody = await resClone.text();
       }
       
       serverResponse = {
@@ -61,7 +61,10 @@ export default function RegisterPage() {
       };
 
       if (!response.ok) {
-        throw new Error(typeof responseBody === 'object' && responseBody.message ? responseBody.message : 'Registration failed');
+        const errorMessage = (typeof responseBody === 'object' && responseBody.message) 
+            ? responseBody.message 
+            : typeof responseBody === 'string' ? responseBody : 'Registration failed';
+        throw new Error(errorMessage);
       }
 
       // Automatically sign in the user after successful registration
@@ -169,29 +172,31 @@ export default function RegisterPage() {
         </Card>
         
         {/* Debug Information Box */}
-        <Card className="mt-4 bg-muted/50">
-          <CardHeader>
-            <CardTitle className="text-lg">Debug Information</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2 text-xs">
-              <div>
-                <h4 className="font-bold">Live Input Data:</h4>
-                <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
-                  {JSON.stringify({ name, email, password: password.replace(/./g, '*') }, null, 2)}
-                </pre>
-              </div>
-              {debugInfo && (
+        {(debugInfo) && (
+          <Card className="mt-4 bg-muted/50">
+            <CardHeader>
+              <CardTitle className="text-lg text-destructive">Debug Information</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2 text-xs">
                 <div>
-                  <h4 className="font-bold mt-4">Last Action Trace:</h4>
+                  <h4 className="font-bold">Live Input Data:</h4>
                   <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
-                    {JSON.stringify(debugInfo, null, 2)}
+                    {JSON.stringify({ name, email, password: password.replace(/./g, '*') }, null, 2)}
                   </pre>
                 </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
+                {debugInfo && (
+                  <div>
+                    <h4 className="font-bold mt-4">Last Action Trace:</h4>
+                    <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
+                      {JSON.stringify(debugInfo, null, 2)}
+                    </pre>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
       </div>
     </div>
