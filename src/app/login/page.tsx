@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useFormState, useFormStatus } from 'react-dom';
+import { authenticate } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,91 +14,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-import { useToast } from '@/hooks/use-toast';
+import { Film, AlertCircle } from 'lucide-react';
 
 export default function LoginPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
-
-  const handleCredentialsLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (result?.error) {
-        let errorObject;
-        // The error can be a stringified JSON object or a simple string like 'CredentialsSignin'
-        try {
-          // Attempt to parse the error message as JSON (our custom debug info)
-          errorObject = JSON.parse(result.error);
-        } catch (e) {
-          // If parsing fails, it's likely a standard NextAuth error string
-          errorObject = {
-            name: result.error, // e.g., 'CredentialsSignin'
-            message:
-              result.error === 'CredentialsSignin'
-                ? 'Invalid email or password'
-                : 'An authentication error occurred. Please try again.',
-          };
-        }
-        setError(errorObject);
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: errorObject.message,
-        });
-      } else if (result?.ok) {
-        toast({
-          title: 'Success',
-          description: 'Login successful! Redirecting...',
-        });
-        router.push('/');
-        router.refresh();
-      } else {
-        // Handle cases where the sign-in result is neither "ok" nor has an error.
-        // This could happen with network issues that don't throw an exception.
-        const unknownError = {
-          name: 'UnknownSignInError',
-          message: 'An unknown error occurred. The sign-in result was not "ok" and had no error property.',
-          signInResult: result, // include the full result for debugging
-        };
-        setError(unknownError);
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: unknownError.message,
-        });
-      }
-    } catch (err: any) {
-        // This catch block will handle network errors like "Failed to fetch"
-        let errorObject = { 
-            name: err.name || 'CatchAllError',
-            message: err.message || 'An unexpected network or client-side error occurred.', 
-            cause: err.cause, // Include cause if available
-        };
-        setError(errorObject);
-        toast({
-            variant: 'destructive',
-            title: 'Login Failed',
-            description: errorObject.message,
-        });
-    } finally {
-      setLoading(false);
-    }
-  };
-
+  const [errorMessage, dispatch] = useFormState(authenticate, undefined);
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background px-4">
@@ -113,7 +32,7 @@ export default function LoginPage() {
              <p className="mt-2 text-muted-foreground">Welcome back! Please sign in to your account.</p>
         </div>
         <Card>
-          <form onSubmit={handleCredentialsLogin}>
+          <form action={dispatch}>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl">Login</CardTitle>
               <CardDescription>
@@ -129,9 +48,6 @@ export default function LoginPage() {
                     type="email"
                     placeholder="m@example.com"
                     required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
@@ -141,16 +57,23 @@ export default function LoginPage() {
                     name="password"
                     type="password"
                     required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
                 />
+              </div>
+              <div
+                className="flex h-8 items-end space-x-1"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {errorMessage && (
+                  <>
+                    <AlertCircle className="h-5 w-5 text-destructive" />
+                    <p className="text-sm text-destructive">{errorMessage}</p>
+                  </>
+                )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-               <Button className="w-full" type="submit" disabled={loading}>
-                {loading ? 'Signing in...' : 'Login'}
-              </Button>
+               <LoginButton />
                 <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <Link href="/register" className="font-semibold text-primary hover:underline">
@@ -160,19 +83,17 @@ export default function LoginPage() {
             </CardFooter>
           </form>
         </Card>
-        {error && (
-            <Card className="mt-4 bg-destructive/10 border-destructive">
-                <CardHeader>
-                    <CardTitle className="text-destructive text-lg">Debug Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify(error, null, 2)}
-                    </pre>
-                </CardContent>
-            </Card>
-        )}
       </div>
     </div>
+  );
+}
+
+function LoginButton() {
+  const { pending } = useFormStatus();
+ 
+  return (
+    <Button className="w-full" type="submit" disabled={pending}>
+      {pending ? 'Signing in...' : 'Login'}
+    </Button>
   );
 }

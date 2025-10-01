@@ -15,6 +15,7 @@ export async function authenticate(
 ) {
   try {
     await signIn('credentials', formData);
+    return 'Success';
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
