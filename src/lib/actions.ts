@@ -43,11 +43,15 @@ export async function doSignOut() {
 }
 
 export async function registerUser(prevState: any, formData: FormData) {
-  const { name, email, password } = Object.fromEntries(formData.entries());
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  
+  const inputData = { name, email };
 
   try {
      if (!name || !email || !password) {
-      return { message: 'Missing name, email, or password' };
+      return { message: 'Missing name, email, or password', input: inputData };
     }
 
     const existingUser = await prisma.user.findUnique({
@@ -55,7 +59,7 @@ export async function registerUser(prevState: any, formData: FormData) {
     });
 
     if (existingUser) {
-      return { message: 'User with this email already exists' };
+      return { message: 'User with this email already exists', input: inputData };
     }
 
     const hashedPassword = await bcrypt.hash(password as string, 12);
@@ -65,7 +69,7 @@ export async function registerUser(prevState: any, formData: FormData) {
       userRole = ROLES.SUPER_ADMIN;
     }
 
-    await prisma.user.create({
+    const newUser = await prisma.user.create({
       data: {
         name: name as string,
         email: email as string,
@@ -77,14 +81,21 @@ export async function registerUser(prevState: any, formData: FormData) {
     // Automatically sign in after registration
     await signIn('credentials', { email, password, redirectTo: '/' });
 
-    return { message: 'Success' };
+    return { message: 'Success', user: newUser, input: inputData };
 
   } catch (error: any) {
-    console.error('REGISTRATION_ERROR', error);
-     if (error instanceof AuthError) {
-      return { message: `Sign in after registration failed: ${error.type}` };
+    if (error.type === 'CredentialsSignin') {
+      // This is a special case from next-auth, let it redirect
+      throw error;
     }
-    return { message: `An unexpected error occurred: ${error.message}` };
+     if (error instanceof AuthError) {
+       // NEXT_REDIRECT is a special error that should not be caught.
+       if (error.type === 'NEXT_REDIRECT') {
+        throw error;
+       }
+      return { message: `Sign in after registration failed: ${error.type}`, input: inputData };
+    }
+    return { message: `An unexpected error occurred: ${error.message}`, input: inputData };
   }
 }
 

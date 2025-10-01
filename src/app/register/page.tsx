@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,11 +15,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Film, AlertCircle } from 'lucide-react';
-import { registerUser } from '@/lib/actions';
+import { getSuperAdminEmailForDebug, registerUser } from '@/lib/actions';
 
 
 export default function RegisterPage() {
   const [state, formAction] = useActionState(registerUser, { message: null });
+  const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAdminEmail = async () => {
+      const email = await getSuperAdminEmailForDebug();
+      setSuperAdminEmail(email);
+    };
+    fetchAdminEmail();
+  }, []);
+
+  const isMatch = superAdminEmail && state?.input?.email === superAdminEmail;
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background px-4">
@@ -89,6 +100,18 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
+
+         <div className="p-4 border border-dashed rounded-lg text-left">
+            <h2 className="text-lg font-semibold mb-2">Debug Information</h2>
+            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+              {JSON.stringify({
+                "SUPER_ADMIN_EMAIL_from_env": superAdminEmail || 'Loading or N/A in prod...',
+                "isMatch?": isMatch ? "true" : "false",
+                "lastServerActionState": state,
+              }, null, 2)}
+            </pre>
+          </div>
+
       </div>
     </div>
   );
