@@ -8,6 +8,7 @@ import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { ROLES } from './permissions';
+import { redirect } from 'next/navigation';
 
 const prisma = new PrismaClient();
 
@@ -20,11 +21,10 @@ export async function getSuperAdminEmailForDebug() {
 
 export async function authenticate(
   prevState: string | undefined,
-  formData: FormData,
+  formData: FormData
 ) {
   try {
     await signIn('credentials', formData);
-    return 'Success';
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -46,26 +46,27 @@ export async function registerUser(prevState: any, formData: FormData) {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
-  
-  const inputData = { name, email };
+
+  if (!name || !email || !password) {
+    redirect('/register?error=Missing%20name,%20email,%20or%20password');
+  }
 
   try {
-     if (!name || !email || !password) {
-      return { message: 'Missing name, email, or password', input: inputData };
-    }
-
     const existingUser = await prisma.user.findUnique({
       where: { email: email as string },
     });
 
     if (existingUser) {
-      return { message: 'User with this email already exists', input: inputData };
+      redirect('/register?error=User%20with%20this%20email%20already%20exists');
     }
 
     const hashedPassword = await bcrypt.hash(password as string, 12);
 
     let userRole = ROLES.USER;
-    if (process.env.SUPER_ADMIN_EMAIL && email === process.env.SUPER_ADMIN_EMAIL) {
+    if (
+      process.env.SUPER_ADMIN_EMAIL &&
+      email === process.env.SUPER_ADMIN_EMAIL
+    ) {
       userRole = ROLES.SUPER_ADMIN;
     }
 
@@ -77,33 +78,34 @@ export async function registerUser(prevState: any, formData: FormData) {
         role: userRole,
       },
     });
-
-    await signIn('credentials', { email, password, redirectTo: '/' });
-    
-    return { message: 'Success', input: inputData };
-
   } catch (error: any) {
-    if (error instanceof AuthError && error.type === 'NEXT_REDIRECT') {
-      throw error;
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // Handle potential database errors, e.g., unique constraint failed again
+      return redirect(
+        `/register?error=Could%20not%20create%20user:%20${error.code}`
+      );
     }
-    
+    return redirect(`/register?error=An%20unexpected%20error%20occurred`);
+  }
+
+  // After successful registration, attempt to sign in
+  try {
+    await signIn('credentials', { email, password, redirectTo: '/' });
+  } catch (error) {
     if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return { message: 'Sign in after registration failed: Invalid credentials.', input: inputData };
-        default:
-           return { message: `An unexpected AuthError occurred: ${error.type}`, input: inputData };
-      }
+      // Don't redirect here, just show an error on the login page.
+      // The user is created, they can try to log in manually.
+      redirect(
+        '/login?error=Registration%20successful,%20but%20automatic%20login%20failed.'
+      );
     }
-    
-    return { message: `An unexpected error occurred: ${error.message || error}`, input: inputData };
+    throw error; // Re-throw other errors
   }
 }
 
-
 export async function getMovies() {
   const movies = await prisma.movie.findMany({
-    orderBy: { updatedAt: 'desc' },
+    orderBy: { createdAt: 'desc' },
     include: {
       author: true,
     },
@@ -118,14 +120,14 @@ export async function getMovie(movieId: number) {
   const movie = await prisma.movie.findUnique({
     where: { id: movieId },
     include: {
-        reviews: {
-            include: {
-                user: true
-            }
+      reviews: {
+        include: {
+          user: true,
         },
-        subtitles: true,
-        author: true,
-    }
+      },
+      subtitles: true,
+      author: true,
+    },
   });
   if (!movie) return null;
 
@@ -135,10 +137,7 @@ export async function getMovie(movieId: number) {
   };
 }
 
-export async function saveMovie(
-  movieData: MovieFormData,
-  id?: number
-) {
+export async function saveMovie(movieData: MovieFormData, id?: number) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
@@ -149,7 +148,7 @@ export async function saveMovie(
     genres: JSON.stringify(movieData.genres),
     authorId: session.user.id,
   };
-  
+
   if (id) {
     await prisma.movie.update({ where: { id }, data: data as any });
     revalidatePath(`/manage`);
@@ -198,9 +197,30 @@ export async function updateUserProfile(
     throw new Error('Not authorized');
   }
 
+  const updateData: { [key: string]: string } = {};
+
+  if (data.name !== undefined) {
+    updateData.name = data.name;
+  }
+  if (data.bio !== undefined) {
+    updateData.bio = data.bio;
+  }
+  if (data.website !== undefined) {
+    updateData.website = data.website;
+  }
+  if (data.twitter !== undefined) {
+    updateData.twitter = data.twitter;
+  }
+  if (data.linkedin !== undefined) {
+    updateData.linkedin = data.linkedin;
+  }
+  if (data.image !== undefined) {
+    updateData.image = data.image;
+  }
+
   await prisma.user.update({
     where: { id: userId },
-    data,
+    data: updateData,
   });
 
   revalidatePath(`/profile/${userId}`);
