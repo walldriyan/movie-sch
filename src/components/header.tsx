@@ -1,6 +1,6 @@
 'use client';
 
-import { Film, Search } from 'lucide-react';
+import { Film, LayoutGrid, Search } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Input } from './ui/input';
