@@ -46,28 +46,33 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<any>(null);
 
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    const result = await signIn('credentials', {
-      redirect: false,
-      email,
-      password,
-    });
-
-    setLoading(false);
-    if (result?.error) {
-      setError(result.error);
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: result.error,
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
       });
-    } else if (result?.ok) {
-      router.push('/');
+
+      if (result?.error) {
+        throw new Error(result.error);
+      } else if (result?.ok) {
+        router.push('/');
+      }
+    } catch (err: any) {
+        setError(err);
+        toast({
+            variant: 'destructive',
+            title: 'Login Failed',
+            description: err.message || 'An unexpected error occurred.',
+        });
+    } finally {
+        setLoading(false);
     }
   };
 
@@ -157,7 +162,7 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify({ message: error }, null, 2)}
+                        {JSON.stringify({ message: error.message, stack: error.stack }, null, 2)}
                     </pre>
                 </CardContent>
             </Card>
