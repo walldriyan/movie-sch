@@ -1,12 +1,13 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star } from 'lucide-react';
+import { Film, Globe, Star, Tv } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
 import type { Movie } from '@prisma/client';
 import { auth } from '@/auth';
+import { Separator } from '@/components/ui/separator';
 
 export default async function HomePage() {
   const session = await auth();
@@ -17,14 +18,6 @@ export default async function HomePage() {
       <div className="w-full bg-background text-foreground">
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
           <div className="max-w-md">
-            {session?.user && (
-              <div className="p-4 mb-8 border border-dashed rounded-lg text-left">
-                <h2 className="text-lg font-semibold mb-2">Session Debug Info</h2>
-                <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-                  {JSON.stringify(session, null, 2)}
-                </pre>
-              </div>
-            )}
             <h1 className="font-serif text-4xl font-bold">
               Your Catalog is Empty
             </h1>
@@ -48,14 +41,23 @@ export default async function HomePage() {
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 py-8 mt-16">
-        {session?.user && (
-          <div className="p-4 mb-8 border border-dashed rounded-lg">
-            <h2 className="text-lg font-semibold mb-2">Session Debug Info</h2>
-            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-              {JSON.stringify(session, null, 2)}
-            </pre>
-          </div>
-        )}
+        <div className="flex items-center gap-2 mb-8">
+            <Button variant="secondary" className="rounded-full">
+                <Film />
+                <span>All</span>
+            </Button>
+             <Button variant="outline" className="rounded-full">
+                <Globe />
+                <span>International</span>
+            </Button>
+             <Button variant="outline" className="rounded-full">
+                <Tv />
+                <span>Series</span>
+            </Button>
+        </div>
+
+        <Separator className="mb-12" />
+        
         <div className="space-y-12">
           {allMovies.map((movie) => {
             const movieImageUrl =
