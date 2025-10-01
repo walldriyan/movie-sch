@@ -9,6 +9,9 @@ import {
   Bookmark,
   MoreHorizontal,
   Share2,
+  BookText,
+  ListVideo,
+  ThumbsUp,
 } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import Header from '@/components/header';
@@ -31,7 +34,8 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { cn } from '@/lib/utils';
 
 
 const LOCAL_STORAGE_KEY = 'movies_data';
@@ -40,6 +44,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
   const { id: movieId } = React.use(params);
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState('about');
 
   useEffect(() => {
     setIsMounted(true);
@@ -78,6 +83,10 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl);
 
   const authorAvatar = PlaceHolderImages.find(img => img.id === 'avatar-1');
+
+  const tabButtonStyle = "flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground";
+  const activeTabButtonStyle = "text-primary font-semibold";
+
 
   return (
     <div className="min-h-screen w-full bg-background">
@@ -119,19 +128,27 @@ export default function MoviePage({ params }: { params: { id: string } }) {
             </div>
 
             <Separator />
-            <div className='flex items-center justify-between py-2 text-muted-foreground'>
-                <div className='flex items-center gap-4'>
-                    <div className='flex items-center gap-2'>
+            <div className='flex items-center justify-between py-4 text-muted-foreground'>
+                <div className='flex items-center gap-6'>
+                    <button onClick={() => setActiveTab('about')} className={cn(tabButtonStyle, activeTab === 'about' && activeTabButtonStyle)}>
                       <Image src="/imdb.png" alt="IMDb" width={40} height={20} />
                       <div className="flex items-center gap-1">
                           <Star className="w-5 h-5 text-yellow-400" />
                           <span>{movie.imdbRating.toFixed(1)}</span>
                       </div>
-                    </div>
-                     <div className="flex items-center gap-1">
+                    </button>
+                     <button onClick={() => setActiveTab('reviews')} className={cn(tabButtonStyle, activeTab === 'reviews' && activeTabButtonStyle)}>
                         <MessageCircle className="w-5 h-5" />
                         <span>{movie.reviews.length}</span>
-                    </div>
+                    </button>
+                    <button onClick={() => setActiveTab('subtitles')} className={cn(tabButtonStyle, activeTab === 'subtitles' && activeTabButtonStyle)}>
+                        <ListVideo className="w-5 h-5" />
+                        <span>Subtitles</span>
+                    </button>
+                    <button onClick={() => setActiveTab('recommendations')} className={cn(tabButtonStyle, activeTab === 'recommendations' && activeTabButtonStyle)}>
+                        <ThumbsUp className="w-5 h-5" />
+                        <span>Recommendations</span>
+                    </button>
                 </div>
                 <div className='flex items-center gap-2'>
                     <Button variant="ghost" size="icon"><Bookmark className='w-5 h-5' /></Button>
@@ -143,13 +160,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
 
           </header>
 
-          <Tabs defaultValue="about" className="w-full">
-            <TabsList>
-              <TabsTrigger value="about">About</TabsTrigger>
-              <TabsTrigger value="reviews">Reviews</TabsTrigger>
-              <TabsTrigger value="subtitles">Subtitles</TabsTrigger>
-              <TabsTrigger value="recommendations">Recommendations</TabsTrigger>
-            </TabsList>
+          <Tabs value={activeTab}>
             <TabsContent value="about">
               <div
                 className="prose prose-invert max-w-none mx-auto text-foreground/80 mt-6"
