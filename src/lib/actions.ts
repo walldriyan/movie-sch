@@ -44,25 +44,30 @@ export async function doSignOut() {
   await signOut();
 }
 
-export async function registerUser(prevState: any, formData: FormData) {
+export async function registerUser(
+  prevState: { message: string | null, input?: any },
+  formData: FormData
+): Promise<{ message: string | null, input?: any }> {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
+  const formInput = { name, email };
+
 
   if (!name || !email || !password) {
-    redirect('/register?error=Missing%20name,%20email,%20or%20password');
+    return { message: 'Missing name, email, or password', input: formInput };
   }
 
   try {
     const existingUser = await prisma.user.findUnique({
-      where: { email: email as string },
+      where: { email },
     });
 
     if (existingUser) {
-      redirect('/register?error=User%20with%20this%20email%20already%20exists');
+      return { message: 'User with this email already exists', input: formInput };
     }
 
-    const hashedPassword = await bcrypt.hash(password as string, 12);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
     let userRole = ROLES.USER;
     if (
@@ -74,20 +79,19 @@ export async function registerUser(prevState: any, formData: FormData) {
 
     await prisma.user.create({
       data: {
-        name: name as string,
-        email: email as string,
+        name,
+        email,
         password: hashedPassword,
         role: userRole,
       },
     });
+
   } catch (error: any) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       // Handle potential database errors, e.g., unique constraint failed again
-      return redirect(
-        `/register?error=Could%20not%20create%20user:%20${error.code}`
-      );
+      return { message: `Could not create user: ${error.code}`, input: formInput };
     }
-    return redirect(`/register?error=An%20unexpected%20error%20occurred`);
+    return { message: 'An unexpected error occurred during registration.', input: formInput };
   }
 
   // After successful registration, attempt to sign in
@@ -101,8 +105,15 @@ export async function registerUser(prevState: any, formData: FormData) {
         '/login?error=Registration%20successful,%20but%20automatic%20login%20failed.'
       );
     }
-    throw error; // Re-throw other errors
+    // For other errors, we might want to return a message instead of throwing
+     if (error instanceof Error) {
+        return { message: error.message, input: formInput };
+    }
+    throw error;
   }
+   // This part is unreachable if signIn is successful because it redirects.
+   // But needed for type safety.
+  return { message: 'Success' };
 }
 
 export async function getMovies() {
