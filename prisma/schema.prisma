@@ -18,14 +18,51 @@ model User {
   image         String?
   password      String?
   role          String    @default("USER")
-  accounts      Account[]
-  sessions      Session[]
-  movies        Movie[]
-  reviews       Review[]
   bio           String?
   website       String?
   twitter       String?
   linkedin      String?
+  movies        Movie[]
+  reviews       Review[]
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model Movie {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  posterUrl   String?
+  year        Int
+  duration    String
+  genres      String   // Stored as a JSON string
+  imdbRating  Float
+  viewCount   Int
+  likes       Int
+  status      String   @default("PUBLISHED") // e.g., PUBLISHED, PENDING_DELETION
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId    String
+  reviews     Review[]
+  subtitles   Subtitle[]
+}
+
+model Review {
+  id        Int    @id @default(autoincrement())
+  rating    Int
+  comment   String
+  movie     Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   Int
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+}
+
+model Subtitle {
+  id            Int    @id @default(autoincrement())
+  language      String
+  downloadUrl   String
+  uploaderName  String
+  movie         Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId       Int
 }
 
 model Account {
@@ -34,15 +71,14 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -61,47 +97,4 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-}
-
-model Movie {
-  id          Int       @id @default(autoincrement())
-  title       String
-  posterUrl   String?
-  description String
-  year        Int
-  duration    String
-  imdbRating  Float
-  genres      String
-  status      String    @default("PUBLISHED")
-  viewCount   Int       @default(0)
-  likes       Int       @default(0)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  reviews     Review[]
-  subtitles   Subtitle[]
-  authorId    String
-  author      User      @relation(fields: [authorId], references: [id])
-}
-
-model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  comment   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  movieId   Int
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  uploaderName String
-  fileUrl      String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  movieId      Int
-  movie        Movie    @relation(fields: [movieId], references: [id])
 }
