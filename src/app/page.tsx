@@ -62,19 +62,20 @@ export default function HomePage() {
       <main className='max-w-4xl mx-auto px-4 py-8'>
         <div className='space-y-12'>
           {allMovies.map(movie => {
-            const movieImageUrl = movie.posterUrl ||
-              (movie.galleryImageIds.length > 0 
-                ? PlaceHolderImages.find(p => p.id === movie.galleryImageIds[0])?.imageUrl
-                : null);
+            const movieImageUrl = 
+              (movie.galleryImageIds && movie.galleryImageIds.length > 0 ? movie.galleryImageIds[0] : movie.posterUrl) ||
+              PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
 
             return (
               <article key={movie.id}>
                 <div className="flex items-center space-x-3 mb-4 text-sm">
-                  <Avatar className='w-6 h-6'>
-                      {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt="Author" data-ai-hint={authorAvatar.imageHint} />}
-                      <AvatarFallback>U</AvatarFallback>
-                  </Avatar>
-                  <span className='font-medium text-foreground'>CineVerse Editor</span>
+                   <Link href="/profile/cineverse-editor" className='flex items-center gap-3 group'>
+                    <Avatar className='w-6 h-6'>
+                        {authorAvatar && <AvatarImage src={authorAvatar.imageUrl} alt="Author" data-ai-hint={authorAvatar.imageHint} />}
+                        <AvatarFallback>U</AvatarFallback>
+                    </Avatar>
+                    <span className='font-medium text-foreground group-hover:text-primary'>CineVerse Editor</span>
+                  </Link>
                   <span className='text-muted-foreground'>{movie.year}</span>
                 </div>
 
