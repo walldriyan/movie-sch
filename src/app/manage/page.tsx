@@ -251,7 +251,7 @@ export default function ManageMoviesPage() {
     <>
       <SidebarProvider>
         <Sidebar variant="inset" collapsible="icon">
-          <SidebarContent className="p-0">
+          <SidebarContent className="p-0 flex flex-col">
             <div className='p-4'>
               <Link href="/" className="flex items-center space-x-2">
                 <Film className="h-7 w-7 text-primary" />
@@ -295,6 +295,7 @@ export default function ManageMoviesPage() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+            <div className="flex-grow" />
           </SidebarContent>
           <SidebarFooter>
             <SidebarMenuButton asChild>
