@@ -55,7 +55,7 @@ export default function MovieDetailClient({
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
 
-        <div className="relative z-10 text-foreground flex flex-col items-start text-left px-4 md:px-8 pb-8 max-w-4xl w-full">
+        <div className="relative z-10 text-foreground flex flex-col items-start text-left px-4 md:px-8 pb-0 max-w-4xl w-full">
           <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
             {movie.title}
           </h1>
@@ -148,7 +148,7 @@ export default function MovieDetailClient({
         </div>
       </header>
 
-      <Tabs value={activeTab} className="mt-12 px-4 md:px-8 max-w-4xl">
+      <Tabs value={activeTab} className="mt-8 px-4 md:px-8 max-w-4xl">
         {children}
       </Tabs>
     </>
