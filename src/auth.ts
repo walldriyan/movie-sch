@@ -5,6 +5,9 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { permissions, ROLES } from '@/lib/permissions';
 import type { NextAuthConfig } from 'next-auth';
+import { config } from 'dotenv';
+
+config(); // Load environment variables from .env file
 
 const prisma = new PrismaClient();
 
