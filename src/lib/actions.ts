@@ -162,14 +162,22 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     throw new Error('User not authenticated');
   }
 
-  let status = movieData.status;
-  if (!id) { // Only on creation
-    if(session.user.role === ROLES.USER_ADMIN) {
+  let status;
+
+  if (id) {
+    // It's an update, always set to pending approval
+    status = MovieStatus.PENDING_APPROVAL;
+  } else {
+    // It's a creation
+    if (session.user.role === ROLES.USER_ADMIN) {
       status = MovieStatus.PENDING_APPROVAL;
     } else if (session.user.role === ROLES.SUPER_ADMIN) {
       status = MovieStatus.PUBLISHED;
+    } else {
+       status = movieData.status; // fallback
     }
   }
+
 
   const data = {
     ...movieData,
