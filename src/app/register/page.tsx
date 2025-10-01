@@ -14,9 +14,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film } from 'lucide-react';
+import { Film, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signIn } from 'next-auth/react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -25,7 +26,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,15 +43,7 @@ export default function RegisterPage() {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        let errorData;
-        try {
-          // Try to parse it as JSON
-          errorData = JSON.parse(errorText);
-        } catch (e) {
-          // If parsing fails, use the raw text
-          errorData = { message: errorText };
-        }
+        const errorData = await response.json();
         throw new Error(errorData.message || 'Registration failed');
       }
 
@@ -72,12 +65,7 @@ export default function RegisterPage() {
       }
 
     } catch (err: any) {
-      setError(err);
-      toast({
-        variant: 'destructive',
-        title: 'Operation Failed',
-        description: err.message || 'An unexpected error occurred.',
-      });
+      setError(err.message || 'An unexpected error occurred.');
     } finally {
         setLoading(false);
     }
@@ -104,6 +92,13 @@ export default function RegisterPage() {
           </CardHeader>
           <form onSubmit={handleRegister}>
             <CardContent className="grid gap-4">
+               {error && (
+                <Alert variant="destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Registration Error</AlertTitle>
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
               <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
                 <Input 
@@ -153,18 +148,6 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
-        {error && (
-            <Card className="mt-4 bg-destructive/10 border-destructive">
-                <CardHeader>
-                    <CardTitle className="text-destructive text-lg">Debug Information</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify({ name: error.name, message: error.message }, null, 2)}
-                    </pre>
-                </CardContent>
-            </Card>
-        )}
       </div>
     </div>
   );
