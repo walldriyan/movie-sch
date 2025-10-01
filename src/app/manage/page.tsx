@@ -12,7 +12,7 @@ export default async function ManageMoviesPage() {
     notFound();
   }
 
-  const initialMovies = await getMovies();
+  const { movies, totalPages } = await getMovies({ page: 1, limit: 10 });
 
-  return <ManageMoviesClient initialMovies={initialMovies as any} user={user} />;
+  return <ManageMoviesClient initialMovies={movies as any} initialTotalPages={totalPages} user={user} />;
 }
