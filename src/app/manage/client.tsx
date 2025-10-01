@@ -3,9 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import type { Movie } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { getMovies, saveMovie, deleteMovie } from '@/lib/actions';
+import { saveMovie, deleteMovie } from '@/lib/actions';
 import type { MovieFormData } from '@/lib/types';
-import { PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
 import MovieList from '@/components/manage/movie-list';
 import MovieForm from '@/components/manage/movie-form';
@@ -19,6 +19,50 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { Prisma } from '@prisma/client';
+
+const prisma = new PrismaClient();
+
+async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string } = {}) {
+    const { page = 1, limit = 10, userId, userRole } = options;
+    
+    if (!userId || !userRole) {
+        return { movies: [], totalPages: 0, totalMovies: 0 };
+    }
+
+    const skip = (page - 1) * limit;
+
+    let whereClause: Prisma.MovieWhereInput = {};
+
+    if (userRole === ROLES.USER_ADMIN) {
+        whereClause = { authorId: userId };
+    } else if (userRole !== ROLES.SUPER_ADMIN) {
+      return { movies: [], totalPages: 0, totalMovies: 0 };
+    }
+
+    const movies = await prisma.movie.findMany({
+        where: whereClause,
+        skip: skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            author: true,
+        },
+    });
+
+    const totalMovies = await prisma.movie.count({ where: whereClause });
+    const totalPages = Math.ceil(totalMovies / limit);
+
+    return {
+        movies: movies.map((movie) => ({
+            ...movie,
+            genres: JSON.parse(movie.genres || '[]'),
+        })),
+        totalPages,
+        totalMovies,
+    };
+}
+
 
 interface ManageMoviesClientProps {
   initialMovies: Movie[];
@@ -36,7 +80,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
 
   const fetchMovies = async (page: number) => {
     try {
-      const { movies: moviesFromDb, totalPages: newTotalPages } = await getMovies({ page, limit: 10 });
+      const { movies: moviesFromDb, totalPages: newTotalPages } = await getMoviesForAdmin({ page, limit: 10, userId: user.id, userRole: user.role });
       setMovies(moviesFromDb as any);
       setTotalPages(newTotalPages);
       setCurrentPage(page);

@@ -105,22 +105,12 @@ export async function registerUser(
 
 
 export async function getMovies(options: { page?: number; limit?: number } = {}) {
-    const session = await auth();
-    const user = session?.user;
-
-    if (!user) {
-        return { movies: [], totalPages: 0, totalMovies: 0 };
-    }
-
     const { page = 1, limit = 10 } = options;
     const skip = (page - 1) * limit;
 
-    let whereClause: Prisma.MovieWhereInput = {};
-
-    if (user.role === ROLES.USER_ADMIN) {
-        whereClause = { authorId: user.id };
-    }
-    // SUPER_ADMIN has an empty whereClause, fetching all movies.
+    const whereClause: Prisma.MovieWhereInput = {
+      status: 'PUBLISHED'
+    };
 
     const movies = await prisma.movie.findMany({
         where: whereClause,
@@ -334,4 +324,48 @@ export async function updateUserRole(
 
   revalidatePath('/admin/users');
   revalidatePath(`/profile/${userId}`);
+}
+
+async function getMoviesForAdmin(options: { page?: number; limit?: number } = {}) {
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user) {
+        return { movies: [], totalPages: 0, totalMovies: 0 };
+    }
+
+    const { page = 1, limit = 10 } = options;
+    const skip = (page - 1) * limit;
+
+    let whereClause: Prisma.MovieWhereInput = {};
+
+    if (user.role === ROLES.USER_ADMIN) {
+        whereClause = { authorId: user.id };
+    } else if (user.role !== ROLES.SUPER_ADMIN) {
+      // For any other role, they shouldn't access this page. But as a safeguard:
+      return { movies: [], totalPages: 0, totalMovies: 0 };
+    }
+    // SUPER_ADMIN has an empty whereClause, fetching all movies.
+
+    const movies = await prisma.movie.findMany({
+        where: whereClause,
+        skip: skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+            author: true,
+        },
+    });
+
+    const totalMovies = await prisma.movie.count({ where: whereClause });
+    const totalPages = Math.ceil(totalMovies / limit);
+
+    return {
+        movies: movies.map((movie) => ({
+            ...movie,
+            genres: JSON.parse(movie.genres || '[]'),
+        })),
+        totalPages,
+        totalMovies,
+    };
 }
