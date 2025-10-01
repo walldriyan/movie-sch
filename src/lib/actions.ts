@@ -100,9 +100,9 @@ export async function registerUser(
     };
   }
 
-  // Redirect to login page after successful registration
   redirect('/login');
 }
+
 
 export async function getMovies() {
   const movies = await prisma.movie.findMany({
@@ -262,5 +262,48 @@ export async function updateUserProfile(
     data: updateData as any,
   });
 
+  revalidatePath(`/profile/${userId}`);
+}
+
+export async function requestAdminAccess(
+  userId: string,
+  message: string
+) {
+  const session = await auth();
+  if (!session?.user || session.user.id !== userId) {
+    throw new Error('Not authorized');
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      permissionRequestStatus: 'PENDING',
+      permissionRequestMessage: message,
+    },
+  });
+
+  revalidatePath(`/profile/${userId}`);
+  revalidatePath('/admin/users');
+}
+
+export async function updateUserRole(
+  userId: string,
+  role: string,
+  status: string
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    throw new Error('Not authorized');
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      role: role,
+      permissionRequestStatus: status,
+    },
+  });
+
+  revalidatePath('/admin/users');
   revalidatePath(`/profile/${userId}`);
 }

@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil } from 'lucide-react';
+import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle } from 'lucide-react';
 import React from 'react';
 import type { User as PrismaUser } from '@prisma/client';
 import type { Movie } from '@/lib/types';
@@ -15,6 +15,40 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import EditProfileDialog from '@/components/edit-profile-dialog';
 import { Button } from '@/components/ui/button';
+import { ROLES } from '@/lib/permissions';
+import RequestAccessDialog from '@/components/request-access-dialog';
+
+const PermissionStatusIndicator = ({ status }: { status: string | null }) => {
+  if (!status || status === 'NONE') return null;
+
+  const statusMap = {
+    PENDING: {
+      icon: <Hourglass className="h-4 w-4" />,
+      text: 'Pending Approval',
+      className: 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20',
+    },
+    APPROVED: {
+      icon: <CheckCircle2 className="h-4 w-4" />,
+      text: 'Request Approved',
+      className: 'bg-green-500/10 text-green-400 border-green-500/20',
+    },
+    REJECTED: {
+      icon: <XCircle className="h-4 w-4" />,
+      text: 'Request Rejected',
+      className: 'bg-red-500/10 text-red-400 border-red-500/20',
+    },
+  };
+
+  const currentStatus = statusMap[status as keyof typeof statusMap];
+  if (!currentStatus) return null;
+
+  return (
+    <div className={`mt-4 rounded-lg p-3 text-sm flex items-center gap-3 border ${currentStatus.className}`}>
+      {currentStatus.icon}
+      <span>{currentStatus.text}</span>
+    </div>
+  );
+};
 
 
 export default async function ProfilePage({ params }: { params: { username: string } }) {
@@ -98,10 +132,15 @@ export default async function ProfilePage({ params }: { params: { username: stri
                 </article>
               );
             })}
+             {userMovies.length === 0 && (
+                <div className="text-center text-muted-foreground py-16">
+                  <p>{profileUser.name} hasn't posted any movies yet.</p>
+                </div>
+             )}
           </div>
 
           {/* Right side - Profile Info */}
-          <div className="md:col-span-1">
+          <aside className="md:col-span-1">
             <div className="sticky top-24 space-y-6 border-l pl-6">
               <div className="flex justify-between items-start">
                 <Avatar className="w-16 h-16">
@@ -157,11 +196,11 @@ export default async function ProfilePage({ params }: { params: { username: stri
               {isOwnProfile && loggedInUser && (
                 <>
                   <Separator />
-                  <Card className='border-0 shadow-none'>
-                    <CardHeader>
+                  <Card className='border-0 shadow-none -mx-6'>
+                    <CardHeader className='px-6'>
                       <CardTitle className="text-lg">My Details</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 px-6">
                       <div>
                         <h4 className="text-sm font-semibold text-muted-foreground">Email</h4>
                         <p className="text-sm">{loggedInUser.email}</p>
@@ -169,7 +208,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
                       <div>
                         <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
                         <div className="text-sm">
-                          <Badge variant={loggedInUser.role === 'SUPER_ADMIN' ? 'default' : 'secondary'}>
+                           <Badge variant={loggedInUser.role === ROLES.SUPER_ADMIN ? 'default' : loggedInUser.role === ROLES.USER_ADMIN ? 'secondary' : 'outline'}>
                             {loggedInUser.role}
                           </Badge>
                         </div>
@@ -179,20 +218,37 @@ export default async function ProfilePage({ params }: { params: { username: stri
                           <ShieldCheck className="h-4 w-4"/>
                           Permissions
                         </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {loggedInUser.permissions?.map(permission => (
-                            <Badge key={permission} variant="outline" className="font-mono text-xs">
-                              {permission}
-                            </Badge>
-                          ))}
-                        </div>
+                        {loggedInUser.permissions && loggedInUser.permissions.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {loggedInUser.permissions.map(permission => (
+                              <Badge key={permission} variant="outline" className="font-mono text-xs">
+                                {permission}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No special permissions.</p>
+                        )}
                       </div>
+                       {loggedInUser.role === ROLES.USER && (
+                        <div>
+                          <Separator className="my-4" />
+                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                            Become a Contributor
+                          </h4>
+                           <p className="text-xs text-muted-foreground mb-3">
+                            Want to add or manage movies? Request admin access to become a contributor.
+                          </p>
+                          <RequestAccessDialog user={profileUser} />
+                           <PermissionStatusIndicator status={profileUser.permissionRequestStatus} />
+                        </div>
+                       )}
                     </CardContent>
                   </Card>
                 </>
               )}
             </div>
-          </div>
+          </aside>
         </div>
       </main>
     </div>
