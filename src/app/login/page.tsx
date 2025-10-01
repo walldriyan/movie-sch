@@ -60,9 +60,14 @@ export default function LoginPage() {
       });
 
       if (result?.error) {
+        // This path is taken if the server returns a specific error message,
+        // but next-auth credential errors often throw instead.
         throw new Error(result.error);
       } else if (result?.ok) {
         router.push('/');
+      } else {
+        // Handle cases where result is null or not ok but has no error
+        throw new Error('An unknown error occurred during login.');
       }
     } catch (err: any) {
         setError(err);
