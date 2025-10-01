@@ -97,7 +97,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
       <Header />
       <main className="max-w-6xl mx-auto px-4 py-8">
         <article>
-          <header className="mb-8 relative h-[500px] rounded-2xl overflow-hidden flex items-center justify-center">
+          <header className="mb-8 relative h-[500px] rounded-2xl overflow-hidden flex items-end justify-start">
             {heroImage && (
               <Image
                   src={heroImage}
@@ -112,7 +112,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                     src={sideImage1.imageUrl}
                     alt="Side image 1"
                     fill
-                    className="object-cover absolute -left-1/2 -translate-x-1/2 opacity-50 blur-sm"
+                    className="object-cover absolute -left-1/2 -translate-x-1/2 opacity-30 blur-md"
                     data-ai-hint={sideImage1.imageHint}
                 />
             )}
@@ -121,7 +121,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
                     src={sideImage2.imageUrl}
                     alt="Side image 2"
                     fill
-                    className="object-cover absolute -right-1/2 translate-x-1/2 opacity-50 blur-sm"
+                    className="object-cover absolute -right-1/2 translate-x-1/2 opacity-30 blur-md"
                     data-ai-hint={sideImage2.imageHint}
                 />
             )}
@@ -129,8 +129,8 @@ export default function MoviePage({ params }: { params: { id: string } }) {
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
             <div className='absolute inset-0 bg-gradient-to-r from-background via-transparent to-background' />
 
-            <div className="relative z-10 text-center text-foreground flex flex-col items-center max-w-2xl">
-               <h1 className="font-serif text-4xl md:text-6xl font-bold leading-tight mb-4">
+            <div className="relative z-10 text-foreground flex flex-col items-start text-left p-8 max-w-4xl">
+               <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
                 {movie.title}
               </h1>
 
