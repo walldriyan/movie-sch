@@ -7,9 +7,11 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
 import type { Movie } from '@prisma/client';
+import { auth } from '@/app/api/auth/[...nextauth]/route';
 
 export default async function HomePage() {
   const allMovies = (await getMovies()) as Movie[];
+  const session = await auth();
 
   if (allMovies.length === 0) {
     return (
@@ -24,9 +26,11 @@ export default async function HomePage() {
               Start by adding your favorite movies to build your personal
               CineVerse.
             </p>
-            <Button asChild className="mt-6" size="lg">
-              <Link href="/manage">Add Your First Movie</Link>
-            </Button>
+            {session?.user && (
+              <Button asChild className="mt-6" size="lg">
+                <Link href="/manage">Add Your First Movie</Link>
+              </Button>
+            )}
           </div>
         </main>
       </div>
@@ -36,7 +40,7 @@ export default async function HomePage() {
   const authorAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-1');
 
   return (
-    <div className="w-full bg.background text-foreground">
+    <div className="w-full bg-background text-foreground">
       <Header />
       <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="space-y-12">
