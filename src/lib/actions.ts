@@ -9,8 +9,8 @@ import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { ROLES } from './permissions';
 import { redirect } from 'next/navigation';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
+import { writeFile, mkdir } from 'fs/promises';
+import { join, dirname } from 'path';
 
 const prisma = new PrismaClient();
 
@@ -194,6 +194,9 @@ export async function uploadProfileImage(formData: FormData) {
 
   const filename = `${Date.now()}-${file.name}`;
   const path = join(process.cwd(), 'public/uploads/avatars', filename);
+
+  // Ensure the directory exists
+  await mkdir(dirname(path), { recursive: true });
 
   await writeFile(path, buffer);
 
