@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import { ROLES } from '@/lib/permissions';
+import 'dotenv/config';
 
 const prisma = new PrismaClient();
 
@@ -23,7 +24,10 @@ export async function POST(req: Request) {
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const userRole = email === process.env.SUPER_ADMIN_EMAIL ? ROLES.SUPER_ADMIN : ROLES.USER;
+    let userRole = ROLES.USER;
+    if (email === process.env.SUPER_ADMIN_EMAIL) {
+      userRole = ROLES.SUPER_ADMIN;
+    }
 
     const user = await prisma.user.create({
       data: {
