@@ -37,15 +37,15 @@ model Movie {
   posterUrl   String?
   year        Int
   duration    String
-  genres      String // Stored as a JSON string
+  genres      String   // Storing genres as a JSON string
   imdbRating  Float
-  viewCount   Int
-  likes       Int
-  status      String   @default("PUBLISHED")
-  author      User     @relation(fields: [authorId], references: [id])
-  authorId    String
+  viewCount   Int      @default(0)
+  likes       Int      @default(0)
+  status      String   @default("PUBLISHED") // PUBLISHED, PENDING_DELETION
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  author      User     @relation(fields: [authorId], references: [id])
+  authorId    String
   reviews     Review[]
   subtitles   Subtitle[]
 }
@@ -54,25 +54,25 @@ model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   movie     Movie    @relation(fields: [movieId], references: [id])
   movieId   Int
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  downloadUrl  String
-  uploaderName String
-  movie        Movie    @relation(fields: [movieId], references: [id])
-  movieId      Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            Int      @id @default(autoincrement())
+  language      String
+  fileUrl       String
+  uploaderName  String
+  downloadCount Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  movie         Movie    @relation(fields: [movieId], references: [id])
+  movieId       Int
 }
-
 
 model Account {
   id                String  @id @default(cuid())
@@ -80,12 +80,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
