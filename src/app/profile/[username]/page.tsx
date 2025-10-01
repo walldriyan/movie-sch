@@ -1,16 +1,19 @@
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Link as LinkIcon, Twitter, Linkedin } from 'lucide-react';
+import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck } from 'lucide-react';
 import React from 'react';
 import type { Movie } from '@prisma/client';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ProfileHeader from '@/components/profile-header';
-import { getMovies } from '@/lib/actions';
+import { getMovies, getUsers } from '@/lib/actions';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import type { User } from '@/lib/types';
+
 
 const staticProfileData = {
   bio: 'Bringing you the latest and greatest in the world of cinema. I curate movie lists, write reviews, and help you discover your next favorite film. Join me on this cinematic journey!',
@@ -19,23 +22,29 @@ const staticProfileData = {
   linkedin: 'https://linkedin.com/in/cineverse',
 };
 
-export default async function ProfilePage() {
+export default async function ProfilePage({ params }: { params: { username: string } }) {
   const session = await auth();
-  const user = session?.user;
+  const loggedInUser = session?.user;
 
-  if (!user) {
+  // Fetch the user whose profile is being viewed
+  const allUsers = await getUsers();
+  const profileUser = allUsers.find(u => u.id === params.username) as User | undefined;
+
+  if (!profileUser) {
     notFound();
   }
 
+  const isOwnProfile = loggedInUser?.id === profileUser.id;
+
   const allMovies = (await getMovies()) as Movie[];
   const userAvatar =
-    user.image ||
+    profileUser.image ||
     PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <ProfileHeader username={user.name || 'User'} />
+        <ProfileHeader username={profileUser.name || 'User'} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">
@@ -102,13 +111,13 @@ export default async function ProfilePage() {
             <div className="sticky top-24 space-y-6">
               <Avatar className="w-16 h-16">
                 {userAvatar && (
-                  <AvatarImage src={userAvatar} alt={user.name || 'User'} />
+                  <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
                 )}
                 <AvatarFallback>
-                  {user.name?.charAt(0).toUpperCase() || 'U'}
+                  {profileUser.name?.charAt(0).toUpperCase() || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <h3 className="text-xl font-semibold">{user.name}</h3>
+              <h3 className="text-xl font-semibold">{profileUser.name}</h3>
               <p className="text-muted-foreground text-sm">
                 {staticProfileData.bio}
               </p>
@@ -139,17 +148,44 @@ export default async function ProfilePage() {
                   <Linkedin className="w-5 h-5" />
                 </Link>
               </div>
-              <Separator />
-              <Card>
-                <CardHeader>
-                  <CardTitle>Session Details</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-                    {JSON.stringify(session, null, 2)}
-                  </pre>
-                </CardContent>
-              </Card>
+
+              {isOwnProfile && loggedInUser && (
+                <>
+                  <Separator />
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">My Details</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground">Email</h4>
+                        <p className="text-sm">{loggedInUser.email}</p>
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
+                        <p className="text-sm">
+                          <Badge variant={loggedInUser.role === 'SUPER_ADMIN' ? 'default' : 'secondary'}>
+                            {loggedInUser.role}
+                          </Badge>
+                        </p>
+                      </div>
+                       <div>
+                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                          <ShieldCheck className="h-4 w-4"/>
+                          Permissions
+                        </h4>
+                        <div className="flex flex-wrap gap-2 mt-2">
+                          {loggedInUser.permissions?.map(permission => (
+                            <Badge key={permission} variant="outline" className="font-mono text-xs">
+                              {permission}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -157,3 +193,5 @@ export default async function ProfilePage() {
     </div>
   );
 }
+
+    
