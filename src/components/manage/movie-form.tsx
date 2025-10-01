@@ -24,7 +24,6 @@ import type { MovieFormData } from '@/lib/types';
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   posterUrl: z.string().optional(),
-  galleryImageIds: z.array(z.string()).optional().default([]),
   description: z.string().min(10, 'Description is required'),
   year: z.coerce.number().min(1800, 'Invalid year'),
   duration: z.string().min(1, 'Duration is required'),
@@ -46,7 +45,6 @@ export default function MovieForm({
   onBack,
 }: MovieFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
-  const galleryFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<MovieFormValues>({
     resolver: zodResolver(movieSchema),
@@ -54,7 +52,6 @@ export default function MovieForm({
       ? {
           title: editingMovie.title,
           posterUrl: editingMovie.posterUrl || '',
-          galleryImageIds: (editingMovie.galleryImageIds as any) || [],
           description: editingMovie.description,
           year: editingMovie.year,
           duration: editingMovie.duration,
@@ -64,7 +61,6 @@ export default function MovieForm({
       : {
           title: '',
           posterUrl: '',
-          galleryImageIds: [],
           description: '',
           year: new Date().getFullYear(),
           duration: '',
@@ -74,14 +70,12 @@ export default function MovieForm({
   });
 
   const posterUrlValue = form.watch('posterUrl');
-  const galleryImageIdsValue = form.watch('galleryImageIds');
 
   const handleSubmit = async (values: MovieFormValues) => {
     const movieData: MovieFormData = {
       title: values.title,
       description: values.description,
       posterUrl: values.posterUrl || null,
-      galleryImageIds: values.galleryImageIds || [],
       year: values.year,
       duration: values.duration,
       genres: values.genres.split(',').map((g) => g.trim()) as any,
@@ -94,43 +88,22 @@ export default function MovieForm({
   };
 
   const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-    isGallery: boolean
+    event: React.ChangeEvent<HTMLInputElement>
   ) => {
-    const files = event.target.files;
-    if (!files) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
 
-    Array.from(files).forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const src = e.target?.result as string;
-        if (src) {
-          if (isGallery) {
-            form.setValue(
-              'galleryImageIds',
-              [...(form.getValues('galleryImageIds') || []), src],
-              { shouldValidate: true, shouldDirty: true }
-            );
-          } else {
-            form.setValue('posterUrl', src, {
-              shouldValidate: true,
-              shouldDirty: true,
-            });
-          }
-        }
-      };
-      reader.readAsDataURL(file);
-    });
-  };
-
-  const removeGalleryImage = (index: number) => {
-    const newImages = (form.getValues('galleryImageIds') || []).filter(
-      (_, i) => i !== index
-    );
-    form.setValue('galleryImageIds', newImages, {
-      shouldValidate: true,
-      shouldDirty: true,
-    });
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const src = e.target?.result as string;
+      if (src) {
+        form.setValue('posterUrl', src, {
+          shouldValidate: true,
+          shouldDirty: true,
+        });
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -208,62 +181,12 @@ export default function MovieForm({
                     <input
                       type="file"
                       ref={posterFileInputRef}
-                      onChange={(e) => handleFileChange(e, false)}
+                      onChange={(e) => handleFileChange(e)}
                       style={{ display: 'none' }}
                       accept="image/*"
                     />
                   </div>
                 </div>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="galleryImageIds"
-            render={() => (
-              <FormItem>
-                <FormLabel className="text-muted-foreground">
-                  Gallery Images
-                </FormLabel>
-                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                  {galleryImageIdsValue?.map((src, index) => (
-                    <div key={index} className="relative group aspect-square">
-                      <Image
-                        src={src}
-                        alt={`Gallery image ${index + 1}`}
-                        fill
-                        className="object-cover rounded-md"
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="icon"
-                        className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                        onClick={() => removeGalleryImage(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="aspect-square w-full h-full flex-col"
-                    onClick={() => galleryFileInputRef.current?.click()}
-                  >
-                    <Upload className="h-6 w-6" />
-                    <span>Upload</span>
-                  </Button>
-                </div>
-                <input
-                  type="file"
-                  ref={galleryFileInputRef}
-                  onChange={(e) => handleFileChange(e, true)}
-                  style={{ display: 'none' }}
-                  accept="image/*"
-                  multiple
-                />
                 <FormMessage />
               </FormItem>
             )}

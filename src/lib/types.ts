@@ -14,8 +14,7 @@ export type Review = PrismaReview & {
 export type Subtitle = PrismaSubtitle;
 
 // This is now redundant with the Prisma model, but kept for client-side compatibility
-export type Movie = Omit<PrismaMovie, 'galleryImageIds' | 'genres'> & {
-  galleryImageIds: string[];
+export type Movie = Omit<PrismaMovie, 'genres'> & {
   genres: string[];
   reviews: Review[];
   subtitles: Subtitle[];

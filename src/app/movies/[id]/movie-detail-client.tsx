@@ -11,13 +11,6 @@ import {
   Share2,
   ListVideo,
 } from 'lucide-react';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from '@/components/ui/carousel';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -35,15 +28,12 @@ export default function MovieDetailClient({
 }) {
   const [activeTab, setActiveTab] = React.useState('about');
   const heroImage =
-    movie.galleryImageIds && movie.galleryImageIds.length > 0
-      ? movie.galleryImageIds[0]
-      : movie.posterUrl
+    movie.posterUrl
       ? movie.posterUrl
       : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')
           ?.imageUrl;
 
   const authorAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-1');
-  const hasGallery = movie.galleryImageIds && movie.galleryImageIds.length > 0;
 
   const tabButtonStyle =
     'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2';
@@ -53,34 +43,14 @@ export default function MovieDetailClient({
   return (
     <>
       <header className="mb-8 relative h-[500px] rounded-2xl overflow-hidden flex items-end justify-between">
-        {hasGallery ? (
-          <Carousel className="w-full h-full">
-            <CarouselContent>
-              {movie.galleryImageIds.map((src: string, index: number) => (
-                <CarouselItem key={index}>
-                  <Image
-                    src={src}
-                    alt={`Gallery image ${index + 1} for ${movie.title}`}
-                    fill
-                    className="object-cover"
-                    priority={index === 0}
-                  />
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-4" />
-            <CarouselNext className="right-4" />
-          </Carousel>
-        ) : (
-          heroImage && (
-            <Image
-              src={heroImage}
-              alt={`Poster for ${movie.title}`}
-              fill
-              className="object-cover"
-              priority
-            />
-          )
+        {heroImage && (
+          <Image
+            src={heroImage}
+            alt={`Poster for ${movie.title}`}
+            fill
+            className="object-cover"
+            priority
+          />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />

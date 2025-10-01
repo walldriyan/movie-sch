@@ -59,10 +59,7 @@ export default async function HomePage() {
         <div className="space-y-12">
           {allMovies.map((movie) => {
             const movieImageUrl =
-              (movie.galleryImageIds &&
-              (movie.galleryImageIds as any).length > 0
-                ? (movie.galleryImageIds as any)[0]
-                : movie.posterUrl) ||
+              movie.posterUrl ||
               PlaceHolderImages.find(
                 (p) => p.id === 'movie-poster-placeholder'
               )?.imageUrl;

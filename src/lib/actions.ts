@@ -1,7 +1,7 @@
 'use server';
 
 import { PrismaClient } from '@prisma/client';
-import type { Movie, User } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { MovieFormData } from './types';
 import { signIn, signOut } from '@/auth';
@@ -83,7 +83,7 @@ export async function registerUser(prevState: any, formData: FormData) {
     return { message: 'Success', input: inputData };
 
   } catch (error: any) {
-    if (error.type === 'NEXT_REDIRECT') {
+    if (error instanceof AuthError && error.type === 'NEXT_REDIRECT') {
       throw error;
     }
     
@@ -107,7 +107,6 @@ export async function getMovies() {
   });
   return movies.map((movie) => ({
     ...movie,
-    galleryImageIds: JSON.parse(movie.galleryImageIds || '[]'),
     genres: JSON.parse(movie.genres || '[]'),
   }));
 }
@@ -128,7 +127,6 @@ export async function getMovie(movieId: number) {
 
   return {
     ...movie,
-    galleryImageIds: JSON.parse(movie.galleryImageIds || '[]'),
     genres: JSON.parse(movie.genres || '[]'),
   };
 }
@@ -139,7 +137,6 @@ export async function saveMovie(
 ) {
   const data = {
     ...movieData,
-    galleryImageIds: JSON.stringify(movieData.galleryImageIds),
     genres: JSON.stringify(movieData.genres),
   };
   
