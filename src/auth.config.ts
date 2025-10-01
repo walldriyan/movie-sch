@@ -5,6 +5,7 @@ import { PrismaClient } from "@prisma/client"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from "bcryptjs"
+import { AuthError } from 'next-auth';
 
 import { permissions, ROLES } from "@/lib/permissions"
 
@@ -33,13 +34,13 @@ export const authConfig = {
         })
 
         if (!user || !user.password) {
-          return null
+          throw new AuthError("Invalid credentials");
         }
 
         const isValidPassword = await bcrypt.compare(credentials.password as string, user.password)
 
         if (!isValidPassword) {
-          return null
+          throw new AuthError("Invalid credentials");
         }
 
         return user
