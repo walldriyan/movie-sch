@@ -50,7 +50,6 @@ interface EditProfileDialogProps {
 export default function EditProfileDialog({ user }: EditProfileDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
-  const avatarFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -81,25 +80,6 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
         description: 'Failed to update profile.',
       });
     }
-  };
-  
-  const handleFileChange = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const src = e.target?.result as string;
-      if (src) {
-        form.setValue('image', src, {
-          shouldValidate: true,
-          shouldDirty: true,
-        });
-      }
-    };
-    reader.readAsDataURL(file);
   };
 
   return (
@@ -137,7 +117,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
               name="image"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Avatar</FormLabel>
+                  <FormLabel>Avatar URL</FormLabel>
                   <div className="flex items-center gap-4">
                     <Avatar className="w-16 h-16">
                       {imageValue ? (
@@ -154,18 +134,6 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                        <FormControl>
                           <Input placeholder="Paste image URL" {...field} value={field.value || ''}/>
                        </FormControl>
-                       <FormDescription className="text-center">Or</FormDescription>
-                       <Button type="button" variant="outline" className="w-full" onClick={() => avatarFileInputRef.current?.click()}>
-                          <Upload className="mr-2 h-4 w-4" />
-                          Upload an image
-                       </Button>
-                        <input
-                          type="file"
-                          ref={avatarFileInputRef}
-                          onChange={(e) => handleFileChange(e)}
-                          style={{ display: 'none' }}
-                          accept="image/*"
-                        />
                     </div>
                   </div>
                   <FormMessage />
