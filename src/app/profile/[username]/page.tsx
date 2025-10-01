@@ -2,7 +2,8 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck } from 'lucide-react';
 import React from 'react';
-import type { Movie, User } from '@prisma/client';
+import type { User as PrismaUser } from '@prisma/client';
+import type { Movie } from '@/lib/types';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -27,7 +28,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   // Fetch the user whose profile is being viewed
   const allUsers = await getUsers();
-  const profileUser = allUsers.find(u => u.id === params.username);
+  const profileUser = allUsers.find(u => u.id === params.username) as PrismaUser | undefined;
 
   if (!profileUser) {
     notFound();
@@ -36,6 +37,8 @@ export default async function ProfilePage({ params }: { params: { username: stri
   const isOwnProfile = loggedInUser?.id === profileUser.id;
 
   const allMovies = (await getMovies()) as Movie[];
+  const userMovies = allMovies.filter(movie => movie.authorId === profileUser.id);
+  
   const userAvatar =
     profileUser.image ||
     PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
@@ -47,7 +50,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">
-            {allMovies.map((movie) => {
+            {userMovies.map((movie) => {
               const movieImageUrl =
                 movie.posterUrl ||
                 PlaceHolderImages.find(
@@ -165,12 +168,12 @@ export default async function ProfilePage({ params }: { params: { username: stri
                           </Badge>
                         </div>
                       </div>
-                       <div>
-                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                       <div className="mt-4 border-l pl-4">
+                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
                           <ShieldCheck className="h-4 w-4"/>
                           Permissions
                         </h4>
-                        <div className="flex flex-wrap gap-2 mt-2">
+                        <div className="flex flex-wrap gap-2">
                           {loggedInUser.permissions?.map(permission => (
                             <Badge key={permission} variant="outline" className="font-mono text-xs">
                               {permission}
