@@ -73,14 +73,14 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   const isOwnProfile = loggedInUser?.id === profileUser.id;
 
-  const allMovies = (await getMovies()) as Movie[];
+  const { movies: allMovies } = await getMovies();
   const userMovies = allMovies.filter(movie => movie.authorId === profileUser.id);
   
   const userAvatar =
     profileUser.image ||
     PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
-  const showRequestAccess = loggedInUser?.role === ROLES.USER && profileUser.permissionRequestStatus !== 'APPROVED';
+  const showRequestAccess = isOwnProfile && loggedInUser?.role === ROLES.USER && profileUser.permissionRequestStatus !== 'APPROVED';
 
   return (
     <div className="w-full bg-background text-foreground">
