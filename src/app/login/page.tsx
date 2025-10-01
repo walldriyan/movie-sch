@@ -167,7 +167,13 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify({ message: error.message, stack: error.stack }, null, 2)}
+                        {JSON.stringify({ 
+                            message: error.message, 
+                            stack: error.stack,
+                            type: error.type,
+                            name: error.name,
+                            cause: error.cause,
+                         }, null, 2)}
                     </pre>
                 </CardContent>
             </Card>
