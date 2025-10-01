@@ -326,22 +326,20 @@ export async function updateUserRole(
   revalidatePath(`/profile/${userId}`);
 }
 
-async function getMoviesForAdmin(options: { page?: number; limit?: number } = {}) {
-    const session = await auth();
-    const user = session?.user;
-
-    if (!user) {
+export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string } = {}) {
+    const { page = 1, limit = 10, userId, userRole } = options;
+    
+    if (!userId || !userRole) {
         return { movies: [], totalPages: 0, totalMovies: 0 };
     }
 
-    const { page = 1, limit = 10 } = options;
     const skip = (page - 1) * limit;
 
     let whereClause: Prisma.MovieWhereInput = {};
 
-    if (user.role === ROLES.USER_ADMIN) {
-        whereClause = { authorId: user.id };
-    } else if (user.role !== ROLES.SUPER_ADMIN) {
+    if (userRole === ROLES.USER_ADMIN) {
+        whereClause = { authorId: userId };
+    } else if (userRole !== ROLES.SUPER_ADMIN) {
       // For any other role, they shouldn't access this page. But as a safeguard:
       return { movies: [], totalPages: 0, totalMovies: 0 };
     }

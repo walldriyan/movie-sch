@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import type { Movie } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { saveMovie, deleteMovie } from '@/lib/actions';
+import { saveMovie, deleteMovie, getMoviesForAdmin } from '@/lib/actions';
 import type { MovieFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
@@ -19,49 +19,6 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { PrismaClient, Prisma } from '@prisma/client';
-
-const prisma = new PrismaClient();
-
-async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string } = {}) {
-    const { page = 1, limit = 10, userId, userRole } = options;
-    
-    if (!userId || !userRole) {
-        return { movies: [], totalPages: 0, totalMovies: 0 };
-    }
-
-    const skip = (page - 1) * limit;
-
-    let whereClause: Prisma.MovieWhereInput = {};
-
-    if (userRole === ROLES.USER_ADMIN) {
-        whereClause = { authorId: userId };
-    } else if (userRole !== ROLES.SUPER_ADMIN) {
-      return { movies: [], totalPages: 0, totalMovies: 0 };
-    }
-
-    const movies = await prisma.movie.findMany({
-        where: whereClause,
-        skip: skip,
-        take: limit,
-        orderBy: { createdAt: 'desc' },
-        include: {
-            author: true,
-        },
-    });
-
-    const totalMovies = await prisma.movie.count({ where: whereClause });
-    const totalPages = Math.ceil(totalMovies / limit);
-
-    return {
-        movies: movies.map((movie) => ({
-            ...movie,
-            genres: JSON.parse(movie.genres || '[]'),
-        })),
-        totalPages,
-        totalMovies,
-    };
-}
 
 
 interface ManageMoviesClientProps {
