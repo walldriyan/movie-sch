@@ -9,7 +9,7 @@ import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { ROLES } from './permissions';
 import { redirect } from 'next/navigation';
-import { writeFile, mkdir } from 'fs/promises';
+import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join, dirname } from 'path';
 
 const prisma = new PrismaClient();
@@ -45,14 +45,13 @@ export async function doSignOut() {
 }
 
 export async function registerUser(
-  prevState: { message: string | null, input?: any },
+  prevState: { message: string | null; input?: any },
   formData: FormData
-): Promise<{ message: string | null, input?: any }> {
+): Promise<{ message: string | null; input?: any }> {
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const formInput = { name, email };
-
 
   if (!name || !email || !password) {
     return { message: 'Missing name, email, or password', input: formInput };
@@ -64,7 +63,10 @@ export async function registerUser(
     });
 
     if (existingUser) {
-      return { message: 'User with this email already exists', input: formInput };
+      return {
+        message: 'User with this email already exists',
+        input: formInput,
+      };
     }
 
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -85,13 +87,17 @@ export async function registerUser(
         role: userRole,
       },
     });
-
   } catch (error: any) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      // Handle potential database errors, e.g., unique constraint failed again
-      return { message: `Could not create user: ${error.code}`, input: formInput };
+      return {
+        message: `Could not create user: ${error.code}`,
+        input: formInput,
+      };
     }
-    return { message: 'An unexpected error occurred during registration.', input: formInput };
+    return {
+      message: 'An unexpected error occurred during registration.',
+      input: formInput,
+    };
   }
 
   // Redirect to login page after successful registration
@@ -196,7 +202,6 @@ export async function uploadProfileImage(formData: FormData) {
   return `/uploads/avatars/${filename}`;
 }
 
-
 export async function updateUserProfile(
   userId: string,
   data: {
@@ -213,7 +218,25 @@ export async function updateUserProfile(
     throw new Error('Not authorized');
   }
 
-  const updateData: { [key: string]: string } = {};
+  // If a new image is being uploaded, delete the old one first.
+  if (data.image) {
+    try {
+      const currentUser = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { image: true },
+      });
+
+      if (currentUser?.image && currentUser.image.startsWith('/uploads/')) {
+        const oldImagePath = join(process.cwd(), 'public', currentUser.image);
+        await unlink(oldImagePath);
+      }
+    } catch (error) {
+      // Log the error but don't block the update if deletion fails
+      console.error('Failed to delete old profile image:', error);
+    }
+  }
+
+  const updateData: { [key: string]: string | undefined } = {};
 
   if (data.name !== undefined) {
     updateData.name = data.name;
@@ -236,7 +259,7 @@ export async function updateUserProfile(
 
   await prisma.user.update({
     where: { id: userId },
-    data: updateData,
+    data: updateData as any,
   });
 
   revalidatePath(`/profile/${userId}`);
