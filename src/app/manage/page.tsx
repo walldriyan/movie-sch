@@ -8,7 +8,7 @@ export default async function ManageMoviesPage() {
   const session = await auth();
   const user = session?.user;
 
-  if (!user || user.role !== ROLES.SUPER_ADMIN) {
+  if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     notFound();
   }
 

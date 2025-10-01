@@ -32,6 +32,7 @@ interface ManageLayoutProps {
 
 export default function ManageLayout({ user, children }: ManageLayoutProps) {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
+  const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
   return (
     <SidebarProvider>
@@ -54,7 +55,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+            {canManage && (
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive className="text-base">
                   <Link href="/manage">
@@ -63,7 +64,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-            </AuthGuard>
+            )}
             <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
                <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-base">
