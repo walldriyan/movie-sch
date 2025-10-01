@@ -107,7 +107,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
           {/* Right side - Profile Info */}
           <div className="md:col-span-1">
-            <div className="sticky top-24 space-y-6">
+            <div className="sticky top-24 space-y-6 border-l pl-6">
               <Avatar className="w-16 h-16">
                 {userAvatar && (
                   <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
