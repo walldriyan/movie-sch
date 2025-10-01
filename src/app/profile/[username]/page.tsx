@@ -27,7 +27,8 @@ const userProfile = {
 };
 
 
-export default function ProfilePage({ params: { username } }: { params: { username: string } }) {
+export default function ProfilePage({ params }: { params: { username: string } }) {
+  const { username } = params;
   const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 

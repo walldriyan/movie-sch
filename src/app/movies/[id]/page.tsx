@@ -47,7 +47,8 @@ import Link from 'next/link';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
-export default function MoviePage({ params: { id: movieId } }: { params: { id: string } }) {
+export default function MoviePage({ params }: { params: { id: string } }) {
+  const movieId = params.id;
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
@@ -88,11 +89,12 @@ export default function MoviePage({ params: { id: movieId } }: { params: { id: s
   }
 
   const heroImage =
-    (movie.galleryImageIds && movie.galleryImageIds.length > 0
+    movie.galleryImageIds && movie.galleryImageIds.length > 0
       ? movie.galleryImageIds[0]
-      : movie.posterUrl) ||
-    PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')
-      ?.imageUrl;
+      : movie.posterUrl
+      ? movie.posterUrl
+      : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')
+          ?.imageUrl;
 
   const sideImage1 = PlaceHolderImages.find((img) => img.id === 'avatar-2');
   const sideImage2 = PlaceHolderImages.find((img) => img.id === 'avatar-3');
