@@ -19,7 +19,7 @@ export const authConfig = {
         const superAdminEmail = process.env.SUPER_ADMIN_EMAIL;
         const superAdminPassword = process.env.SUPER_ADMIN_PASSWORD;
         
-        const debugInfo = {
+        const debugInfo: any = {
             step: 'Start Authorization',
             userInput: {
                 email,
@@ -43,6 +43,7 @@ export const authConfig = {
             };
             if (isPasswordMatch) {
               debugInfo.result = 'Success: Super Admin Login';
+              // Do not throw debug info on success. Return the user object.
               return { 
                   id: email, 
                   email: email, 
