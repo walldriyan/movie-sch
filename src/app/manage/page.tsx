@@ -82,11 +82,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 import AuthGuard from '@/components/auth/auth-guard';
 import { getMovies, saveMovie, deleteMovie } from '@/lib/actions';
 import type { MovieFormData } from '@/lib/types';
+import { notFound } from 'next/navigation';
 
 
 const movieSchema = z.object({
@@ -278,418 +279,491 @@ export default function ManageMoviesPage() {
       </div>
     );
   }
+  
+  if (user?.role !== ROLES.SUPER_ADMIN) {
+    notFound();
+  }
 
   return (
     <>
-      <SidebarProvider>
-        <Sidebar variant="inset" collapsible="icon">
-          <SidebarContent className="p-0 flex flex-col">
-            <div className='p-4'>
-              <Link href="/" className="flex items-center space-x-2">
-                <Film className="h-7 w-7 text-primary" />
-                <span className="inline-block font-bold font-serif text-2xl group-data-[collapsible=icon]:hidden">
-                  CineVerse
-                </span>
-              </Link>
-            </div>
+      <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+        <SidebarProvider>
+          <Sidebar variant="inset" collapsible="icon">
+            <SidebarContent className="p-0 flex flex-col">
+              <div className="p-4">
+                <Link href="/" className="flex items-center space-x-2">
+                  <Film className="h-7 w-7 text-primary" />
+                  <span className="inline-block font-bold font-serif text-2xl group-data-[collapsible=icon]:hidden">
+                    CineVerse
+                  </span>
+                </Link>
+              </div>
 
-            <SidebarMenu className="p-4 gap-1.5">
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="text-base">
-                  <Link href="/">
-                    <Home />
-                    <span>Home</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <AuthGuard requiredRole='USER_ADMIN'>
+              <SidebarMenu className="p-4 gap-1.5">
                 <SidebarMenuItem>
-                  <SidebarMenuButton isActive className="text-base">
-                    <LayoutGrid />
-                    <span>My Movies</span>
+                  <SidebarMenuButton asChild className="text-base">
+                    <Link href="/">
+                      <Home />
+                      <span>Home</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              </AuthGuard>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="text-base">
-                  <Bookmark />
-                  <span>Favorites</span>
+                <AuthGuard requiredRole="USER_ADMIN">
+                  <SidebarMenuItem>
+                    <SidebarMenuButton isActive className="text-base">
+                      <LayoutGrid />
+                      <span>My Movies</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </AuthGuard>
+                <SidebarMenuItem>
+                  <SidebarMenuButton className="text-base">
+                    <Bookmark />
+                    <span>Favorites</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton className="text-base">
+                    <User />
+                    <span>Profile</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton className="text-base">
+                    <Settings />
+                    <span>Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+              <div className="flex-grow" />
+            </SidebarContent>
+            <SidebarFooter>
+              {user && (
+                <SidebarMenuButton asChild>
+                  <Link href="#">
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={user.image || userAvatar?.imageUrl}
+                        alt="User avatar"
+                      />
+                      <AvatarFallback>
+                        {user.name?.charAt(0) || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="w-full">{user.name}</span>
+                  </Link>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="text-base">
-                  <User />
-                  <span>Profile</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton className="text-base">
-                  <Settings />
-                  <span>Settings</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-            <div className="flex-grow" />
-          </SidebarContent>
-          <SidebarFooter>
-            {user && <SidebarMenuButton asChild>
-              <Link href="#">
-                 <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={user.image || userAvatar?.imageUrl}
-                      alt="User avatar"
-                    />
-                  <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
-                </Avatar>
-                <span className='w-full'>{user.name}</span>
-              </Link>
-            </SidebarMenuButton>}
-          </SidebarFooter>
-        </Sidebar>
+              )}
+            </SidebarFooter>
+          </Sidebar>
 
-        <SidebarInset>
-          <Header>
-            <div className="flex items-center gap-2">
-              <SidebarTrigger className="md:hidden" />
-              <h1 className="font-semibold text-lg md:text-2xl">
-                Manage Movies
-              </h1>
-            </div>
-          </Header>
-          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-            {view === 'list' ? (
-              <>
-                <div className="flex items-center">
-                  <h1 className="font-semibold text-lg md:text-2xl sr-only">Manage Movies</h1>
-                  <AuthGuard requiredPermissions={[PERMISSIONS['post.create']]}>
-                    <Button
-                      className="ml-auto"
-                      size="sm"
-                      onClick={handleAddNewMovie}
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add New Movie
-                    </Button>
-                  </AuthGuard>
-                </div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Movies</CardTitle>
-                    <CardDescription>
-                      A list of all movies in the catalog.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="hidden w-[100px] sm:table-cell">
-                            <span className="sr-only">Image</span>
-                          </TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="hidden md:table-cell">
-                            Year
-                          </TableHead>
-                          <TableHead>
-                            <span className="sr-only">Actions</span>
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {visibleMovies.length > 0 ? (
-                          visibleMovies.map((movie) => {
-                            return (
-                              <TableRow key={movie.id} className={movie.status === 'PENDING_DELETION' ? 'opacity-50' : ''}>
-                                <TableCell className="hidden sm:table-cell">
-                                  {movie.posterUrl ? (
-                                    <Image
-                                      alt={movie.title}
-                                      className="aspect-square rounded-md object-cover"
-                                      height="64"
-                                      src={movie.posterUrl}
-                                      width="64"
-                                    />
-                                  ) : (
-                                    <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-                                      <ImageIcon />
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                  <Link
-                                    href={`/movies/${movie.id}`}
-                                    className="hover:underline"
-                                  >
-                                    {movie.title}
-                                  </Link>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant={movie.status === 'PUBLISHED' ? 'default' : 'destructive'}>{movie.status || 'PUBLISHED'}</Badge>
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell">
-                                  {movie.year}
-                                </TableCell>
-                                <TableCell>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        aria-haspopup="true"
-                                        size="icon"
-                                        variant="ghost"
-                                      >
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">
-                                          Toggle menu
-                                        </span>
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>
-                                        Actions
-                                      </DropdownMenuLabel>
-                                       <AuthGuard requiredPermissions={[PERMISSIONS['post.update']]}>
-                                        <DropdownMenuItem
-                                            onClick={() => handleEditMovie(movie)}
-                                        >
-                                            Edit
-                                        </DropdownMenuItem>
-                                       </AuthGuard>
-                                       <AuthGuard requiredPermissions={[PERMISSIONS['post.delete']]}>
-                                        <DropdownMenuItem
-                                            onClick={() => handleDeleteMovie(movie)}
-                                            className="text-destructive"
-                                        >
-                                            Delete
-                                        </DropdownMenuItem>
-                                      </AuthGuard>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        ) : (
-                          <TableRow>
-                            <TableCell
-                              colSpan={5}
-                              className="h-24 text-center"
-                            >
-                              No movies found. Add one to get started.
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              <div className="max-w-3xl mx-auto">
-                <div className="flex items-center gap-4 mb-8">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setView('list')}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div>
-                    <h1 className="text-2xl font-bold">
-                      {editingMovie ? 'Edit Movie' : 'Add New Movie'}
+          <SidebarInset>
+            <Header>
+              <div className="flex items-center gap-2">
+                <SidebarTrigger className="md:hidden" />
+                <h1 className="font-semibold text-lg md:text-2xl">
+                  Manage Movies
+                </h1>
+              </div>
+            </Header>
+            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+              {view === 'list' ? (
+                <>
+                  <div className="flex items-center">
+                    <h1 className="font-semibold text-lg md:text-2xl sr-only">
+                      Manage Movies
                     </h1>
+                    <AuthGuard
+                      requiredPermissions={[PERMISSIONS['post.create']]}
+                    >
+                      <Button
+                        className="ml-auto"
+                        size="sm"
+                        onClick={handleAddNewMovie}
+                      >
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Add New Movie
+                      </Button>
+                    </AuthGuard>
                   </div>
-                </div>
-
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(handleFormSubmit)}
-                    className="space-y-8"
-                  >
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="Title"
-                              {...field}
-                              className="border-0 border-b-2 border-gray-700 rounded-none text-4xl font-bold p-0 bg-transparent focus-visible:ring-0 focus:border-primary shadow-none"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="posterUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-muted-foreground">
-                            Poster Image
-                          </FormLabel>
-                          <div className="flex items-center gap-8">
-                            <div className="w-32 h-44 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                              {posterUrlValue ? (
-                                <Image
-                                  src={posterUrlValue}
-                                  alt="Poster Preview"
-                                  width={128}
-                                  height={176}
-                                  className="object-cover w-full h-full"
-                                />
-                              ) : (
-                                <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                              )}
-                            </div>
-                            <div className="flex-grow space-y-2">
-                              <FormControl>
-                                <Input
-                                  placeholder="Paste image URL"
-                                  {...field}
-                                  value={field.value || ''}
-                                  className="bg-transparent border-input"
-                                />
-                              </FormControl>
-                              <FormDescription>Or</FormDescription>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => posterFileInputRef.current?.click()}
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Movies</CardTitle>
+                      <CardDescription>
+                        A list of all movies in the catalog.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="hidden w-[100px] sm:table-cell">
+                              <span className="sr-only">Image</span>
+                            </TableHead>
+                            <TableHead>Title</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="hidden md:table-cell">
+                              Year
+                            </TableHead>
+                            <TableHead>
+                              <span className="sr-only">Actions</span>
+                            </TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {visibleMovies.length > 0 ? (
+                            visibleMovies.map((movie) => {
+                              return (
+                                <TableRow
+                                  key={movie.id}
+                                  className={
+                                    movie.status === 'PENDING_DELETION'
+                                      ? 'opacity-50'
+                                      : ''
+                                  }
+                                >
+                                  <TableCell className="hidden sm:table-cell">
+                                    {movie.posterUrl ? (
+                                      <Image
+                                        alt={movie.title}
+                                        className="aspect-square rounded-md object-cover"
+                                        height="64"
+                                        src={movie.posterUrl}
+                                        width="64"
+                                      />
+                                    ) : (
+                                      <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                                        <ImageIcon />
+                                      </div>
+                                    )}
+                                  </TableCell>
+                                  <TableCell className="font-medium">
+                                    <Link
+                                      href={`/movies/${movie.id}`}
+                                      className="hover:underline"
+                                    >
+                                      {movie.title}
+                                    </Link>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge
+                                      variant={
+                                        movie.status === 'PUBLISHED'
+                                          ? 'default'
+                                          : 'destructive'
+                                      }
+                                    >
+                                      {movie.status || 'PUBLISHED'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="hidden md:table-cell">
+                                    {movie.year}
+                                  </TableCell>
+                                  <TableCell>
+                                    <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                        <Button
+                                          aria-haspopup="true"
+                                          size="icon"
+                                          variant="ghost"
+                                        >
+                                          <MoreHorizontal className="h-4 w-4" />
+                                          <span className="sr-only">
+                                            Toggle menu
+                                          </span>
+                                        </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>
+                                          Actions
+                                        </DropdownMenuLabel>
+                                        <AuthGuard
+                                          requiredPermissions={[
+                                            PERMISSIONS['post.update'],
+                                          ]}
+                                        >
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              handleEditMovie(movie)
+                                            }
+                                          >
+                                            Edit
+                                          </DropdownMenuItem>
+                                        </AuthGuard>
+                                        <AuthGuard
+                                          requiredPermissions={[
+                                            PERMISSIONS['post.delete'],
+                                          ]}
+                                        >
+                                          <DropdownMenuItem
+                                            onClick={() =>
+                                              handleDeleteMovie(movie)
+                                            }
+                                            className="text-destructive"
+                                          >
+                                            Delete
+                                          </DropdownMenuItem>
+                                        </AuthGuard>
+                                      </DropdownMenuContent>
+                                    </DropdownMenu>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })
+                          ) : (
+                            <TableRow>
+                              <TableCell
+                                colSpan={5}
+                                className="h-24 text-center"
                               >
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload an image
-                              </Button>
-                              <input
-                                type="file"
-                                ref={posterFileInputRef}
-                                onChange={(e) => handleFileChange(e, false)}
-                                style={{ display: 'none' }}
-                                accept="image/*"
+                                No movies found. Add one to get started.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </>
+              ) : (
+                <div className="max-w-3xl mx-auto">
+                  <div className="flex items-center gap-4 mb-8">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setView('list')}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <div>
+                      <h1 className="text-2xl font-bold">
+                        {editingMovie ? 'Edit Movie' : 'Add New Movie'}
+                      </h1>
+                    </div>
+                  </div>
+
+                  <Form {...form}>
+                    <form
+                      onSubmit={form.handleSubmit(handleFormSubmit)}
+                      className="space-y-8"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="title"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <Input
+                                placeholder="Title"
+                                {...field}
+                                className="border-0 border-b-2 border-gray-700 rounded-none text-4xl font-bold p-0 bg-transparent focus-visible:ring-0 focus:border-primary shadow-none"
                               />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="posterUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-muted-foreground">
+                              Poster Image
+                            </FormLabel>
+                            <div className="flex items-center gap-8">
+                              <div className="w-32 h-44 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                                {posterUrlValue ? (
+                                  <Image
+                                    src={posterUrlValue}
+                                    alt="Poster Preview"
+                                    width={128}
+                                    height={176}
+                                    className="object-cover w-full h-full"
+                                  />
+                                ) : (
+                                  <ImageIcon className="w-10 h-10 text-muted-foreground" />
+                                )}
+                              </div>
+                              <div className="flex-grow space-y-2">
+                                <FormControl>
+                                  <Input
+                                    placeholder="Paste image URL"
+                                    {...field}
+                                    value={field.value || ''}
+                                    className="bg-transparent border-input"
+                                  />
+                                </FormControl>
+                                <FormDescription>Or</FormDescription>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={() =>
+                                    posterFileInputRef.current?.click()
+                                  }
+                                >
+                                  <Upload className="mr-2 h-4 w-4" />
+                                  Upload an image
+                                </Button>
+                                <input
+                                  type="file"
+                                  ref={posterFileInputRef}
+                                  onChange={(e) => handleFileChange(e, false)}
+                                  style={{ display: 'none' }}
+                                  accept="image/*"
+                                />
+                              </div>
                             </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
                         control={form.control}
                         name="galleryImageIds"
                         render={() => (
-                            <FormItem>
-                                <FormLabel className="text-muted-foreground">Gallery Images</FormLabel>
-                                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                                    {galleryImageIdsValue?.map((src, index) => (
-                                        <div key={index} className="relative group aspect-square">
-                                            <Image src={src} alt={`Gallery image ${index + 1}`} fill className="object-cover rounded-md" />
-                                            <Button
-                                                type="button"
-                                                variant="destructive"
-                                                size="icon"
-                                                className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={() => removeGalleryImage(index)}
-                                            >
-                                                <X className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    ))}
-                                     <Button
-                                        type="button"
-                                        variant="outline"
-                                        className='aspect-square w-full h-full flex-col'
-                                        onClick={() => galleryFileInputRef.current?.click()}
-                                    >
-                                        <Upload className="h-6 w-6" />
-                                        <span>Upload</span>
-                                    </Button>
+                          <FormItem>
+                            <FormLabel className="text-muted-foreground">
+                              Gallery Images
+                            </FormLabel>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+                              {galleryImageIdsValue?.map((src, index) => (
+                                <div
+                                  key={index}
+                                  className="relative group aspect-square"
+                                >
+                                  <Image
+                                    src={src}
+                                    alt={`Gallery image ${index + 1}`}
+                                    fill
+                                    className="object-cover rounded-md"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="destructive"
+                                    size="icon"
+                                    className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => removeGalleryImage(index)}
+                                  >
+                                    <X className="h-4 w-4" />
+                                  </Button>
                                 </div>
-                                <input
-                                    type="file"
-                                    ref={galleryFileInputRef}
-                                    onChange={(e) => handleFileChange(e, true)}
-                                    style={{ display: 'none' }}
-                                    accept="image/*"
-                                    multiple
-                                />
-                                <FormMessage />
-                            </FormItem>
+                              ))}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="aspect-square w-full h-full flex-col"
+                                onClick={() =>
+                                  galleryFileInputRef.current?.click()
+                                }
+                              >
+                                <Upload className="h-6 w-6" />
+                                <span>Upload</span>
+                              </Button>
+                            </div>
+                            <input
+                              type="file"
+                              ref={galleryFileInputRef}
+                              onChange={(e) => handleFileChange(e, true)}
+                              style={{ display: 'none' }}
+                              accept="image/*"
+                              multiple
+                            />
+                            <FormMessage />
+                          </FormItem>
                         )}
-                    />
+                      />
 
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <QuillEditor {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
 
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <QuillEditor {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
-                      <h3 className="text-lg font-semibold text-muted-foreground">
-                        Movie Details
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
+                        <h3 className="text-lg font-semibold text-muted-foreground">
+                          Movie Details
+                        </h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <FormField
+                            control={form.control}
+                            name="year"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-muted-foreground">
+                                  Year
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    placeholder="2024"
+                                    {...field}
+                                    className="bg-transparent border-input"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="duration"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-muted-foreground">
+                                  Duration
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    placeholder="2h 28m"
+                                    {...field}
+                                    className="bg-transparent border-input"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="imdbRating"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="text-muted-foreground">
+                                  IMDb Rating
+                                </FormLabel>
+                                <FormControl>
+                                  <Input
+                                    type="number"
+                                    step="0.1"
+                                    {...field}
+                                    className="bg-transparent border-input"
+                                  />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                         <FormField
                           control={form.control}
-                          name="year"
+                          name="genres"
                           render={({ field }) => (
                             <FormItem>
                               <FormLabel className="text-muted-foreground">
-                                Year
+                                Genres (comma-separated)
                               </FormLabel>
                               <FormControl>
                                 <Input
-                                  type="number"
-                                  placeholder="2024"
-                                  {...field}
-                                  className="bg-transparent border-input"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="duration"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-muted-foreground">
-                                Duration
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="2h 28m"
-                                  {...field}
-                                  className="bg-transparent border-input"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="imdbRating"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-muted-foreground">
-                                IMDb Rating
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.1"
+                                  placeholder="Sci-Fi, Action, Thriller"
                                   {...field}
                                   className="bg-transparent border-input"
                                 />
@@ -699,38 +773,19 @@ export default function ManageMoviesPage() {
                           )}
                         />
                       </div>
-                      <FormField
-                        control={form.control}
-                        name="genres"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-muted-foreground">
-                              Genres (comma-separated)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Sci-Fi, Action, Thriller"
-                                {...field}
-                                className="bg-transparent border-input"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="flex justify-end pt-4">
-                      <Button type="submit" size="lg">
-                        {editingMovie ? 'Save Changes' : 'Publish'}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </div>
-            )}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
+                      <div className="flex justify-end pt-4">
+                        <Button type="submit" size="lg">
+                          {editingMovie ? 'Save Changes' : 'Publish'}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </div>
+              )}
+            </main>
+          </SidebarInset>
+        </SidebarProvider>
+      </AuthGuard>
 
       <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
         <AlertDialogContent>
