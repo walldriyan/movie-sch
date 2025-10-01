@@ -170,7 +170,7 @@ export async function deleteMovie(id: number, permanent: boolean) {
 
 export async function getUsers(): Promise<User[]> {
   const users = await prisma.user.findMany({
-    orderBy: { createdAt: 'desc' },
+    orderBy: { name: 'asc' },
   });
   return users;
 }
