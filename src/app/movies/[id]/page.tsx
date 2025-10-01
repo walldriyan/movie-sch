@@ -47,8 +47,7 @@ import Link from 'next/link';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
-export default function MoviePage({ params }: { params: { id: string } }) {
-  const { id: movieId } = params;
+export default function MoviePage({ params: { id: movieId } }: { params: { id: string } }) {
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
