@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { Inter, Space_Grotesk } from 'next/font/google';
+import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
+import SessionProvider from '@/components/auth/session-provider';
+import Header from '@/components/header';
 
 export const metadata: Metadata = {
   title: 'CineVerse Captions',
@@ -19,6 +21,11 @@ const fontSerif = Space_Grotesk({
   variable: '--font-serif',
 });
 
+const fontSinhala = Noto_Sans_Sinhala({
+  subsets: ['sinhala'],
+  variable: '--font-sinhala',
+});
+
 
 export default function RootLayout({
   children,
@@ -31,11 +38,15 @@ export default function RootLayout({
         className={cn(
           'min-h-screen bg-background font-sans antialiased',
           fontSans.variable,
-          fontSerif.variable
+          fontSerif.variable,
+          fontSinhala.variable
         )}
       >
-        {children}
-        <Toaster />
+        <SessionProvider>
+          <Header />
+          {children}
+          <Toaster />
+        </SessionProvider>
       </body>
     </html>
   );

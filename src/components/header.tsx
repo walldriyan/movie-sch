@@ -1,9 +1,8 @@
-'use client';
+'use server';
 
-import { Film, Search, LayoutGrid } from 'lucide-react';
+import { Film, LayoutGrid, LogIn, User, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Input } from './ui/input';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
@@ -13,67 +12,104 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useEffect, useState } from 'react';
+import React from 'react';
+import { auth } from '@/auth';
 import { Button } from './ui/button';
+import LogoutButton from './auth/logout-button';
+import { ROLES } from '@/lib/permissions';
 
-export default function Header() {
-  const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
-  const [isClient, setIsClient] = useState(false);
+export default async function Header({
+  children,
+}: {
+  children?: React.ReactNode;
+}) {
+  const session = await auth();
+  const user = session?.user;
 
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
+  const userAvatarPlaceholder = PlaceHolderImages.find(
+    (img) => img.id === 'avatar-4'
+  );
 
-  if (!isClient) {
-    return (
-      <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-4 flex h-16 items-center" />
-      </header>
-    );
-  }
-
-  return (
-    <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center space-x-2">
-            <Film className="h-7 w-7 text-primary" />
-            <span className="inline-block font-bold font-serif text-2xl">
-              CineVerse
-            </span>
+  const renderUserMenu = () => {
+    if (!user) {
+      return (
+        <Button asChild variant="ghost">
+          <Link href="/login" className="flex items-center gap-2">
+            <LogIn className="h-5 w-5" />
+            <span>Login</span>
           </Link>
-          <div className="relative hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="pl-9 bg-muted/50 w-64"
-            />
-          </div>
-        </div>
+        </Button>
+      );
+    }
 
-        <div className="flex items-center justify-end space-x-4">
-          <Button variant="ghost" className="hidden sm:inline-flex">
-            Write
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="cursor-pointer h-8 w-8">
+              <AvatarImage
+                src={user.image || userAvatarPlaceholder?.imageUrl}
+                alt={user.name || 'User'}
+                data-ai-hint="person face"
+              />
+              <AvatarFallback>
+                {user.name?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Avatar className="cursor-pointer h-8 w-8">
-                {userAvatar && <AvatarImage src={userAvatar.imageUrl} alt="User avatar" data-ai-hint={userAvatar.imageHint} />}
-                <AvatarFallback>U</AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          <DropdownMenuLabel>
+            <p>My Account</p>
+            <p className="text-xs text-muted-foreground font-normal truncate">
+              {user.email}
+            </p>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem asChild>
+            <Link href={`/profile/${user.id}`}>
+              <User className="mr-2 h-4 w-4" />
+              <span>Profile</span>
+            </Link>
+          </DropdownMenuItem>
+          {user.role === ROLES.SUPER_ADMIN && (
+            <>
               <DropdownMenuItem asChild>
                 <Link href="/manage">
                   <LayoutGrid className="mr-2 h-4 w-4" />
                   <span>Manage Movies</span>
                 </Link>
               </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/users">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Manage Users</span>
+                </Link>
+              </DropdownMenuItem>
+            </>
+          )}
+          <DropdownMenuSeparator />
+          <LogoutButton />
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
+  };
+
+  return (
+    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
+      <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between gap-8">
+        {children || (
+          <div className="flex items-center gap-4">
+            <Link href="/" className="flex items-center space-x-2">
+              <Film className="h-7 w-7 text-primary" />
+              <span className="inline-block font-bold font-serif text-2xl">
+                CineVerse
+              </span>
+            </Link>
+          </div>
+        )}
+        <div className="flex items-center justify-end space-x-4">
+          {renderUserMenu()}
         </div>
       </div>
     </header>

@@ -1,0 +1,183 @@
+'use server';
+
+import { PrismaClient } from '@prisma/client';
+import type { User } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
+import { MovieFormData } from './types';
+import { auth, signIn, signOut } from '@/auth';
+import { AuthError } from 'next-auth';
+import bcrypt from 'bcryptjs';
+import { ROLES } from './permissions';
+
+const prisma = new PrismaClient();
+
+export async function getSuperAdminEmailForDebug() {
+  if (process.env.NODE_ENV === 'development') {
+    return process.env.SUPER_ADMIN_EMAIL || null;
+  }
+  return null;
+}
+
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData,
+) {
+  try {
+    await signIn('credentials', formData);
+    return 'Success';
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return 'Invalid credentials.';
+        default:
+          return 'Something went wrong.';
+      }
+    }
+    throw error;
+  }
+}
+
+export async function doSignOut() {
+  await signOut();
+}
+
+export async function registerUser(prevState: any, formData: FormData) {
+  const name = formData.get('name') as string;
+  const email = formData.get('email') as string;
+  const password = formData.get('password') as string;
+  
+  const inputData = { name, email };
+
+  try {
+     if (!name || !email || !password) {
+      return { message: 'Missing name, email, or password', input: inputData };
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email as string },
+    });
+
+    if (existingUser) {
+      return { message: 'User with this email already exists', input: inputData };
+    }
+
+    const hashedPassword = await bcrypt.hash(password as string, 12);
+
+    let userRole = ROLES.USER;
+    if (process.env.SUPER_ADMIN_EMAIL && email === process.env.SUPER_ADMIN_EMAIL) {
+      userRole = ROLES.SUPER_ADMIN;
+    }
+
+    await prisma.user.create({
+      data: {
+        name: name as string,
+        email: email as string,
+        password: hashedPassword,
+        role: userRole,
+      },
+    });
+
+    await signIn('credentials', { email, password, redirectTo: '/' });
+    
+    return { message: 'Success', input: inputData };
+
+  } catch (error: any) {
+    if (error instanceof AuthError && error.type === 'NEXT_REDIRECT') {
+      throw error;
+    }
+    
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return { message: 'Sign in after registration failed: Invalid credentials.', input: inputData };
+        default:
+           return { message: `An unexpected AuthError occurred: ${error.type}`, input: inputData };
+      }
+    }
+    
+    return { message: `An unexpected error occurred: ${error.message || error}`, input: inputData };
+  }
+}
+
+
+export async function getMovies() {
+  const movies = await prisma.movie.findMany({
+    orderBy: { updatedAt: 'desc' },
+    include: {
+      author: true,
+    },
+  });
+  return movies.map((movie) => ({
+    ...movie,
+    genres: JSON.parse(movie.genres || '[]'),
+  }));
+}
+
+export async function getMovie(movieId: number) {
+  const movie = await prisma.movie.findUnique({
+    where: { id: movieId },
+    include: {
+        reviews: {
+            include: {
+                user: true
+            }
+        },
+        subtitles: true,
+        author: true,
+    }
+  });
+  if (!movie) return null;
+
+  return {
+    ...movie,
+    genres: JSON.parse(movie.genres || '[]'),
+  };
+}
+
+export async function saveMovie(
+  movieData: MovieFormData,
+  id?: number
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('User not authenticated');
+  }
+
+  const data = {
+    ...movieData,
+    genres: JSON.stringify(movieData.genres),
+    authorId: session.user.id,
+  };
+  
+  if (id) {
+    await prisma.movie.update({ where: { id }, data: data as any });
+    revalidatePath(`/manage`);
+    revalidatePath(`/movies/${id}`);
+  } else {
+    await prisma.movie.create({ data: data as any });
+    revalidatePath(`/manage`);
+  }
+  revalidatePath('/');
+}
+
+export async function deleteMovie(id: number, permanent: boolean) {
+  if (permanent) {
+    await prisma.movie.delete({ where: { id } });
+  } else {
+    await prisma.movie.update({
+      where: { id },
+      data: { status: 'PENDING_DELETION' },
+    });
+  }
+  revalidatePath(`/manage`);
+  revalidatePath(`/movies/${id}`);
+  revalidatePath('/');
+}
+
+export async function getUsers(): Promise<User[]> {
+  const users = await prisma.user.findMany({
+    orderBy: { name: 'asc' },
+  });
+  return users;
+}

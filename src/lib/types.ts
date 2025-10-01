@@ -1,35 +1,24 @@
-export interface User {
-  id: number;
-  name: string;
-  avatarUrlId: string;
-}
+// This file is now mostly redundant as we should be using Prisma-generated types.
+// However, some client-side components still rely on them.
+// A future refactor could involve using tools like 'zod-prisma' to generate
+// Zod schemas from the Prisma schema, and inferring types from those.
 
-export interface Review {
-  id: number;
+import type { Movie as PrismaMovie, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser } from "@prisma/client";
+
+export type User = PrismaUser;
+
+export type Review = PrismaReview & {
   user: User;
-  rating: number;
-  comment: string;
-}
+};
 
-export interface Subtitle {
-  id: number;
-  language: string;
-  uploader: string;
-  price: number;
-}
+export type Subtitle = PrismaSubtitle;
 
-export interface Movie {
-  id: number;
-  title: string;
-  description: string;
-  posterUrl: string;
-  galleryImageIds: string[];
-  year: number;
+// This is now redundant with the Prisma model, but kept for client-side compatibility
+export type Movie = Omit<PrismaMovie, 'genres'> & {
   genres: string[];
-  duration: string;
-  imdbRating: number;
-  viewCount: number;
-  likes: number;
   reviews: Review[];
   subtitles: Subtitle[];
-}
+  author: User;
+};
+
+export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId'>;

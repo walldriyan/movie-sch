@@ -1,4 +1,5 @@
 import type {Config} from 'tailwindcss';
+const { fontFamily } = require('tailwindcss/defaultTheme');
 
 export default {
   darkMode: ['class'],
@@ -17,7 +18,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-sans)'],
+        sans: ['var(--font-sinhala)', ...fontFamily.sans],
         serif: ['var(--font-serif)'],
       },
       colors: {
@@ -73,8 +74,8 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
+        lg: `var(--radius)`,
+        md: `calc(var(--radius) - 2px)`,
         sm: 'calc(var(--radius) - 4px)',
       },
       keyframes: {
