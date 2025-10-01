@@ -1,11 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/header";
 
 export default function Loading() {
   return (
     <div className="min-h-screen w-full bg-background">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 py-8 mt-16">
         <div className="space-y-12">
             {[...Array(3)].map((_, i) => (
               <article key={i}>

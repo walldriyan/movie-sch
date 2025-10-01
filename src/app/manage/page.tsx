@@ -26,7 +26,6 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import Header from '@/components/header';
 import {
   MoreHorizontal,
   PlusCircle,
@@ -349,19 +348,11 @@ export default function ManageMoviesPage() {
           </Sidebar>
 
           <SidebarInset>
-            <Header>
-              <div className="flex items-center gap-2">
-                <SidebarTrigger className="md:hidden" />
-                <h1 className="font-semibold text-lg md:text-2xl">
-                  Manage Movies
-                </h1>
-              </div>
-            </Header>
-            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+            <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-16">
               {view === 'list' ? (
                 <>
                   <div className="flex items-center">
-                    <h1 className="font-semibold text-lg md:text-2xl sr-only">
+                    <h1 className="font-semibold text-lg md:text-2xl">
                       Manage Movies
                     </h1>
                     <AuthGuard

@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import SessionProvider from '@/components/auth/session-provider';
+import Header from '@/components/header';
 
 export const metadata: Metadata = {
   title: 'CineVerse Captions',
@@ -42,6 +43,7 @@ export default function RootLayout({
         )}
       >
         <SessionProvider>
+          <Header />
           {children}
           <Toaster />
         </SessionProvider>

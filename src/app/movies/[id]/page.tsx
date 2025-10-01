@@ -2,7 +2,6 @@ import { notFound } from 'next/navigation';
 import { getMovie } from '@/lib/actions';
 import type { Movie, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
-import Header from '@/components/header';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
@@ -41,8 +40,7 @@ export default async function MoviePage({
 
   return (
     <div className="min-h-screen w-full bg-background">
-      <Header />
-      <main className="max-w-6xl mx-auto py-8">
+      <main className="max-w-6xl mx-auto py-8 mt-16">
         <article>
           <MovieDetailClient movie={movie}>
             <TabsContent value="about">

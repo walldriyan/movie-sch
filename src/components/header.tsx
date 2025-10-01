@@ -44,16 +44,18 @@ export default async function Header({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Avatar className="cursor-pointer h-8 w-8">
-            <AvatarImage
-              src={user.image || userAvatarPlaceholder?.imageUrl}
-              alt={user.name || 'User'}
-              data-ai-hint="person face"
-            />
-            <AvatarFallback>
-              {user.name?.charAt(0).toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+            <Avatar className="cursor-pointer h-8 w-8">
+              <AvatarImage
+                src={user.image || userAvatarPlaceholder?.imageUrl}
+                alt={user.name || 'User'}
+                data-ai-hint="person face"
+              />
+              <AvatarFallback>
+                {user.name?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
           <DropdownMenuLabel>

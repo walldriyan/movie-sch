@@ -1,11 +1,9 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import Header from "@/components/header";
 
 export default function Loading() {
   return (
     <div className="min-h-screen w-full bg-background">
-      <Header />
-      <div className="relative -mt-16 h-[500px] w-full">
+      <div className="relative h-[500px] w-full mt-16">
         <Skeleton className="h-full w-full" />
       </div>
       <main className="container mx-auto -mt-64 px-4 pb-8">

@@ -1,6 +1,5 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import Header from '@/components/header';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star } from 'lucide-react';
 import Link from 'next/link';
@@ -16,8 +15,7 @@ export default async function HomePage() {
   if (allMovies.length === 0) {
     return (
       <div className="w-full bg-background text-foreground">
-        <Header />
-        <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center">
+        <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
           <div className="max-w-md">
             {session?.user && (
               <div className="p-4 mb-8 border border-dashed rounded-lg text-left">
@@ -49,8 +47,7 @@ export default async function HomePage() {
 
   return (
     <div className="w-full bg-background text-foreground">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto px-4 py-8 mt-16">
         {session?.user && (
           <div className="p-4 mb-8 border border-dashed rounded-lg">
             <h2 className="text-lg font-semibold mb-2">Session Debug Info</h2>
