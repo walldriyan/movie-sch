@@ -151,7 +151,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
               {isOwnProfile && loggedInUser && (
                 <>
                   <Separator />
-                  <Card>
+                  <Card className='border-l rounded-none'>
                     <CardHeader>
                       <CardTitle className="text-lg">My Details</CardTitle>
                     </CardHeader>
@@ -168,7 +168,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
                           </Badge>
                         </div>
                       </div>
-                       <div className="mt-4 border-l pl-4">
+                       <div className="mt-4">
                         <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
                           <ShieldCheck className="h-4 w-4"/>
                           Permissions
