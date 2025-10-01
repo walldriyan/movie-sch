@@ -3,7 +3,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import GoogleProvider from "next-auth/providers/google"
 import CredentialsProvider from "next-auth/providers/credentials"
-import bcrypt from "bcryptjs"
+import bcrypt from "bcrypt"
 
 import { permissions, ROLES } from "@/lib/permissions"
 
