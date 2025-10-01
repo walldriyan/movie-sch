@@ -1,787 +1,133 @@
 'use client';
 
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { z } from 'zod';
-import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  MoreHorizontal,
-  PlusCircle,
-  ArrowLeft,
-  Upload,
-  Image as ImageIcon,
-  LayoutGrid,
-  Bookmark,
-  User,
-  Settings,
-  Home,
-  Film,
-  X,
-} from 'lucide-react';
-import Image from 'next/image';
-import { Badge } from '@/components/ui/badge';
 import React, { useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import type { Movie } from '@prisma/client';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import QuillEditor from '@/components/quill-editor';
-import Link from 'next/link';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarInset,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarContent,
-  SidebarHeader,
-  SidebarFooter,
-  SidebarTrigger,
-} from '@/components/ui/sidebar';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 import { getMovies, saveMovie, deleteMovie } from '@/lib/actions';
 import type { MovieFormData } from '@/lib/types';
+import { ROLES, PERMISSIONS } from '@/lib/permissions';
 import { notFound } from 'next/navigation';
-import AuthGuard from '@/components/auth/auth-guard';
-
-
-const movieSchema = z.object({
-  title: z.string().min(1, 'Title is required'),
-  posterUrl: z.string().optional(),
-  galleryImageIds: z.array(z.string()).optional().default([]),
-  description: z.string().min(10, 'Description is required'),
-  year: z.coerce.number().min(1800, 'Invalid year'),
-  duration: z.string().min(1, 'Duration is required'),
-  genres: z.string().min(1, 'Genres are required'),
-  imdbRating: z.coerce.number().min(0).max(10),
-});
-
-type MovieFormValues = z.infer<typeof movieSchema>;
+import Loading from '../loading';
+import ManageLayout from '@/components/manage/manage-layout';
+import MovieList from '@/components/manage/movie-list';
+import MovieForm from '@/components/manage/movie-form';
 
 export default function ManageMoviesPage() {
+  const { data: session, status } = useSession();
+  const user = session?.user;
+
   const [movies, setMovies] = useState<Movie[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
-  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
-  const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
-  const posterFileInputRef = React.useRef<HTMLInputElement>(null);
-  const galleryFileInputRef = React.useRef<HTMLInputElement>(null);
-  const user = useCurrentUser();
   const { toast } = useToast();
 
-  const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
-
-  const form = useForm<MovieFormValues>({
-    resolver: zodResolver(movieSchema),
-    defaultValues: {
-      title: '',
-      posterUrl: '',
-      galleryImageIds: [],
-      description: '',
-      year: new Date().getFullYear(),
-      duration: '',
-      genres: '',
-      imdbRating: 0,
-    },
-  });
-  
-  const posterUrlValue = form.watch('posterUrl');
-  const galleryImageIdsValue = form.watch('galleryImageIds');
-
   const fetchMovies = async () => {
-    const moviesFromDb = await getMovies();
-    setMovies(moviesFromDb as any);
+    try {
+      const moviesFromDb = await getMovies();
+      setMovies(moviesFromDb as any);
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to fetch movies.',
+      });
+    }
   };
 
   useEffect(() => {
-    setIsMounted(true);
-    fetchMovies();
-  }, []);
+    if (status === 'authenticated') {
+      fetchMovies();
+    }
+  }, [status]);
+
+  if (status === 'loading') {
+    return <Loading />;
+  }
+
+  if (status === 'unauthenticated' || !user || user.role !== ROLES.SUPER_ADMIN) {
+    notFound();
+  }
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
-    form.reset({
-      title: '',
-      posterUrl: '',
-      galleryImageIds: [],
-      description: '',
-      year: new Date().getFullYear(),
-      duration: '',
-      genres: '',
-      imdbRating: 0,
-    });
     setView('form');
   };
 
   const handleEditMovie = (movie: Movie) => {
     setEditingMovie(movie);
-    form.reset({
-      title: movie.title,
-      posterUrl: movie.posterUrl || '',
-      galleryImageIds: movie.galleryImageIds as any || [],
-      description: movie.description,
-      year: movie.year,
-      duration: movie.duration,
-      genres: (movie.genres as any).join(', '),
-      imdbRating: movie.imdbRating,
-    });
     setView('form');
   };
 
-  const handleDeleteMovie = (movie: Movie) => {
-    setMovieToDelete(movie);
-    setDeleteAlertOpen(true);
-  };
-
-  const confirmDelete = async () => {
-    if (movieToDelete && user?.permissions) {
-       const isPermanent = user.permissions.includes(PERMISSIONS['post.hard_delete']);
-       try {
-        await deleteMovie(movieToDelete.id, isPermanent);
-        await fetchMovies(); // Refetch movies
-        toast({ title: 'Success', description: `Movie "${movieToDelete.title}" has been ${isPermanent ? 'permanently deleted' : 'marked for deletion'}.` });
-      } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete movie.' });
-      }
-      
-      setMovieToDelete(null);
-    }
-    setDeleteAlertOpen(false);
-  };
-
-  const handleFormSubmit = async (values: MovieFormValues) => {
-    const movieData: MovieFormData = {
-        title: values.title,
-        description: values.description,
-        posterUrl: values.posterUrl || null,
-        galleryImageIds: values.galleryImageIds || [],
-        year: values.year,
-        duration: values.duration,
-        genres: values.genres.split(',').map((g) => g.trim()) as any,
-        imdbRating: values.imdbRating,
-        status: 'PUBLISHED',
-        viewCount: editingMovie?.viewCount || 0,
-        likes: editingMovie?.likes || 0,
-    };
-
+  const handleFormSubmit = async (
+    movieData: MovieFormData,
+    id: number | undefined
+  ) => {
     try {
-        await saveMovie(movieData, editingMovie?.id);
-        await fetchMovies(); // Refetch movies
-        setView('list');
-        toast({ title: 'Success', description: `Movie "${values.title}" has been saved.` });
+      await saveMovie(movieData, id);
+      await fetchMovies();
+      setView('list');
+      toast({
+        title: 'Success',
+        description: `Movie "${movieData.title}" has been saved.`,
+      });
     } catch (error) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to save movie.' });
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to save movie.',
+      });
     }
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, isGallery: boolean) => {
-    const files = event.target.files;
-    if (!files) return;
-
-    const fileArray = Array.from(files);
-
-    fileArray.forEach(file => {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const src = e.target?.result as string;
-            if (src) {
-                if (isGallery) {
-                    form.setValue('galleryImageIds', [...(form.getValues('galleryImageIds') || []), src], {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                    });
-                } else {
-                    form.setValue('posterUrl', src, {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                    });
-                }
-            }
-        };
-        reader.readAsDataURL(file);
-    });
+  const handleDeleteConfirmed = async (movieId: number) => {
+    try {
+      const movieToDelete = movies.find(m => m.id === movieId);
+      if (movieToDelete && user?.permissions) {
+        const isPermanent = user.permissions.includes(
+          PERMISSIONS['post.hard_delete']
+        );
+        await deleteMovie(movieId, isPermanent);
+        await fetchMovies();
+        toast({
+          title: 'Success',
+          description: `Movie "${movieToDelete.title}" has been ${
+            isPermanent ? 'permanently deleted' : 'marked for deletion'
+          }.`,
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Failed to delete movie.',
+      });
+    }
   };
 
-  const removeGalleryImage = (index: number) => {
-    const currentImages = form.getValues('galleryImageIds') || [];
-    const newImages = currentImages.filter((_, i) => i !== index);
-    form.setValue('galleryImageIds', newImages, {
-        shouldValidate: true,
-        shouldDirty: true,
-    });
-  }
 
-  const visibleMovies = user?.permissions?.includes(PERMISSIONS['post.approve_deletion'])
+  const visibleMovies = user?.permissions?.includes(
+    PERMISSIONS['post.approve_deletion']
+  )
     ? movies
-    : movies.filter(m => m.status !== 'PENDING_DELETION');
-
-
-  if (!isMounted) {
-    return null;
-  }
-  
-  if (!user || user.role !== ROLES.SUPER_ADMIN) {
-    notFound();
-  }
+    : movies.filter((m) => m.status !== 'PENDING_DELETION');
 
   return (
-    <>
-      <SidebarProvider>
-        <Sidebar variant="inset" collapsible="icon">
-          <SidebarContent className="p-0 flex flex-col">
-            <div className="p-4">
-              <Link href="/" className="flex items-center space-x-2">
-                <Film className="h-7 w-7 text-primary" />
-                <span className="inline-block font-bold font-serif text-2xl group-data-[collapsible=icon]:hidden">
-                  CineVerse
-                </span>
-              </Link>
-            </div>
-
-            <SidebarMenu className="p-4 gap-1.5">
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="text-base">
-                  <Link href="/">
-                    <Home />
-                    <span>Home</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-                <SidebarMenuItem>
-                  <SidebarMenuButton isActive className="text-base">
-                    <LayoutGrid />
-                    <span>My Movies</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </AuthGuard>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="text-base">
-                  <Bookmark />
-                  <span>Favorites</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="text-base">
-                  <User />
-                  <span>Profile</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton className="text-base">
-                  <Settings />
-                  <span>Settings</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-            <div className="flex-grow" />
-          </SidebarContent>
-          <SidebarFooter>
-            {user && (
-              <SidebarMenuButton asChild>
-                <Link href="#">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={user.image || userAvatar?.imageUrl}
-                      alt="User avatar"
-                    />
-                    <AvatarFallback>
-                      {user.name?.charAt(0) || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <span className="w-full">{user.name}</span>
-                </Link>
-              </SidebarMenuButton>
-            )}
-          </SidebarFooter>
-        </Sidebar>
-
-        <SidebarInset>
-          <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-16">
-            {view === 'list' ? (
-              <>
-                <div className="flex items-center">
-                  <h1 className="font-semibold text-lg md:text-2xl">
-                    Manage Movies
-                  </h1>
-                  <AuthGuard
-                    requiredPermissions={[PERMISSIONS['post.create']]}
-                  >
-                    <Button
-                      className="ml-auto"
-                      size="sm"
-                      onClick={handleAddNewMovie}
-                    >
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add New Movie
-                    </Button>
-                  </AuthGuard>
-                </div>
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Movies</CardTitle>
-                    <CardDescription>
-                      A list of all movies in the catalog.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="hidden w-[100px] sm:table-cell">
-                            <span className="sr-only">Image</span>
-                          </TableHead>
-                          <TableHead>Title</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="hidden md:table-cell">
-                            Year
-                          </TableHead>
-                          <TableHead>
-                            <span className="sr-only">Actions</span>
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {visibleMovies.length > 0 ? (
-                          visibleMovies.map((movie) => {
-                            return (
-                              <TableRow
-                                key={movie.id}
-                                className={
-                                  movie.status === 'PENDING_DELETION'
-                                    ? 'opacity-50'
-                                    : ''
-                                }
-                              >
-                                <TableCell className="hidden sm:table-cell">
-                                  {movie.posterUrl ? (
-                                    <Image
-                                      alt={movie.title}
-                                      className="aspect-square rounded-md object-cover"
-                                      height="64"
-                                      src={movie.posterUrl}
-                                      width="64"
-                                    />
-                                  ) : (
-                                    <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-                                      <ImageIcon />
-                                    </div>
-                                  )}
-                                </TableCell>
-                                <TableCell className="font-medium">
-                                  <Link
-                                    href={`/movies/${movie.id}`}
-                                    className="hover:underline"
-                                  >
-                                    {movie.title}
-                                  </Link>
-                                </TableCell>
-                                <TableCell>
-                                  <Badge
-                                    variant={
-                                      movie.status === 'PUBLISHED'
-                                        ? 'default'
-                                        : 'destructive'
-                                    }
-                                  >
-                                    {movie.status || 'PUBLISHED'}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell">
-                                  {movie.year}
-                                </TableCell>
-                                <TableCell>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button
-                                        aria-haspopup="true"
-                                        size="icon"
-                                        variant="ghost"
-                                      >
-                                        <MoreHorizontal className="h-4 w-4" />
-                                        <span className="sr-only">
-                                          Toggle menu
-                                        </span>
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuLabel>
-                                        Actions
-                                      </DropdownMenuLabel>
-                                      <AuthGuard
-                                        requiredPermissions={[
-                                          PERMISSIONS['post.update'],
-                                        ]}
-                                      >
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            handleEditMovie(movie)
-                                          }
-                                        >
-                                          Edit
-                                        </DropdownMenuItem>
-                                      </AuthGuard>
-                                      <AuthGuard
-                                        requiredPermissions={[
-                                          PERMISSIONS['post.delete'],
-                                        ]}
-                                      >
-                                        <DropdownMenuItem
-                                          onClick={() =>
-                                            handleDeleteMovie(movie)
-                                          }
-                                          className="text-destructive"
-                                        >
-                                          Delete
-                                        </DropdownMenuItem>
-                                      </AuthGuard>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </TableCell>
-                              </TableRow>
-                            );
-                          })
-                        ) : (
-                          <TableRow>
-                            <TableCell
-                              colSpan={5}
-                              className="h-24 text-center"
-                            >
-                              No movies found. Add one to get started.
-                            </TableCell>
-                          </TableRow>
-                        )}
-                      </TableBody>
-                    </Table>
-                  </CardContent>
-                </Card>
-              </>
-            ) : (
-              <div className="max-w-3xl mx-auto">
-                <div className="flex items-center gap-4 mb-8">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setView('list')}
-                  >
-                    <ArrowLeft className="h-4 w-4" />
-                  </Button>
-                  <div>
-                    <h1 className="text-2xl font-bold">
-                      {editingMovie ? 'Edit Movie' : 'Add New Movie'}
-                    </h1>
-                  </div>
-                </div>
-
-                <Form {...form}>
-                  <form
-                    onSubmit={form.handleSubmit(handleFormSubmit)}
-                    className="space-y-8"
-                  >
-                    <FormField
-                      control={form.control}
-                      name="title"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <Input
-                              placeholder="Title"
-                              {...field}
-                              className="border-0 border-b-2 border-gray-700 rounded-none text-4xl font-bold p-0 bg-transparent focus-visible:ring-0 focus:border-primary shadow-none"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="posterUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-muted-foreground">
-                            Poster Image
-                          </FormLabel>
-                          <div className="flex items-center gap-8">
-                            <div className="w-32 h-44 bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                              {posterUrlValue ? (
-                                <Image
-                                  src={posterUrlValue}
-                                  alt="Poster Preview"
-                                  width={128}
-                                  height={176}
-                                  className="object-cover w-full h-full"
-                                />
-                              ) : (
-                                <ImageIcon className="w-10 h-10 text-muted-foreground" />
-                              )}
-                            </div>
-                            <div className="flex-grow space-y-2">
-                              <FormControl>
-                                <Input
-                                  placeholder="Paste image URL"
-                                  {...field}
-                                  value={field.value || ''}
-                                  className="bg-transparent border-input"
-                                />
-                              </FormControl>
-                              <FormDescription>Or</FormDescription>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() =>
-                                  posterFileInputRef.current?.click()
-                                }
-                              >
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload an image
-                              </Button>
-                              <input
-                                type="file"
-                                ref={posterFileInputRef}
-                                onChange={(e) => handleFileChange(e, false)}
-                                style={{ display: 'none' }}
-                                accept="image/*"
-                              />
-                            </div>
-                          </div>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="galleryImageIds"
-                      render={() => (
-                        <FormItem>
-                          <FormLabel className="text-muted-foreground">
-                            Gallery Images
-                          </FormLabel>
-                          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
-                            {galleryImageIdsValue?.map((src, index) => (
-                              <div
-                                key={index}
-                                className="relative group aspect-square"
-                              >
-                                <Image
-                                  src={src}
-                                  alt={`Gallery image ${index + 1}`}
-                                  fill
-                                  className="object-cover rounded-md"
-                                />
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => removeGalleryImage(index)}
-                                >
-                                  <X className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            ))}
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="aspect-square w-full h-full flex-col"
-                              onClick={() =>
-                                galleryFileInputRef.current?.click()
-                              }
-                            >
-                              <Upload className="h-6 w-6" />
-                              <span>Upload</span>
-                            </Button>
-                          </div>
-                          <input
-                            type="file"
-                            ref={galleryFileInputRef}
-                            onChange={(e) => handleFileChange(e, true)}
-                            style={{ display: 'none' }}
-                            accept="image/*"
-                            multiple
-                          />
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormControl>
-                            <QuillEditor {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
-                      <h3 className="text-lg font-semibold text-muted-foreground">
-                        Movie Details
-                      </h3>
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="year"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-muted-foreground">
-                                Year
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  placeholder="2024"
-                                  {...field}
-                                  className="bg-transparent border-input"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="duration"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-muted-foreground">
-                                Duration
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  placeholder="2h 28m"
-                                  {...field}
-                                  className="bg-transparent border-input"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="imdbRating"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel className="text-muted-foreground">
-                                IMDb Rating
-                              </FormLabel>
-                              <FormControl>
-                                <Input
-                                  type="number"
-                                  step="0.1"
-                                  {...field}
-                                  className="bg-transparent border-input"
-                                />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
-                      <FormField
-                        control={form.control}
-                        name="genres"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-muted-foreground">
-                              Genres (comma-separated)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                placeholder="Sci-Fi, Action, Thriller"
-                                {...field}
-                                className="bg-transparent border-input"
-                              />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    <div className="flex justify-end pt-4">
-                      <Button type="submit" size="lg">
-                        {editingMovie ? 'Save Changes' : 'Publish'}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </div>
-            )}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
-
-      <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the
-              movie &quot;{movieToDelete?.title}&quot;.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={confirmDelete}
-              className="bg-destructive hover:bg-destructive/90"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+    <ManageLayout user={user}>
+      {view === 'list' ? (
+        <MovieList
+          movies={visibleMovies}
+          onAddNew={handleAddNewMovie}
+          onEdit={handleEditMovie}
+          onDeleteConfirmed={handleDeleteConfirmed}
+        />
+      ) : (
+        <MovieForm
+          editingMovie={editingMovie}
+          onFormSubmit={handleFormSubmit}
+          onBack={() => setView('list')}
+        />
+      )}
+    </ManageLayout>
   );
 }
