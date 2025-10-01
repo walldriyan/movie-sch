@@ -28,14 +28,14 @@ export const authConfig = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email as string }
         })
 
         if (!user || !user.password) {
           return null
         }
 
-        const isValidPassword = await bcrypt.compare(credentials.password, user.password)
+        const isValidPassword = await bcrypt.compare(credentials.password as string, user.password)
 
         if (!isValidPassword) {
           return null
@@ -49,27 +49,27 @@ export const authConfig = {
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session, token }: { session: any, token: any }) {
-      if (token) {
-        session.user.id = token.id
-        session.user.role = token.role
-        session.user.permissions = token.permissions
-      }
-      return session
-    },
-    async jwt({ token, user }: { token: any, user?: any }) {
+    async jwt({ token, user }) {
       if (user) {
+        // On sign in, populate token with user info
         token.id = user.id
-        const userRole = user.role || ROLES.USER;
+        const userRole = (user as any).role || ROLES.USER;
         token.role = userRole;
         token.permissions = permissions[userRole] || [];
       }
       return token
+    },
+    async session({ session, token }) {
+      if (session.user && token.id) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as string;
+        session.user.permissions = token.permissions as string[];
+      }
+      return session
     }
   },
   pages: {
     signIn: '/login',
-    // error: '/auth/error', // Custom error page
   },
   secret: process.env.NEXTAUTH_SECRET,
 } satisfies NextAuthConfig;
