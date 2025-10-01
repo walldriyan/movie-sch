@@ -43,6 +43,8 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
+        // The `user` object from the `authorize` callback contains the role.
+        // We need to cast `user` to `any` to access the `role` property.
         const userRole = (user as any).role || ROLES.USER;
         token.role = userRole;
         token.permissions = permissions[userRole] || [];
