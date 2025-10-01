@@ -65,11 +65,11 @@ export async function registerUser(prevState: any, formData: FormData) {
     const hashedPassword = await bcrypt.hash(password as string, 12);
 
     let userRole = ROLES.USER;
-    if (email === process.env.SUPER_ADMIN_EMAIL) {
+    if (process.env.SUPER_ADMIN_EMAIL && email === process.env.SUPER_ADMIN_EMAIL) {
       userRole = ROLES.SUPER_ADMIN;
     }
 
-    const newUser = await prisma.user.create({
+    await prisma.user.create({
       data: {
         name: name as string,
         email: email as string,
@@ -80,22 +80,29 @@ export async function registerUser(prevState: any, formData: FormData) {
 
     // Automatically sign in after registration
     await signIn('credentials', { email, password, redirectTo: '/' });
-
-    return { message: 'Success', user: newUser, input: inputData };
+    
+    // This part is unlikely to be reached because signIn will redirect
+    return { message: 'Success', input: inputData };
 
   } catch (error: any) {
-    if (error.type === 'CredentialsSignin') {
-      // This is a special case from next-auth, let it redirect
+    // The `signIn` function can throw a specific error to signal a redirect.
+    // We must not catch this error, but let it bubble up to Next.js.
+    if (error instanceof AuthError && error.type === 'NEXT_REDIRECT') {
       throw error;
     }
-     if (error instanceof AuthError) {
-       // NEXT_REDIRECT is a special error that should not be caught.
-       if (error.type === 'NEXT_REDIRECT') {
-        throw error;
-       }
-      return { message: `Sign in after registration failed: ${error.type}`, input: inputData };
+    
+    // Handle other specific auth errors if needed
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return { message: 'Sign in after registration failed: Invalid credentials.', input: inputData };
+        default:
+           return { message: `An unexpected AuthError occurred: ${error.type}`, input: inputData };
+      }
     }
-    return { message: `An unexpected error occurred: ${error.message}`, input: inputData };
+    
+    // For any other errors, return a generic message
+    return { message: `An unexpected error occurred: ${error.message || error}`, input: inputData };
   }
 }
 
