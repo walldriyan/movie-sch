@@ -6,6 +6,8 @@ import { revalidatePath } from 'next/cache';
 import { MovieFormData } from './types';
 import { signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
+import bcrypt from 'bcryptjs';
+import { ROLES } from './permissions';
 
 const prisma = new PrismaClient();
 
@@ -39,6 +41,53 @@ export async function authenticate(
 export async function doSignOut() {
   await signOut();
 }
+
+export async function registerUser(prevState: any, formData: FormData) {
+  const { name, email, password } = Object.fromEntries(formData.entries());
+
+  try {
+     if (!name || !email || !password) {
+      return { message: 'Missing name, email, or password' };
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: email as string },
+    });
+
+    if (existingUser) {
+      return { message: 'User with this email already exists' };
+    }
+
+    const hashedPassword = await bcrypt.hash(password as string, 12);
+
+    let userRole = ROLES.USER;
+    if (email === process.env.SUPER_ADMIN_EMAIL) {
+      userRole = ROLES.SUPER_ADMIN;
+    }
+
+    await prisma.user.create({
+      data: {
+        name: name as string,
+        email: email as string,
+        password: hashedPassword,
+        role: userRole,
+      },
+    });
+
+    // Automatically sign in after registration
+    await signIn('credentials', { email, password, redirectTo: '/' });
+
+    return { message: 'Success' };
+
+  } catch (error: any) {
+    console.error('REGISTRATION_ERROR', error);
+     if (error instanceof AuthError) {
+      return { message: `Sign in after registration failed: ${error.type}` };
+    }
+    return { message: `An unexpected error occurred: ${error.message}` };
+  }
+}
+
 
 export async function getMovies() {
   const movies = await prisma.movie.findMany({

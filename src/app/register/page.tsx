@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useActionState } from 'react';
+import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -14,105 +14,12 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { signIn } from 'next-auth/react';
-import { getSuperAdminEmailForDebug } from '@/lib/actions';
+import { Film, AlertCircle } from 'lucide-react';
+import { registerUser } from '@/lib/actions';
 
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [debugInfo, setDebugInfo] = useState<object | null>(null);
-  const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchDebugEnv = async () => {
-      const adminEmail = await getSuperAdminEmailForDebug();
-      setSuperAdminEmail(adminEmail);
-    };
-    fetchDebugEnv();
-  }, []);
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-
-    const submittedData = { name, email, password };
-    let serverResponse = {};
-
-    try {
-      const response = await fetch('/api/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(submittedData),
-      });
-
-      const resClone = response.clone();
-      let responseBody;
-      try {
-        responseBody = await response.json();
-      } catch (jsonError) {
-        responseBody = await resClone.text();
-      }
-      
-      serverResponse = {
-        status: response.status,
-        statusText: response.statusText,
-        body: responseBody,
-      };
-
-      if (!response.ok) {
-        const errorMessage = (typeof responseBody === 'object' && responseBody.message) 
-            ? responseBody.message 
-            : typeof responseBody === 'string' ? responseBody : 'Registration failed';
-        throw new Error(errorMessage);
-      }
-
-      setDebugInfo({
-          step: 'Registration API Call Success',
-          submittedData,
-          serverResponse,
-      });
-
-      // Automatically sign in the user after successful registration
-      const signInResult = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (signInResult?.ok) {
-        toast({
-          title: 'Registration Successful',
-          description: 'Welcome to CineVerse!',
-        });
-        router.push('/');
-      } else {
-        throw new Error(signInResult?.error || 'Sign in after registration failed');
-      }
-
-    } catch (err: any) {
-       setDebugInfo({
-          step: 'Error caught',
-          submittedData,
-          serverResponse,
-          error: {
-            name: err.name,
-            message: err.message,
-            stack: err.stack
-          },
-       });
-    } finally {
-        setLoading(false);
-    }
-  };
+  const [state, formAction] = useActionState(registerUser, { message: null });
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-background px-4">
@@ -127,7 +34,7 @@ export default function RegisterPage() {
              <p className="mt-2 text-muted-foreground">Create your account to get started.</p>
         </div>
         <Card>
-          <form onSubmit={handleRegister}>
+          <form action={formAction}>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl">Register</CardTitle>
               <CardDescription>
@@ -139,42 +46,40 @@ export default function RegisterPage() {
                 <Label htmlFor="name">Name</Label>
                 <Input 
                     id="name" 
+                    name="name"
                     type="text" 
                     placeholder="John Doe" 
                     required 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input 
                     id="email" 
+                    name="email"
                     type="email" 
                     placeholder="m@example.com" 
                     required 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
                 />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
                 <Input 
                     id="password" 
+                    name="password"
                     type="password" 
                     required 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
                 />
               </div>
+               {state?.message && state.message !== 'Success' && (
+                  <div className="flex items-center space-x-2 text-destructive text-sm mt-2">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>{state.message}</p>
+                  </div>
+                )}
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-              <Button className="w-full" type="submit" disabled={loading}>
-                {loading ? 'Creating account...' : 'Register'}
-              </Button>
+              <RegisterButton />
               <p className="text-sm text-muted-foreground">
                   Already have an account?{' '}
                   <Link href="/login" className="font-semibold text-primary hover:underline">
@@ -184,44 +89,18 @@ export default function RegisterPage() {
             </CardFooter>
           </form>
         </Card>
-        
-        {/* Debug Information Box */}
-        {(process.env.NODE_ENV === 'development') && (
-          <Card className="mt-4 bg-muted/50">
-            <CardHeader>
-              <CardTitle className="text-lg text-destructive">Debug Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2 text-xs">
-                <div>
-                  <h4 className="font-bold">Environment Variable Check (DEV ONLY):</h4>
-                   <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
-                    {JSON.stringify({ 
-                        'process.env.SUPER_ADMIN_EMAIL (from server)': superAdminEmail || 'Loading or not found...',
-                        'Is Match?': superAdminEmail ? (email === superAdminEmail).toString() : 'N/A'
-                    }, null, 2)}
-                  </pre>
-                </div>
-                <div>
-                  <h4 className="font-bold mt-4">Live Input Data:</h4>
-                  <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
-                    {JSON.stringify({ name, email, password: password.replace(/./g, '*') }, null, 2)}
-                  </pre>
-                </div>
-                {debugInfo && (
-                  <div>
-                    <h4 className="font-bold mt-4">Last Action Trace:</h4>
-                    <pre className="mt-1 p-2 bg-background rounded-md overflow-x-auto">
-                      {JSON.stringify(debugInfo, null, 2)}
-                    </pre>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
       </div>
     </div>
+  );
+}
+
+
+function RegisterButton() {
+  const { pending } = useFormStatus();
+ 
+  return (
+    <Button className="w-full" type="submit" disabled={pending}>
+      {pending ? 'Creating account...' : 'Register'}
+    </Button>
   );
 }
