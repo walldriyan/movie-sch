@@ -71,12 +71,12 @@ export default function RegisterPage() {
         throw new Error(signInResult?.error || 'Sign in after registration failed');
       }
 
-    } catch (error: any) {
-      setError(error);
+    } catch (err: any) {
+      setError(err);
       toast({
         variant: 'destructive',
-        title: 'Registration Failed',
-        description: error.message || 'An unexpected error occurred.',
+        title: 'Operation Failed',
+        description: err.message || 'An unexpected error occurred.',
       });
     } finally {
         setLoading(false);
@@ -160,7 +160,7 @@ export default function RegisterPage() {
                 </CardHeader>
                 <CardContent>
                     <pre className="text-sm text-destructive-foreground bg-transparent p-4 rounded-md overflow-auto">
-                        {JSON.stringify({ message: error.message }, null, 2)}
+                        {JSON.stringify({ name: error.name, message: error.message }, null, 2)}
                     </pre>
                 </CardContent>
             </Card>
