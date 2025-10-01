@@ -7,7 +7,7 @@ import { MovieFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
-import { ROLES } from './permissions';
+import { ROLES, MovieStatus } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join, dirname } from 'path';
@@ -109,7 +109,7 @@ export async function getMovies(options: { page?: number; limit?: number } = {})
     const skip = (page - 1) * limit;
 
     const whereClause: Prisma.MovieWhereInput = {
-      status: 'PUBLISHED'
+      status: MovieStatus.PUBLISHED
     };
 
     const movies = await prisma.movie.findMany({
@@ -162,8 +162,18 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     throw new Error('User not authenticated');
   }
 
+  let status = movieData.status;
+  if (!id) { // Only on creation
+    if(session.user.role === ROLES.USER_ADMIN) {
+      status = MovieStatus.PENDING_APPROVAL;
+    } else if (session.user.role === ROLES.SUPER_ADMIN) {
+      status = MovieStatus.PUBLISHED;
+    }
+  }
+
   const data = {
     ...movieData,
+    status: status,
     genres: JSON.stringify(movieData.genres),
     authorId: session.user.id,
   };
@@ -366,4 +376,23 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
         totalPages,
         totalMovies,
     };
+}
+
+
+export async function updateMovieStatus(movieId: number, status: string) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    throw new Error('Not authorized to change movie status.');
+  }
+
+  if (!Object.values(MovieStatus).includes(status)) {
+    throw new Error(`Invalid status: ${status}`);
+  }
+
+  await prisma.movie.update({
+    where: { id: movieId },
+    data: { status },
+  });
+
+  revalidatePath('/manage');
 }

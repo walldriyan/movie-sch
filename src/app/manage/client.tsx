@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import type { Movie } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { saveMovie, deleteMovie, getMoviesForAdmin } from '@/lib/actions';
+import { saveMovie, deleteMovie, getMoviesForAdmin, updateMovieStatus } from '@/lib/actions';
 import type { MovieFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
@@ -109,6 +109,23 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
       });
     }
   };
+
+  const handleStatusChange = async (movieId: number, newStatus: string) => {
+    try {
+      await updateMovieStatus(movieId, newStatus);
+      await fetchMovies(currentPage);
+      toast({
+        title: 'Status Updated',
+        description: `Movie status has been changed to ${newStatus}.`,
+      });
+    } catch (error: any) {
+       toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Failed to update movie status.',
+      });
+    }
+  };
   
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -131,6 +148,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
             onAddNew={handleAddNewMovie}
             onEdit={handleEditMovie}
             onDeleteConfirmed={handleDeleteConfirmed}
+            onStatusChange={handleStatusChange}
           />
           {totalPages > 1 && (
              <Pagination>

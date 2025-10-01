@@ -24,6 +24,13 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -40,13 +47,14 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import AuthGuard from '@/components/auth/auth-guard';
-import { PERMISSIONS } from '@/lib/permissions';
+import { PERMISSIONS, MovieStatus } from '@/lib/permissions';
 
 interface MovieListProps {
   movies: Movie[];
   onAddNew: () => void;
   onEdit: (movie: Movie) => void;
   onDeleteConfirmed: (movieId: number) => void;
+  onStatusChange: (movieId: number, newStatus: string) => void;
 }
 
 export default function MovieList({
@@ -54,6 +62,7 @@ export default function MovieList({
   onAddNew,
   onEdit,
   onDeleteConfirmed,
+  onStatusChange,
 }: MovieListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
@@ -69,6 +78,21 @@ export default function MovieList({
     }
     setDeleteAlertOpen(false);
     setMovieToDelete(null);
+  };
+
+  const getStatusVariant = (status: string | null) => {
+    switch (status) {
+      case MovieStatus.PUBLISHED:
+        return 'default';
+      case MovieStatus.PENDING_APPROVAL:
+        return 'secondary';
+      case MovieStatus.PRIVATE:
+        return 'outline';
+      case MovieStatus.PENDING_DELETION:
+        return 'destructive';
+      default:
+        return 'outline';
+    }
   };
 
   return (
@@ -110,7 +134,9 @@ export default function MovieList({
                   <TableRow
                     key={movie.id}
                     className={
-                      movie.status === 'PENDING_DELETION' ? 'opacity-50' : ''
+                      movie.status === MovieStatus.PENDING_DELETION
+                        ? 'opacity-50'
+                        : ''
                     }
                   >
                     <TableCell className="hidden sm:table-cell">
@@ -137,14 +163,8 @@ export default function MovieList({
                       </Link>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant={
-                          movie.status === 'PUBLISHED'
-                            ? 'default'
-                            : 'destructive'
-                        }
-                      >
-                        {movie.status || 'PUBLISHED'}
+                      <Badge variant={getStatusVariant(movie.status)}>
+                        {movie.status || 'DRAFT'}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
@@ -171,6 +191,35 @@ export default function MovieList({
                               Edit
                             </DropdownMenuItem>
                           </AuthGuard>
+
+                          <AuthGuard requiredPermissions={[PERMISSIONS['post.change_status']]}>
+                             <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>
+                                Change Status
+                              </DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                <DropdownMenuSubContent>
+                                  <DropdownMenuRadioGroup
+                                    value={movie.status || ''}
+                                    onValueChange={(newStatus) =>
+                                      onStatusChange(movie.id, newStatus)
+                                    }
+                                  >
+                                    {Object.values(MovieStatus).map((status) => (
+                                      <DropdownMenuRadioItem
+                                        key={status}
+                                        value={status}
+                                      >
+                                        {status}
+                                      </DropdownMenuRadioItem>
+                                    ))}
+                                  </DropdownMenuRadioGroup>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                            </DropdownMenuSub>
+                            <DropdownMenuSeparator />
+                          </AuthGuard>
+                          
                           <AuthGuard
                             requiredPermissions={[PERMISSIONS['post.delete']]}
                           >
