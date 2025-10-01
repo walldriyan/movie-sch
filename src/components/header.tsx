@@ -1,6 +1,6 @@
 'use server';
 
-import { Film, LayoutGrid, LogIn, LogOut, User } from 'lucide-react';
+import { Film, LayoutGrid, LogIn, User } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -13,9 +13,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import React from 'react';
-import { Skeleton } from './ui/skeleton';
-import { signOut, auth } from '@/auth';
+import { auth } from '@/auth';
 import { Button } from './ui/button';
+import LogoutButton from './auth/logout-button';
 
 export default async function Header({
   children,
@@ -78,17 +78,7 @@ export default async function Header({
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
-          <form action={async () => {
-            'use server';
-            await signOut();
-          }}>
-            <button type="submit" className="w-full">
-              <DropdownMenuItem>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
-              </DropdownMenuItem>
-            </button>
-          </form>
+          <LogoutButton />
         </DropdownMenuContent>
       </DropdownMenu>
     );

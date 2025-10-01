@@ -5,7 +5,6 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { permissions, ROLES } from '@/lib/permissions';
 import type { NextAuthConfig } from 'next-auth';
-import { AuthError } from 'next-auth';
 
 const prisma = new PrismaClient();
 
@@ -16,6 +15,10 @@ export const authConfig = {
       async authorize(credentials) {
         const email = credentials.email as string;
         const password = credentials.password as string;
+
+        if (!email || !password) {
+            return null;
+        }
 
         const user = await prisma.user.findUnique({
           where: { email },
@@ -43,8 +46,6 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        // The `user` object from the `authorize` callback contains the role.
-        // We need to cast `user` to `any` to access the `role` property.
         const userRole = (user as any).role || ROLES.USER;
         token.role = userRole;
         token.permissions = permissions[userRole] || [];
