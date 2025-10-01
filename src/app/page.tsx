@@ -41,7 +41,7 @@ export default async function HomePage() {
 
   return (
     <div className="w-full bg-background text-foreground">
-      <main className="max-w-4xl mx-auto px-4 py-8 mt-16">
+      <main className="max-w-4xl mx-auto px-4 py-8">
         <div className="flex items-center gap-2 mb-8">
             <Button variant="secondary" className="rounded-full">
                 <Film />
