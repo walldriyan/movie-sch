@@ -25,81 +25,69 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<any>(null);
-  
+
   const handleCredentialsLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    
     try {
       const result = await signIn('credentials', {
         redirect: false,
         email,
         password,
       });
-  
+
       if (result?.error) {
-        let errorObject;
+         let errorObject;
+        // The error can be a stringified JSON object or a simple string like 'CredentialsSignin'
         try {
-          // The custom error from `authorize` should be a JSON string.
+          // Attempt to parse the error message as JSON (our custom debug info)
           errorObject = JSON.parse(result.error);
         } catch (e) {
-          // For other generic errors like 'CredentialsSignin' or 'Failed to fetch'.
-          errorObject = { 
-              message: result.error === 'CredentialsSignin' 
-                ? 'Invalid email or password' 
-                : result.error, 
-              name: result.error === 'CredentialsSignin' ? 'CredentialsSignin' : 'SignInError',
+          // If parsing fails, it's likely a standard NextAuth error string
+          errorObject = {
+            name: result.error, // e.g., 'CredentialsSignin'
+            message:
+              result.error === 'CredentialsSignin'
+                ? 'Invalid email or password'
+                : 'An authentication error occurred. Please try again.',
           };
         }
-
-        setError(errorObject);
-
-        toast({
+         setError(errorObject);
+         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: typeof errorObject.message === 'string' 
-            ? errorObject.message 
-            : 'Detailed debug info available below.',
+          description: errorObject.message,
         });
 
       } else if (result?.ok) {
         toast({
           title: 'Success',
-          description: 'Login successful!',
+          description: 'Login successful! Redirecting...',
         });
         router.push('/');
-        router.refresh(); 
+        router.refresh();
       } else {
-        // Handle cases where result is null or not ok without an error
-         const unknownError = { message: 'An unexpected error occurred during login.', name: 'UnknownError' };
-         setError(unknownError);
-         toast({
+        const unknownError = { message: 'An unknown error occurred. The sign-in result was not "ok" and had no error property.', name: 'UnknownSignInError' };
+        setError(unknownError);
+        toast({
             variant: 'destructive',
             title: 'Login Failed',
             description: unknownError.message,
         });
       }
-    } catch (error: any) {
-        // This catch block handles network errors or errors thrown by next-auth itself
-        let errorObject = { message: 'An unexpected error occurred.', name: 'CatchAllError' };
-        
-        // The detailed message from our `authorize` function will be in `error.cause.err.message`
-        if (error.cause?.err?.message) {
-            try {
-                errorObject = JSON.parse(error.cause.err.message);
-            } catch (e) {
-                 errorObject = { message: error.cause.err.message, name: error.name || "AuthError" };
-            }
-        } else if (error.message) {
-            errorObject = { message: error.message, name: error.name || "GenericError" };
-        }
-
+    } catch (err: any) {
+        // This catch block will handle network errors like "Failed to fetch"
+        let errorObject = { 
+            message: err.message || 'An unexpected network or client-side error occurred.', 
+            name: err.name || 'CatchAllError',
+            cause: err.cause,
+        };
         setError(errorObject);
         toast({
             variant: 'destructive',
             title: 'Login Failed',
-            description: typeof errorObject.message === 'string' ? errorObject.message : 'Detailed debug info available below.',
+            description: errorObject.message,
         });
     } finally {
       setLoading(false);
@@ -130,12 +118,12 @@ export default function LoginPage() {
             <CardContent className="grid gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
-                <Input 
-                    id="email" 
+                <Input
+                    id="email"
                     name="email"
-                    type="email" 
-                    placeholder="m@example.com" 
-                    required 
+                    type="email"
+                    placeholder="m@example.com"
+                    required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
@@ -143,11 +131,11 @@ export default function LoginPage() {
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="password">Password</Label>
-                <Input 
-                    id="password" 
+                <Input
+                    id="password"
                     name="password"
-                    type="password" 
-                    required 
+                    type="password"
+                    required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
