@@ -32,10 +32,12 @@ import { Pencil, User as UserIcon, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Image from 'next/image';
 
+const MAX_FILE_SIZE = 1048576; // 1 MB
+
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   bio: z.string().max(160, 'Bio must not be longer than 160 characters.').optional(),
-  image: z.any(), // Accept file or string
+  image: z.any(),
   website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   twitter: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   linkedin: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
@@ -66,10 +68,13 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      let imageUrl = user.image; // Keep old image by default
+      let imageUrl = user.image;
 
-      // Check if a new file is selected
       if (data.image && typeof data.image === 'object' && data.image.size > 0) {
+        if (data.image.size > MAX_FILE_SIZE) {
+          form.setError("image", { message: "File size must be less than 1MB." });
+          return;
+        }
         const formData = new FormData();
         formData.append('image', data.image);
         const newImageUrl = await uploadProfileImage(formData);
@@ -84,7 +89,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
         website: data.website,
         twitter: data.twitter,
         linkedin: data.linkedin,
-        image: imageUrl, // Use the new or old URL
+        image: imageUrl,
       };
 
       await updateUserProfile(user.id, updateData);
@@ -107,13 +112,17 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // For preview
+      if (file.size > MAX_FILE_SIZE) {
+        form.setError("image", { message: "File size must be less than 1MB." });
+        return;
+      }
+      form.clearErrors("image");
+
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
       reader.readAsDataURL(file);
-      // Set the file object in the form
       form.setValue('image', file);
     }
   };
