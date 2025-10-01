@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ProfileHeader from '@/components/profile-header';
+import { useParams } from 'next/navigation';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
@@ -27,8 +28,9 @@ const userProfile = {
 };
 
 
-export default function ProfilePage({ params }: { params: { username: string } }) {
-  const { username } = params;
+export default function ProfilePage() {
+  const params = useParams();
+  const { username } = params as { username: string };
   const [allMovies, setAllMovies] = useState<Movie[]>([]);
   const [isMounted, setIsMounted] = useState(false);
 

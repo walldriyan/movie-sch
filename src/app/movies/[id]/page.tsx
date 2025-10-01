@@ -44,11 +44,13 @@ import {
   CarouselPrevious,
 } from '@/components/ui/carousel';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 
 const LOCAL_STORAGE_KEY = 'movies_data';
 
-export default function MoviePage({ params }: { params: { id: string } }) {
-  const movieId = params.id;
+export default function MoviePage() {
+  const params = useParams();
+  const movieId = params.id as string;
   const [movie, setMovie] = useState<Movie | null>(null);
   const [isMounted, setIsMounted] = useState(false);
   const [activeTab, setActiveTab] = useState('about');
@@ -106,7 +108,7 @@ export default function MoviePage({ params }: { params: { id: string } }) {
   const activeTabButtonStyle = 'text-primary font-semibold border-primary';
   const inactiveTabButtonStyle = 'border-transparent';
 
-  const hasGallery = movie.galleryImageIds && movie.galleryImageIds.length > 1;
+  const hasGallery = movie.galleryImageIds && movie.galleryImageIds.length > 0;
 
   return (
     <div className="min-h-screen w-full bg-background">
