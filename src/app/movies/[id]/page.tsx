@@ -16,11 +16,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Bot, Download } from 'lucide-react';
+import { Bot, Download, Tag } from 'lucide-react';
 import React from 'react';
 
+const TagsSection = ({ genres }: { genres: string[] }) => (
+  <div className="flex flex-wrap gap-2">
+    {genres.map((genre: string) => (
+      <Button key={genre} variant="outline" size="sm" className="rounded-full">
+        <Tag className="mr-2 h-4 w-4" />
+        {genre}
+      </Button>
+    ))}
+  </div>
+);
 
 export default async function MoviePage({
   params,
@@ -40,21 +49,14 @@ export default async function MoviePage({
 
   return (
     <div className="min-h-screen w-full bg-background">
-      <main className="max-w-6xl mx-auto py-8 mt-16">
+      <main className="max-w-6xl mx-auto pb-8">
         <article>
           <MovieDetailClient movie={movie}>
             <TabsContent value="about">
               <div
-                className="prose prose-invert max-w-none text-foreground/80 mt-6"
+                className="prose prose-invert max-w-none text-foreground/80"
                 dangerouslySetInnerHTML={{ __html: movie.description }}
               />
-              <div className="my-8 flex flex-wrap gap-2">
-                {movie.genres.map((genre: string) => (
-                  <Badge key={genre} variant="outline" className="text-sm">
-                    {genre}
-                  </Badge>
-                ))}
-              </div>
               <Separator className="my-8" />
               <section id="recommendations">
                 <h2 className="font-serif text-3xl font-bold mb-8">
