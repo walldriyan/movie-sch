@@ -231,10 +231,19 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
 
 
   const data = {
-    ...movieData,
+    title: movieData.title,
+    description: movieData.description,
     posterUrl: finalPosterUrl,
-    status: status,
+    year: movieData.year,
+    duration: movieData.duration,
     genres: JSON.stringify(movieData.genres),
+    directors: movieData.directors,
+    mainCast: movieData.mainCast,
+    imdbRating: movieData.imdbRating,
+    rottenTomatoesRating: movieData.rottenTomatoesRating,
+    googleRating: movieData.googleRating,
+    status: status,
+    viewCount: movieData.viewCount,
     authorId: session.user.id,
   };
   
@@ -276,7 +285,7 @@ export async function getUsers(): Promise<User[]> {
   return users;
 }
 
-export async function uploadProfileImage(formData: FormData) {
+export async function uploadProfileImage(formData: FormData): Promise<string | null> {
     const file = formData.get('image') as File;
     if (!file || file.size === 0) {
       return null;

@@ -102,7 +102,6 @@ export default function MovieForm({
       googleRating: values.googleRating || null,
       status: editingMovie?.status || 'DRAFT',
       viewCount: editingMovie?.viewCount || 0,
-      likes: editingMovie?.likes || 0,
     };
     await onFormSubmit(movieData, editingMovie?.id);
   };
