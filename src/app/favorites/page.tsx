@@ -3,27 +3,30 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, SlidersHorizontal, CalendarClock, CalendarDays, CalendarCheck } from 'lucide-react';
+import { Film, Star, CalendarDays, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getMovies } from '@/lib/actions';
+import { getFavoriteMovies } from '@/lib/actions';
 import type { Movie } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
-import AdvancedFilterDialog from '@/components/advanced-filter-dialog';
-import type { FilterState } from '@/components/advanced-filter-dialog';
-import { format, formatRelative } from 'date-fns';
+import { auth } from '@/auth';
+import { notFound } from 'next/navigation';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import Loading from './loading';
+import { format, formatRelative } from 'date-fns';
 
-export default async function HomePage() {
-  
-  const { movies: fetchedMovies } = await getMovies();
-  const movies = fetchedMovies as any[];
+export default async function FavoritesPage() {
+  const session = await auth();
+  if (!session?.user) {
+    notFound();
+  }
+
+  const favoriteMovies = await getFavoriteMovies();
+  const movies = favoriteMovies as any[];
 
   const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
   
@@ -32,12 +35,16 @@ export default async function HomePage() {
       <div className="w-full bg-background text-foreground">
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
           <div className="max-w-md">
+             <Bookmark className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <h1 className="font-serif text-4xl font-bold">
-              No Movies Yet
+              No Favorites Yet
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Be the first to add a movie to the collection!
+              You haven't added any movies to your favorites. Click the bookmark icon on a movie to save it here.
             </p>
+             <Button asChild className="mt-8">
+                <Link href="/">Browse Movies</Link>
+            </Button>
           </div>
         </main>
       </div>
@@ -48,50 +55,12 @@ export default async function HomePage() {
     <div className="w-full bg-background text-foreground">
       <TooltipProvider>
         <main className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center gap-2 mb-8">
-              <Button variant={'secondary'} className="rounded-full">
-                  <Film />
-                  <span>All</span>
-              </Button>
-              <Button variant="outline" className="rounded-full">
-                  <Globe />
-                  <span>International</span>
-              </Button>
-              <Button variant="outline" className="rounded-full">
-                  <Tv />
-                  <span>Series</span>
-              </Button>
-          </div>
+           <div className="mb-8">
+            <h1 className="font-serif text-4xl font-bold">My Favorites</h1>
+            <p className="text-muted-foreground mt-2">A collection of movies you've saved.</p>
+           </div>
 
           <Separator className="mb-8" />
-          
-          <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                  <Button variant={'ghost'} size="sm" className="rounded-full">
-                      <CalendarClock className="mr-2 h-4 w-4" />
-                      Today
-                  </Button>
-                  <Button variant={'ghost'} size="sm" className="rounded-full">
-                      <CalendarDays className="mr-2 h-4 w-4" />
-                      This Week
-                  </Button>
-                  <Button variant={'ghost'} size="sm" className="rounded-full">
-                      <CalendarCheck className="mr-2 h-4 w-4" />
-                      This Month
-                  </Button>
-              </div>
-              {/* <AdvancedFilterDialog 
-                  allGenres={['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Thriller', 'Romance', 'Animation']}
-                  currentFilters={filters}
-                  onApplyFilters={() => {}}
-                  triggerButton={
-                      <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground">
-                          <SlidersHorizontal className="mr-2 h-4 w-4" />
-                          <span>Advanced Filters</span>
-                      </Button>
-                  }
-              /> */}
-          </div>
           
           <div className={`space-y-12 transition-opacity`}>
             {movies.map((movie) => {

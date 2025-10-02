@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -31,6 +32,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -42,7 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw, Eye, ThumbsUp } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw, Eye, ThumbsUp, ListFilter } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -50,6 +52,7 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { PERMISSIONS, MovieStatus } from '@/lib/permissions';
 import { Skeleton } from '../ui/skeleton';
 import { format } from 'date-fns';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
 type MovieWithDetails = Movie & { author: User, _count: { likedBy: number }};
 
@@ -60,8 +63,26 @@ interface MovieListProps {
   onDeleteConfirmed: (movieId: number) => void;
   onStatusChange: (movieId: number, newStatus: string) => void;
   onRefresh: () => void;
+  onFilterChange: (status: string | null) => void;
   isRefreshing: boolean;
+  statusChangingMovieId: number | null;
+  currentFilter: string | null;
 }
+
+const SkeletonRow = () => (
+  <TableRow>
+    <TableCell colSpan={6}>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-md" />
+        <div className="space-y-2">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+        </div>
+      </div>
+    </TableCell>
+  </TableRow>
+);
+
 
 export default function MovieList({
   movies,
@@ -70,7 +91,10 @@ export default function MovieList({
   onDeleteConfirmed,
   onStatusChange,
   onRefresh,
+  onFilterChange,
   isRefreshing,
+  statusChangingMovieId,
+  currentFilter,
 }: MovieListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<MovieWithDetails | null>(null);
@@ -102,6 +126,8 @@ export default function MovieList({
         return 'outline';
     }
   };
+  
+  const statusOptions = [null, ...Object.values(MovieStatus)];
 
   return (
     <>
@@ -126,18 +152,42 @@ export default function MovieList({
                 A list of all movies in the catalog.
               </CardDescription>
             </div>
-            <Button variant="outline" size="icon" onClick={onRefresh} disabled={isRefreshing}>
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
+            <div className='flex items-center gap-2'>
+              {isRefreshing ? (
+                  <Skeleton className="h-8 w-28" />
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1">
+                      <ListFilter className="h-3.5 w-3.5" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        {currentFilter ? `Filter: ${currentFilter}` : "Filter Status"}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={currentFilter || 'ALL'} onValueChange={(value) => onFilterChange(value === 'ALL' ? null : value)}>
+                      <DropdownMenuRadioItem value="ALL">All</DropdownMenuRadioItem>
+                      {Object.values(MovieStatus).map(status => (
+                        <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+
+              <Button variant="outline" size="icon" onClick={onRefresh} disabled={isRefreshing}>
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
-                </TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Author</TableHead>
                 <TableHead>Status</TableHead>
@@ -159,37 +209,49 @@ export default function MovieList({
                         : ''
                     }
                   >
-                    <TableCell className="hidden sm:table-cell">
-                      {movie.posterUrl ? (
-                        <Image
-                          alt={movie.title}
-                          className="aspect-square rounded-md object-cover"
-                          height="64"
-                          src={movie.posterUrl}
-                          width="64"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-                          <ImageIcon />
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium max-w-xs truncate">
-                      <Link
-                        href={`/movies/${movie.id}`}
-                        className="hover:underline"
-                      >
-                        {movie.title}
-                      </Link>
+                    <TableCell className="font-medium max-w-xs">
+                       <div className="flex items-center gap-3">
+                         {movie.posterUrl ? (
+                          <Image
+                            alt={movie.title}
+                            className="aspect-square rounded-md object-cover"
+                            height="40"
+                            src={movie.posterUrl}
+                            width="40"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                            <ImageIcon />
+                          </div>
+                        )}
+                        <Link
+                          href={`/movies/${movie.id}`}
+                          className="hover:underline truncate"
+                        >
+                          {movie.title}
+                        </Link>
+                       </div>
                     </TableCell>
                      <TableCell>
-                      <div className="font-medium">{movie.author.name}</div>
-                      <div className="text-xs text-muted-foreground">{movie.author.email}</div>
+                      <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={movie.author.image || ''} alt={movie.author.name || ''} />
+                            <AvatarFallback>{movie.author.name?.charAt(0) || 'U'}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{movie.author.name}</div>
+                            <div className="text-xs text-muted-foreground">{movie.author.email}</div>
+                          </div>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(movie.status)}>
-                        {movie.status || 'DRAFT'}
-                      </Badge>
+                      {statusChangingMovieId === movie.id ? (
+                        <Skeleton className="h-5 w-24 rounded-full" />
+                      ) : (
+                        <Badge variant={getStatusVariant(movie.status)}>
+                          {movie.status || 'DRAFT'}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                        {format(new Date(movie.createdAt), 'MMM dd, yyyy')}
@@ -230,7 +292,7 @@ export default function MovieList({
 
                           <AuthGuard requiredPermissions={[PERMISSIONS['post.change_status']]}>
                              <DropdownMenuSub>
-                              <DropdownMenuSubTrigger>
+                              <DropdownMenuSubTrigger disabled={statusChangingMovieId === movie.id}>
                                 Change Status
                               </DropdownMenuSubTrigger>
                               <DropdownMenuPortal>
@@ -273,8 +335,8 @@ export default function MovieList({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
-                    No movies found. Add one to get started.
+                  <TableCell colSpan={6} className="h-24 text-center">
+                    No movies found for the selected filter.
                   </TableCell>
                 </TableRow>
               )}

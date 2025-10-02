@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useTransition } from 'react';
 import type { Movie } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { saveMovie, deleteMovie, getMoviesForAdmin, updateMovieStatus } from '@/lib/actions';
@@ -37,29 +37,41 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [formError, setFormError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [statusChangingMovieId, setStatusChangingMovieId] = useState<number | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
   const { toast } = useToast();
 
-  const fetchMovies = async (page: number) => {
+  const fetchMovies = async (page: number, status: string | null) => {
     setIsRefreshing(true);
-    try {
-      const { movies: moviesFromDb, totalPages: newTotalPages } = await getMoviesForAdmin({ page, limit: 10, userId: user.id, userRole: user.role });
-      setMovies(moviesFromDb as any);
-      setTotalPages(newTotalPages);
-      setCurrentPage(page);
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to fetch movies.',
-      });
-    } finally {
-      setIsRefreshing(false);
-    }
+    startTransition(async () => {
+      try {
+        const { movies: moviesFromDb, totalPages: newTotalPages } = await getMoviesForAdmin({ 
+          page, 
+          limit: 10, 
+          userId: user.id, 
+          userRole: user.role,
+          status,
+        });
+        setMovies(moviesFromDb as any);
+        setTotalPages(newTotalPages);
+        setCurrentPage(page);
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Failed to fetch movies.',
+        });
+      } finally {
+        setIsRefreshing(false);
+      }
+    });
   };
   
   useEffect(() => {
-    fetchMovies(currentPage);
-  }, [currentPage]);
+    fetchMovies(currentPage, statusFilter);
+  }, [currentPage, statusFilter]);
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
@@ -80,11 +92,11 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
     try {
       setFormError(null);
       await saveMovie(movieData, id);
-      await fetchMovies(id ? currentPage : 1); // Refresh current page or go to first page on new item
+      await fetchMovies(id ? currentPage : 1, statusFilter);
       setView('list');
       toast({
         title: 'Success',
-        description: `Movie "${movieData.title}" has been saved.`,
+        description: `Movie "${movieData.title}" has been submitted for approval.`,
       });
     } catch (error: any) {
       console.error('Failed to save movie:', error);
@@ -100,7 +112,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
           PERMISSIONS['post.hard_delete']
         );
         await deleteMovie(movieId, isPermanent);
-        await fetchMovies(currentPage);
+        await fetchMovies(currentPage, statusFilter);
         toast({
           title: 'Success',
           description: `Movie "${movieToDelete.title}" has been ${
@@ -118,9 +130,10 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   };
 
   const handleStatusChange = async (movieId: number, newStatus: string) => {
+    setStatusChangingMovieId(movieId);
     try {
       await updateMovieStatus(movieId, newStatus);
-      await fetchMovies(currentPage);
+      await fetchMovies(currentPage, statusFilter);
       toast({
         title: 'Status Updated',
         description: `Movie status has been changed to ${newStatus}.`,
@@ -131,6 +144,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         title: 'Error',
         description: error.message || 'Failed to update movie status.',
       });
+    } finally {
+      setStatusChangingMovieId(null);
     }
   };
   
@@ -146,10 +161,15 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   };
   
   const handleRefresh = () => {
-    fetchMovies(currentPage);
+    fetchMovies(currentPage, statusFilter);
     toast({
       title: 'Movie list refreshed',
     });
+  }
+
+  const handleFilterChange = (status: string | null) => {
+    setStatusFilter(status);
+    setCurrentPage(1); // Reset to first page on filter change
   }
 
   const visibleMovies = user?.permissions?.includes(
@@ -169,9 +189,12 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
             onDeleteConfirmed={handleDeleteConfirmed}
             onStatusChange={handleStatusChange}
             onRefresh={handleRefresh}
+            onFilterChange={handleFilterChange}
             isRefreshing={isRefreshing}
+            statusChangingMovieId={statusChangingMovieId}
+            currentFilter={statusFilter}
           />
-          {totalPages > 1 && (
+          {totalPages > 1 && !isRefreshing && (
              <Pagination>
                 <PaginationContent>
                   <PaginationItem>

@@ -3,6 +3,7 @@
 import React, { useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Star,
   MessageCircle,
@@ -13,6 +14,7 @@ import {
   Tag,
   ThumbsUp,
   ThumbsDown,
+  ArrowLeft,
 } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -33,6 +35,7 @@ export default function MovieDetailClient({
   currentUser?: User;
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('about');
@@ -93,6 +96,16 @@ export default function MovieDetailClient({
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.back()}
+          className="absolute top-4 left-4 z-10 rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          <span className="sr-only">Back</span>
+        </Button>
 
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
             {movie.genres.map((genre: string) => (

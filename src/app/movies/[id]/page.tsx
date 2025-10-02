@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, ThumbsUp, Heart, Clapperboard } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, ThumbsUp, Heart, Clapperboard, Images } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -118,6 +118,37 @@ const TrailerSection = ({ movie }: { movie: Movie }) => {
   );
 };
 
+const ImageGallerySection = ({ movie }: { movie: Movie }) => {
+  const images = movie.mediaLinks?.filter(link => link.type === 'image') || [];
+  if (images.length === 0) {
+    return null;
+  }
+
+  return (
+    <>
+      <Separator className="my-12" />
+      <section id="gallery">
+        <h2 className="font-serif text-3xl font-bold mb-8 flex items-center gap-3">
+          <Images className="h-8 w-8 text-primary" />
+          Gallery
+        </h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          {images.map((image, index) => (
+            <div key={index} className="aspect-video relative overflow-hidden rounded-lg">
+              <Image
+                src={image.url}
+                alt={`Gallery image ${index + 1} for ${movie.title}`}
+                fill
+                className="object-cover transition-transform duration-300 hover:scale-105"
+              />
+            </div>
+          ))}
+        </div>
+      </section>
+    </>
+  );
+};
+
 
 export default async function MoviePage({
   params,
@@ -151,6 +182,8 @@ export default async function MoviePage({
                     />
 
                     <TrailerSection movie={movie} />
+                    
+                    <ImageGallerySection movie={movie} />
 
                     <Separator className="my-12" />
                     <section id="recommendations">

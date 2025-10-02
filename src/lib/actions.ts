@@ -11,6 +11,7 @@ import { ROLES, MovieStatus } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 const prisma = new PrismaClient();
 
@@ -142,19 +143,64 @@ export async function registerUser(
 }
 
 
-export async function getMovies(options: { page?: number; limit?: number } = {}) {
-    const { page = 1, limit = 10 } = options;
+export async function getMovies(options: { page?: number; limit?: number, filters?: any } = {}) {
+    const { page = 1, limit = 10, filters } = options;
     const skip = (page - 1) * limit;
 
-    const whereClause: Prisma.MovieWhereInput = {
+    let whereClause: Prisma.MovieWhereInput = {
       status: MovieStatus.PUBLISHED
     };
+    
+    let orderBy: Prisma.MovieOrderByWithRelationInput = { updatedAt: 'desc' };
+
+    if (filters) {
+      const { sortBy, genres, yearRange, ratingRange, timeFilter } = filters;
+      
+      if (sortBy) {
+        const [field, direction] = sortBy.split('-');
+        if (['updatedAt', 'imdbRating'].includes(field) && ['asc', 'desc'].includes(direction)) {
+          orderBy = { [field]: direction };
+        }
+      }
+
+      if (genres && genres.length > 0) {
+        whereClause.genres = {
+          search: genres.join(' & '),
+        };
+      }
+
+      if (yearRange) {
+        whereClause.year = {
+          gte: yearRange[0],
+          lte: yearRange[1],
+        };
+      }
+      
+      if (ratingRange) {
+        whereClause.imdbRating = {
+          gte: ratingRange[0],
+          lte: ratingRange[1],
+        };
+      }
+
+      if (timeFilter) {
+        const now = new Date();
+        if (timeFilter === 'today') {
+          whereClause.updatedAt = { gte: startOfDay(now), lte: endOfDay(now) };
+        } else if (timeFilter === 'this_week') {
+          whereClause.updatedAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
+        } else if (timeFilter === 'this_month') {
+          whereClause.updatedAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
+        }
+      }
+    }
+
 
     const movies = await prisma.movie.findMany({
         where: whereClause,
         skip: skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
             author: true,
         },
@@ -203,35 +249,14 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
   }
-
-  let status;
+  const userId = session.user.id;
 
   // Handle image upload
   let finalPosterUrl = movieData.posterUrl;
   if (movieData.posterUrl && movieData.posterUrl.startsWith('data:image')) {
     finalPosterUrl = await saveImageFromDataUrl(movieData.posterUrl, 'movies');
   }
-
-  if (id) {
-    const existingMovie = await prisma.movie.findUnique({ where: { id } });
-    // If posterUrl is changing and the old one was an uploaded file, delete it.
-    if (finalPosterUrl !== existingMovie?.posterUrl) {
-      await deleteUploadedFile(existingMovie?.posterUrl);
-    }
-    // It's an update, set to pending approval
-    status = MovieStatus.PENDING_APPROVAL;
-  } else {
-    // It's a creation
-    if (session.user.role === ROLES.USER_ADMIN) {
-      status = MovieStatus.PENDING_APPROVAL;
-    } else if (session.user.role === ROLES.SUPER_ADMIN) {
-      status = MovieStatus.PUBLISHED;
-    } else {
-       status = movieData.status; // fallback
-    }
-  }
-
-
+  
   const data = {
     title: movieData.title,
     description: movieData.description,
@@ -244,18 +269,30 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     imdbRating: movieData.imdbRating,
     rottenTomatoesRating: movieData.rottenTomatoesRating,
     googleRating: movieData.googleRating,
-    status: status,
     viewCount: movieData.viewCount,
-    authorId: session.user.id,
     mediaLinks: JSON.stringify(movieData.mediaLinks || []),
   };
-  
+
+  const status = MovieStatus.PENDING_APPROVAL;
+
   if (id) {
-    await prisma.movie.update({ where: { id }, data: data as any });
+    const existingMovie = await prisma.movie.findUnique({ where: { id } });
+    if (!existingMovie) {
+        throw new Error('Movie not found');
+    }
+    // If posterUrl is changing and the old one was an uploaded file, delete it.
+    if (finalPosterUrl !== existingMovie?.posterUrl) {
+      await deleteUploadedFile(existingMovie?.posterUrl);
+    }
+    
+    await prisma.movie.update({ 
+        where: { id }, 
+        data: { ...data, status: status } as any
+    });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.movie.create({ data: data as any });
+    await prisma.movie.create({ data: { ...data, status: status, authorId: userId } as any });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
@@ -391,8 +428,8 @@ export async function updateUserRole(
   revalidatePath(`/profile/${userId}`);
 }
 
-export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string } = {}) {
-    const { page = 1, limit = 10, userId, userRole } = options;
+export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null } = {}) {
+    const { page = 1, limit = 10, userId, userRole, status } = options;
     
     if (!userId || !userRole) {
         return { movies: [], totalPages: 0, totalMovies: 0 };
@@ -405,10 +442,12 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
     if (userRole === ROLES.USER_ADMIN) {
         whereClause = { authorId: userId };
     } else if (userRole !== ROLES.SUPER_ADMIN) {
-      // For any other role, they shouldn't access this page. But as a safeguard:
       return { movies: [], totalPages: 0, totalMovies: 0 };
     }
-    // SUPER_ADMIN has an empty whereClause, fetching all movies.
+
+    if(status) {
+      whereClause.status = status;
+    }
 
     const movies = await prisma.movie.findMany({
         where: whereClause,
@@ -444,7 +483,7 @@ export async function updateMovieStatus(movieId: number, status: string) {
     throw new Error('Not authorized to change movie status.');
   }
 
-  if (!Object.values(MovieStatus).includes(status)) {
+  if (!Object.values(MovieStatus).includes(status as any)) {
     throw new Error(`Invalid status: ${status}`);
   }
 
