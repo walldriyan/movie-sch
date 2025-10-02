@@ -74,7 +74,7 @@ export default function MovieDetailClient({
 
   return (
     <>
-      <header className="relative h-[500px] rounded-2xl overflow-hidden flex items-end justify-between">
+      <header className="relative h-[500px] rounded-2xl overflow-hidden flex items-end">
         {heroImage && (
           <Image
             src={heroImage}
@@ -96,7 +96,7 @@ export default function MovieDetailClient({
             ))}
         </div>
 
-        <div className="relative z-10 text-foreground flex flex-col items-start text-left px-4 md:px-8 pb-0 max-w-4xl w-full">
+        <div className="relative z-10 text-foreground flex flex-col items-start text-left px-4 md:px-8 pb-0 w-full">
           <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
             {movie.title}
           </h1>
