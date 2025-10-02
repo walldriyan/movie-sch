@@ -17,6 +17,8 @@ import { auth } from '@/auth';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
+import { Badge } from './ui/badge';
+import { cn } from '@/lib/utils';
 
 export default async function Header({
   children,
@@ -29,6 +31,19 @@ export default async function Header({
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
   );
+
+  const getBadgeVariant = (role: string) => {
+    switch (role) {
+      case ROLES.SUPER_ADMIN:
+        return 'default';
+      case ROLES.USER_ADMIN:
+        return 'info';
+      case ROLES.USER:
+        return 'secondary';
+      default:
+        return 'outline';
+    }
+  }
 
   const renderUserMenu = () => {
     if (!user) {
@@ -47,7 +62,7 @@ export default async function Header({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          <Button variant="ghost" className="relative h-10 rounded-full px-2 space-x-2">
             <Avatar className="cursor-pointer h-8 w-8">
               <AvatarImage
                 src={user.image || userAvatarPlaceholder?.imageUrl}
@@ -58,6 +73,14 @@ export default async function Header({
                 {user.name?.charAt(0).toUpperCase() || 'U'}
               </AvatarFallback>
             </Avatar>
+            <div className="flex flex-col items-start">
+              <span className="text-sm font-medium">{user.name}</span>
+              <Badge variant={getBadgeVariant(user.role)} className={cn('h-auto px-1.5 py-0', {
+                'bg-green-500/80': user.role === ROLES.SUPER_ADMIN,
+              })}>
+                {user.role}
+              </Badge>
+            </div>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
