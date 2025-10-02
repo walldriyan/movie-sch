@@ -103,15 +103,15 @@ export default function HomePage() {
           
           <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                  <Button variant={filters.timeFilter === 'today' ? 'ghost' : 'link'} size="sm" className={cn("rounded-full", {'bg-muted': filters.timeFilter === 'today'})} onClick={() => handleTimeFilterChange('today')}>
+                  <Button variant={filters.timeFilter === 'today' ? 'secondary' : 'ghost'} size="sm" className="rounded-full" onClick={() => handleTimeFilterChange('today')}>
                       <CalendarClock className="mr-2 h-4 w-4" />
                       Today
                   </Button>
-                  <Button variant={filters.timeFilter === 'this_week' ? 'ghost' : 'link'} size="sm" className={cn("rounded-full", {'bg-muted': filters.timeFilter === 'this_week'})} onClick={() => handleTimeFilterChange('this_week')}>
+                  <Button variant={filters.timeFilter === 'this_week' ? 'secondary' : 'ghost'} size="sm" className="rounded-full" onClick={() => handleTimeFilterChange('this_week')}>
                       <CalendarDays className="mr-2 h-4 w-4" />
                       This Week
                   </Button>
-                  <Button variant={filters.timeFilter === 'this_month' ? 'ghost' : 'link'} size="sm" className={cn("rounded-full", {'bg-muted': filters.timeFilter === 'this_month'})} onClick={() => handleTimeFilterChange('this_month')}>
+                  <Button variant={filters.timeFilter === 'this_month' ? 'secondary' : 'ghost'} size="sm" className="rounded-full" onClick={() => handleTimeFilterChange('this_month')}>
                       <CalendarCheck className="mr-2 h-4 w-4" />
                       This Month
                   </Button>
@@ -121,7 +121,7 @@ export default function HomePage() {
                   currentFilters={filters}
                   onApplyFilters={setFilters}
                   triggerButton={
-                      <Button variant="link" size="sm" className="rounded-full text-muted-foreground">
+                      <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground">
                           <SlidersHorizontal className="mr-2 h-4 w-4" />
                           <span>Advanced Filters</span>
                       </Button>
