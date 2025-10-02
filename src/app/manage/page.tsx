@@ -35,7 +35,7 @@ export default function ManageMoviesPage() {
     } else if (status === 'unauthenticated') {
       notFound();
     }
-  }, [session, status, user]);
+  }, [status]); // Removed session and user from dependencies
 
   if (status === 'loading' || isLoading) {
     return <Loading />;
