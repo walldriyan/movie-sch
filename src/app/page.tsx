@@ -96,15 +96,15 @@ export default async function HomePage() {
 
                 <div className="grid grid-cols-12 gap-8">
                   <div className="col-span-8">
-                    <Link href={`/movies/${movie.id}`} className="group block">
+                    <Link href={`/movies/${movie.id}`} className="group">
                       <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
                         {movie.title}
                       </h2>
-                      <div
-                        className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
-                        dangerouslySetInnerHTML={{ __html: movie.description }}
-                      />
                     </Link>
+                    <div
+                      className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
+                      dangerouslySetInnerHTML={{ __html: movie.description }}
+                    />
                   </div>
                   <div className="col-span-4">
                     {movieImageUrl && (
