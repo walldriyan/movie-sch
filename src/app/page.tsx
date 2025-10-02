@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv } from 'lucide-react';
+import { Film, Globe, Star, Tv, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
@@ -58,7 +58,28 @@ export default async function HomePage() {
             </Button>
         </div>
 
-        <Separator className="mb-12" />
+        <Separator className="mb-8" />
+        
+        <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2">
+                <Button variant="ghost" size="sm" className="rounded-full">
+                    <TrendingUp className="mr-2 h-4 w-4" />
+                    Trending
+                </Button>
+                <Button variant="ghost" size="sm" className="rounded-full">
+                    <Star className="mr-2 h-4 w-4" />
+                    Top Rated
+                </Button>
+                 <Button variant="ghost" size="sm" className="rounded-full">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    New Releases
+                </Button>
+            </div>
+             <Button variant="link" size="sm" className="rounded-full text-muted-foreground">
+                <span>View All</span>
+                <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+        </div>
         
         <div className="space-y-12">
           {allMovies.map((movie) => {
@@ -96,10 +117,10 @@ export default async function HomePage() {
 
                 <div className="grid grid-cols-12 gap-8">
                   <div className="col-span-8">
-                    <Link href={`/movies/${movie.id}`} className="group">
-                      <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
-                        {movie.title}
-                      </h2>
+                    <Link href={`/movies/${movie.id}`} className="group block mb-2">
+                        <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
+                            {movie.title}
+                        </h2>
                     </Link>
                     <div
                       className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
