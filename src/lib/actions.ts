@@ -204,8 +204,6 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     throw new Error('User not authenticated');
   }
 
-  let status;
-
   // Handle image upload
   let finalPosterUrl = movieData.posterUrl;
   if (movieData.posterUrl && movieData.posterUrl.startsWith('data:image')) {
@@ -238,29 +236,18 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
       await deleteUploadedFile(existingMovie?.posterUrl);
     }
     
-    // Determine status on update. Non-super-admins move to PENDING_APPROVAL.
-    if (session.user.role === ROLES.SUPER_ADMIN) {
-        // Super admin can edit, we might want to keep the status or set it to published
-        // For now, let's just update and let status be changed separately if needed.
-        // If we want to auto-publish on edit, we can set status here.
-        // Let's keep existing status unless it's a draft
-        status = existingMovie.status === 'DRAFT' ? MovieStatus.PUBLISHED : existingMovie.status;
-    } else {
-        status = MovieStatus.PENDING_APPROVAL;
-    }
+    // Always set to PENDING_APPROVAL on update
+    const status = MovieStatus.PENDING_APPROVAL;
 
-    await prisma.movie.update({ where: { id }, data: { ...data, status } as any });
+    await prisma.movie.update({ 
+        where: { id }, 
+        data: { ...data, status } as any
+    });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    // It's a creation
-    if (session.user.role === ROLES.USER_ADMIN) {
-      status = MovieStatus.PENDING_APPROVAL;
-    } else if (session.user.role === ROLES.SUPER_ADMIN) {
-      status = MovieStatus.PUBLISHED;
-    } else {
-       status = movieData.status || 'DRAFT'; // fallback
-    }
+    // Always set to PENDING_APPROVAL on creation
+    const status = MovieStatus.PENDING_APPROVAL;
     await prisma.movie.create({ data: { ...data, status, authorId: session.user.id } as any });
     revalidatePath(`/manage`);
   }
