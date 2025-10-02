@@ -10,7 +10,7 @@ import bcrypt from 'bcryptjs';
 import { ROLES, MovieStatus } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink } from 'fs/promises';
-import { join, dirname } from 'path';
+import { join } from 'path';
 
 const prisma = new PrismaClient();
 
@@ -414,6 +414,9 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
         orderBy: { createdAt: 'desc' },
         include: {
             author: true,
+            _count: {
+              select: { likedBy: true },
+            }
         },
     });
 
