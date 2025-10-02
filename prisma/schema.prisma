@@ -10,49 +10,6 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Movie {
-  id          Int       @id @default(autoincrement())
-  title       String
-  description String
-  posterUrl   String?
-  year        Int
-  duration    String
-  genres      String
-  imdbRating  Float
-  viewCount   Int       @default(0)
-  likes       Int       @default(0)
-  status      String    @default("PUBLISHED") // e.g., PUBLISHED, DRAFT, PENDING_DELETION
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  author      User      @relation(fields: [authorId], references: [id])
-  authorId    String
-  reviews     Review[]
-  subtitles   Subtitle[]
-}
-
-model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  comment   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  movieId   Int
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-}
-
-model Subtitle {
-  id          Int      @id @default(autoincrement())
-  language    String
-  url         String
-  uploaderName String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  movie       Movie    @relation(fields: [movieId], references: [id])
-  movieId     Int
-}
-
 model User {
   id            String    @id @default(cuid())
   name          String?
@@ -60,22 +17,75 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("USER") // e.g., USER, USER_ADMIN, SUPER_ADMIN
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  
-  permissionRequestStatus  String?   @default("NONE") // e.g., NONE, PENDING, APPROVED, REJECTED
-  permissionRequestMessage String?
-
+  role          String    @default("USER")
+  permissions   String?
   bio           String?
   website       String?
   twitter       String?
   linkedin      String?
-  
-  accounts      Account[]
-  sessions      Session[]
-  movies        Movie[]
-  reviews       Review[]
+  permissionRequestStatus String?
+  permissionRequestMessage String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accounts Account[]
+  sessions Session[]
+  movies   Movie[]
+}
+
+model Movie {
+  id                   Int      @id @default(autoincrement())
+  title                String
+  description          String
+  posterUrl            String?
+  year                 Int
+  duration             String
+  genres               String
+  directors            String?
+  mainCast             String?
+  imdbRating           Float
+  rottenTomatoesRating Int?
+  googleRating         Int?
+  status               String?
+  viewCount            Int      @default(0)
+  likes                Int      @default(0)
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
+
+  reviews   Review[]
+  subtitles Subtitle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Review {
+  id      Int    @id @default(autoincrement())
+  rating  Int
+  comment String
+
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId Int
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+
+  createdAt DateTime @default(now())
+}
+
+model Subtitle {
+  id            Int    @id @default(autoincrement())
+  language      String
+  uploaderName  String
+  downloadCount Int    @default(0)
+  fileUrl       String
+
+  movie   Movie @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId Int
+
+  createdAt DateTime @default(now())
 }
 
 model Account {
@@ -109,4 +119,12 @@ model Session {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
 }
