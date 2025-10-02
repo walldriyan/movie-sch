@@ -17,7 +17,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, ThumbsUp, Heart } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, ThumbsUp, Heart, Clapperboard } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -69,6 +69,56 @@ const LikedByAvatars = ({ users }: { users: User[] }) => {
 };
 
 
+const TrailerSection = ({ movie }: { movie: Movie }) => {
+  const trailer = movie.mediaLinks?.find(link => link.type === 'trailer');
+  if (!trailer?.url) {
+    return null;
+  }
+
+  const getYouTubeVideoId = (url: string): string | null => {
+    try {
+      const urlObj = new URL(url);
+      if (urlObj.hostname === 'youtu.be') {
+        return urlObj.pathname.slice(1);
+      }
+      if (urlObj.hostname.includes('youtube.com')) {
+        return urlObj.searchParams.get('v');
+      }
+      return null;
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const videoId = getYouTubeVideoId(trailer.url);
+  if (!videoId) {
+    return null;
+  }
+
+  return (
+    <>
+      <Separator className="my-12" />
+      <section id="trailer">
+        <h2 className="font-serif text-3xl font-bold mb-8 flex items-center gap-3">
+          <Clapperboard className="h-8 w-8 text-primary" />
+          Trailer
+        </h2>
+        <div className="aspect-video w-full">
+          <iframe
+            className="w-full h-full rounded-lg"
+            src={`https://www.youtube.com/embed/${videoId}`}
+            title="YouTube video player"
+            frameBorder="0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          ></iframe>
+        </div>
+      </section>
+    </>
+  );
+};
+
+
 export default async function MoviePage({
   params,
 }: {
@@ -99,7 +149,10 @@ export default async function MoviePage({
                       className="prose prose-invert max-w-none text-foreground/80"
                       dangerouslySetInnerHTML={{ __html: movie.description }}
                     />
-                    <Separator className="my-8" />
+
+                    <TrailerSection movie={movie} />
+
+                    <Separator className="my-12" />
                     <section id="recommendations">
                       <h2 className="font-serif text-3xl font-bold mb-8">
                         More Like This

@@ -1,3 +1,5 @@
+'use client';
+
 // This file is now mostly redundant as we should be using Prisma-generated types.
 // However, some client-side components still rely on them.
 // A future refactor could involve using tools like 'zod-prisma' to generate
@@ -13,9 +15,15 @@ export type Review = PrismaReview & {
 
 export type Subtitle = PrismaSubtitle;
 
+export type MediaLink = {
+  type: 'trailer' | 'image';
+  url: string;
+}
+
 // This is now redundant with the Prisma model, but kept for client-side compatibility
-export type Movie = Omit<PrismaMovie, 'genres'> & {
+export type Movie = Omit<PrismaMovie, 'genres' | 'mediaLinks'> & {
   genres: string[];
+  mediaLinks: MediaLink[];
   reviews: Review[];
   subtitles: Subtitle[];
   author: User;
@@ -23,4 +31,6 @@ export type Movie = Omit<PrismaMovie, 'genres'> & {
   dislikedBy: User[];
 };
 
-export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'likedBy' | 'dislikedBy'>;
+export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'likedBy' | 'dislikedBy' | 'mediaLinks'> & {
+  mediaLinks?: MediaLink[];
+};
