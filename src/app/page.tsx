@@ -101,8 +101,8 @@ export default async function HomePage() {
                         </h2>
                     </Link>
                     <Link href={`/movies/${movie.id}`} className='group'>
-                        <div
-                          className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
+                        <span
+                          className="block prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
                           dangerouslySetInnerHTML={{ __html: movie.description }}
                         />
                     </Link>
