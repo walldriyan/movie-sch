@@ -154,7 +154,7 @@ export async function getMovies(options: { page?: number; limit?: number } = {})
         where: whereClause,
         skip: skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { updatedAt: 'desc' },
         include: {
             author: true,
         },
