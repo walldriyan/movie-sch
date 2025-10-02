@@ -48,7 +48,7 @@ export default async function HomePage() {
     <div className="w-full bg-background text-foreground">
       <TooltipProvider>
         <main className="max-w-4xl mx-auto px-4 py-8">
-          <div className="flex items-center gap-2 mb-8">
+          <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
                   <Film />
                   <span>All</span>
