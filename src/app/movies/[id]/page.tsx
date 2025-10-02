@@ -65,8 +65,8 @@ export default async function MoviePage({
         <article>
           <MovieDetailClient movie={movie}>
             <TabsContent value="about">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-12 px-4 md:px-0">
-                 <div className="md:col-span-2">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+                 <div className="md:col-span-3">
                     <div
                       className="prose prose-invert max-w-none text-foreground/80"
                       dangerouslySetInnerHTML={{ __html: movie.description }}
