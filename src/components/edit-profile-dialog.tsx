@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { updateUserProfile, uploadProfileImage } from '@/lib/actions';
+import { updateUserProfile } from '@/lib/actions';
 import type { User } from '@prisma/client';
 import { Pencil, User as UserIcon, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -37,7 +37,7 @@ const MAX_FILE_SIZE = 1048576; // 1 MB
 const profileFormSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   bio: z.string().max(160, 'Bio must not be longer than 160 characters.').optional(),
-  image: z.any(),
+  image: z.string().optional(), // We'll handle the file object separately
   website: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   twitter: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
   linkedin: z.string().url('Please enter a valid URL.').optional().or(z.literal('')),
@@ -53,6 +53,8 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
   const [previewImage, setPreviewImage] = React.useState<string | null>(user.image);
+  const [imageFile, setImageFile] = React.useState<File | null>(null);
+
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
@@ -68,20 +70,20 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
 
   const onSubmit = async (data: ProfileFormValues) => {
     try {
-      let imageUrl = user.image;
+      let imageUrl = user.image; // Keep old image by default
 
-      if (data.image && typeof data.image === 'object' && data.image.size > 0) {
-        if (data.image.size > MAX_FILE_SIZE) {
-          form.setError("image", { message: "File size must be less than 1MB." });
-          return;
-        }
+      if (imageFile) {
         const formData = new FormData();
-        formData.append('image', data.image);
+        formData.append('image', imageFile);
         const newImageUrl = await uploadProfileImage(formData);
         if (newImageUrl) {
           imageUrl = newImageUrl;
         }
+      } else if (data.image !== user.image) {
+        // Handle URL pasting
+        imageUrl = data.image;
       }
+
 
       const updateData = {
         name: data.name,
@@ -118,12 +120,12 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
       }
       form.clearErrors("image");
 
+      setImageFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
       reader.readAsDataURL(file);
-      form.setValue('image', file);
     }
   };
 
@@ -170,34 +172,36 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
                     {user.name?.charAt(0).toUpperCase() || 'U'}
                   </AvatarFallback>
                 </Avatar>
-                <FormField
-                  control={form.control}
-                  name="image"
-                  render={({ field: { onChange, value, ...rest } }) => (
-                    <FormItem className="flex-grow">
-                      <FormControl>
-                        <div>
-                          <Input
-                            id="picture"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageChange(e)}
-                            {...rest}
-                          />
-                          <Button asChild variant="outline">
-                            <label htmlFor="picture" className="cursor-pointer">
-                              <Upload className="mr-2 h-4 w-4" />
-                              Upload Image
-                            </label>
-                          </Button>
-                        </div>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                
+                <div className="flex-grow">
+                   <Input
+                      id="picture-url"
+                      placeholder='Paste image URL'
+                      defaultValue={user.image || ''}
+                      onChange={(e) => {
+                          form.setValue('image', e.target.value);
+                          setPreviewImage(e.target.value);
+                          setImageFile(null);
+                      }}
+                    />
+                    <p className="text-xs text-muted-foreground text-center my-2">OR</p>
+                    <Button asChild variant="outline" className='w-full'>
+                        <label htmlFor="picture-file" className="cursor-pointer">
+                            <Upload className="mr-2 h-4 w-4" />
+                            Upload Image
+                        </label>
+                    </Button>
+                    <input
+                        id="picture-file"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e)}
+                    />
+                </div>
+
               </div>
+               <FormMessage>{form.formState.errors.image?.message}</FormMessage>
             </FormItem>
 
             <FormField
