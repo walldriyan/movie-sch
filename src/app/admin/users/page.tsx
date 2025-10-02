@@ -24,6 +24,7 @@ import {
   MoreHorizontal,
   PlusCircle,
   ShieldQuestion,
+  RefreshCw,
   Check,
   X,
 } from 'lucide-react';
@@ -35,8 +36,8 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSub,
   DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
   DropdownMenuPortal,
+  DropdownMenuSubContent,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
@@ -47,17 +48,24 @@ import { ROLES } from '@/lib/permissions';
 export default function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const { toast } = useToast();
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   const fetchUsers = async () => {
+    setIsRefreshing(true);
     try {
       const usersFromDb = await getUsers();
       setUsers(usersFromDb);
+      toast({
+        title: 'User list refreshed',
+      });
     } catch (error) {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: 'Failed to fetch users.',
       });
+    } finally {
+      setIsRefreshing(false);
     }
   };
 
@@ -101,10 +109,17 @@ export default function ManageUsersPage() {
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Users</CardTitle>
-          <CardDescription>
-            A list of all users in the system.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+             <div>
+              <CardTitle>Users</CardTitle>
+              <CardDescription>
+                A list of all users in the system.
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="icon" onClick={fetchUsers} disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
