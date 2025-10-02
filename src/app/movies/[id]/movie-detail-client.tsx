@@ -106,7 +106,7 @@ export default function MovieDetailClient({
               href={`/profile/${movie.author.id}`}
               className="flex items-center gap-4 group"
             >
-              <Avatar>
+              <Avatar className='w-16 h-16'>
                 {authorAvatarUrl && (
                   <AvatarImage
                     src={authorAvatarUrl}
@@ -196,7 +196,7 @@ export default function MovieDetailClient({
         </div>
       </header>
 
-      <Tabs value={activeTab} className="mt-8">
+      <Tabs value={activeTab} className="mt-8 px-0">
         {children}
       </Tabs>
     </>
