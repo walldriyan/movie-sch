@@ -176,10 +176,10 @@ export default function MovieDetailClient({
             </div>
             <div className="flex items-center gap-2">
                <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={isPending}>
-                <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
+                <ThumbsUp className={cn("w-6 h-6", isLiked && "text-primary fill-primary")} />
               </Button>
                <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
-                <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
+                <ThumbsDown className={cn("w-6 h-6", isDisliked && "text-destructive fill-destructive")} />
               </Button>
               <Button variant="ghost" size="icon">
                 <Bookmark className="w-5 h-5" />
