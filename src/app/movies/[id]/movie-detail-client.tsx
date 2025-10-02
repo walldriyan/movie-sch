@@ -11,6 +11,8 @@ import {
   Share2,
   ListVideo,
   Tag,
+  ThumbsUp,
+  ThumbsDown,
 } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -70,10 +72,10 @@ export default function MovieDetailClient({
             {movie.title}
           </h1>
 
-          <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-8">
+          <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2.5">
             <Link
               href={`/profile/${movie.author.id}`}
-              className="flex items-center gap-4 group mt-2.5"
+              className="flex items-center gap-4 group"
             >
               <Avatar>
                 {authorAvatarUrl && (
@@ -144,9 +146,16 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2">
+               <Button variant="ghost" size="icon">
+                <ThumbsUp className="w-5 h-5" />
+              </Button>
+               <Button variant="ghost" size="icon">
+                <ThumbsDown className="w-5 h-5" />
+              </Button>
               <Button variant="ghost" size="icon">
                 <Bookmark className="w-5 h-5" />
               </Button>
+              <Separator orientation="vertical" className="h-6 mx-2" />
               <Button variant="ghost" size="icon">
                 <Share2 className="w-5 h-5" />
               </Button>

@@ -17,8 +17,9 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User, Video, Star } from 'lucide-react';
 import React from 'react';
+import Image from 'next/image';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -30,6 +31,17 @@ const TagsSection = ({ genres }: { genres: string[] }) => (
     ))}
   </div>
 );
+
+const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) => (
+  <div className="flex items-start gap-4">
+    <div className="text-muted-foreground mt-1">{icon}</div>
+    <div>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="font-medium">{value}</p>
+    </div>
+  </div>
+);
+
 
 export default async function MoviePage({
   params,
@@ -53,17 +65,55 @@ export default async function MoviePage({
         <article>
           <MovieDetailClient movie={movie}>
             <TabsContent value="about">
-              <div
-                className="prose prose-invert max-w-none text-foreground/80"
-                dangerouslySetInnerHTML={{ __html: movie.description }}
-              />
-              <Separator className="my-8" />
-              <section id="recommendations">
-                <h2 className="font-serif text-3xl font-bold mb-8">
-                  More Like This
-                </h2>
-                <MovieRecommendations currentMovie={movie} />
-              </section>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+                 <div className="md:col-span-2">
+                    <div
+                      className="prose prose-invert max-w-none text-foreground/80"
+                      dangerouslySetInnerHTML={{ __html: movie.description }}
+                    />
+                    <Separator className="my-8" />
+                    <section id="recommendations">
+                      <h2 className="font-serif text-3xl font-bold mb-8">
+                        More Like This
+                      </h2>
+                      <MovieRecommendations currentMovie={movie} />
+                    </section>
+                 </div>
+
+                 <aside className="md:col-span-1">
+                    <Card className="sticky top-24 bg-card/50">
+                       <CardHeader>
+                        <CardTitle>Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={movie.year} />
+                        <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={movie.duration} />
+                        <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={movie.directors || 'N/A'} />
+                        <DetailItem icon={<User className="h-5 w-5" />} label="Main Cast" value={movie.mainCast || 'N/A'} />
+                        
+                        <Separator />
+                        
+                        <h4 className="font-semibold pt-2">Ratings</h4>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
+                                <span className="font-bold">{movie.imdbRating.toFixed(1)}</span>
+                            </div>
+                             <div className="flex items-center gap-2 text-sm">
+                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                <span>{movie.rottenTomatoesRating || 'N/A'}%</span>
+                            </div>
+                             <div className="flex items-center gap-2 text-sm">
+                               <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1h-9.2V16h5.28c-.45 1.6-1.9 2.7-3.73 2.7-2.2 0-4-1.8-4-4s1.8-4 4-4c1.08 0 2.05.4 2.8.9l2.7-2.7C18.6 6.3 16.5 5 14.15 5c-3.96 0-7.15 3.2-7.15 7.15s3.19 7.15 7.15 7.15c3.8 0 6.9-2.9 6.9-6.9 0-.6-.05-1.1-.15-1.6z"></path></svg>
+                                <span>{movie.googleRating || 'N/A'}%</span>
+                            </div>
+                        </div>
+
+                      </CardContent>
+                    </Card>
+                 </aside>
+
+              </div>
             </TabsContent>
             <TabsContent value="reviews">
               <section id="reviews" className="my-12">
