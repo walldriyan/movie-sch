@@ -226,6 +226,8 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     mediaLinks: JSON.stringify(movieData.mediaLinks || []),
   };
 
+  const status = MovieStatus.PENDING_APPROVAL;
+
   if (id) {
     const existingMovie = await prisma.movie.findUnique({ where: { id } });
     if (!existingMovie) {
@@ -236,9 +238,6 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
       await deleteUploadedFile(existingMovie?.posterUrl);
     }
     
-    // Always set to PENDING_APPROVAL on update
-    const status = MovieStatus.PENDING_APPROVAL;
-
     await prisma.movie.update({ 
         where: { id }, 
         data: { ...data, status } as any
@@ -246,8 +245,6 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    // Always set to PENDING_APPROVAL on creation
-    const status = MovieStatus.PENDING_APPROVAL;
     await prisma.movie.create({ data: { ...data, status, authorId: session.user.id } as any });
     revalidatePath(`/manage`);
   }
@@ -384,8 +381,8 @@ export async function updateUserRole(
   revalidatePath(`/profile/${userId}`);
 }
 
-export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string } = {}) {
-    const { page = 1, limit = 10, userId, userRole } = options;
+export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null } = {}) {
+    const { page = 1, limit = 10, userId, userRole, status } = options;
     
     if (!userId || !userRole) {
         return { movies: [], totalPages: 0, totalMovies: 0 };
@@ -398,10 +395,12 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
     if (userRole === ROLES.USER_ADMIN) {
         whereClause = { authorId: userId };
     } else if (userRole !== ROLES.SUPER_ADMIN) {
-      // For any other role, they shouldn't access this page. But as a safeguard:
       return { movies: [], totalPages: 0, totalMovies: 0 };
     }
-    // SUPER_ADMIN has an empty whereClause, fetching all movies.
+
+    if(status) {
+      whereClause.status = status;
+    }
 
     const movies = await prisma.movie.findMany({
         where: whereClause,
@@ -437,7 +436,7 @@ export async function updateMovieStatus(movieId: number, status: string) {
     throw new Error('Not authorized to change movie status.');
   }
 
-  if (!Object.values(MovieStatus).includes(status)) {
+  if (!Object.values(MovieStatus).includes(status as any)) {
     throw new Error(`Invalid status: ${status}`);
   }
 

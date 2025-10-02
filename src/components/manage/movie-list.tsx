@@ -31,6 +31,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -42,7 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw, Eye, ThumbsUp } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw, Eye, ThumbsUp, ListFilter } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -61,9 +62,26 @@ interface MovieListProps {
   onDeleteConfirmed: (movieId: number) => void;
   onStatusChange: (movieId: number, newStatus: string) => void;
   onRefresh: () => void;
+  onFilterChange: (status: string | null) => void;
   isRefreshing: boolean;
   statusChangingMovieId: number | null;
+  currentFilter: string | null;
 }
+
+const SkeletonRow = () => (
+  <TableRow>
+    <TableCell colSpan={6}>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-md" />
+        <div className="space-y-2">
+            <Skeleton className="h-4 w-[250px]" />
+            <Skeleton className="h-4 w-[200px]" />
+        </div>
+      </div>
+    </TableCell>
+  </TableRow>
+);
+
 
 export default function MovieList({
   movies,
@@ -72,8 +90,10 @@ export default function MovieList({
   onDeleteConfirmed,
   onStatusChange,
   onRefresh,
+  onFilterChange,
   isRefreshing,
   statusChangingMovieId,
+  currentFilter,
 }: MovieListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<MovieWithDetails | null>(null);
@@ -105,6 +125,8 @@ export default function MovieList({
         return 'outline';
     }
   };
+  
+  const statusOptions = [null, ...Object.values(MovieStatus)];
 
   return (
     <>
@@ -129,9 +151,32 @@ export default function MovieList({
                 A list of all movies in the catalog.
               </CardDescription>
             </div>
-            <Button variant="outline" size="icon" onClick={onRefresh} disabled={isRefreshing}>
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            </Button>
+            <div className='flex items-center gap-2'>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="h-8 gap-1">
+                    <ListFilter className="h-3.5 w-3.5" />
+                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                      {currentFilter ? `Filter: ${currentFilter}` : "Filter Status"}
+                    </span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup value={currentFilter || 'ALL'} onValueChange={(value) => onFilterChange(value === 'ALL' ? null : value)}>
+                    <DropdownMenuRadioItem value="ALL">All</DropdownMenuRadioItem>
+                    {Object.values(MovieStatus).map(status => (
+                      <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
+                    ))}
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <Button variant="outline" size="icon" onClick={onRefresh} disabled={isRefreshing}>
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -149,7 +194,13 @@ export default function MovieList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {movies.length > 0 ? (
+              {isRefreshing ? (
+                 <>
+                  <SkeletonRow />
+                  <SkeletonRow />
+                  <SkeletonRow />
+                 </>
+              ) : movies.length > 0 ? (
                 movies.map((movie) => (
                   <TableRow
                     key={movie.id}
@@ -286,7 +337,7 @@ export default function MovieList({
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    No movies found. Add one to get started.
+                    No movies found for the selected filter.
                   </TableCell>
                 </TableRow>
               )}
