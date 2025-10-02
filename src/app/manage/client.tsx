@@ -37,6 +37,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [formError, setFormError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [statusChangingMovieId, setStatusChangingMovieId] = useState<number | null>(null);
   const { toast } = useToast();
 
   const fetchMovies = async (page: number) => {
@@ -118,6 +119,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   };
 
   const handleStatusChange = async (movieId: number, newStatus: string) => {
+    setStatusChangingMovieId(movieId);
     try {
       await updateMovieStatus(movieId, newStatus);
       await fetchMovies(currentPage);
@@ -131,6 +133,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         title: 'Error',
         description: error.message || 'Failed to update movie status.',
       });
+    } finally {
+      setStatusChangingMovieId(null);
     }
   };
   
@@ -170,6 +174,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
             onStatusChange={handleStatusChange}
             onRefresh={handleRefresh}
             isRefreshing={isRefreshing}
+            statusChangingMovieId={statusChangingMovieId}
           />
           {totalPages > 1 && (
              <Pagination>

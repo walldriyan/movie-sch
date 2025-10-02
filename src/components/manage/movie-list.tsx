@@ -62,6 +62,7 @@ interface MovieListProps {
   onStatusChange: (movieId: number, newStatus: string) => void;
   onRefresh: () => void;
   isRefreshing: boolean;
+  statusChangingMovieId: number | null;
 }
 
 export default function MovieList({
@@ -72,6 +73,7 @@ export default function MovieList({
   onStatusChange,
   onRefresh,
   isRefreshing,
+  statusChangingMovieId,
 }: MovieListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<MovieWithDetails | null>(null);
@@ -193,9 +195,13 @@ export default function MovieList({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={getStatusVariant(movie.status)}>
-                        {movie.status || 'DRAFT'}
-                      </Badge>
+                      {statusChangingMovieId === movie.id ? (
+                        <Skeleton className="h-5 w-24 rounded-full" />
+                      ) : (
+                        <Badge variant={getStatusVariant(movie.status)}>
+                          {movie.status || 'DRAFT'}
+                        </Badge>
+                      )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                        {format(new Date(movie.createdAt), 'MMM dd, yyyy')}
@@ -236,7 +242,7 @@ export default function MovieList({
 
                           <AuthGuard requiredPermissions={[PERMISSIONS['post.change_status']]}>
                              <DropdownMenuSub>
-                              <DropdownMenuSubTrigger>
+                              <DropdownMenuSubTrigger disabled={statusChangingMovieId === movie.id}>
                                 Change Status
                               </DropdownMenuSubTrigger>
                               <DropdownMenuPortal>
