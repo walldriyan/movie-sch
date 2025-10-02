@@ -55,7 +55,7 @@ const LikedByAvatars = ({ users }: { users: User[] }) => {
     <div className="flex items-center gap-2">
        <div className="flex -space-x-2 overflow-hidden">
         {displayedUsers.map((user, index) => (
-            <Avatar key={user.id} className="h-12 w-12 border-2 border-background">
+            <Avatar key={user.id} className="h-7 w-7 border-2 border-background">
               <AvatarImage src={user.image || ''} alt={user.name || 'User'} />
               <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
@@ -92,7 +92,7 @@ export default async function MoviePage({
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
           <MovieDetailClient movie={movie} currentUser={currentUser}>
-            <TabsContent value="about">
+            <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                  <div className="md:col-span-3">
                     <div
@@ -152,7 +152,7 @@ export default async function MoviePage({
 
               </div>
             </TabsContent>
-            <TabsContent value="reviews">
+            <TabsContent value="reviews" className='px-4 md:px-0'>
               <section id="reviews" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
                   Responses ({movie.reviews.length})
@@ -172,7 +172,7 @@ export default async function MoviePage({
                 <ReviewForm />
               </section>
             </TabsContent>
-            <TabsContent value="subtitles">
+            <TabsContent value="subtitles" className='px-4 md:px-0'>
               <section id="subtitles" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
                   Subtitles
