@@ -62,7 +62,7 @@ export default async function Header({
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-10 rounded-full px-2 space-x-2">
+          <Button variant="ghost" className="relative h-10 rounded-full px-2 space-x-2 justify-start">
             <Avatar className="cursor-pointer h-8 w-8">
               <AvatarImage
                 src={user.image || userAvatarPlaceholder?.imageUrl}
@@ -75,7 +75,7 @@ export default async function Header({
             </Avatar>
             <div className="flex flex-col items-start">
               <span className="text-xs font-medium">{user.name}</span>
-              <Badge variant={getBadgeVariant(user.role)} className={cn('h-auto px-1.5 py-0 text-[10px]', {
+              <Badge variant={getBadgeVariant(user.role)} className={cn('h-auto px-1 py-0 text-[9px] leading-tight', {
                 'bg-green-500/80': user.role === ROLES.SUPER_ADMIN,
               })}>
                 {user.role}
