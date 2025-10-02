@@ -13,37 +13,46 @@ export default function ManageMoviesPage() {
   const { data: session, status } = useSession();
   const [movies, setMovies] = useState<Movie[]>([]);
   const [totalPages, setTotalPages] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isDataLoading, setIsDataLoading] = useState(true);
 
   const user = session?.user;
 
   useEffect(() => {
+    // Only run the effect if the session is authenticated and we have a user
     if (status === 'authenticated' && user) {
       if (![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
+        // If the user is authenticated but doesn't have the role, then it's a true 404
         notFound();
         return;
       }
-      setIsLoading(true);
+      
+      setIsDataLoading(true);
       getMoviesForAdmin({ page: 1, limit: 10, userId: user.id, userRole: user.role })
         .then(({ movies, totalPages }) => {
           setMovies(movies as any);
           setTotalPages(totalPages);
         })
         .finally(() => {
-          setIsLoading(false);
+          setIsDataLoading(false);
         });
-    } else if (status === 'unauthenticated') {
-      notFound();
     }
-  }, [session, status]);
+  }, [session, status, user]); // Depend on user object as well
 
-  if (status === 'loading' || isLoading) {
+  // Show loading state while session is loading or while data is being fetched
+  if (status === 'loading' || (status === 'authenticated' && isDataLoading)) {
     return <Loading />;
   }
 
-  if (!user) {
+  // If session is unauthenticated after loading, show not found
+  if (status === 'unauthenticated') {
     return notFound();
   }
+  
+  // This should only be reached for authenticated users with correct roles
+  if (user) {
+    return <ManageMoviesClient initialMovies={movies} initialTotalPages={totalPages} user={user} />;
+  }
 
-  return <ManageMoviesClient initialMovies={movies} initialTotalPages={totalPages} user={user} />;
+  // Fallback, though theoretically unreachable if logic is sound.
+  return notFound();
 }
