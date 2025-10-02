@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState } from 'react';
@@ -152,26 +153,30 @@ export default function MovieList({
               </CardDescription>
             </div>
             <div className='flex items-center gap-2'>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="h-8 gap-1">
-                    <ListFilter className="h-3.5 w-3.5" />
-                    <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
-                      {currentFilter ? `Filter: ${currentFilter}` : "Filter Status"}
-                    </span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuRadioGroup value={currentFilter || 'ALL'} onValueChange={(value) => onFilterChange(value === 'ALL' ? null : value)}>
-                    <DropdownMenuRadioItem value="ALL">All</DropdownMenuRadioItem>
-                    {Object.values(MovieStatus).map(status => (
-                      <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
-                    ))}
-                  </DropdownMenuRadioGroup>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              {isRefreshing ? (
+                  <Skeleton className="h-8 w-28" />
+              ) : (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="h-8 gap-1">
+                      <ListFilter className="h-3.5 w-3.5" />
+                      <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">
+                        {currentFilter ? `Filter: ${currentFilter}` : "Filter Status"}
+                      </span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Filter by status</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuRadioGroup value={currentFilter || 'ALL'} onValueChange={(value) => onFilterChange(value === 'ALL' ? null : value)}>
+                      <DropdownMenuRadioItem value="ALL">All</DropdownMenuRadioItem>
+                      {Object.values(MovieStatus).map(status => (
+                        <DropdownMenuRadioItem key={status} value={status}>{status}</DropdownMenuRadioItem>
+                      ))}
+                    </DropdownMenuRadioGroup>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
 
               <Button variant="outline" size="icon" onClick={onRefresh} disabled={isRefreshing}>
                 <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
@@ -194,13 +199,7 @@ export default function MovieList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {isRefreshing ? (
-                 <>
-                  <SkeletonRow />
-                  <SkeletonRow />
-                  <SkeletonRow />
-                 </>
-              ) : movies.length > 0 ? (
+              {movies.length > 0 ? (
                 movies.map((movie) => (
                   <TableRow
                     key={movie.id}
