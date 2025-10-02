@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,11 +15,12 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
 import type { Movie } from '@prisma/client';
-import type { MovieFormData } from '@/lib/types';
+import type { MovieFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const movieSchema = z.object({
@@ -34,12 +35,17 @@ const movieSchema = z.object({
   imdbRating: z.coerce.number().min(0).max(10),
   rottenTomatoesRating: z.coerce.number().min(0).max(100).optional(),
   googleRating: z.coerce.number().min(0).max(100).optional(),
+  mediaLinks: z.array(z.object({
+    type: z.enum(['trailer', 'image']),
+    url: z.string().url('Please enter a valid URL.').min(1, 'URL is required.'),
+  })).optional(),
 });
 
 type MovieFormValues = z.infer<typeof movieSchema>;
 
+type MovieWithLinks = Movie & { mediaLinks: MediaLink[] };
 interface MovieFormProps {
-  editingMovie: Movie | null;
+  editingMovie: MovieWithLinks | null;
   onFormSubmit: (movieData: MovieFormData, id?: number) => Promise<void>;
   onBack: () => void;
   error?: string | null;
@@ -68,6 +74,7 @@ export default function MovieForm({
           imdbRating: editingMovie.imdbRating,
           rottenTomatoesRating: editingMovie.rottenTomatoesRating || undefined,
           googleRating: editingMovie.googleRating || undefined,
+          mediaLinks: editingMovie.mediaLinks || [],
         }
       : {
           title: '',
@@ -81,11 +88,17 @@ export default function MovieForm({
           imdbRating: 0,
           rottenTomatoesRating: undefined,
           googleRating: undefined,
+          mediaLinks: [],
         },
   });
   
-  const { formState } = form;
+  const { control, formState } = form;
   const posterUrlValue = form.watch('posterUrl');
+
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'mediaLinks',
+  });
 
   const handleSubmit = async (values: MovieFormValues) => {
     const movieData: MovieFormData = {
@@ -102,6 +115,7 @@ export default function MovieForm({
       googleRating: values.googleRating || null,
       status: editingMovie?.status || 'DRAFT',
       viewCount: editingMovie?.viewCount || 0,
+      mediaLinks: values.mediaLinks,
     };
     await onFormSubmit(movieData, editingMovie?.id);
   };
@@ -393,6 +407,67 @@ export default function MovieForm({
                 )}
               />
             </div>
+          </div>
+
+          <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
+            <h3 className="text-lg font-semibold text-muted-foreground">
+              Media Links
+            </h3>
+            <div className="space-y-4">
+              {fields.map((field, index) => (
+                <div key={field.id} className="flex items-end gap-2 p-4 border rounded-lg">
+                  <FormField
+                    control={control}
+                    name={`mediaLinks.${index}.type`}
+                    render={({ field }) => (
+                      <FormItem className="w-1/3">
+                        <FormLabel>Type</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="trailer">Trailer</SelectItem>
+                            <SelectItem value="image">Image</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                   <FormField
+                    control={control}
+                    name={`mediaLinks.${index}.url`}
+                    render={({ field }) => (
+                      <FormItem className="flex-grow">
+                        <FormLabel>URL</FormLabel>
+                        <FormControl>
+                          <Input placeholder="https://..." {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    onClick={() => remove(index)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => append({ type: 'trailer', url: '' })}
+            >
+              <Plus className="mr-2 h-4 w-4" /> Add Link
+            </Button>
           </div>
           
           {error && (

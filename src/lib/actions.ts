@@ -167,6 +167,7 @@ export async function getMovies(options: { page?: number; limit?: number } = {})
         movies: movies.map((movie) => ({
             ...movie,
             genres: JSON.parse(movie.genres || '[]'),
+            mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
         })),
         totalPages,
         totalMovies,
@@ -193,6 +194,7 @@ export async function getMovie(movieId: number) {
   return {
     ...movie,
     genres: JSON.parse(movie.genres || '[]'),
+    mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
   };
 }
 
@@ -245,6 +247,7 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     status: status,
     viewCount: movieData.viewCount,
     authorId: session.user.id,
+    mediaLinks: JSON.stringify(movieData.mediaLinks || []),
   };
   
   if (id) {
@@ -427,6 +430,7 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
         movies: movies.map((movie) => ({
             ...movie,
             genres: JSON.parse(movie.genres || '[]'),
+            mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
         })),
         totalPages,
         totalMovies,
