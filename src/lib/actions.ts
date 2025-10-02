@@ -211,27 +211,7 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
   if (movieData.posterUrl && movieData.posterUrl.startsWith('data:image')) {
     finalPosterUrl = await saveImageFromDataUrl(movieData.posterUrl, 'movies');
   }
-
-  if (id) {
-    const existingMovie = await prisma.movie.findUnique({ where: { id } });
-    // If posterUrl is changing and the old one was an uploaded file, delete it.
-    if (finalPosterUrl !== existingMovie?.posterUrl) {
-      await deleteUploadedFile(existingMovie?.posterUrl);
-    }
-    // It's an update, set to pending approval
-    status = MovieStatus.PENDING_APPROVAL;
-  } else {
-    // It's a creation
-    if (session.user.role === ROLES.USER_ADMIN) {
-      status = MovieStatus.PENDING_APPROVAL;
-    } else if (session.user.role === ROLES.SUPER_ADMIN) {
-      status = MovieStatus.PUBLISHED;
-    } else {
-       status = movieData.status; // fallback
-    }
-  }
-
-
+  
   const data = {
     title: movieData.title,
     description: movieData.description,
@@ -244,18 +224,44 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     imdbRating: movieData.imdbRating,
     rottenTomatoesRating: movieData.rottenTomatoesRating,
     googleRating: movieData.googleRating,
-    status: status,
     viewCount: movieData.viewCount,
-    authorId: session.user.id,
     mediaLinks: JSON.stringify(movieData.mediaLinks || []),
   };
-  
+
   if (id) {
-    await prisma.movie.update({ where: { id }, data: data as any });
+    const existingMovie = await prisma.movie.findUnique({ where: { id } });
+    if (!existingMovie) {
+        throw new Error('Movie not found');
+    }
+    // If posterUrl is changing and the old one was an uploaded file, delete it.
+    if (finalPosterUrl !== existingMovie?.posterUrl) {
+      await deleteUploadedFile(existingMovie?.posterUrl);
+    }
+    
+    // Determine status on update. Non-super-admins move to PENDING_APPROVAL.
+    if (session.user.role === ROLES.SUPER_ADMIN) {
+        // Super admin can edit, we might want to keep the status or set it to published
+        // For now, let's just update and let status be changed separately if needed.
+        // If we want to auto-publish on edit, we can set status here.
+        // Let's keep existing status unless it's a draft
+        status = existingMovie.status === 'DRAFT' ? MovieStatus.PUBLISHED : existingMovie.status;
+    } else {
+        status = MovieStatus.PENDING_APPROVAL;
+    }
+
+    await prisma.movie.update({ where: { id }, data: { ...data, status } as any });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.movie.create({ data: data as any });
+    // It's a creation
+    if (session.user.role === ROLES.USER_ADMIN) {
+      status = MovieStatus.PENDING_APPROVAL;
+    } else if (session.user.role === ROLES.SUPER_ADMIN) {
+      status = MovieStatus.PUBLISHED;
+    } else {
+       status = movieData.status || 'DRAFT'; // fallback
+    }
+    await prisma.movie.create({ data: { ...data, status, authorId: session.user.id } as any });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
