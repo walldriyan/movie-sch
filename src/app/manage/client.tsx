@@ -76,11 +76,11 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         title: 'Success',
         description: `Movie "${movieData.title}" has been saved.`,
       });
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to save movie.',
+        description: error.message || 'Failed to save movie.',
       });
     }
   };
