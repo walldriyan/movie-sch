@@ -50,6 +50,7 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { PERMISSIONS, MovieStatus } from '@/lib/permissions';
 import { Skeleton } from '../ui/skeleton';
 import { format } from 'date-fns';
+import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 
 type MovieWithDetails = Movie & { author: User, _count: { likedBy: number }};
 
@@ -135,9 +136,6 @@ export default function MovieList({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
-                </TableHead>
                 <TableHead>Title</TableHead>
                 <TableHead>Author</TableHead>
                 <TableHead>Status</TableHead>
@@ -159,32 +157,40 @@ export default function MovieList({
                         : ''
                     }
                   >
-                    <TableCell className="hidden sm:table-cell">
-                      {movie.posterUrl ? (
-                        <Image
-                          alt={movie.title}
-                          className="aspect-square rounded-md object-cover"
-                          height="64"
-                          src={movie.posterUrl}
-                          width="64"
-                        />
-                      ) : (
-                        <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
-                          <ImageIcon />
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium max-w-xs truncate">
-                      <Link
-                        href={`/movies/${movie.id}`}
-                        className="hover:underline"
-                      >
-                        {movie.title}
-                      </Link>
+                    <TableCell className="font-medium max-w-xs">
+                       <div className="flex items-center gap-3">
+                         {movie.posterUrl ? (
+                          <Image
+                            alt={movie.title}
+                            className="aspect-square rounded-md object-cover"
+                            height="40"
+                            src={movie.posterUrl}
+                            width="40"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                            <ImageIcon />
+                          </div>
+                        )}
+                        <Link
+                          href={`/movies/${movie.id}`}
+                          className="hover:underline truncate"
+                        >
+                          {movie.title}
+                        </Link>
+                       </div>
                     </TableCell>
                      <TableCell>
-                      <div className="font-medium">{movie.author.name}</div>
-                      <div className="text-xs text-muted-foreground">{movie.author.email}</div>
+                      <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarImage src={movie.author.image || ''} alt={movie.author.name || ''} />
+                            <AvatarFallback>{movie.author.name?.charAt(0) || 'U'}</AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <div className="font-medium">{movie.author.name}</div>
+                            <div className="text-xs text-muted-foreground">{movie.author.email}</div>
+                          </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(movie.status)}>
@@ -273,7 +279,7 @@ export default function MovieList({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={7} className="h-24 text-center">
+                  <TableCell colSpan={6} className="h-24 text-center">
                     No movies found. Add one to get started.
                   </TableCell>
                 </TableRow>
