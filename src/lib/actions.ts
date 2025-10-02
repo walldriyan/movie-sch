@@ -186,7 +186,11 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     status: status,
     genres: JSON.stringify(movieData.genres),
     authorId: session.user.id,
+    likes: undefined, // Remove invalid field
   };
+  
+  delete data.likes;
+
 
   if (id) {
     await prisma.movie.update({ where: { id }, data: data as any });
