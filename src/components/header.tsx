@@ -74,8 +74,8 @@ export default async function Header({
               </AvatarFallback>
             </Avatar>
             <div className="flex flex-col items-start">
-              <span className="text-sm font-medium">{user.name}</span>
-              <Badge variant={getBadgeVariant(user.role)} className={cn('h-auto px-1.5 py-0', {
+              <span className="text-xs font-medium">{user.name}</span>
+              <Badge variant={getBadgeVariant(user.role)} className={cn('h-auto px-1.5 py-0 text-[10px]', {
                 'bg-green-500/80': user.role === ROLES.SUPER_ADMIN,
               })}>
                 {user.role}
