@@ -16,10 +16,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { Movie } from '@prisma/client';
 import type { MovieFormData } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -41,12 +42,14 @@ interface MovieFormProps {
   editingMovie: Movie | null;
   onFormSubmit: (movieData: MovieFormData, id?: number) => Promise<void>;
   onBack: () => void;
+  error?: string | null;
 }
 
 export default function MovieForm({
   editingMovie,
   onFormSubmit,
   onBack,
+  error,
 }: MovieFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -392,6 +395,17 @@ export default function MovieForm({
               />
             </div>
           </div>
+          
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Submission Error</AlertTitle>
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" disabled={formState.isSubmitting}>
               {formState.isSubmitting ? (

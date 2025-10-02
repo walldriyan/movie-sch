@@ -33,6 +33,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [formError, setFormError] = useState<string | null>(null);
   const { toast } = useToast();
 
   const fetchMovies = async (page: number) => {
@@ -56,11 +57,13 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
+    setFormError(null);
     setView('form');
   };
 
   const handleEditMovie = (movie: Movie) => {
     setEditingMovie(movie);
+    setFormError(null);
     setView('form');
   };
 
@@ -69,6 +72,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
     id: number | undefined
   ) => {
     try {
+      setFormError(null);
       await saveMovie(movieData, id);
       await fetchMovies(id ? currentPage : 1); // Refresh current page or go to first page on new item
       setView('list');
@@ -77,11 +81,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         description: `Movie "${movieData.title}" has been saved.`,
       });
     } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to save movie.',
-      });
+      console.error('Failed to save movie:', error);
+      setFormError(error.message || 'An unknown error occurred while saving the movie.');
     }
   };
 
@@ -131,6 +132,11 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
     }
+  };
+
+  const handleBackFromForm = () => {
+    setView('list');
+    setFormError(null);
   };
 
   const visibleMovies = user?.permissions?.includes(
@@ -196,7 +202,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         <MovieForm
           editingMovie={editingMovie}
           onFormSubmit={handleFormSubmit}
-          onBack={() => setView('list')}
+          onBack={handleBackFromForm}
+          error={formError}
         />
       )}
     </ManageLayout>
