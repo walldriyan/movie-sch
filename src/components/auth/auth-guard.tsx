@@ -1,13 +1,14 @@
 "use client";
 
-import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { ReactNode } from "react";
+import { useSession } from "next-auth/react";
+import type { ReactNode } from "react";
 
 interface AuthGuardProps {
   children: ReactNode;
   requiredPermissions?: string[];
   requiredRole?: string;
   allowByDefault?: boolean;
+  fallback?: ReactNode;
 }
 
 export default function AuthGuard({
@@ -15,14 +16,20 @@ export default function AuthGuard({
   requiredPermissions,
   requiredRole,
   allowByDefault = false,
+  fallback = null,
 }: AuthGuardProps) {
-  const user = useCurrentUser();
+  const { data: session, status } = useSession();
+  const user = session?.user;
+
+  if (status === 'loading') {
+    return <>{fallback}</>;
+  }
 
   if (!user) {
     if (allowByDefault) {
       return <>{children}</>;
     }
-    return null; // Or a loading spinner, or a "not authenticated" message
+    return null;
   }
 
   const hasRole = requiredRole ? user.role === requiredRole : true;
@@ -38,5 +45,5 @@ export default function AuthGuard({
     return <>{children}</>;
   }
 
-  return null; // Or a "not authorized" message
+  return null;
 }
