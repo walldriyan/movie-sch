@@ -18,7 +18,7 @@ model User {
   image                   String?
   password                String?
   role                    String    @default("USER")
-  bio                     String?   @db.Text
+  bio                     String?
   website                 String?
   twitter                 String?
   linkedin                String?
@@ -28,10 +28,9 @@ model User {
   accounts Account[]
   sessions Session[]
   movies   Movie[]
+  reviews  Review[]
 
-  likedMovies     Movie[] @relation("UserLikes")
-  dislikedMovies  Movie[] @relation("UserDislikes")
-  favoriteMovies  FavoriteMovie[]
+  favoriteMovies FavoriteMovie[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -40,11 +39,11 @@ model User {
 model Movie {
   id                   Int      @id @default(autoincrement())
   title                String
-  description          String   @db.Text
+  description          String
   posterUrl            String?
   year                 Int
   duration             String
-  genres               String?
+  genres               String
   imdbRating           Float
   rottenTomatoesRating Int?
   googleRating         Int?
@@ -52,49 +51,51 @@ model Movie {
   viewCount            Int      @default(0)
   directors            String?
   mainCast             String?
-  mediaLinks           String?  @db.Text
-  authorId             String
-  author               User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  mediaLinks           String?
+
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId String
 
   reviews   Review[]
   subtitles Subtitle[]
-  likedBy   User[]     @relation("UserLikes")
-  dislikedBy User[]    @relation("UserDislikes")
+  likedBy   User[]     @relation("MovieLikes")
+  dislikedBy User[]     @relation("MovieDislikes")
+
   favoritedBy FavoriteMovie[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model FavoriteMovie {
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   Int
+  createdAt DateTime @default(now())
+
+  @@id([userId, movieId])
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
-  movieId   Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
   movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId   Int
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Subtitle {
   id           Int      @id @default(autoincrement())
   language     String
-  uploaderName String
   fileUrl      String
-  movieId      Int
+  uploaderName String
   movie        Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  movieId      Int
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-}
-
-model FavoriteMovie {
-  userId    String
-  movieId   Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-
-  @@id([userId, movieId])
 }
 
 model Account {
@@ -103,12 +104,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
