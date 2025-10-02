@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle } from 'lucide-react';
+import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle, VideoOff } from 'lucide-react';
 import React from 'react';
 import type { User as PrismaUser } from '@prisma/client';
 import type { Movie } from '@/lib/types';
@@ -85,7 +85,7 @@ export default async function ProfilePage({ params }: { params: { username: stri
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <ProfileHeader username={profileUser.name || 'User'} />
+        <ProfileHeader user={profileUser} />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">
@@ -143,9 +143,13 @@ export default async function ProfilePage({ params }: { params: { username: stri
               );
             })}
              {userMovies.length === 0 && (
-                <div className="text-center text-muted-foreground py-16">
-                  <p>{profileUser.name} hasn't posted any movies yet.</p>
-                </div>
+                <Card className="text-center border-dashed">
+                  <CardContent className="p-16 flex flex-col items-center gap-4">
+                    <VideoOff className="h-16 w-16 text-muted-foreground" />
+                    <h3 className="text-lg font-semibold">No Movies Yet</h3>
+                    <p className="text-muted-foreground">{profileUser.name} hasn't posted any movies yet.</p>
+                  </CardContent>
+                </Card>
              )}
           </div>
 
