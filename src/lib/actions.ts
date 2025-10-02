@@ -11,6 +11,7 @@ import { ROLES, MovieStatus } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 const prisma = new PrismaClient();
 
@@ -153,7 +154,7 @@ export async function getMovies(options: { page?: number; limit?: number, filter
     let orderBy: Prisma.MovieOrderByWithRelationInput = { updatedAt: 'desc' };
 
     if (filters) {
-      const { sortBy, genres, yearRange, ratingRange } = filters;
+      const { sortBy, genres, yearRange, ratingRange, timeFilter } = filters;
       
       if (sortBy) {
         const [field, direction] = sortBy.split('-');
@@ -163,11 +164,9 @@ export async function getMovies(options: { page?: number; limit?: number, filter
       }
 
       if (genres && genres.length > 0) {
-        whereClause.AND = (whereClause.AND || [] as any).concat({
-          OR: genres.map((genre: string) => ({
-             genres: { contains: `"${genre}"`}
-          })),
-        });
+        whereClause.genres = {
+          search: genres.join(' & '),
+        };
       }
 
       if (yearRange) {
@@ -182,6 +181,17 @@ export async function getMovies(options: { page?: number; limit?: number, filter
           gte: ratingRange[0],
           lte: ratingRange[1],
         };
+      }
+
+      if (timeFilter) {
+        const now = new Date();
+        if (timeFilter === 'today') {
+          whereClause.updatedAt = { gte: startOfDay(now), lte: endOfDay(now) };
+        } else if (timeFilter === 'this_week') {
+          whereClause.updatedAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
+        } else if (timeFilter === 'this_month') {
+          whereClause.updatedAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
+        }
       }
     }
 

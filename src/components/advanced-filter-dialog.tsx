@@ -29,6 +29,7 @@ export interface FilterState {
   genres: string[];
   yearRange: [number, number];
   ratingRange: [number, number];
+  timeFilter: 'all' | 'today' | 'this_week' | 'this_month';
 }
 
 interface AdvancedFilterDialogProps {
@@ -53,11 +54,12 @@ export default function AdvancedFilterDialog({
   };
   
   const handleReset = () => {
-    const defaultFilters = {
+    const defaultFilters: FilterState = {
       sortBy: 'updatedAt-desc',
       genres: [],
-      yearRange: [1980, new Date().getFullYear()] as [number, number],
-      ratingRange: [0, 10] as [number, number],
+      yearRange: [1980, new Date().getFullYear()],
+      ratingRange: [0, 10],
+      timeFilter: 'all',
     };
     setLocalFilters(defaultFilters);
     onApplyFilters(defaultFilters);

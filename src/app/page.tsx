@@ -4,7 +4,7 @@ import { useState, useEffect, useTransition } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, TrendingUp, Calendar, SlidersHorizontal, Loader2 } from 'lucide-react';
+import { Film, Globe, Star, Tv, TrendingUp, Calendar, SlidersHorizontal, Loader2, CalendarClock, CalendarDays, CalendarCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
@@ -20,6 +20,9 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip"
 import Loading from './loading';
+import { cn } from '@/lib/utils';
+
+type TimeFilter = 'all' | 'today' | 'this_week' | 'this_month';
 
 export default function HomePage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -29,6 +32,7 @@ export default function HomePage() {
     genres: [],
     yearRange: [1980, new Date().getFullYear()],
     ratingRange: [0, 10],
+    timeFilter: 'all',
   });
 
   useEffect(() => {
@@ -39,6 +43,10 @@ export default function HomePage() {
   }, [filters]);
   
   const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
+  
+  const handleTimeFilterChange = (timeFilter: TimeFilter) => {
+    setFilters(prev => ({...prev, timeFilter}));
+  }
 
   if (isPending) {
     return <Loading />;
@@ -77,7 +85,7 @@ export default function HomePage() {
       <TooltipProvider>
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center gap-2 mb-8">
-              <Button variant="secondary" className="rounded-full">
+              <Button variant={filters.timeFilter === 'all' ? 'secondary' : 'outline'} className="rounded-full" onClick={() => handleTimeFilterChange('all')}>
                   <Film />
                   <span>All</span>
               </Button>
@@ -95,17 +103,17 @@ export default function HomePage() {
           
           <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                  <Button variant="ghost" size="sm" className="rounded-full">
-                      <TrendingUp className="mr-2 h-4 w-4" />
-                      Trending
+                  <Button variant={filters.timeFilter === 'today' ? 'ghost' : 'link'} size="sm" className={cn("rounded-full", {'bg-muted': filters.timeFilter === 'today'})} onClick={() => handleTimeFilterChange('today')}>
+                      <CalendarClock className="mr-2 h-4 w-4" />
+                      Today
                   </Button>
-                  <Button variant="ghost" size="sm" className="rounded-full">
-                      <Star className="mr-2 h-4 w-4" />
-                      Top Rated
+                  <Button variant={filters.timeFilter === 'this_week' ? 'ghost' : 'link'} size="sm" className={cn("rounded-full", {'bg-muted': filters.timeFilter === 'this_week'})} onClick={() => handleTimeFilterChange('this_week')}>
+                      <CalendarDays className="mr-2 h-4 w-4" />
+                      This Week
                   </Button>
-                  <Button variant="ghost" size="sm" className="rounded-full">
-                      <Calendar className="mr-2 h-4 w-4" />
-                      New Releases
+                  <Button variant={filters.timeFilter === 'this_month' ? 'ghost' : 'link'} size="sm" className={cn("rounded-full", {'bg-muted': filters.timeFilter === 'this_month'})} onClick={() => handleTimeFilterChange('this_month')}>
+                      <CalendarCheck className="mr-2 h-4 w-4" />
+                      This Month
                   </Button>
               </div>
               <AdvancedFilterDialog 
