@@ -24,12 +24,14 @@ model User {
   linkedin                String?
   permissionRequestStatus String?
   permissionRequestMessage String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
-  accounts Account[]
-  sessions Session[]
-  movies   Movie[]
-
-  likedMovies   Movie[] @relation("MovieLikes")
+  accounts     Account[]
+  sessions     Session[]
+  movies       Movie[]
+  reviews      Review[]
+  likedMovies  Movie[]   @relation("MovieLikes")
   dislikedMovies Movie[] @relation("MovieDislikes")
   favoriteMovies FavoriteMovie[]
 }
@@ -41,7 +43,7 @@ model Movie {
   posterUrl            String?
   year                 Int
   duration             String
-  genres               String?
+  genres               String
   imdbRating           Float
   rottenTomatoesRating Int?
   googleRating         Int?
@@ -50,51 +52,50 @@ model Movie {
   directors            String?
   mainCast             String?
   mediaLinks           String?
+  authorId             String
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
-  author   User   @relation(fields: [authorId], references: [id])
-  authorId String
-
-  reviews   Review[]
-  subtitles Subtitle[]
-  likedBy   User[]     @relation("MovieLikes")
-  dislikedBy User[]     @relation("MovieDislikes")
-  favoritedBy FavoriteMovie[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model FavoriteMovie {
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
-  movieId   Int
-  createdAt DateTime @default(now())
-
-  @@id([userId, movieId])
+  author       User          @relation(fields: [authorId], references: [id])
+  reviews      Review[]
+  subtitles    Subtitle[]
+  likedBy      User[]        @relation("MovieLikes")
+  dislikedBy   User[]        @relation("MovieDislikes")
+  favoritedBy  FavoriteMovie[]
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   movie     Movie    @relation(fields: [movieId], references: [id])
   movieId   Int
   user      User     @relation(fields: [userId], references: [id])
   userId    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 }
 
 model Subtitle {
   id           Int      @id @default(autoincrement())
   language     String
-  fileUrl      String
+  url          String
   uploaderName String
-  movie        Movie    @relation(fields: [movieId], references: [id])
-  movieId      Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  movie        Movie    @relation(fields: [movieId], references: [id])
+  movieId      Int
+}
+
+model FavoriteMovie {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  movie     Movie    @relation(fields: [movieId], references: [id])
+  movieId   Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, movieId])
 }
 
 model Account {
