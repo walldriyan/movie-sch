@@ -101,7 +101,7 @@ export default async function HomePage() {
                           {movie.title}
                         </h2>
                         <div
-                          className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2"
+                          className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
                           dangerouslySetInnerHTML={{ __html: movie.description }}
                         />
                       </div>
