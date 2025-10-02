@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import Loading from './loading';
 
 export default function HomePage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -39,14 +40,8 @@ export default function HomePage() {
   
   const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
 
-  if (isPending && movies.length === 0) {
-    return (
-      <div className="w-full bg-background text-foreground">
-        <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </main>
-      </div>
-    );
+  if (isPending) {
+    return <Loading />;
   }
   
   if (movies.length === 0 && !isPending) {
