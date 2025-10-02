@@ -65,17 +65,17 @@ export default async function HomePage() {
 
           <Separator className="mb-8" />
           
-          <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-2">
-                  <Button variant={'ghost'} size="sm" className="rounded-full">
+          <div className="flex items-center justify-between mb-8 overflow-hidden">
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
+                  <Button variant={'ghost'} size="sm" className="rounded-full whitespace-nowrap">
                       <CalendarClock className="mr-2 h-4 w-4" />
                       Today
                   </Button>
-                  <Button variant={'ghost'} size="sm" className="rounded-full">
+                  <Button variant={'ghost'} size="sm" className="rounded-full whitespace-nowrap">
                       <CalendarDays className="mr-2 h-4 w-4" />
                       This Week
                   </Button>
-                  <Button variant={'ghost'} size="sm" className="rounded-full">
+                  <Button variant={'ghost'} size="sm" className="rounded-full whitespace-nowrap">
                       <CalendarCheck className="mr-2 h-4 w-4" />
                       This Month
                   </Button>
