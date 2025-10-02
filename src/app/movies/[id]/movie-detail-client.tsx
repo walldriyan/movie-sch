@@ -61,8 +61,8 @@ export default function MovieDetailClient({
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
             {movie.genres.map((genre: string) => (
             <Button key={genre} variant="outline" size="sm" className="rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20">
-                <Tag className="mr-2 h-4 w-4" />
                 {genre}
+                <Tag className="ml-2 h-4 w-4" />
             </Button>
             ))}
         </div>
@@ -167,7 +167,7 @@ export default function MovieDetailClient({
         </div>
       </header>
 
-      <Tabs value={activeTab} className="mt-8 px-4 md:px-8 max-w-4xl">
+      <Tabs value={activeTab} className="mt-8">
         {children}
       </Tabs>
     </>
