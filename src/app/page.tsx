@@ -1,10 +1,9 @@
-'use client';
+'use server';
 
-import { useState, useEffect, useTransition } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, TrendingUp, Calendar, SlidersHorizontal, Loader2, CalendarClock, CalendarDays, CalendarCheck } from 'lucide-react';
+import { Film, Globe, Star, Tv, SlidersHorizontal, CalendarClock, CalendarDays, CalendarCheck } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
@@ -12,68 +11,33 @@ import type { Movie } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import AdvancedFilterDialog from '@/components/advanced-filter-dialog';
 import type { FilterState } from '@/components/advanced-filter-dialog';
-import { format, formatRelative, subDays } from 'date-fns';
+import { format, formatRelative } from 'date-fns';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/components/ui/tooltip"
+} from "@/components/ui/tooltip";
 import Loading from './loading';
-import { cn } from '@/lib/utils';
 
-type TimeFilter = 'all' | 'today' | 'this_week' | 'this_month';
-
-export default function HomePage() {
-  const [movies, setMovies] = useState<Movie[]>([]);
-  const [isPending, startTransition] = useTransition();
-  const [filters, setFilters] = useState<FilterState>({
-    sortBy: 'updatedAt-desc',
-    genres: [],
-    yearRange: [1980, new Date().getFullYear()],
-    ratingRange: [0, 10],
-    timeFilter: 'all',
-  });
-
-  useEffect(() => {
-    startTransition(async () => {
-      const { movies: fetchedMovies } = await getMovies({ filters });
-      setMovies(fetchedMovies as any);
-    });
-  }, [filters]);
+export default async function HomePage() {
   
+  const { movies: fetchedMovies } = await getMovies();
+  const movies = fetchedMovies as any[];
+
   const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
   
-  const handleTimeFilterChange = (timeFilter: TimeFilter) => {
-    setFilters(prev => ({...prev, timeFilter}));
-  }
-
-  if (isPending) {
-    return <Loading />;
-  }
-  
-  if (movies.length === 0 && !isPending) {
+  if (movies.length === 0) {
     return (
       <div className="w-full bg-background text-foreground">
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
           <div className="max-w-md">
             <h1 className="font-serif text-4xl font-bold">
-              No Movies Found
+              No Movies Yet
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              No movies match your current filter criteria. Try adjusting your filters.
+              Be the first to add a movie to the collection!
             </p>
-             <AdvancedFilterDialog 
-                allGenres={['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Thriller', 'Romance', 'Animation']}
-                currentFilters={filters}
-                onApplyFilters={setFilters}
-                triggerButton={
-                  <Button className="mt-6" size="lg">
-                    <SlidersHorizontal className="mr-2 h-5 w-5" />
-                    Adjust Filters
-                  </Button>
-                }
-              />
           </div>
         </main>
       </div>
@@ -85,7 +49,7 @@ export default function HomePage() {
       <TooltipProvider>
         <main className="max-w-4xl mx-auto px-4 py-8">
           <div className="flex items-center gap-2 mb-8">
-              <Button variant={filters.timeFilter === 'all' ? 'secondary' : 'outline'} className="rounded-full" onClick={() => handleTimeFilterChange('all')}>
+              <Button variant={'secondary'} className="rounded-full">
                   <Film />
                   <span>All</span>
               </Button>
@@ -103,33 +67,33 @@ export default function HomePage() {
           
           <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-2">
-                  <Button variant={filters.timeFilter === 'today' ? 'secondary' : 'ghost'} size="sm" className="rounded-full" onClick={() => handleTimeFilterChange('today')}>
+                  <Button variant={'ghost'} size="sm" className="rounded-full">
                       <CalendarClock className="mr-2 h-4 w-4" />
                       Today
                   </Button>
-                  <Button variant={filters.timeFilter === 'this_week' ? 'secondary' : 'ghost'} size="sm" className="rounded-full" onClick={() => handleTimeFilterChange('this_week')}>
+                  <Button variant={'ghost'} size="sm" className="rounded-full">
                       <CalendarDays className="mr-2 h-4 w-4" />
                       This Week
                   </Button>
-                  <Button variant={filters.timeFilter === 'this_month' ? 'secondary' : 'ghost'} size="sm" className="rounded-full" onClick={() => handleTimeFilterChange('this_month')}>
+                  <Button variant={'ghost'} size="sm" className="rounded-full">
                       <CalendarCheck className="mr-2 h-4 w-4" />
                       This Month
                   </Button>
               </div>
-              <AdvancedFilterDialog 
+              {/* <AdvancedFilterDialog 
                   allGenres={['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Thriller', 'Romance', 'Animation']}
                   currentFilters={filters}
-                  onApplyFilters={setFilters}
+                  onApplyFilters={() => {}}
                   triggerButton={
                       <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground">
                           <SlidersHorizontal className="mr-2 h-4 w-4" />
                           <span>Advanced Filters</span>
                       </Button>
                   }
-              />
+              /> */}
           </div>
           
-          <div className={`space-y-12 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}>
+          <div className={`space-y-12 transition-opacity`}>
             {movies.map((movie) => {
               const movieImageUrl =
                 movie.posterUrl ||
