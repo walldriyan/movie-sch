@@ -14,6 +14,44 @@ import { join, dirname } from 'path';
 
 const prisma = new PrismaClient();
 
+async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
+  if (!dataUrl.startsWith('data:image')) {
+    return dataUrl; // It's already a URL, so return it as is.
+  }
+
+  try {
+    const fileType = dataUrl.substring(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
+    const base64Data = dataUrl.substring(dataUrl.indexOf(',') + 1);
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${fileType}`;
+    const directory = join(process.cwd(), `public/uploads/${subfolder}`);
+    const path = join(directory, filename);
+
+    // Ensure the directory exists
+    await mkdir(directory, { recursive: true });
+    await writeFile(path, buffer);
+
+    return `/uploads/${subfolder}/${filename}`;
+  } catch (error) {
+    console.error("Error saving image from data URL:", error);
+    return null; // Return null or a default image path on error
+  }
+}
+
+async function deleteUploadedFile(filePath: string | null | undefined) {
+    if (!filePath || !filePath.startsWith('/uploads/')) {
+        return; // Not a managed file
+    }
+    try {
+        const fullPath = join(process.cwd(), 'public', filePath);
+        await unlink(fullPath);
+    } catch (error) {
+        console.error(`Failed to delete file: ${filePath}`, error);
+    }
+}
+
+
 export async function getSuperAdminEmailForDebug() {
   if (process.env.NODE_ENV === 'development') {
     return process.env.SUPER_ADMIN_EMAIL || null;
@@ -146,6 +184,8 @@ export async function getMovie(movieId: number) {
       },
       subtitles: true,
       author: true,
+      likedBy: true,
+      dislikedBy: true,
     },
   });
   if (!movie) return null;
@@ -164,8 +204,19 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
 
   let status;
 
+  // Handle image upload
+  let finalPosterUrl = movieData.posterUrl;
+  if (movieData.posterUrl && movieData.posterUrl.startsWith('data:image')) {
+    finalPosterUrl = await saveImageFromDataUrl(movieData.posterUrl, 'movies');
+  }
+
   if (id) {
-    // It's an update, always set to pending approval
+    const existingMovie = await prisma.movie.findUnique({ where: { id } });
+    // If posterUrl is changing and the old one was an uploaded file, delete it.
+    if (finalPosterUrl !== existingMovie?.posterUrl) {
+      await deleteUploadedFile(existingMovie?.posterUrl);
+    }
+    // It's an update, set to pending approval
     status = MovieStatus.PENDING_APPROVAL;
   } else {
     // It's a creation
@@ -180,12 +231,22 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
 
 
   const data = {
-    ...movieData,
-    status: status,
+    title: movieData.title,
+    description: movieData.description,
+    posterUrl: finalPosterUrl,
+    year: movieData.year,
+    duration: movieData.duration,
     genres: JSON.stringify(movieData.genres),
+    directors: movieData.directors,
+    mainCast: movieData.mainCast,
+    imdbRating: movieData.imdbRating,
+    rottenTomatoesRating: movieData.rottenTomatoesRating,
+    googleRating: movieData.googleRating,
+    status: status,
+    viewCount: movieData.viewCount,
     authorId: session.user.id,
   };
-
+  
   if (id) {
     await prisma.movie.update({ where: { id }, data: data as any });
     revalidatePath(`/manage`);
@@ -198,7 +259,13 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
 }
 
 export async function deleteMovie(id: number, permanent: boolean) {
+  const movieToDelete = await prisma.movie.findUnique({ where: { id } });
+  if (!movieToDelete) {
+    throw new Error("Movie not found");
+  }
+
   if (permanent) {
+    await deleteUploadedFile(movieToDelete.posterUrl);
     await prisma.movie.delete({ where: { id } });
   } else {
     await prisma.movie.update({
@@ -218,24 +285,15 @@ export async function getUsers(): Promise<User[]> {
   return users;
 }
 
-export async function uploadProfileImage(formData: FormData) {
-  const file = formData.get('image') as File;
-  if (!file || file.size === 0) {
-    return null;
-  }
-
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  const filename = `${Date.now()}-${file.name}`;
-  const path = join(process.cwd(), 'public/uploads/avatars', filename);
-
-  // Ensure the directory exists
-  await mkdir(dirname(path), { recursive: true });
-
-  await writeFile(path, buffer);
-
-  return `/uploads/avatars/${filename}`;
+export async function uploadProfileImage(formData: FormData): Promise<string | null> {
+    const file = formData.get('image') as File;
+    if (!file || file.size === 0) {
+      return null;
+    }
+    const dataUrl = await file.arrayBuffer().then(buffer => 
+        `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
+    );
+    return saveImageFromDataUrl(dataUrl, 'avatars');
 }
 
 export async function updateUserProfile(
@@ -253,45 +311,31 @@ export async function updateUserProfile(
   if (!session?.user || session.user.id !== userId) {
     throw new Error('Not authorized');
   }
+  
+  const currentUser = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { image: true },
+  });
 
-  // If a new image is being uploaded, delete the old one first.
-  if (data.image) {
-    try {
-      const currentUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { image: true },
-      });
-
+  let finalImageUrl = data.image;
+  // If a new data URL is provided for the image
+  if (data.image && data.image.startsWith('data:image')) {
+      finalImageUrl = await saveImageFromDataUrl(data.image, 'avatars');
+      // If there was an old image and it was an uploaded file, delete it
       if (currentUser?.image && currentUser.image.startsWith('/uploads/')) {
-        const oldImagePath = join(process.cwd(), 'public', currentUser.image);
-        await unlink(oldImagePath);
+        await deleteUploadedFile(currentUser.image);
       }
-    } catch (error) {
-      // Log the error but don't block the update if deletion fails
-      console.error('Failed to delete old profile image:', error);
-    }
   }
 
-  const updateData: { [key: string]: string | undefined } = {};
 
-  if (data.name !== undefined) {
-    updateData.name = data.name;
-  }
-  if (data.bio !== undefined) {
-    updateData.bio = data.bio;
-  }
-  if (data.website !== undefined) {
-    updateData.website = data.website;
-  }
-  if (data.twitter !== undefined) {
-    updateData.twitter = data.twitter;
-  }
-  if (data.linkedin !== undefined) {
-    updateData.linkedin = data.linkedin;
-  }
-  if (data.image !== undefined) {
-    updateData.image = data.image;
-  }
+  const updateData = {
+    name: data.name,
+    bio: data.bio,
+    website: data.website,
+    twitter: data.twitter,
+    linkedin: data.linkedin,
+    image: finalImageUrl,
+  };
 
   await prisma.user.update({
     where: { id: userId },
@@ -403,4 +447,66 @@ export async function updateMovieStatus(movieId: number, status: string) {
   });
 
   revalidatePath('/manage');
+}
+
+export async function toggleLikeMovie(movieId: number, like: boolean) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('Not authenticated');
+  }
+  const userId = session.user.id;
+
+  const movie = await prisma.movie.findUnique({
+    where: { id: movieId },
+    include: { likedBy: true, dislikedBy: true },
+  });
+
+  if (!movie) {
+    throw new Error('Movie not found');
+  }
+
+  const isLiked = movie.likedBy.some(user => user.id === userId);
+  const isDisliked = movie.dislikedBy.some(user => user.id === userId);
+
+  if (like) { // Handle Like action
+    if (isLiked) {
+      // User is un-liking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          likedBy: { disconnect: { id: userId } },
+        },
+      });
+    } else {
+      // User is liking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          likedBy: { connect: { id: userId } },
+          dislikedBy: { disconnect: isDisliked ? { id: userId } : undefined }, // Remove from dislikes if it was disliked
+        },
+      });
+    }
+  } else { // Handle Dislike action
+    if (isDisliked) {
+      // User is un-disliking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          dislikedBy: { disconnect: { id: userId } },
+        },
+      });
+    } else {
+      // User is disliking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          dislikedBy: { connect: { id: userId } },
+          likedBy: { disconnect: isLiked ? { id: userId } : undefined }, // Remove from likes if it was liked
+        },
+      });
+    }
+  }
+
+  revalidatePath(`/movies/${movieId}`);
 }

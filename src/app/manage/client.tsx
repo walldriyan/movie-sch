@@ -10,6 +10,8 @@ import ManageLayout from '@/components/manage/manage-layout';
 import MovieList from '@/components/manage/movie-list';
 import MovieForm from '@/components/manage/movie-form';
 import type { Session } from 'next-auth';
+import { RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Pagination,
   PaginationContent,
@@ -33,9 +35,12 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { toast } = useToast();
 
   const fetchMovies = async (page: number) => {
+    setIsRefreshing(true);
     try {
       const { movies: moviesFromDb, totalPages: newTotalPages } = await getMoviesForAdmin({ page, limit: 10, userId: user.id, userRole: user.role });
       setMovies(moviesFromDb as any);
@@ -47,20 +52,24 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         title: 'Error',
         description: 'Failed to fetch movies.',
       });
+    } finally {
+      setIsRefreshing(false);
     }
   };
   
   useEffect(() => {
     fetchMovies(currentPage);
-  }, [currentPage, user]);
+  }, [currentPage]);
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
+    setFormError(null);
     setView('form');
   };
 
   const handleEditMovie = (movie: Movie) => {
     setEditingMovie(movie);
+    setFormError(null);
     setView('form');
   };
 
@@ -69,6 +78,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
     id: number | undefined
   ) => {
     try {
+      setFormError(null);
       await saveMovie(movieData, id);
       await fetchMovies(id ? currentPage : 1); // Refresh current page or go to first page on new item
       setView('list');
@@ -76,12 +86,9 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         title: 'Success',
         description: `Movie "${movieData.title}" has been saved.`,
       });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to save movie.',
-      });
+    } catch (error: any) {
+      console.error('Failed to save movie:', error);
+      setFormError(error.message || 'An unknown error occurred while saving the movie.');
     }
   };
 
@@ -133,6 +140,18 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
     }
   };
 
+  const handleBackFromForm = () => {
+    setView('list');
+    setFormError(null);
+  };
+  
+  const handleRefresh = () => {
+    fetchMovies(currentPage);
+    toast({
+      title: 'Movie list refreshed',
+    });
+  }
+
   const visibleMovies = user?.permissions?.includes(
     PERMISSIONS['post.approve_deletion']
   )
@@ -149,6 +168,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
             onEdit={handleEditMovie}
             onDeleteConfirmed={handleDeleteConfirmed}
             onStatusChange={handleStatusChange}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
           />
           {totalPages > 1 && (
              <Pagination>
@@ -196,7 +217,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
         <MovieForm
           editingMovie={editingMovie}
           onFormSubmit={handleFormSubmit}
-          onBack={() => setView('list')}
+          onBack={handleBackFromForm}
+          error={formError}
         />
       )}
     </ManageLayout>

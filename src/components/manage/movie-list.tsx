@@ -42,12 +42,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, PlusCircle, Image as ImageIcon } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import AuthGuard from '@/components/auth/auth-guard';
 import { PERMISSIONS, MovieStatus } from '@/lib/permissions';
+import { Skeleton } from '../ui/skeleton';
 
 interface MovieListProps {
   movies: Movie[];
@@ -55,6 +56,8 @@ interface MovieListProps {
   onEdit: (movie: Movie) => void;
   onDeleteConfirmed: (movieId: number) => void;
   onStatusChange: (movieId: number, newStatus: string) => void;
+  onRefresh: () => void;
+  isRefreshing: boolean;
 }
 
 export default function MovieList({
@@ -63,6 +66,8 @@ export default function MovieList({
   onEdit,
   onDeleteConfirmed,
   onStatusChange,
+  onRefresh,
+  isRefreshing,
 }: MovieListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
@@ -99,7 +104,10 @@ export default function MovieList({
     <>
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Manage Movies</h1>
-        <AuthGuard requiredPermissions={[PERMISSIONS['post.create']]}>
+        <AuthGuard 
+          requiredPermissions={[PERMISSIONS['post.create']]}
+          fallback={<Skeleton className="ml-auto h-9 w-[150px] rounded-full" />}
+        >
           <Button className="ml-auto" size="sm" onClick={onAddNew}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Add New Movie
@@ -108,10 +116,17 @@ export default function MovieList({
       </div>
       <Card>
         <CardHeader>
-          <CardTitle>Movies</CardTitle>
-          <CardDescription>
-            A list of all movies in the catalog.
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Movies</CardTitle>
+              <CardDescription>
+                A list of all movies in the catalog.
+              </CardDescription>
+            </div>
+            <Button variant="outline" size="icon" onClick={onRefresh} disabled={isRefreshing}>
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>

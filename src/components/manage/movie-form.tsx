@@ -16,10 +16,11 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { Movie } from '@prisma/client';
 import type { MovieFormData } from '@/lib/types';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -28,7 +29,11 @@ const movieSchema = z.object({
   year: z.coerce.number().min(1800, 'Invalid year'),
   duration: z.string().min(1, 'Duration is required'),
   genres: z.string().min(1, 'Genres are required'),
+  directors: z.string().optional(),
+  mainCast: z.string().optional(),
   imdbRating: z.coerce.number().min(0).max(10),
+  rottenTomatoesRating: z.coerce.number().min(0).max(100).optional(),
+  googleRating: z.coerce.number().min(0).max(100).optional(),
 });
 
 type MovieFormValues = z.infer<typeof movieSchema>;
@@ -37,12 +42,14 @@ interface MovieFormProps {
   editingMovie: Movie | null;
   onFormSubmit: (movieData: MovieFormData, id?: number) => Promise<void>;
   onBack: () => void;
+  error?: string | null;
 }
 
 export default function MovieForm({
   editingMovie,
   onFormSubmit,
   onBack,
+  error,
 }: MovieFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -56,7 +63,11 @@ export default function MovieForm({
           year: editingMovie.year,
           duration: editingMovie.duration,
           genres: (editingMovie.genres as any).join(', '),
+          directors: editingMovie.directors || '',
+          mainCast: editingMovie.mainCast || '',
           imdbRating: editingMovie.imdbRating,
+          rottenTomatoesRating: editingMovie.rottenTomatoesRating || undefined,
+          googleRating: editingMovie.googleRating || undefined,
         }
       : {
           title: '',
@@ -65,7 +76,11 @@ export default function MovieForm({
           year: new Date().getFullYear(),
           duration: '',
           genres: '',
+          directors: '',
+          mainCast: '',
           imdbRating: 0,
+          rottenTomatoesRating: undefined,
+          googleRating: undefined,
         },
   });
   
@@ -80,10 +95,13 @@ export default function MovieForm({
       year: values.year,
       duration: values.duration,
       genres: values.genres.split(',').map((g) => g.trim()) as any,
+      directors: values.directors || null,
+      mainCast: values.mainCast || null,
       imdbRating: values.imdbRating,
-      status: editingMovie?.status || 'DRAFT', // Preserve status or default to DRAFT
+      rottenTomatoesRating: values.rottenTomatoesRating || null,
+      googleRating: values.googleRating || null,
+      status: editingMovie?.status || 'DRAFT',
       viewCount: editingMovie?.viewCount || 0,
-      likes: editingMovie?.likes || 0,
     };
     await onFormSubmit(movieData, editingMovie?.id);
   };
@@ -210,7 +228,7 @@ export default function MovieForm({
             <h3 className="text-lg font-semibold text-muted-foreground">
               Movie Details
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <FormField
                 control={form.control}
                 name="year"
@@ -248,19 +266,20 @@ export default function MovieForm({
                   </FormItem>
                 )}
               />
-              <FormField
+            </div>
+             <FormField
                 control={form.control}
-                name="imdbRating"
+                name="directors"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-muted-foreground">
-                      IMDb Rating
+                      Director(s) (comma-separated)
                     </FormLabel>
                     <FormControl>
                       <Input
-                        type="number"
-                        step="0.1"
+                        placeholder="Christopher Nolan"
                         {...field}
+                         value={field.value || ''}
                         className="bg-transparent border-input"
                       />
                     </FormControl>
@@ -268,7 +287,26 @@ export default function MovieForm({
                   </FormItem>
                 )}
               />
-            </div>
+               <FormField
+                control={form.control}
+                name="mainCast"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground">
+                      Main Cast (comma-separated)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Cillian Murphy, Emily Blunt"
+                        {...field}
+                         value={field.value || ''}
+                        className="bg-transparent border-input"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             <FormField
               control={form.control}
               name="genres"
@@ -288,7 +326,85 @@ export default function MovieForm({
                 </FormItem>
               )}
             />
+             <h3 className="text-lg font-semibold text-muted-foreground pt-4">
+              Ratings
+            </h3>
+             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+               <FormField
+                control={form.control}
+                name="imdbRating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground">
+                      IMDb Rating
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        {...field}
+                        className="bg-transparent border-input"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+               <FormField
+                control={form.control}
+                name="rottenTomatoesRating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground">
+                      Rotten Tomatoes (%)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="93"
+                        {...field}
+                        value={field.value ?? ''}
+                        className="bg-transparent border-input"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+                 <FormField
+                control={form.control}
+                name="googleRating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-muted-foreground">
+                      Google Users (%)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="91"
+                        {...field}
+                        value={field.value ?? ''}
+                        className="bg-transparent border-input"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </div>
+          
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Submission Error</AlertTitle>
+              <AlertDescription>
+                {error}
+              </AlertDescription>
+            </Alert>
+          )}
+          
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" disabled={formState.isSubmitting}>
               {formState.isSubmitting ? (
