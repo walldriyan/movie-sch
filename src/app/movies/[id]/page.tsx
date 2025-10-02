@@ -55,7 +55,7 @@ const LikedByAvatars = ({ users }: { users: User[] }) => {
     <div className="flex items-center gap-2">
        <div className="flex -space-x-2 overflow-hidden">
         {displayedUsers.map((user, index) => (
-            <Avatar key={user.id} className="h-6 w-6 border-2 border-background">
+            <Avatar key={user.id} className="h-12 w-12 border-2 border-background">
               <AvatarImage src={user.image || ''} alt={user.name || 'User'} />
               <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
