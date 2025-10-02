@@ -12,6 +12,7 @@ import type { Movie } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import AdvancedFilterDialog from '@/components/advanced-filter-dialog';
 import type { FilterState } from '@/components/advanced-filter-dialog';
+import { format } from 'date-fns';
 
 export default function HomePage() {
   const [movies, setMovies] = useState<Movie[]>([]);
@@ -149,20 +150,22 @@ export default function HomePage() {
                       {movie.author.name}
                     </span>
                   </Link>
-                  <span className="text-muted-foreground">{new Date(movie.updatedAt).toLocaleDateString()}</span>
+                  <span className="text-muted-foreground">{format(new Date(movie.updatedAt), 'MMM dd, yyyy')}</span>
                 </div>
 
                 <div className="grid grid-cols-12 gap-8">
                   <div className="col-span-8">
-                    <Link href={`/movies/${movie.id}`} className="group block mb-2">
+                    <Link href={`/movies/${movie.id}`} className="group block">
+                      <div className="space-y-2">
                         <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
                             {movie.title}
                         </h2>
+                        <div
+                          className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
+                          dangerouslySetInnerHTML={{ __html: movie.description }}
+                        />
+                      </div>
                     </Link>
-                    <div
-                      className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
-                      dangerouslySetInnerHTML={{ __html: movie.description }}
-                    />
                   </div>
                   <div className="col-span-4">
                     {movieImageUrl && (
