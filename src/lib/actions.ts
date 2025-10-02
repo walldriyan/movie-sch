@@ -146,6 +146,8 @@ export async function getMovie(movieId: number) {
       },
       subtitles: true,
       author: true,
+      likedBy: true,
+      dislikedBy: true,
     },
   });
   if (!movie) return null;
@@ -403,4 +405,66 @@ export async function updateMovieStatus(movieId: number, status: string) {
   });
 
   revalidatePath('/manage');
+}
+
+export async function toggleLikeMovie(movieId: number, like: boolean) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('Not authenticated');
+  }
+  const userId = session.user.id;
+
+  const movie = await prisma.movie.findUnique({
+    where: { id: movieId },
+    include: { likedBy: true, dislikedBy: true },
+  });
+
+  if (!movie) {
+    throw new Error('Movie not found');
+  }
+
+  const isLiked = movie.likedBy.some(user => user.id === userId);
+  const isDisliked = movie.dislikedBy.some(user => user.id === userId);
+
+  if (like) { // Handle Like action
+    if (isLiked) {
+      // User is un-liking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          likedBy: { disconnect: { id: userId } },
+        },
+      });
+    } else {
+      // User is liking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          likedBy: { connect: { id: userId } },
+          dislikedBy: { disconnect: isDisliked ? { id: userId } : undefined }, // Remove from dislikes if it was disliked
+        },
+      });
+    }
+  } else { // Handle Dislike action
+    if (isDisliked) {
+      // User is un-disliking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          dislikedBy: { disconnect: { id: userId } },
+        },
+      });
+    } else {
+      // User is disliking
+      await prisma.movie.update({
+        where: { id: movieId },
+        data: {
+          dislikedBy: { connect: { id: userId } },
+          likedBy: { disconnect: isLiked ? { id: userId } : undefined }, // Remove from likes if it was liked
+        },
+      });
+    }
+  }
+
+  revalidatePath(`/movies/${movieId}`);
 }

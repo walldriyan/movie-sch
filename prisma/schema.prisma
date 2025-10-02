@@ -10,26 +10,75 @@ datasource db {
   url      = "file:./dev.db"
 }
 
+model Movie {
+  id                    Int      @id @default(autoincrement())
+  title                 String
+  description           String
+  posterUrl             String?
+  year                  Int
+  duration              String
+  genres                String
+  imdbRating            Float
+  rottenTomatoesRating  Int?
+  googleRating          Int?
+  directors             String?
+  mainCast              String?
+  status                String?  @default("DRAFT")
+  viewCount             Int      @default(0)
+  author                User     @relation(fields: [authorId], references: [id])
+  authorId              String
+  reviews               Review[]
+  subtitles             Subtitle[]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  likedBy               User[]   @relation("UserLikes")
+  dislikedBy            User[]   @relation("UserDislikes")
+}
+
+model Subtitle {
+  id           Int    @id @default(autoincrement())
+  language     String
+  uploaderName String
+  downloadUrl  String
+  movie        Movie  @relation(fields: [movieId], references: [id])
+  movieId      Int
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  movie     Movie    @relation(fields: [movieId], references: [id])
+  movieId   Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    String
+}
+
+// NextAuth models
 model User {
-  id                        String    @id @default(cuid())
-  name                      String?
-  email                     String?   @unique
-  emailVerified             DateTime?
-  image                     String?
-  password                  String?
-  role                      String    @default("USER")
-  permissionRequestStatus   String?   @default("NONE")
-  permissionRequestMessage  String?
-  bio                       String?
-  website                   String?
-  twitter                   String?
-  linkedin                  String?
-  createdAt                 DateTime  @default(now())
-  updatedAt                 DateTime  @updatedAt
-  accounts                  Account[]
-  sessions                  Session[]
-  movies                    Movie[]
-  reviews                   Review[]
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String?   @unique
+  emailVerified           DateTime?
+  password                String?
+  image                   String?
+  accounts                Account[]
+  sessions                Session[]
+  role                    String    @default("USER")
+  permissions             String? // This could be a JSON string of permissions
+  bio                     String?
+  website                 String?
+  twitter                 String?
+  linkedin                String?
+  permissionRequestStatus String?   @default("NONE") // PENDING, APPROVED, REJECTED
+  permissionRequestMessage String?
+
+  // App-specific relations
+  movies                  Movie[]
+  reviews                 Review[]
+  likedMovies             Movie[]   @relation("UserLikes")
+  dislikedMovies          Movie[]   @relation("UserDislikes")
 }
 
 model Account {
@@ -45,8 +94,7 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -65,49 +113,4 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
-}
-
-model Movie {
-  id                   Int       @id @default(autoincrement())
-  title                String
-  description          String
-  posterUrl            String?
-  year                 Int
-  duration             String
-  genres               String? // Stored as a JSON string
-  directors            String?
-  mainCast             String?
-  imdbRating           Float
-  rottenTomatoesRating Int?
-  googleRating         Int?
-  status               String?
-  viewCount            Int       @default(0)
-  likes                Int       @default(0)
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  authorId             String
-  author               User      @relation(fields: [authorId], references: [id])
-  reviews              Review[]
-  subtitles            Subtitle[]
-}
-
-model Review {
-  id        String   @id @default(cuid())
-  rating    Int
-  comment   String
-  createdAt DateTime @default(now())
-  movieId   Int
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
-}
-
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  uploaderName String
-  downloadUrl  String
-  createdAt    DateTime @default(now())
-  movieId      Int
-  movie        Movie    @relation(fields: [movieId], references: [id])
 }

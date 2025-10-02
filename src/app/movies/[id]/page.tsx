@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { getMovie } from '@/lib/actions';
-import type { Movie, Review, Subtitle } from '@/lib/types';
+import type { Movie, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -17,9 +17,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User, Video, Star } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, ThumbsUp, Heart } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { auth } from '@/auth';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -42,6 +44,30 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: stri
   </div>
 );
 
+const LikedByAvatars = ({ users }: { users: User[] }) => {
+  const displayedUsers = users.slice(0, 5);
+
+  if (users.length === 0) {
+    return <p className="text-sm text-muted-foreground">Be the first to like this.</p>;
+  }
+
+  return (
+    <div className="flex items-center gap-2">
+       <div className="flex -space-x-2 overflow-hidden">
+        {displayedUsers.map((user, index) => (
+            <Avatar key={user.id} className="h-6 w-6 border-2 border-background">
+              <AvatarImage src={user.image || ''} alt={user.name || 'User'} />
+              <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+        ))}
+      </div>
+      <p className="text-sm text-muted-foreground">
+        {users.length > 5 ? `+${users.length - 5} more` : ''}
+      </p>
+    </div>
+  );
+};
+
 
 export default async function MoviePage({
   params,
@@ -54,6 +80,8 @@ export default async function MoviePage({
   }
 
   const movie = (await getMovie(movieId)) as Movie | null;
+  const session = await auth();
+  const currentUser = session?.user;
 
   if (!movie) {
     notFound();
@@ -63,9 +91,9 @@ export default async function MoviePage({
     <div className="min-h-screen w-full bg-background">
       <main className="max-w-6xl mx-auto pb-8">
         <article>
-          <MovieDetailClient movie={movie}>
+          <MovieDetailClient movie={movie} currentUser={currentUser}>
             <TabsContent value="about">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-12 px-4 md:px-0">
                  <div className="md:col-span-3">
                     <div
                       className="prose prose-invert max-w-none text-foreground/80"
@@ -89,7 +117,7 @@ export default async function MoviePage({
                         <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={movie.year} />
                         <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={movie.duration} />
                         <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={movie.directors || 'N/A'} />
-                        <DetailItem icon={<User className="h-5 w-5" />} label="Main Cast" value={movie.mainCast || 'N/A'} />
+                        <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={movie.mainCast || 'N/A'} />
                         
                         <Separator />
                         
@@ -108,6 +136,15 @@ export default async function MoviePage({
                                 <span>{movie.googleRating || 'N/A'}%</span>
                             </div>
                         </div>
+
+                        <Separator />
+
+                        <h4 className="font-semibold pt-2">Site Likes</h4>
+                         <div className="flex items-center gap-2 text-foreground">
+                            <Heart className="h-5 w-5 text-red-500 fill-red-500"/>
+                            <span className="font-bold">{movie.likedBy.length}</span>
+                        </div>
+                        <LikedByAvatars users={movie.likedBy} />
 
                       </CardContent>
                     </Card>

@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useTransition } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -19,16 +19,22 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { Movie } from '@/lib/types';
+import type { Movie, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { toggleLikeMovie } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 export default function MovieDetailClient({
   movie,
+  currentUser,
   children,
 }: {
   movie: Movie;
+  currentUser?: User;
   children: React.ReactNode;
 }) {
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('about');
   const heroImage =
     movie.posterUrl
@@ -42,6 +48,29 @@ export default function MovieDetailClient({
     'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2';
   const activeTabButtonStyle = 'text-primary font-semibold border-primary';
   const inactiveTabButtonStyle = 'border-transparent';
+  
+  const handleLike = (like: boolean) => {
+    if (!currentUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication required',
+        description: 'You must be logged in to like or dislike a movie.',
+      });
+      return;
+    }
+    startTransition(() => {
+      toggleLikeMovie(movie.id, like).catch((err) => {
+        toast({
+          variant: 'destructive',
+          title: 'An error occurred',
+          description: err.message,
+        });
+      });
+    });
+  };
+  
+  const isLiked = currentUser && movie.likedBy.some(user => user.id === currentUser.id);
+  const isDisliked = currentUser && movie.dislikedBy.some(user => user.id === currentUser.id);
 
   return (
     <>
@@ -61,8 +90,8 @@ export default function MovieDetailClient({
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
             {movie.genres.map((genre: string) => (
             <Button key={genre} variant="outline" size="sm" className="rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20">
+                <Tag className="mr-2 h-4 w-4" />
                 {genre}
-                <Tag className="ml-2 h-4 w-4" />
             </Button>
             ))}
         </div>
@@ -146,11 +175,11 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2">
-               <Button variant="ghost" size="icon">
-                <ThumbsUp className="w-5 h-5" />
+               <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={isPending}>
+                <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
               </Button>
-               <Button variant="ghost" size="icon">
-                <ThumbsDown className="w-5 h-5" />
+               <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
+                <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
               </Button>
               <Button variant="ghost" size="icon">
                 <Bookmark className="w-5 h-5" />
