@@ -96,7 +96,7 @@ export default function MovieDetailClient({
             ))}
         </div>
 
-        <div className="relative z-10 text-foreground flex flex-col items-start text-left px-4 md:px-8 pb-0 w-full">
+        <div className="relative z-10 text-foreground flex flex-col items-start text-left pb-0 w-full px-0">
           <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
             {movie.title}
           </h1>

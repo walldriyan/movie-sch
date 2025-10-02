@@ -89,11 +89,11 @@ export default async function MoviePage({
 
   return (
     <div className="min-h-screen w-full bg-background">
-      <main className="max-w-6xl mx-auto pb-8">
+      <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
           <MovieDetailClient movie={movie} currentUser={currentUser}>
             <TabsContent value="about">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-12 px-4 md:px-0">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                  <div className="md:col-span-3">
                     <div
                       className="prose prose-invert max-w-none text-foreground/80"
@@ -153,7 +153,7 @@ export default async function MoviePage({
               </div>
             </TabsContent>
             <TabsContent value="reviews">
-              <section id="reviews" className="my-12 px-4 md:px-0">
+              <section id="reviews" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
                   Responses ({movie.reviews.length})
                 </h2>
@@ -173,7 +173,7 @@ export default async function MoviePage({
               </section>
             </TabsContent>
             <TabsContent value="subtitles">
-              <section id="subtitles" className="my-12 px-4 md:px-0">
+              <section id="subtitles" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
                   Subtitles
                 </h2>
