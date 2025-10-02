@@ -1,44 +1,74 @@
+'use client';
 
-
+import { useState, useEffect, useTransition } from 'react';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, TrendingUp, Calendar, ArrowRight } from 'lucide-react';
+import { Film, Globe, Star, Tv, TrendingUp, Calendar, SlidersHorizontal, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
 import type { Movie } from '@/lib/types';
-import { auth } from '@/auth';
 import { Separator } from '@/components/ui/separator';
+import AdvancedFilterDialog from '@/components/advanced-filter-dialog';
+import type { FilterState } from '@/components/advanced-filter-dialog';
 
-export default async function HomePage() {
-  const session = await auth();
-  const { movies: allMovies } = await getMovies();
+export default function HomePage() {
+  const [movies, setMovies] = useState<Movie[]>([]);
+  const [isPending, startTransition] = useTransition();
+  const [filters, setFilters] = useState<FilterState>({
+    sortBy: 'updatedAt-desc',
+    genres: [],
+    yearRange: [1980, new Date().getFullYear()],
+    ratingRange: [0, 10],
+  });
 
-  if (allMovies.length === 0) {
+  useEffect(() => {
+    startTransition(async () => {
+      const { movies: fetchedMovies } = await getMovies({ filters });
+      setMovies(fetchedMovies as any);
+    });
+  }, [filters]);
+  
+  const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
+
+  if (isPending && movies.length === 0) {
+    return (
+      <div className="w-full bg-background text-foreground">
+        <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
+          <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </main>
+      </div>
+    );
+  }
+  
+  if (movies.length === 0 && !isPending) {
     return (
       <div className="w-full bg-background text-foreground">
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
           <div className="max-w-md">
             <h1 className="font-serif text-4xl font-bold">
-              Your Catalog is Empty
+              No Movies Found
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Start by adding your favorite movies to build your personal
-              CineVerse.
+              No movies match your current filter criteria. Try adjusting your filters.
             </p>
-            {session?.user?.role === 'SUPER_ADMIN' && (
-              <Button asChild className="mt-6" size="lg">
-                <Link href="/manage">Add Your First Movie</Link>
-              </Button>
-            )}
+             <AdvancedFilterDialog 
+                allGenres={['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Thriller', 'Romance', 'Animation']}
+                currentFilters={filters}
+                onApplyFilters={setFilters}
+                triggerButton={
+                  <Button className="mt-6" size="lg">
+                    <SlidersHorizontal className="mr-2 h-5 w-5" />
+                    Adjust Filters
+                  </Button>
+                }
+              />
           </div>
         </main>
       </div>
     );
   }
-
-  const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -75,14 +105,21 @@ export default async function HomePage() {
                     New Releases
                 </Button>
             </div>
-             <Button variant="link" size="sm" className="rounded-full text-muted-foreground">
-                <span>View All</span>
-                <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
+             <AdvancedFilterDialog 
+                allGenres={['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Thriller', 'Romance', 'Animation']}
+                currentFilters={filters}
+                onApplyFilters={setFilters}
+                triggerButton={
+                    <Button variant="link" size="sm" className="rounded-full text-muted-foreground">
+                        <SlidersHorizontal className="mr-2 h-4 w-4" />
+                        <span>Advanced Filters</span>
+                    </Button>
+                }
+             />
         </div>
         
-        <div className="space-y-12">
-          {allMovies.map((movie) => {
+        <div className={`space-y-12 transition-opacity ${isPending ? 'opacity-50' : 'opacity-100'}`}>
+          {movies.map((movie) => {
             const movieImageUrl =
               movie.posterUrl ||
               PlaceHolderImages.find(
@@ -112,7 +149,7 @@ export default async function HomePage() {
                       {movie.author.name}
                     </span>
                   </Link>
-                  <span className="text-muted-foreground">{movie.year}</span>
+                  <span className="text-muted-foreground">{new Date(movie.updatedAt).toLocaleDateString()}</span>
                 </div>
 
                 <div className="grid grid-cols-12 gap-8">

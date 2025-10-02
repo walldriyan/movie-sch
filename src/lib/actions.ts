@@ -142,19 +142,55 @@ export async function registerUser(
 }
 
 
-export async function getMovies(options: { page?: number; limit?: number } = {}) {
-    const { page = 1, limit = 10 } = options;
+export async function getMovies(options: { page?: number; limit?: number, filters?: any } = {}) {
+    const { page = 1, limit = 10, filters } = options;
     const skip = (page - 1) * limit;
 
-    const whereClause: Prisma.MovieWhereInput = {
+    let whereClause: Prisma.MovieWhereInput = {
       status: MovieStatus.PUBLISHED
     };
+    
+    let orderBy: Prisma.MovieOrderByWithRelationInput = { updatedAt: 'desc' };
+
+    if (filters) {
+      const { sortBy, genres, yearRange, ratingRange } = filters;
+      
+      if (sortBy) {
+        const [field, direction] = sortBy.split('-');
+        if (['updatedAt', 'imdbRating'].includes(field) && ['asc', 'desc'].includes(direction)) {
+          orderBy = { [field]: direction };
+        }
+      }
+
+      if (genres && genres.length > 0) {
+        whereClause.AND = (whereClause.AND || [] as any).concat({
+          OR: genres.map((genre: string) => ({
+             genres: { contains: `"${genre}"`}
+          })),
+        });
+      }
+
+      if (yearRange) {
+        whereClause.year = {
+          gte: yearRange[0],
+          lte: yearRange[1],
+        };
+      }
+      
+      if (ratingRange) {
+        whereClause.imdbRating = {
+          gte: ratingRange[0],
+          lte: ratingRange[1],
+        };
+      }
+    }
+
 
     const movies = await prisma.movie.findMany({
         where: whereClause,
         skip: skip,
         take: limit,
-        orderBy: { updatedAt: 'desc' },
+        orderBy,
         include: {
             author: true,
         },
@@ -203,6 +239,7 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
   }
+  const userId = session.user.id;
 
   // Handle image upload
   let finalPosterUrl = movieData.posterUrl;
@@ -240,12 +277,12 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     
     await prisma.movie.update({ 
         where: { id }, 
-        data: { ...data, status } as any
+        data: { ...data, status: status } as any
     });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.movie.create({ data: { ...data, status, authorId: session.user.id } as any });
+    await prisma.movie.create({ data: { ...data, status: status, authorId: userId } as any });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
