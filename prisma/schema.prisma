@@ -1,62 +1,43 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
 generator client {
   provider = "prisma-client-js"
 }
 
-datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
-}
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER")
+  bio           String?
+  website       String?
+  twitter       String?
+  linkedin      String?
 
-model Movie {
-  id                   Int       @id @default(autoincrement())
-  title                String
-  description          String
-  posterUrl            String?
-  year                 Int
-  duration             String
-  genres               String
-  directors            String?
-  mainCast             String?
-  imdbRating           Float
-  rottenTomatoesRating Int?
-  googleRating         Int?
-  viewCount            Int       @default(0)
-  status               String?   @default("DRAFT")
-  authorId             String
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  author               User      @relation(fields: [authorId], references: [id])
-  reviews              Review[]
-  subtitles            Subtitle[]
-  likedBy              User[]    @relation("MovieLikes")
-  dislikedBy           User[]    @relation("MovieDislikes")
-  mediaLinks           String?   @default("[]")
-}
+  permissionRequestStatus  String?
+  permissionRequestMessage String?
 
-model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  comment   String
-  movieId   Int
-  userId    String
+  accounts Account[]
+  sessions Session[]
+  movies   Movie[]
+
+  likedMovies    Movie[] @relation("UserLikedMovies")
+  dislikedMovies Movie[] @relation("UserDislikedMovies")
+
+  reviews  Review[]
+  subtitles Subtitle[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  user      User     @relation(fields: [userId], references: [id])
-}
-
-model Subtitle {
-  id            Int      @id @default(autoincrement())
-  language      String
-  url           String
-  uploaderName  String
-  movieId       Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  movie         Movie    @relation(fields: [movieId], references: [id])
 }
 
 model Account {
@@ -86,32 +67,63 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id                      String    @id @default(cuid())
-  name                    String?
-  email                   String?   @unique
-  emailVerified           DateTime?
-  image                   String?
-  password                String?
-  accounts                Account[]
-  sessions                Session[]
-  movies                  Movie[]
-  reviews                 Review[]
-  role                    String    @default("USER")
-  likedMovies             Movie[]   @relation("MovieLikes")
-  dislikedMovies          Movie[]   @relation("MovieDislikes")
-  bio                     String?
-  website                 String?
-  twitter                 String?
-  linkedin                String?
-  permissionRequestStatus String?   @default("NONE") // NONE, PENDING, APPROVED, REJECTED
-  permissionRequestMessage String?
+model Movie {
+  id                   Int      @id @default(autoincrement())
+  title                String
+  description          String
+  posterUrl            String?
+  year                 Int
+  duration             String
+  genres               String?
+  imdbRating           Float
+  rottenTomatoesRating Int?
+  googleRating         Int?
+  status               String   @default("DRAFT")
+  viewCount            Int      @default(0)
+  directors            String?
+  mainCast             String?
+  mediaLinks           String?
+  
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  likedBy    User[] @relation("UserLikedMovies")
+  dislikedBy User[] @relation("UserDislikedMovies")
+
+  reviews   Review[]
+  subtitles Subtitle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
+model Review {
+  id      Int    @id @default(autoincrement())
+  comment String
+  rating  Int
 
-  @@unique([identifier, token])
+  movieId Int
+  movie   Movie @relation(fields: [movieId], references: [id])
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subtitle {
+  id           Int    @id @default(autoincrement())
+  language     String
+  filePath     String
+  uploaderName String
+
+  movieId Int
+  movie   Movie @relation(fields: [movieId], references: [id])
+
+  uploaderId String
+  uploader   User   @relation(fields: [uploaderId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
