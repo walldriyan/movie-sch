@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import type { Movie } from '@prisma/client';
+import type { Movie, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -42,18 +42,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw, Eye, ThumbsUp } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import AuthGuard from '@/components/auth/auth-guard';
 import { PERMISSIONS, MovieStatus } from '@/lib/permissions';
 import { Skeleton } from '../ui/skeleton';
+import { format } from 'date-fns';
+
+type MovieWithDetails = Movie & { author: User, _count: { likedBy: number }};
 
 interface MovieListProps {
-  movies: Movie[];
+  movies: MovieWithDetails[];
   onAddNew: () => void;
-  onEdit: (movie: Movie) => void;
+  onEdit: (movie: MovieWithDetails) => void;
   onDeleteConfirmed: (movieId: number) => void;
   onStatusChange: (movieId: number, newStatus: string) => void;
   onRefresh: () => void;
@@ -70,9 +73,9 @@ export default function MovieList({
   isRefreshing,
 }: MovieListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
-  const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
+  const [movieToDelete, setMovieToDelete] = useState<MovieWithDetails | null>(null);
 
-  const handleDeleteClick = (movie: Movie) => {
+  const handleDeleteClick = (movie: MovieWithDetails) => {
     setMovieToDelete(movie);
     setDeleteAlertOpen(true);
   };
@@ -136,8 +139,10 @@ export default function MovieList({
                   <span className="sr-only">Image</span>
                 </TableHead>
                 <TableHead>Title</TableHead>
+                <TableHead>Author</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Year</TableHead>
+                <TableHead className="hidden md:table-cell">Date</TableHead>
+                <TableHead className="text-right">Stats</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -169,7 +174,7 @@ export default function MovieList({
                         </div>
                       )}
                     </TableCell>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium max-w-xs truncate">
                       <Link
                         href={`/movies/${movie.id}`}
                         className="hover:underline"
@@ -177,13 +182,29 @@ export default function MovieList({
                         {movie.title}
                       </Link>
                     </TableCell>
+                     <TableCell>
+                      <div className="font-medium">{movie.author.name}</div>
+                      <div className="text-xs text-muted-foreground">{movie.author.email}</div>
+                    </TableCell>
                     <TableCell>
                       <Badge variant={getStatusVariant(movie.status)}>
                         {movie.status || 'DRAFT'}
                       </Badge>
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {movie.year}
+                       {format(new Date(movie.createdAt), 'MMM dd, yyyy')}
+                    </TableCell>
+                    <TableCell className="text-right">
+                       <div className="flex justify-end items-center gap-4">
+                          <div className="flex items-center gap-1">
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{movie.viewCount}</span>
+                          </div>
+                           <div className="flex items-center gap-1">
+                            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+                            <span className="text-sm">{movie._count.likedBy}</span>
+                          </div>
+                        </div>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -252,7 +273,7 @@ export default function MovieList({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={5} className="h-24 text-center">
+                  <TableCell colSpan={7} className="h-24 text-center">
                     No movies found. Add one to get started.
                   </TableCell>
                 </TableRow>

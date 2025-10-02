@@ -59,13 +59,20 @@ export default function MovieDetailClient({
       return;
     }
     startTransition(() => {
-      toggleLikeMovie(movie.id, like).catch((err) => {
-        toast({
-          variant: 'destructive',
-          title: 'An error occurred',
-          description: err.message,
+      toggleLikeMovie(movie.id, like)
+        .then(() => {
+          toast({
+            title: 'Success',
+            description: `Your preference has been updated.`,
+          });
+        })
+        .catch((err) => {
+          toast({
+            variant: 'destructive',
+            title: 'An error occurred',
+            description: err.message,
+          });
         });
-      });
     });
   };
   
