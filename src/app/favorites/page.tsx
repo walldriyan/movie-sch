@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Star, CalendarDays, Clock } from 'lucide-react';
+import { Film, Star, CalendarDays, Clock, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getFavoriteMovies } from '@/lib/actions';

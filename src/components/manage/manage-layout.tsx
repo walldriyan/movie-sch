@@ -76,9 +76,11 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
               </SidebarMenuItem>
             </AuthGuard>
             <SidebarMenuItem>
-              <SidebarMenuButton className="text-base">
-                <Bookmark />
-                <span>Favorites</span>
+              <SidebarMenuButton asChild className="text-base">
+                <Link href="/favorites">
+                    <Bookmark />
+                    <span>Favorites</span>
+                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>

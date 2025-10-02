@@ -1,6 +1,6 @@
 'use server';
 
-import { Film, LayoutGrid, LogIn, User, Users } from 'lucide-react';
+import { Film, LayoutGrid, LogIn, User, Users, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
@@ -95,6 +95,12 @@ export default async function Header({
             <Link href={`/profile/${user.id}`}>
               <User className="mr-2 h-4 w-4" />
               <span>Profile</span>
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href="/favorites">
+              <Bookmark className="mr-2 h-4 w-4" />
+              <span>My Favorites</span>
             </Link>
           </DropdownMenuItem>
           {canManage && (

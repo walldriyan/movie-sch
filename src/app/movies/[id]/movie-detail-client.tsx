@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Movie, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { toggleLikeMovie } from '@/lib/actions';
+import { toggleLikeMovie, toggleFavoriteMovie } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MovieDetailClient({
@@ -37,6 +37,7 @@ export default function MovieDetailClient({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isFavoritePending, startFavoriteTransition] = useTransition();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('about');
   const heroImage =
@@ -78,13 +79,42 @@ export default function MovieDetailClient({
         });
     });
   };
+
+  const handleFavorite = () => {
+    if (!currentUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication required',
+        description: 'You must be logged in to add a movie to favorites.',
+      });
+      return;
+    }
+    startFavoriteTransition(() => {
+      toggleFavoriteMovie(movie.id)
+        .then(() => {
+          toast({
+            title: 'Favorites Updated',
+            description: `Movie has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`,
+          });
+        })
+        .catch((err) => {
+          toast({
+            variant: 'destructive',
+            title: 'An error occurred',
+            description: err.message,
+          });
+        });
+    });
+  };
   
   const isLiked = currentUser && movie.likedBy.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && movie.dislikedBy.some(user => user.id === currentUser.id);
+  const isFavorited = movie.favoritedBy && movie.favoritedBy.length > 0;
+
 
   return (
     <>
-      <header className="relative h-[500px] rounded-2xl overflow-hidden flex items-end">
+      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end -mx-8 px-8">
         {heroImage && (
           <Image
             src={heroImage}
@@ -201,8 +231,8 @@ export default function MovieDetailClient({
                <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
                 <ThumbsDown className={cn("w-6 h-6", isDisliked && "text-destructive fill-destructive")} />
               </Button>
-              <Button variant="ghost" size="icon">
-                <Bookmark className="w-5 h-5" />
+              <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={isFavoritePending}>
+                 <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
               </Button>
               <Separator orientation="vertical" className="h-6 mx-2" />
               <Button variant="ghost" size="icon">

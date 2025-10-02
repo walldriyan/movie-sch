@@ -5,7 +5,7 @@
 // A future refactor could involve using tools like 'zod-prisma' to generate
 // Zod schemas from the Prisma schema, and inferring types from those.
 
-import type { Movie as PrismaMovie, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser } from "@prisma/client";
+import type { Movie as PrismaMovie, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoriteMovie as PrismaFavoriteMovie } from "@prisma/client";
 
 export type User = PrismaUser;
 
@@ -29,8 +29,9 @@ export type Movie = Omit<PrismaMovie, 'genres' | 'mediaLinks'> & {
   author: User;
   likedBy: User[];
   dislikedBy: User[];
+  favoritedBy?: PrismaFavoriteMovie[];
 };
 
-export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'likedBy' | 'dislikedBy' | 'mediaLinks'> & {
+export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'likedBy' | 'dislikedBy' | 'mediaLinks' | 'favoritedBy'> & {
   mediaLinks?: MediaLink[];
 };

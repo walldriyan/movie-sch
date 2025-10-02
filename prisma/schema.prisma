@@ -1,43 +1,100 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+generator client {
+  provider = "prisma-client-js"
+}
+
 datasource db {
   provider = "sqlite"
   url      = "file:./dev.db"
 }
 
-generator client {
-  provider = "prisma-client-js"
-}
-
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String    @default("USER")
-  bio           String?
-  website       String?
-  twitter       String?
-  linkedin      String?
-
-  permissionRequestStatus  String?
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String?   @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String?
+  role                    String    @default("USER")
+  bio                     String?   @db.Text
+  website                 String?
+  twitter                 String?
+  linkedin                String?
+  permissionRequestStatus String?
   permissionRequestMessage String?
 
   accounts Account[]
   sessions Session[]
   movies   Movie[]
 
-  likedMovies    Movie[] @relation("UserLikedMovies")
-  dislikedMovies Movie[] @relation("UserDislikedMovies")
-
-  reviews  Review[]
-  subtitles Subtitle[]
+  likedMovies     Movie[] @relation("UserLikes")
+  dislikedMovies  Movie[] @relation("UserDislikes")
+  favoriteMovies  FavoriteMovie[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+}
+
+model Movie {
+  id                   Int      @id @default(autoincrement())
+  title                String
+  description          String   @db.Text
+  posterUrl            String?
+  year                 Int
+  duration             String
+  genres               String?
+  imdbRating           Float
+  rottenTomatoesRating Int?
+  googleRating         Int?
+  status               String   @default("DRAFT")
+  viewCount            Int      @default(0)
+  directors            String?
+  mainCast             String?
+  mediaLinks           String?  @db.Text
+  authorId             String
+  author               User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  reviews   Review[]
+  subtitles Subtitle[]
+  likedBy   User[]     @relation("UserLikes")
+  dislikedBy User[]    @relation("UserDislikes")
+  favoritedBy FavoriteMovie[]
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  movieId   Int
+  userId    String
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Subtitle {
+  id           Int      @id @default(autoincrement())
+  language     String
+  uploaderName String
+  fileUrl      String
+  movieId      Int
+  movie        Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model FavoriteMovie {
+  userId    String
+  movieId   Int
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movie     Movie    @relation(fields: [movieId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([userId, movieId])
 }
 
 model Account {
@@ -46,12 +103,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -67,63 +124,10 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model Movie {
-  id                   Int      @id @default(autoincrement())
-  title                String
-  description          String
-  posterUrl            String?
-  year                 Int
-  duration             String
-  genres               String?
-  imdbRating           Float
-  rottenTomatoesRating Int?
-  googleRating         Int?
-  status               String   @default("DRAFT")
-  viewCount            Int      @default(0)
-  directors            String?
-  mainCast             String?
-  mediaLinks           String?
-  
-  authorId String
-  author   User   @relation(fields: [authorId], references: [id])
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
 
-  likedBy    User[] @relation("UserLikedMovies")
-  dislikedBy User[] @relation("UserDislikedMovies")
-
-  reviews   Review[]
-  subtitles Subtitle[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Review {
-  id      Int    @id @default(autoincrement())
-  comment String
-  rating  Int
-
-  movieId Int
-  movie   Movie @relation(fields: [movieId], references: [id])
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Subtitle {
-  id           Int    @id @default(autoincrement())
-  language     String
-  filePath     String
-  uploaderName String
-
-  movieId Int
-  movie   Movie @relation(fields: [movieId], references: [id])
-
-  uploaderId String
-  uploader   User   @relation(fields: [uploaderId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  @@unique([identifier, token])
 }
