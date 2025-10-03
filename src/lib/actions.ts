@@ -221,6 +221,9 @@ export async function getMovies(options: { page?: number; limit?: number, filter
 }
 
 export async function getMovie(movieId: number) {
+  const session = await auth();
+  const userId = session?.user?.id;
+
   const movie = await prisma.movie.findUnique({
     where: { id: movieId },
     include: {
@@ -233,6 +236,7 @@ export async function getMovie(movieId: number) {
       author: true,
       likedBy: true,
       dislikedBy: true,
+      favoritedBy: userId ? { where: { userId } } : false,
     },
   });
   if (!movie) return null;
@@ -555,4 +559,70 @@ export async function toggleLikeMovie(movieId: number, like: boolean) {
   }
 
   revalidatePath(`/movies/${movieId}`);
+}
+
+export async function toggleFavoriteMovie(movieId: number) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('Not authenticated');
+  }
+  const userId = session.user.id;
+
+  const existingFavorite = await prisma.favoriteMovie.findUnique({
+    where: {
+      userId_movieId: {
+        userId,
+        movieId,
+      },
+    },
+  });
+
+  if (existingFavorite) {
+    await prisma.favoriteMovie.delete({
+      where: {
+        userId_movieId: {
+          userId,
+          movieId,
+        },
+      },
+    });
+  } else {
+    await prisma.favoriteMovie.create({
+      data: {
+        userId,
+        movieId,
+      },
+    });
+  }
+
+  revalidatePath(`/movies/${movieId}`);
+  revalidatePath('/favorites');
+}
+
+export async function getFavoriteMovies() {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return [];
+  }
+  const userId = session.user.id;
+
+  const favoriteMovies = await prisma.favoriteMovie.findMany({
+    where: { userId },
+    include: {
+      movie: {
+        include: {
+          author: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return favoriteMovies.map(fav => ({
+    ...fav.movie,
+    genres: JSON.parse(fav.movie.genres || '[]'),
+    mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
+  }));
 }

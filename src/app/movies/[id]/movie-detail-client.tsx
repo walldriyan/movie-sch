@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Movie, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { toggleLikeMovie } from '@/lib/actions';
+import { toggleLikeMovie, toggleFavoriteMovie } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MovieDetailClient({
@@ -37,6 +37,7 @@ export default function MovieDetailClient({
 }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
+  const [isFavoritePending, startFavoriteTransition] = useTransition();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = React.useState('about');
   const heroImage =
@@ -48,7 +49,7 @@ export default function MovieDetailClient({
   const authorAvatarUrl = movie.author.image || PlaceHolderImages.find((img) => img.id === 'avatar-1')?.imageUrl;
 
   const tabButtonStyle =
-    'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2';
+    'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2 whitespace-nowrap';
   const activeTabButtonStyle = 'text-primary font-semibold border-primary';
   const inactiveTabButtonStyle = 'border-transparent';
   
@@ -78,19 +79,48 @@ export default function MovieDetailClient({
         });
     });
   };
+
+  const handleFavorite = () => {
+    if (!currentUser) {
+      toast({
+        variant: 'destructive',
+        title: 'Authentication required',
+        description: 'You must be logged in to add a movie to favorites.',
+      });
+      return;
+    }
+    startFavoriteTransition(() => {
+      toggleFavoriteMovie(movie.id)
+        .then(() => {
+          toast({
+            title: 'Favorites Updated',
+            description: `Movie has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`,
+          });
+        })
+        .catch((err) => {
+          toast({
+            variant: 'destructive',
+            title: 'An error occurred',
+            description: err.message,
+          });
+        });
+    });
+  };
   
   const isLiked = currentUser && movie.likedBy.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && movie.dislikedBy.some(user => user.id === currentUser.id);
+  const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
+
 
   return (
     <>
-      <header className="relative h-[500px] rounded-2xl overflow-hidden flex items-end">
+      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end">
         {heroImage && (
           <Image
             src={heroImage}
             alt={`Poster for ${movie.title}`}
             fill
-            className="object-cover"
+            className="object-cover rounded-2xl"
             priority
           />
         )}
@@ -116,8 +146,8 @@ export default function MovieDetailClient({
             ))}
         </div>
 
-        <div className="relative z-10 text-foreground flex flex-col items-start text-left pb-0 w-full px-0">
-          <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
+        <div className="relative z-10 text-foreground flex flex-col items-start text-left pb-0 w-full pr-8">
+          <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4 text-left">
             {movie.title}
           </h1>
 
@@ -150,8 +180,8 @@ export default function MovieDetailClient({
           </div>
 
           <Separator className="my-4 bg-border/20" />
-          <div className="flex items-center justify-between py-2 text-muted-foreground w-full">
-            <div className="flex items-center gap-6">
+          <div className="flex items-center justify-between py-2 text-muted-foreground w-full overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-6 flex-shrink-0">
               <button
                 onClick={() => setActiveTab('about')}
                 className={cn(
@@ -194,15 +224,15 @@ export default function MovieDetailClient({
                 <span className="text-foreground">Subtitles</span>
               </button>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 pl-4">
                <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={isPending}>
                 <ThumbsUp className={cn("w-6 h-6", isLiked && "text-primary fill-primary")} />
               </Button>
                <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
                 <ThumbsDown className={cn("w-6 h-6", isDisliked && "text-destructive fill-destructive")} />
               </Button>
-              <Button variant="ghost" size="icon">
-                <Bookmark className="w-5 h-5" />
+              <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={isFavoritePending}>
+                 <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
               </Button>
               <Separator orientation="vertical" className="h-6 mx-2" />
               <Button variant="ghost" size="icon">
@@ -216,7 +246,7 @@ export default function MovieDetailClient({
         </div>
       </header>
 
-      <Tabs value={activeTab} className="mt-8 px-0">
+      <Tabs value={activeTab} className="mt-8">
         {children}
       </Tabs>
     </>

@@ -7,56 +7,95 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = env("DATABASE_URL")
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String?   @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String?
+  role                    String    @default("USER")
+  bio                     String?
+  website                 String?
+  twitter                 String?
+  linkedin                String?
+  permissionRequestStatus String?
+  permissionRequestMessage String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  accounts     Account[]
+  sessions     Session[]
+  movies       Movie[]
+  reviews      Review[]
+  likedMovies  Movie[]   @relation("MovieLikes")
+  dislikedMovies Movie[] @relation("MovieDislikes")
+  favoriteMovies FavoriteMovie[]
 }
 
 model Movie {
-  id                   Int       @id @default(autoincrement())
+  id                   Int      @id @default(autoincrement())
   title                String
   description          String
   posterUrl            String?
   year                 Int
   duration             String
   genres               String
-  directors            String?
-  mainCast             String?
   imdbRating           Float
   rottenTomatoesRating Int?
   googleRating         Int?
-  viewCount            Int       @default(0)
-  status               String?   @default("DRAFT")
+  status               String   @default("DRAFT")
+  viewCount            Int      @default(0)
+  directors            String?
+  mainCast             String?
+  mediaLinks           String?
   authorId             String
-  createdAt            DateTime  @default(now())
-  updatedAt            DateTime  @updatedAt
-  author               User      @relation(fields: [authorId], references: [id])
-  reviews              Review[]
-  subtitles            Subtitle[]
-  likedBy              User[]    @relation("MovieLikes")
-  dislikedBy           User[]    @relation("MovieDislikes")
-  mediaLinks           String?   @default("[]")
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  author       User          @relation(fields: [authorId], references: [id])
+  reviews      Review[]
+  subtitles    Subtitle[]
+  likedBy      User[]        @relation("MovieLikes")
+  dislikedBy   User[]        @relation("MovieDislikes")
+  favoritedBy  FavoriteMovie[]
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
-  movieId   Int
-  userId    String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   movie     Movie    @relation(fields: [movieId], references: [id])
+  movieId   Int
   user      User     @relation(fields: [userId], references: [id])
+  userId    String
 }
 
 model Subtitle {
-  id            Int      @id @default(autoincrement())
-  language      String
-  url           String
-  uploaderName  String
-  movieId       Int
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  movie         Movie    @relation(fields: [movieId], references: [id])
+  id           Int      @id @default(autoincrement())
+  language     String
+  url          String
+  uploaderName String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  movie        Movie    @relation(fields: [movieId], references: [id])
+  movieId      Int
+}
+
+model FavoriteMovie {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  movie     Movie    @relation(fields: [movieId], references: [id])
+  movieId   Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, movieId])
 }
 
 model Account {
@@ -84,28 +123,6 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
-
-model User {
-  id                      String    @id @default(cuid())
-  name                    String?
-  email                   String?   @unique
-  emailVerified           DateTime?
-  image                   String?
-  password                String?
-  accounts                Account[]
-  sessions                Session[]
-  movies                  Movie[]
-  reviews                 Review[]
-  role                    String    @default("USER")
-  likedMovies             Movie[]   @relation("MovieLikes")
-  dislikedMovies          Movie[]   @relation("MovieDislikes")
-  bio                     String?
-  website                 String?
-  twitter                 String?
-  linkedin                String?
-  permissionRequestStatus String?   @default("NONE") // NONE, PENDING, APPROVED, REJECTED
-  permissionRequestMessage String?
 }
 
 model VerificationToken {
