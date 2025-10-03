@@ -120,7 +120,7 @@ export default function MovieDetailClient({
             src={heroImage}
             alt={`Poster for ${movie.title}`}
             fill
-            className="object-cover"
+            className="object-cover rounded-2xl"
             priority
           />
         )}
@@ -147,7 +147,7 @@ export default function MovieDetailClient({
         </div>
 
         <div className="relative z-10 text-foreground flex flex-col items-start text-left pb-0 w-full px-8">
-          <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4">
+          <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4 text-left">
             {movie.title}
           </h1>
 
