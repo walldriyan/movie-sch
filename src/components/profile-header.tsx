@@ -8,12 +8,18 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { User } from '@prisma/client';
 import Link from 'next/link';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import EditProfileDialog from './edit-profile-dialog';
 
-export default function ProfileHeader({ user, currentFilter }: { user: User, currentFilter: string }) {
+export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { user: User, currentFilter: string, isOwnProfile: boolean }) {
   const coverImage = PlaceHolderImages.find(
     (img) => img.id === 'movie-poster-placeholder'
   );
   
+  const userAvatar =
+  user.image ||
+  PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
+
   return (
     <div className="sticky top-16 bg-background/95 backdrop-blur-sm z-30 -mx-4 px-4 border-b">
        <div className="relative h-48 -mx-4 -mt-8 rounded-b-2xl overflow-hidden">
@@ -29,13 +35,27 @@ export default function ProfileHeader({ user, currentFilter }: { user: User, cur
          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       </div>
       <div className="max-w-4xl mx-auto">
-        <div className="flex items-center justify-between h-16 relative z-10 -mt-8">
-          <div>
-            <h2 className="text-2xl font-bold">{user.name}</h2>
-            <p className="text-sm text-muted-foreground">1.2K Followers</p>
+        <div className="flex items-end justify-between h-16 relative z-10 -mt-20">
+          <div className="flex items-end gap-4">
+            <Avatar className="w-24 h-24 border-4 border-background">
+                {userAvatar && (
+                    <AvatarImage src={userAvatar} alt={user.name || 'User'} />
+                )}
+                <AvatarFallback>
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+            </Avatar>
+            <div>
+              <h2 className="text-2xl font-bold">{user.name}</h2>
+              <p className="text-sm text-muted-foreground">1.2K Followers</p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline">Follow</Button>
+          <div className="flex items-center gap-2 self-end pb-2">
+            {isOwnProfile ? (
+              <EditProfileDialog user={user} />
+            ) : (
+              <Button variant="outline">Follow</Button>
+            )}
             <Button variant="ghost" size="icon">
               <MoreHorizontal />
             </Button>

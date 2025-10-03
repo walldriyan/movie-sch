@@ -102,7 +102,7 @@ export default async function ProfilePage({
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <ProfileHeader user={profileUser} currentFilter={currentFilter} />
+        <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
         
         <div className="flex flex-col md:flex-row gap-12 mt-10">
           {/* Left side - Posts */}
@@ -182,17 +182,6 @@ export default async function ProfilePage({
             <div className="md:sticky top-24">
                <ScrollArea className="h-auto md:h-[calc(100vh-6rem)]">
                 <div className="space-y-6 pr-4">
-                  <div className="flex justify-between items-start">
-                    <Avatar className="w-16 h-16">
-                      {userAvatar && (
-                        <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
-                      )}
-                      <AvatarFallback>
-                        {profileUser.name?.charAt(0).toUpperCase() || 'U'}
-                      </AvatarFallback>
-                    </Avatar>
-                    {isOwnProfile && <EditProfileDialog user={profileUser} />}
-                  </div>
                   <h2 className="text-2xl font-bold">{profileUser.name}</h2>
                   {profileUser.bio && (
                     <p className="text-muted-foreground text-sm">
