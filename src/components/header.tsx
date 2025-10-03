@@ -128,8 +128,8 @@ export default async function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-transparent backdrop-blur-sm border-b border-white/10">
-      <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between gap-8">
+    <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-lg border-b border-white/10">
+      <div className="px-4 flex h-16 items-center justify-between gap-8">
         {children || (
           <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center space-x-2">
