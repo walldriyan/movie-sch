@@ -1,4 +1,5 @@
 
+
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle, VideoOff, Bookmark, Images, Users, Grid3x3 } from 'lucide-react';
@@ -103,17 +104,17 @@ export default async function ProfilePage({
         <ProfileHeader user={profileUser} />
         
         <div className="border-b mt-4">
-          <div className="flex items-center gap-1">
-             <Button asChild variant="ghost" className={cn("rounded-none border-b-2", currentFilter === 'posts' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground')}>
+          <div className="flex items-center gap-2">
+             <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full">
                 <Link href={`/profile/${profileUser.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
              </Button>
-              <Button asChild variant="ghost" className={cn("rounded-none border-b-2", currentFilter === 'favorites' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground')}>
+              <Button asChild variant={currentFilter === 'favorites' ? 'secondary' : 'ghost'} className="rounded-full">
                 <Link href={`/profile/${profileUser.id}?filter=favorites`}><Bookmark className="mr-2 h-4 w-4" /> Favorites</Link>
              </Button>
-              <Button variant="ghost" className="rounded-none border-b-2 border-transparent text-muted-foreground" disabled>
+              <Button variant="ghost" className="rounded-full" disabled>
                 <Users className="mr-2 h-4 w-4" /> Followers
              </Button>
-              <Button variant="ghost" className="rounded-none border-b-2 border-transparent text-muted-foreground" disabled>
+              <Button variant="ghost" className="rounded-full" disabled>
                 <Images className="mr-2 h-4 w-4" /> Images
              </Button>
           </div>
@@ -137,7 +138,7 @@ export default async function ProfilePage({
 
                   <div className="grid grid-cols-12 gap-8">
                     <div className="col-span-8">
-                      <Link href={`/movies/${movie.id}`} className="group block">
+                      <Link href={`/movies/${movie.id}`} className="group block mb-2">
                         <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
                             {movie.title}
                         </h2>
