@@ -68,8 +68,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
     const showRequestAccess = isOwnProfile && loggedInUser?.role === ROLES.USER && profileUser.permissionRequestStatus !== 'APPROVED';
 
     return (
-      <ScrollArea className="h-auto md:h-[calc(100vh-12rem)]">
-        <div className="space-y-6 pr-4">
+        <div className="space-y-6">
            <div className="flex justify-between items-start">
              <div>
                 <h2 className="text-2xl font-bold">{profileUser.name}</h2>
@@ -167,6 +166,5 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
             </>
           )}
         </div>
-      </ScrollArea>
     );
 }
