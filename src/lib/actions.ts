@@ -234,6 +234,8 @@ export async function getMovie(movieId: number) {
       },
       author: true,
       favoritedBy: userId ? { where: { userId } } : false,
+      likedBy: true,
+      dislikedBy: true,
     },
   });
   
@@ -629,3 +631,5 @@ export async function getFavoriteMovies() {
     mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
   }));
 }
+
+    
