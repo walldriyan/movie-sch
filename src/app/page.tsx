@@ -94,11 +94,15 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         className="object-cover transition-transform duration-300 transform group-hover:scale-105"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end p-4">
+                    <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/80 flex items-end p-4">
                        <div className="w-full transform transition-all duration-300 group-hover:translate-y-0 translate-y-8 opacity-0 group-hover:opacity-100">
                          <div className="flex items-end justify-between">
                             <div>
-                                <h3 className="text-white text-lg font-bold">{movie.title}</h3>
+                                {isLarge ? (
+                                    <h3 className="text-white text-xl font-bold">{movie.title}</h3>
+                                ) : (
+                                    <h4 className="text-white text-sm font-semibold">{movie.title}</h4>
+                                )}
                                 {(isLarge || isMedium) && (
                                     <span className="text-white/70 text-sm mt-1 line-clamp-2" >{movie.description.replace(/<[^>]*>?/gm, '')}</span>
                                 )}
@@ -119,18 +123,18 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
           <section>
             <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
-            <div className="flex flex-wrap gap-x-8 gap-y-4">
+            <div className="flex flex-wrap items-start justify-center gap-x-8 gap-y-4">
               {users.map(user => {
                  const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                 return (
-                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group gap-2">
+                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group">
                     <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
                        <AvatarFallback>
                         {user.name?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className='text-center'>
+                    <div className='text-center mt-2'>
                       <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
                       <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
                     </div>
