@@ -102,8 +102,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {movies.map((movie) => {
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {movies.map((movie, index) => {
               const movieImageUrl =
                 movie.posterUrl ||
                 PlaceHolderImages.find(
@@ -111,12 +111,15 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 )?.imageUrl;
               
               const authorAvatarUrl = movie.author?.image || authorAvatarPlaceholder?.imageUrl;
-              const postDate = new Date(movie.updatedAt);
-              const now = new Date();
-              const relativeDate = formatRelative(postDate, now);
 
               return (
-                <Card key={movie.id} className="overflow-hidden group relative flex flex-col justify-end">
+                <Card 
+                  key={movie.id} 
+                  className={cn(
+                    "overflow-hidden group relative flex flex-col justify-end min-h-[450px]",
+                    index === 0 && "lg:col-span-1 lg:row-span-2 min-h-[600px]" // Make first card taller on large screens
+                  )}
+                >
                    {movieImageUrl && (
                       <Image
                         src={movieImageUrl}
@@ -125,9 +128,9 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         className="object-cover transition-transform duration-300 group-hover:scale-105"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
                   
-                  <div className="relative p-6 text-white">
+                  <div className="relative p-6 text-white z-10">
                       <Link href={`/movies/${movie.id}`} className="block">
                         <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
                             {movie.title}
