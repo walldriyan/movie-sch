@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useTransition } from 'react';
+import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,36 +10,22 @@ import { Separator } from '@/components/ui/separator';
 import AuthGuard from '@/components/auth/auth-guard';
 import { MovieStatus, ROLES } from '@/lib/permissions';
 import type { Movie } from '@/lib/types';
-import { updateMovieStatus } from '@/lib/actions';
-import { useToast } from '@/hooks/use-toast';
+import { Button } from './ui/button';
 
 interface AdminActionsProps {
   movie: Movie;
+  handleStatusChange: (newStatus: string) => void;
+  isStatusChanging: boolean;
 }
 
-export default function AdminActions({ movie }: AdminActionsProps) {
-  const router = useRouter();
-  const { toast } = useToast();
-  const [isStatusChanging, startStatusTransition] = useTransition();
+export default function AdminActions({ movie, handleStatusChange, isStatusChanging }: AdminActionsProps) {
   const authorAvatarUrl = movie.author.image;
+  const [selectedStatus, setSelectedStatus] = useState(movie.status);
 
-  const handleStatusChange = (newStatus: string) => {
-    startStatusTransition(async () => {
-      try {
-        await updateMovieStatus(movie.id, newStatus);
-        toast({
-          title: "Status Updated",
-          description: `Movie status has been changed to ${newStatus}.`,
-        });
-        router.refresh();
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message || "Failed to update movie status.",
-        });
-      }
-    });
+  const onConfirmStatusChange = () => {
+    if (selectedStatus !== movie.status) {
+      handleStatusChange(selectedStatus);
+    }
   };
 
   return (
@@ -64,7 +49,7 @@ export default function AdminActions({ movie }: AdminActionsProps) {
               <div className="flex items-center gap-2">
                 <Select
                   defaultValue={movie.status}
-                  onValueChange={handleStatusChange}
+                  onValueChange={setSelectedStatus}
                   disabled={isStatusChanging}
                 >
                   <SelectTrigger className="w-[180px]">
@@ -76,7 +61,19 @@ export default function AdminActions({ movie }: AdminActionsProps) {
                     ))}
                   </SelectContent>
                 </Select>
-                {isStatusChanging && <Loader2 className="w-5 h-5 animate-spin text-primary" />}
+                <Button
+                    onClick={onConfirmStatusChange}
+                    disabled={isStatusChanging || selectedStatus === movie.status}
+                >
+                    {isStatusChanging ? (
+                        <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Updating...
+                        </>
+                    ) : (
+                        'Update Status'
+                    )}
+                </Button>
               </div>
             </div>
             <div>

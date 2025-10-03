@@ -163,8 +163,6 @@ export default async function MoviePage({
                     
                     <ImageGallerySection movie={movie} />
 
-                    <AdminActions movie={movie} />
-
                     <Separator className="my-12" />
                     <section id="recommendations">
                       <h2 className="font-serif text-3xl font-bold mb-8">
@@ -205,7 +203,6 @@ export default async function MoviePage({
                       </CardContent>
                     </Card>
                  </aside>
-
               </div>
             </TabsContent>
             <TabsContent value="reviews" className='px-4 md:px-0'>
@@ -288,6 +285,7 @@ export default async function MoviePage({
               </section>
             </TabsContent>
           </MovieDetailClient>
+          <AdminActions movie={movie} />
         </article>
       </main>
     </div>
