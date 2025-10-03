@@ -114,14 +114,14 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               {users.map(user => {
                  const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                 return (
-                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center gap-2 group">
+                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group">
                     <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
                        <AvatarFallback>
                         {user.name?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className='text-center'>
+                    <div className='text-center mt-2'>
                       <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
                       <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
                     </div>
