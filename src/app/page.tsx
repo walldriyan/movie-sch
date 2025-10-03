@@ -94,10 +94,10 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                       />
                     )}
                      {/* Gradient overlay from transparent to dark */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent" />
 
                     {/* Progressive blur effect */}
-                    <div className="absolute inset-0 backdrop-blur-sm mask-gradient" />
+                    <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />
                     
                     {/* Content */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
