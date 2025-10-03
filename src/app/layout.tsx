@@ -36,13 +36,13 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body
         className={cn(
-          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative overflow-x-hidden',
+          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative',
           fontSans.variable,
           fontSerif.variable,
           fontSinhala.variable
         )}
       >
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
           <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
           <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
           <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
