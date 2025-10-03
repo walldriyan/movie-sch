@@ -186,7 +186,7 @@ export default async function ProfilePage({
           </div>
 
           {/* Right side - Profile Info */}
-          <aside className="w-full md:w-1/3">
+          <aside className="w-full md:w-1/3 md:max-w-xs">
             <div className="md:sticky top-24">
                <ScrollArea className="h-auto md:h-[calc(100vh-6rem)]">
                 <div className="space-y-6 pr-4">
