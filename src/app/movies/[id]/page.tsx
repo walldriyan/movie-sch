@@ -285,12 +285,10 @@ export default async function MoviePage({
                 </div>
               </section>
             </TabsContent>
+            <AdminActions movie={movie} />
           </MovieDetailClient>
-          <AdminActions movie={movie} />
         </article>
       </main>
     </div>
   );
 }
-
-    
