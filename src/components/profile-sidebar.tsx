@@ -13,7 +13,6 @@ import type { User } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import EditProfileDialog from '@/components/edit-profile-dialog';
 import RequestAccessDialog from '@/components/request-access-dialog';
 import { ROLES } from '@/lib/permissions';
 import { ScrollArea } from './ui/scroll-area';
@@ -75,7 +74,6 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
               <h2 className="text-2xl font-bold">{profileUser.name}</h2>
               <p className="text-muted-foreground text-sm">{profileUser.email}</p>
             </div>
-            {isOwnProfile && <EditProfileDialog user={profileUser} />}
           </div>
 
           {profileUser.bio && (
