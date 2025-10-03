@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, SlidersHorizontal, Users, Play } from 'lucide-react';
+import { Film, Globe, Star, Tv, SlidersHorizontal, Users, Play, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies, getUsers } from '@/lib/actions';
@@ -12,12 +12,14 @@ import type { Movie, User } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
+import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 
 
-export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string } }) {
+export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string } }) {
   const timeFilter = searchParams?.timeFilter;
+  const currentPage = Number(searchParams?.page) || 1;
 
-  const { movies: fetchedMovies } = await getMovies({ filters: { timeFilter } });
+  const { movies: fetchedMovies, totalPages } = await getMovies({ page: currentPage, limit: 10, filters: { timeFilter } });
   const movies = fetchedMovies as any[];
   const users = (await getUsers()) as User[];
   
@@ -93,14 +95,11 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         className="object-cover rounded-xl"
                       />
                     )}
-                     {/* Gradient overlay from transparent to dark */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
-
-                    {/* Progressive blur effect */}
+                    <div className="absolute bottom-0 left-0 right-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
                     <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />
                     
-                    {/* Content */}
-                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
                       <div className="flex items-end justify-between">
                         <div>
                           {isLarge ? (
@@ -125,6 +124,42 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 );
               })}
             </div>
+
+            {totalPages > 1 && (
+              <Pagination className="mt-12">
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationPrevious 
+                      href={`/?page=${currentPage - 1}`}
+                      className={cn(
+                        "dark bg-gray-800 hover:bg-gray-700",
+                        currentPage === 1 && "pointer-events-none opacity-50"
+                      )}
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </PaginationPrevious>
+                  </PaginationItem>
+
+                  <PaginationItem>
+                    <Link href="#" className="px-4 py-2 rounded-md text-sm font-medium">
+                      All Posts
+                    </Link>
+                  </PaginationItem>
+                  
+                  <PaginationItem>
+                    <PaginationNext
+                      href={`/?page=${currentPage + 1}`}
+                      className={cn(
+                        "dark bg-gray-800 hover:bg-gray-700",
+                        currentPage === totalPages && "pointer-events-none opacity-50"
+                      )}
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </PaginationNext>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            )}
 
 
           <Separator className="my-12 bg-gray-800" />
