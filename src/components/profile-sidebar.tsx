@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import RequestAccessDialog from '@/components/request-access-dialog';
 import { ROLES } from '@/lib/permissions';
 import { ScrollArea } from './ui/scroll-area';
+import EditProfileDialog from './edit-profile-dialog';
 
 interface ProfileSidebarProps {
   profileUser: User;
@@ -69,12 +70,12 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
     return (
       <ScrollArea className="h-auto md:h-[calc(100vh-12rem)]">
         <div className="space-y-6 pr-4">
-          <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold">{profileUser.name}</h2>
-              <p className="text-muted-foreground text-sm">{profileUser.email}</p>
-            </div>
-          </div>
+           <div className="flex justify-between items-start">
+             <div>
+                <h2 className="text-2xl font-bold">{profileUser.name}</h2>
+                <p className="text-muted-foreground text-sm">{profileUser.email}</p>
+             </div>
+           </div>
 
           {profileUser.bio && (
             <p className="text-muted-foreground text-sm">
