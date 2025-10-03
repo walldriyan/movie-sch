@@ -1,18 +1,17 @@
 
 'use server';
 
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, SlidersHorizontal, Users, Play, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies, getUsers } from '@/lib/actions';
-import type { Movie, User } from '@/lib/types';
+import type { User } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
-import { Pagination, PaginationContent, PaginationItem, PaginationLink, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import MovieGrid from '@/components/movie-grid';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 
 export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string } }) {
@@ -65,65 +64,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               </Button>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 md:auto-rows-[152px] gap-4">
-              {movies.map((movie, index) => {
-                const movieImageUrl =
-                  movie.posterUrl ||
-                  PlaceHolderImages.find(
-                    (p) => p.id === 'movie-poster-placeholder'
-                  )?.imageUrl;
-                
-                const patternIndex = index % 5;
-                const isLarge = patternIndex === 0;
-                const isMedium = patternIndex === 1;
-
-                return (
-                  <Link
-                    href={`/movies/${movie.id}`}
-                    key={movie.id}
-                    className={cn(
-                      'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f]',
-                      isLarge && 'md:col-span-2 md:row-span-2',
-                      isMedium && 'md:row-span-2',
-                    )}
-                  >
-                    {movieImageUrl && (
-                      <Image
-                        src={movieImageUrl}
-                        alt={movie.title}
-                        fill
-                        className="object-cover rounded-xl"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
-                    <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />
-                    
-                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
-                      <div className="flex items-end justify-between">
-                        <div>
-                          {isLarge ? (
-                            <h3 className="text-white text-xl font-bold">
-                              {movie.title}
-                            </h3>
-                          ) : (
-                            <h4 className="text-white text-sm font-semibold">
-                              {movie.title}
-                            </h4>
-                          )}
-                          {(isLarge || isMedium) && (
-                              <span className="text-white/70 text-sm mt-1 line-clamp-2" >{movie.description.replace(/<[^>]*>?/gm, '')}</span>
-                          )}
-                        </div>
-                        <div className="ml-2 p-3 rounded-full bg-primary/80 group-hover:bg-primary transition-colors flex-shrink-0">
-                          <Play className="h-5 w-5 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
+          <MovieGrid movies={movies} />
 
             {totalPages > 1 && (
               <Pagination className="mt-12">
