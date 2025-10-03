@@ -15,7 +15,7 @@ export default function ProfileHeader({ user, currentFilter }: { user: User, cur
   );
   
   return (
-    <div className="sticky top-16 bg-background/95 backdrop-blur-sm z-30 -mx-4 px-4">
+    <div className="sticky top-16 bg-background/95 backdrop-blur-sm z-30 -mx-4 px-4 border-b">
        <div className="relative h-48 -mx-4 -mt-8 rounded-b-2xl overflow-hidden">
         {coverImage && (
             <Image
@@ -57,7 +57,6 @@ export default function ProfileHeader({ user, currentFilter }: { user: User, cur
              </Button>
           </div>
         </div>
-        <Separator />
       </div>
     </div>
   );
