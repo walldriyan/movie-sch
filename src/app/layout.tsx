@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -33,7 +34,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark overflow-x-hidden">
       <body
         className={cn(
           'min-h-screen bg-[#0a0a0a] font-sans antialiased relative',
