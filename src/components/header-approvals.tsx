@@ -91,7 +91,7 @@ export default function HeaderApprovals() {
                             </div>
                              <div className="flex items-center gap-2 mt-2">
                                 <Button asChild size="sm" variant="outline">
-                                    <Link href={`/movies/${movie.id}`} target="_blank">Read <ExternalLink className='ml-2 h-3 w-3'/></Link>
+                                    <Link href={`/movies/${movie.id}`}>Read</Link>
                                 </Button>
                                 <Button asChild size="sm" variant="secondary">
                                     <Link href="/manage">Manage</Link>
