@@ -102,7 +102,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               </div>
           </div>
           
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {movies.map((movie) => {
               const movieImageUrl =
                 movie.posterUrl ||
@@ -113,7 +113,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               const authorAvatarUrl = movie.author?.image || authorAvatarPlaceholder?.imageUrl;
 
               return (
-                <Card key={movie.id} className="group overflow-hidden">
+                <Card key={movie.id} className="group overflow-hidden rounded-2xl">
                     <CardContent className="p-4">
                         <div className="flex gap-4">
                             <div className="relative w-24 h-36 flex-shrink-0">
