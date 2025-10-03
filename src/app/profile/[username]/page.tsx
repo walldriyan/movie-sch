@@ -1,6 +1,6 @@
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle, VideoOff } from 'lucide-react';
+import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle, VideoOff, Bookmark, Images, Users, Grid3x3 } from 'lucide-react';
 import React from 'react';
 import type { User as PrismaUser } from '@prisma/client';
 import type { Movie } from '@/lib/types';
@@ -8,7 +8,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ProfileHeader from '@/components/profile-header';
-import { getMovies, getUsers } from '@/lib/actions';
+import { getMovies, getUsers, getFavoriteMoviesByUserId } from '@/lib/actions';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +17,7 @@ import EditProfileDialog from '@/components/edit-profile-dialog';
 import { Button } from '@/components/ui/button';
 import { ROLES } from '@/lib/permissions';
 import RequestAccessDialog from '@/components/request-access-dialog';
+import { cn } from '@/lib/utils';
 
 const PermissionStatusIndicator = ({ status }: { status: string | null }) => {
   if (!status || status === 'NONE') return null;
@@ -59,9 +60,16 @@ const PermissionStatusIndicator = ({ status }: { status: string | null }) => {
 };
 
 
-export default async function ProfilePage({ params }: { params: { username: string } }) {
+export default async function ProfilePage({ 
+  params,
+  searchParams,
+}: { 
+  params: { username: string },
+  searchParams: { filter?: string } 
+}) {
   const session = await auth();
   const loggedInUser = session?.user;
+  const currentFilter = searchParams.filter || 'posts';
 
   // Fetch the user whose profile is being viewed
   const allUsers = await getUsers();
@@ -73,8 +81,14 @@ export default async function ProfilePage({ params }: { params: { username: stri
 
   const isOwnProfile = loggedInUser?.id === profileUser.id;
 
-  const { movies: allMovies } = await getMovies();
-  const userMovies = allMovies.filter(movie => movie.authorId === profileUser.id);
+  let displayMovies: Movie[] = [];
+  if (currentFilter === 'posts') {
+    const { movies: allMovies } = await getMovies({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
+    displayMovies = allMovies;
+  } else if (currentFilter === 'favorites') {
+    displayMovies = await getFavoriteMoviesByUserId(profileUser.id);
+  }
+
   
   const userAvatar =
     profileUser.image ||
@@ -86,10 +100,28 @@ export default async function ProfilePage({ params }: { params: { username: stri
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 py-8">
         <ProfileHeader user={profileUser} />
+        
+        <div className="border-b mt-4">
+          <div className="flex items-center gap-1">
+             <Button asChild variant="ghost" className={cn("rounded-none border-b-2", currentFilter === 'posts' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground')}>
+                <Link href={`/profile/${profileUser.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
+             </Button>
+              <Button asChild variant="ghost" className={cn("rounded-none border-b-2", currentFilter === 'favorites' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground')}>
+                <Link href={`/profile/${profileUser.id}?filter=favorites`}><Bookmark className="mr-2 h-4 w-4" /> Favorites</Link>
+             </Button>
+              <Button variant="ghost" className="rounded-none border-b-2 border-transparent text-muted-foreground" disabled>
+                <Users className="mr-2 h-4 w-4" /> Followers
+             </Button>
+              <Button variant="ghost" className="rounded-none border-b-2 border-transparent text-muted-foreground" disabled>
+                <Images className="mr-2 h-4 w-4" /> Images
+             </Button>
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">
-            {userMovies.map((movie) => {
+            {displayMovies.map((movie: any) => {
               const movieImageUrl =
                 movie.posterUrl ||
                 PlaceHolderImages.find(
@@ -142,12 +174,18 @@ export default async function ProfilePage({ params }: { params: { username: stri
                 </article>
               );
             })}
-             {userMovies.length === 0 && (
+             {displayMovies.length === 0 && (
                 <Card className="text-center border-dashed">
                   <CardContent className="p-16 flex flex-col items-center gap-4">
                     <VideoOff className="h-16 w-16 text-muted-foreground" />
-                    <h3 className="text-lg font-semibold">No Movies Yet</h3>
-                    <p className="text-muted-foreground">{profileUser.name} hasn't posted any movies yet.</p>
+                    <h3 className="text-lg font-semibold">
+                      {currentFilter === 'posts' ? 'No Movies Yet' : 'No Favorites Yet'}
+                    </h3>
+                    <p className="text-muted-foreground">
+                      {currentFilter === 'posts' 
+                        ? `${profileUser.name} hasn't posted any movies yet.`
+                        : `No favorite movies to display.`}
+                    </p>
                   </CardContent>
                 </Card>
              )}

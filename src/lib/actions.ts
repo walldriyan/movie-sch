@@ -144,7 +144,7 @@ export async function registerUser(
 
 
 export async function getMovies(options: { page?: number; limit?: number, filters?: any } = {}) {
-    const { page = 1, limit = 10, filters } = options;
+    const { page = 1, limit = 10, filters = {} } = options;
     const skip = (page - 1) * limit;
 
     let whereClause: Prisma.MovieWhereInput = {
@@ -153,45 +153,53 @@ export async function getMovies(options: { page?: number; limit?: number, filter
     
     let orderBy: Prisma.MovieOrderByWithRelationInput = { updatedAt: 'desc' };
 
-    if (filters) {
-      const { sortBy, genres, yearRange, ratingRange, timeFilter } = filters;
-      
-      if (sortBy) {
-        const [field, direction] = sortBy.split('-');
-        if (['updatedAt', 'imdbRating'].includes(field) && ['asc', 'desc'].includes(direction)) {
-          orderBy = { [field]: direction };
-        }
+    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate } = filters;
+    
+    if (authorId) {
+      whereClause.authorId = authorId;
+      if (!includePrivate) {
+        whereClause.status = MovieStatus.PUBLISHED;
+      } else {
+        // If including private, don't filter by status unless specified
+        delete whereClause.status;
       }
+    }
+    
+    if (sortBy) {
+      const [field, direction] = sortBy.split('-');
+      if (['updatedAt', 'imdbRating'].includes(field) && ['asc', 'desc'].includes(direction)) {
+        orderBy = { [field]: direction };
+      }
+    }
 
-      if (genres && genres.length > 0) {
-        whereClause.genres = {
-          search: genres.join(' & '),
-        };
-      }
+    if (genres && genres.length > 0) {
+      whereClause.genres = {
+        search: genres.join(' & '),
+      };
+    }
 
-      if (yearRange) {
-        whereClause.year = {
-          gte: yearRange[0],
-          lte: yearRange[1],
-        };
-      }
-      
-      if (ratingRange) {
-        whereClause.imdbRating = {
-          gte: ratingRange[0],
-          lte: ratingRange[1],
-        };
-      }
+    if (yearRange) {
+      whereClause.year = {
+        gte: yearRange[0],
+        lte: yearRange[1],
+      };
+    }
+    
+    if (ratingRange) {
+      whereClause.imdbRating = {
+        gte: ratingRange[0],
+        lte: ratingRange[1],
+      };
+    }
 
-      if (timeFilter) {
-        const now = new Date();
-        if (timeFilter === 'today') {
-          whereClause.createdAt = { gte: startOfDay(now), lte: endOfDay(now) };
-        } else if (timeFilter === 'this_week') {
-          whereClause.createdAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
-        } else if (timeFilter === 'this_month') {
-          whereClause.createdAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
-        }
+    if (timeFilter) {
+      const now = new Date();
+      if (timeFilter === 'today') {
+        whereClause.createdAt = { gte: startOfDay(now), lte: endOfDay(now) };
+      } else if (timeFilter === 'this_week') {
+        whereClause.createdAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
+      } else if (timeFilter === 'this_month') {
+        whereClause.createdAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
       }
     }
 
@@ -602,6 +610,7 @@ export async function toggleFavoriteMovie(movieId: number) {
 
   revalidatePath(`/movies/${movieId}`);
   revalidatePath('/favorites');
+  revalidatePath(`/profile/${userId}`);
 }
 
 export async function getFavoriteMovies() {
@@ -611,6 +620,28 @@ export async function getFavoriteMovies() {
   }
   const userId = session.user.id;
 
+  const favoriteMovies = await prisma.favoriteMovie.findMany({
+    where: { userId },
+    include: {
+      movie: {
+        include: {
+          author: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    },
+  });
+
+  return favoriteMovies.map(fav => ({
+    ...fav.movie,
+    genres: JSON.parse(fav.movie.genres || '[]'),
+    mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
+  }));
+}
+
+export async function getFavoriteMoviesByUserId(userId: string) {
   const favoriteMovies = await prisma.favoriteMovie.findMany({
     where: { userId },
     include: {
