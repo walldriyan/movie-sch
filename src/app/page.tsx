@@ -81,7 +81,6 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                     key={movie.id}
                     className={cn(
                       'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer group bg-[#0b0d0f] transition-all duration-300',
-                      'hover:shadow-lg hover:shadow-primary/20',
                       isLarge && 'md:col-span-2 md:row-span-2',
                       isMedium && 'md:row-span-2',
                     )}
@@ -91,7 +90,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         src={movieImageUrl}
                         alt={movie.title}
                         fill
-                        className="object-cover transition-transform duration-300 transform group-hover:scale-105 blur-sm"
+                        className="object-cover transition-transform duration-300 transform blur-sm"
                       />
                     )}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end p-4">
