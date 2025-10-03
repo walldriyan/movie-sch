@@ -4,20 +4,12 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, SlidersHorizontal, CalendarClock, CalendarDays, CalendarCheck, Users, Play } from 'lucide-react';
+import { Film, Globe, Star, Tv, SlidersHorizontal, Users, Play } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies, getUsers } from '@/lib/actions';
 import type { Movie, User } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
-import type { FilterState } from '@/components/advanced-filter-dialog';
-import { format, formatRelative } from 'date-fns';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 
@@ -28,13 +20,10 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   const { movies: fetchedMovies } = await getMovies({ filters: { timeFilter } });
   const movies = fetchedMovies as any[];
   const users = (await getUsers()) as User[];
-
-  const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
+  
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
   );
-
-  const heroImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder');
   
   if (movies.length === 0) {
     return (
@@ -57,18 +46,13 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-background text-gray-200">
-        {heroImage && (
-             <div className="absolute inset-0">
-                <Image
-                    src={heroImage.imageUrl}
-                    alt="Background"
-                    fill
-                    className="object-cover blur-2xl opacity-20"
-                />
-                <div className="absolute inset-0 bg-black/70" />
-            </div>
-        )}
+    <div className="relative min-h-screen w-full bg-[#0a0a0a] text-gray-200 overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-green-900/50 filter blur-3xl opacity-20"></div>
+          <div className="absolute -bottom-48 -right-32 w-96 h-96 rounded-full bg-rose-900/50 filter blur-3xl opacity-20"></div>
+          <div className="absolute -top-48 -right-48 w-96 h-96 rounded-full bg-amber-900/50 filter blur-3xl opacity-10"></div>
+        </div>
+
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
@@ -98,7 +82,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                     href={`/movies/${movie.id}`}
                     key={movie.id}
                     className={cn(
-                      'relative block overflow-hidden rounded-xl shadow-lg cursor-pointer group',
+                      'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer group bg-[#0b0d0f] transition-all duration-300',
+                      'hover:shadow-lg hover:shadow-primary/20',
                       (index === 0 || index === 5) && 'md:col-span-2 md:row-span-2'
                     )}
                   >
@@ -121,10 +106,6 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         </div>
                       </div>
                     </div>
-                     <div
-                        className="pointer-events-none absolute inset-0 rounded-xl transition-all duration-300 group-hover:shadow-inner-glow"
-                        style={{'--glow-color': 'hsl(var(--primary))'} as React.CSSProperties}
-                    />
                   </Link>
                 );
               })}
