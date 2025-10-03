@@ -42,17 +42,17 @@ export default function ProfileHeader({ user, currentFilter }: { user: User, cur
           </div>
         </div>
         <div className="mt-4">
-          <div className="flex items-center gap-2 pb-[5px]">
-             <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full">
+          <div className="flex items-center gap-2 pb-[5px] overflow-x-auto no-scrollbar">
+             <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full whitespace-nowrap">
                 <Link href={`/profile/${user.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
              </Button>
-              <Button asChild variant={currentFilter === 'favorites' ? 'secondary' : 'ghost'} className="rounded-full">
+              <Button asChild variant={currentFilter === 'favorites' ? 'secondary' : 'ghost'} className="rounded-full whitespace-nowrap">
                 <Link href={`/profile/${user.id}?filter=favorites`}><Bookmark className="mr-2 h-4 w-4" /> Favorites</Link>
              </Button>
-              <Button variant="ghost" className="rounded-full" disabled>
+              <Button variant="ghost" className="rounded-full whitespace-nowrap" disabled>
                 <Users className="mr-2 h-4 w-4" /> Followers
              </Button>
-              <Button variant="ghost" className="rounded-full" disabled>
+              <Button variant="ghost" className="rounded-full whitespace-nowrap" disabled>
                 <Images className="mr-2 h-4 w-4" /> Images
              </Button>
           </div>
