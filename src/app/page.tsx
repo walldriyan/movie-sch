@@ -4,7 +4,7 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, SlidersHorizontal, CalendarClock, CalendarDays, CalendarCheck, Users } from 'lucide-react';
+import { Film, Globe, Star, Tv, SlidersHorizontal, CalendarClock, CalendarDays, CalendarCheck, Users, Play } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies, getUsers } from '@/lib/actions';
@@ -55,82 +55,74 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   }
 
   return (
-    <div className="w-full bg-background text-foreground">
-      <TooltipProvider>
-        <main className="max-w-6xl mx-auto px-4 py-8">
+    <div className="w-full bg-gradient-to-b from-[#091018] via-[#07121a] to-[#071014] text-gray-200">
+      <div className="absolute inset-0 pointer-events-none" aria-hidden>
+        <div className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-gradient-to-br from-blue-900/40 via-transparent to-transparent filter blur-3xl opacity-60"></div>
+        <div className="absolute -bottom-32 -right-32 w-72 h-72 rounded-full bg-gradient-to-br from-purple-900/30 via-transparent to-transparent filter blur-3xl opacity-50"></div>
+      </div>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
                   <Film />
                   <span>All</span>
               </Button>
-              <Button variant="outline" className="rounded-full">
+              <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
                   <Globe />
                   <span>International</span>
               </Button>
-              <Button variant="outline" className="rounded-full">
+              <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
                   <Tv />
                   <span>Series</span>
               </Button>
           </div>
-
-          <Separator className="mb-8" />
           
-          <div className="flex items-center justify-between mb-8 overflow-hidden">
-              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
-                  <Button asChild variant={timeFilter === 'today' ? 'secondary' : 'ghost'} size="sm" className="rounded-full whitespace-nowrap">
-                    <Link href="/?timeFilter=today">
-                      <CalendarClock className="mr-2 h-4 w-4" />
-                      Today
-                    </Link>
-                  </Button>
-                  <Button asChild variant={timeFilter === 'this_week' ? 'secondary' : 'ghost'} size="sm" className="rounded-full whitespace-nowrap">
-                    <Link href="/?timeFilter=this_week">
-                      <CalendarDays className="mr-2 h-4 w-4" />
-                      This Week
-                    </Link>
-                  </Button>
-                  <Button asChild variant={timeFilter === 'this_month' ? 'secondary' : 'ghost'} size="sm" className="rounded-full whitespace-nowrap">
-                    <Link href="/?timeFilter=this_month">
-                      <CalendarCheck className="mr-2 h-4 w-4" />
-                      This Month
-                    </Link>
-                  </Button>
-                   {timeFilter && (
-                     <Button asChild variant="ghost" size="sm" className="rounded-full whitespace-nowrap text-destructive">
-                        <Link href="/">Clear</Link>
-                    </Button>
-                   )}
-              </div>
-          </div>
-          
-           <div className="columns-1 sm:columns-2 md:columns-3 gap-4">
-            {movies.map((movie) => {
-              const movieImageUrl =
-                movie.posterUrl ||
-                PlaceHolderImages.find(
-                  (p) => p.id === 'movie-poster-placeholder'
-                )?.imageUrl;
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {movies.map((movie, index) => {
+                const movieImageUrl =
+                  movie.posterUrl ||
+                  PlaceHolderImages.find(
+                    (p) => p.id === 'movie-poster-placeholder'
+                  )?.imageUrl;
 
-              return (
-                <Link href={`/movies/${movie.id}`} key={movie.id} className="block mb-4 relative overflow-hidden rounded-2xl shadow-lg cursor-pointer group">
-                  {movieImageUrl && (
+                return (
+                  <Link
+                    href={`/movies/${movie.id}`}
+                    key={movie.id}
+                    className={cn(
+                      'relative block overflow-hidden rounded-xl shadow-lg cursor-pointer group',
+                      (index === 0 || index === 5) && 'md:col-span-2 md:row-span-2'
+                    )}
+                  >
+                    {movieImageUrl && (
                       <Image
-                          src={movieImageUrl}
-                          alt={movie.title}
-                          width={500}
-                          height={750}
-                          className="w-full rounded-2xl transition-transform duration-300 transform group-hover:scale-105"
+                        src={movieImageUrl}
+                        alt={movie.title}
+                        width={500}
+                        height={750}
+                        className="w-full h-full object-cover transition-transform duration-300 transform group-hover:scale-105"
                       />
-                  )}
-                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xl font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {movie.title}
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                      <div className="w-full">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-white text-sm font-semibold">{movie.title}</h3>
+                          <div className="ml-2 p-2 rounded-full bg-primary/80 group-hover:bg-primary transition-colors">
+                            <Play className="h-4 w-4 text-white" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                     <div
+                        className="pointer-events-none absolute inset-0 rounded-xl transition-all duration-300 group-hover:shadow-inner-glow"
+                        style={{'--glow-color': 'hsl(var(--primary))'} as React.CSSProperties}
+                    />
+                  </Link>
+                );
+              })}
+            </div>
 
-          <Separator className="my-12" />
+
+          <Separator className="my-12 bg-gray-800" />
 
           <section>
             <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
@@ -139,7 +131,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                  const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                 return (
                   <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center gap-3 group">
-                    <Avatar className="w-24 h-24 text-4xl">
+                    <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
                        <AvatarFallback>
                         {user.name?.charAt(0).toUpperCase() || 'U'}
@@ -156,7 +148,6 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
           </section>
 
         </main>
-      </TooltipProvider>
     </div>
   );
 }
