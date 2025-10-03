@@ -31,6 +31,7 @@ import type { User } from '@prisma/client';
 import { Pencil, User as UserIcon, Upload } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import Image from 'next/image';
+import { ScrollArea } from './ui/scroll-area';
 
 const MAX_FILE_SIZE = 1048576; // 1 MB
 
@@ -136,7 +137,7 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
           <Pencil className="mr-2 h-4 w-4" /> Edit Profile
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md h-[80svh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Edit profile</DialogTitle>
           <DialogDescription>
@@ -144,124 +145,128 @@ export default function EditProfileDialog({ user }: EditProfileDialogProps) {
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-            <FormField
-              control={form.control}
-              name="name"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Name</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Your Name" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormItem>
-              <FormLabel>Avatar</FormLabel>
-              <div className="flex items-center gap-4">
-                <Avatar className="w-16 h-16">
-                  {previewImage ? (
-                    <AvatarImage src={previewImage} alt={user.name || 'User'} />
-                  ) : (
-                    <UserIcon className="w-8 h-8 text-muted-foreground" />
+          <form onSubmit={form.handleSubmit(onSubmit)} className="flex-grow overflow-hidden flex flex-col">
+            <ScrollArea className="flex-grow pr-6 -mr-6">
+              <div className="space-y-4 py-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Your Name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
                   )}
-                  <AvatarFallback>
-                    {user.name?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
+                />
                 
-                <div className="flex-grow">
-                   <Input
-                      id="picture-url"
-                      placeholder='Paste image URL'
-                      defaultValue={user.image || ''}
-                      onChange={(e) => {
-                          form.setValue('image', e.target.value);
-                          setPreviewImage(e.target.value);
-                          setImageFile(null);
-                      }}
-                    />
-                    <p className="text-xs text-muted-foreground text-center my-2">OR</p>
-                    <Button asChild variant="outline" className='w-full'>
-                        <label htmlFor="picture-file" className="cursor-pointer">
-                            <Upload className="mr-2 h-4 w-4" />
-                            Upload Image
-                        </label>
-                    </Button>
-                    <input
-                        id="picture-file"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => handleImageChange(e)}
-                    />
-                </div>
+                <FormItem>
+                  <FormLabel>Avatar</FormLabel>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="w-16 h-16">
+                      {previewImage ? (
+                        <AvatarImage src={previewImage} alt={user.name || 'User'} />
+                      ) : (
+                        <UserIcon className="w-8 h-8 text-muted-foreground" />
+                      )}
+                      <AvatarFallback>
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    
+                    <div className="flex-grow">
+                      <Input
+                          id="picture-url"
+                          placeholder='Paste image URL'
+                          defaultValue={user.image || ''}
+                          onChange={(e) => {
+                              form.setValue('image', e.target.value);
+                              setPreviewImage(e.target.value);
+                              setImageFile(null);
+                          }}
+                        />
+                        <p className="text-xs text-muted-foreground text-center my-2">OR</p>
+                        <Button asChild variant="outline" className='w-full'>
+                            <label htmlFor="picture-file" className="cursor-pointer">
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload Image
+                            </label>
+                        </Button>
+                        <input
+                            id="picture-file"
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => handleImageChange(e)}
+                        />
+                    </div>
 
+                  </div>
+                  <FormMessage>{form.formState.errors.image?.message}</FormMessage>
+                </FormItem>
+
+                <FormField
+                  control={form.control}
+                  name="bio"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bio</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Tell us a little bit about yourself"
+                          className="resize-none"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="website"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Website</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://your-website.com" {...field} value={field.value || ''}/>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="twitter"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Twitter URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://twitter.com/your-handle" {...field} value={field.value || ''}/>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="linkedin"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>LinkedIn URL</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://linkedin.com/in/your-profile" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-               <FormMessage>{form.formState.errors.image?.message}</FormMessage>
-            </FormItem>
-
-            <FormField
-              control={form.control}
-              name="bio"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bio</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Tell us a little bit about yourself"
-                      className="resize-none"
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <FormField
-              control={form.control}
-              name="website"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Website</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://your-website.com" {...field} value={field.value || ''}/>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="twitter"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Twitter URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://twitter.com/your-handle" {...field} value={field.value || ''}/>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="linkedin"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>LinkedIn URL</FormLabel>
-                  <FormControl>
-                    <Input placeholder="https://linkedin.com/in/your-profile" {...field} value={field.value || ''} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
+            </ScrollArea>
+            <DialogFooter className="pt-4 border-t">
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Saving...' : 'Save changes'}
               </Button>
