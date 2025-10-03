@@ -100,7 +100,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                             <div>
                                 <h3 className="text-white text-lg font-bold">{movie.title}</h3>
                                 {(isLarge || isMedium) && (
-                                    <p className="text-white/70 text-sm mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: movie.description }}></p>
+                                    <div className="text-white/70 text-sm mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: movie.description }}></div>
                                 )}
                             </div>
                             <div className="ml-2 p-3 rounded-full bg-primary/80 group-hover:bg-primary transition-colors flex-shrink-0">
