@@ -118,11 +118,11 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
           {isOwnProfile && loggedInUser && (
             <>
               <Separator />
-              <Card className='border-0 shadow-none -mx-6 bg-transparent'>
-                <CardHeader className='px-6'>
+              <Card className='border-0 shadow-none bg-transparent'>
+                <CardHeader>
                   <CardTitle className="text-lg">My Details</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4 px-6">
+                <CardContent className="space-y-4">
                   <div>
                     <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
                     <div className="text-sm">
