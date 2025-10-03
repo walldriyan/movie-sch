@@ -144,7 +144,7 @@ export default async function MoviePage({
   }
 
   return (
-    <div className="min-h-screen w-full bg-background">
+    <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
           <MovieDetailClient movie={movie} currentUser={currentUser}>
