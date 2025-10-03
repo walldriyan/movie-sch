@@ -47,7 +47,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
   return (
     <div className="w-full bg-background text-foreground">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
                   <Film />
@@ -63,13 +63,17 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               </Button>
           </div>
           
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 md:auto-rows-[152px] gap-4">
               {movies.map((movie, index) => {
                 const movieImageUrl =
                   movie.posterUrl ||
                   PlaceHolderImages.find(
                     (p) => p.id === 'movie-poster-placeholder'
                   )?.imageUrl;
+                
+                const patternIndex = index % 5;
+                const isLarge = patternIndex === 0;
+                const isMedium = patternIndex === 1;
 
                 return (
                   <Link
@@ -78,25 +82,30 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                     className={cn(
                       'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer group bg-[#0b0d0f] transition-all duration-300',
                       'hover:shadow-lg hover:shadow-primary/20',
-                      (index === 0 || index === 5) && 'md:col-span-2 md:row-span-2'
+                      isLarge && 'md:col-span-2 md:row-span-2',
+                      isMedium && 'md:row-span-2',
                     )}
                   >
                     {movieImageUrl && (
                       <Image
                         src={movieImageUrl}
                         alt={movie.title}
-                        width={500}
-                        height={750}
-                        className="w-full h-full object-cover transition-transform duration-300 transform group-hover:scale-105"
+                        fill
+                        className="object-cover transition-transform duration-300 transform group-hover:scale-105"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                      <div className="w-full">
-                        <div className="flex items-center justify-between">
-                          <h3 className="text-white text-sm font-semibold">{movie.title}</h3>
-                          <div className="ml-2 p-2 rounded-full bg-primary/80 group-hover:bg-primary transition-colors">
-                            <Play className="h-4 w-4 text-white" />
-                          </div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent flex items-end p-4">
+                       <div className="w-full transform transition-all duration-300 group-hover:translate-y-0 translate-y-8 opacity-0 group-hover:opacity-100">
+                         <div className="flex items-end justify-between">
+                            <div>
+                                <h3 className="text-white text-lg font-bold">{movie.title}</h3>
+                                {(isLarge || isMedium) && (
+                                    <p className="text-white/70 text-sm mt-1 line-clamp-2" dangerouslySetInnerHTML={{ __html: movie.description }}></p>
+                                )}
+                            </div>
+                            <div className="ml-2 p-3 rounded-full bg-primary/80 group-hover:bg-primary transition-colors flex-shrink-0">
+                                <Play className="h-5 w-5 text-white" />
+                            </div>
                         </div>
                       </div>
                     </div>
