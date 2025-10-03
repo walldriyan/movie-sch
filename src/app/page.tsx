@@ -102,8 +102,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               </div>
           </div>
           
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {movies.map((movie, index) => {
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {movies.map((movie) => {
               const movieImageUrl =
                 movie.posterUrl ||
                 PlaceHolderImages.find(
@@ -113,61 +113,59 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               const authorAvatarUrl = movie.author?.image || authorAvatarPlaceholder?.imageUrl;
 
               return (
-                <Card 
-                  key={movie.id} 
-                  className={cn(
-                    "overflow-hidden group relative flex flex-col justify-end min-h-[350px]",
-                    index === 0 && "lg:col-span-1 lg:row-span-2 lg:min-h-[500px]"
-                  )}
-                >
-                   {movieImageUrl && (
-                      <Image
-                        src={movieImageUrl}
-                        alt={movie.title}
-                        fill
-                        className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent"></div>
-                  
-                  <div className="relative p-6 text-white z-10">
-                      <Link href={`/movies/${movie.id}`} className="block">
-                        <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
-                            {movie.title}
-                        </h2>
-                      </Link>
-                      <div
-                        className="prose prose-sm text-white/80 mt-2 line-clamp-2"
-                        dangerouslySetInnerHTML={{ __html: movie.description }}
-                      />
+                <Card key={movie.id} className="group overflow-hidden">
+                    <CardContent className="p-4">
+                        <div className="flex gap-4">
+                            <div className="relative w-24 h-36 flex-shrink-0">
+                                {movieImageUrl && (
+                                <Link href={`/movies/${movie.id}`}>
+                                    <Image
+                                        src={movieImageUrl}
+                                        alt={movie.title}
+                                        fill
+                                        className="object-cover rounded-md transition-transform duration-300 group-hover:scale-105"
+                                    />
+                                </Link>
+                                )}
+                            </div>
+                            <div className="flex flex-col">
+                                <Link href={`/movies/${movie.id}`} className="block mb-1">
+                                    <h2 className="font-serif text-lg font-bold leading-tight group-hover:text-primary transition-colors">
+                                        {movie.title}
+                                    </h2>
+                                </Link>
+                                <div
+                                    className="prose prose-sm text-muted-foreground mt-1 line-clamp-2"
+                                    dangerouslySetInnerHTML={{ __html: movie.description }}
+                                />
 
-                      <Separator className='my-4 bg-white/20' />
-                      
-                      <div className="flex items-center justify-between text-sm">
-                        <Link
-                          href={`/profile/${movie.author.id}`}
-                          className="flex items-center gap-3 group/author"
-                        >
-                          <Avatar className="w-8 h-8">
-                            {authorAvatarUrl && (
-                              <AvatarImage
-                                src={authorAvatarUrl}
-                                alt={movie.author.name || 'Author'}
-                                data-ai-hint="person face"
-                              />
-                            )}
-                            <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
-                          </Avatar>
-                          <span className="font-medium text-white group-hover/author:text-primary">
-                            {movie.author.name}
-                          </span>
-                        </Link>
-                         <div className="flex items-center gap-1">
-                          <Star className="w-4 h-4 text-yellow-400" />
-                          <span>{movie.imdbRating.toFixed(1)}</span>
+                                <div className="mt-auto pt-2 flex items-center justify-between text-sm">
+                                    <Link
+                                    href={`/profile/${movie.author.id}`}
+                                    className="flex items-center gap-2 group/author"
+                                    >
+                                    <Avatar className="w-6 h-6">
+                                        {authorAvatarUrl && (
+                                        <AvatarImage
+                                            src={authorAvatarUrl}
+                                            alt={movie.author.name || 'Author'}
+                                            data-ai-hint="person face"
+                                        />
+                                        )}
+                                        <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-medium text-muted-foreground group-hover/author:text-primary">
+                                        {movie.author.name}
+                                    </span>
+                                    </Link>
+                                    <div className="flex items-center gap-1 text-muted-foreground">
+                                    <Star className="w-4 h-4 text-yellow-400" />
+                                    <span>{movie.imdbRating.toFixed(1)}</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                      </div>
-                  </div>
+                    </CardContent>
                 </Card>
               );
             })}
