@@ -4,18 +4,31 @@ import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { ROLES } from '@/lib/permissions';
 import ManageMoviesClient from '@/app/manage/client';
-import { getMoviesForAdmin } from '@/lib/actions';
+import { getMoviesForAdmin, getMovie } from '@/lib/actions';
 import type { Movie } from '@prisma/client';
 import Loading from './loading';
 
-export default async function ManageMoviesPage() {
+export default async function ManageMoviesPage({ searchParams }: { searchParams?: { edit?: string } }) {
   const session = await auth();
   const user = session?.user;
 
-  // If there's no user or the user doesn't have the required role, show 404.
-  // This check now runs on the server.
   if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     notFound();
+  }
+
+  // Check if we are in edit mode
+  const editingMovieId = searchParams?.edit ? parseInt(searchParams.edit, 10) : undefined;
+  let editingMovie = null;
+
+  if (editingMovieId && !isNaN(editingMovieId)) {
+    const movieToEdit = await getMovie(editingMovieId);
+    // Basic authorization check: does the user own this movie or are they a super admin?
+    if (movieToEdit && (movieToEdit.authorId === user.id || user.role === ROLES.SUPER_ADMIN)) {
+      editingMovie = movieToEdit;
+    } else {
+       // You might want to handle this case, e.g., show an error or redirect
+       console.warn(`User ${user.id} tried to edit movie ${editingMovieId} without permission.`);
+    }
   }
 
   // Fetch initial data on the server.
@@ -32,6 +45,7 @@ export default async function ManageMoviesPage() {
       initialMovies={movies as any} 
       initialTotalPages={totalPages} 
       user={user} 
+      initialEditingMovie={editingMovie as any}
     />
   );
 }

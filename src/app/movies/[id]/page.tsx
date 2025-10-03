@@ -1,6 +1,7 @@
+
 import { notFound } from 'next/navigation';
 import { getMovie } from '@/lib/actions';
-import type { Movie, Review, Subtitle, User } from '@/lib/types';
+import type { Movie, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -17,11 +18,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, ThumbsUp, Heart, Clapperboard, Images } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { auth } from '@/auth';
+import AdminActions from '@/components/admin-actions';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -43,31 +44,6 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: stri
     </div>
   </div>
 );
-
-const LikedByAvatars = ({ users }: { users: User[] }) => {
-  const displayedUsers = users.slice(0, 5);
-
-  if (users.length === 0) {
-    return <p className="text-sm text-muted-foreground">Be the first to like this.</p>;
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-       <div className="flex -space-x-2 overflow-hidden">
-        {displayedUsers.map((user, index) => (
-            <Avatar key={user.id} className="h-7 w-7 border-2 border-background">
-              <AvatarImage src={user.image || ''} alt={user.name || 'User'} />
-              <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-        ))}
-      </div>
-      <p className="text-sm text-muted-foreground">
-        {users.length > 5 ? `+${users.length - 5} more` : ''}
-      </p>
-    </div>
-  );
-};
-
 
 const TrailerSection = ({ movie }: { movie: Movie }) => {
   const trailer = movie.mediaLinks?.find(link => link.type === 'trailer');
@@ -169,7 +145,7 @@ export default async function MoviePage({
   }
 
   return (
-    <div className="min-h-screen w-full bg-background">
+    <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
           <MovieDetailClient movie={movie} currentUser={currentUser}>
@@ -222,20 +198,9 @@ export default async function MoviePage({
                                 <span>{movie.googleRating || 'N/A'}%</span>
                             </div>
                         </div>
-
-                        <Separator />
-
-                        <h4 className="font-semibold pt-2">Site Likes</h4>
-                         <div className="flex items-center gap-2 text-foreground">
-                            <Heart className="h-5 w-5 text-red-500 fill-red-500"/>
-                            <span className="font-bold">{movie.likedBy.length}</span>
-                        </div>
-                        <LikedByAvatars users={movie.likedBy} />
-
                       </CardContent>
                     </Card>
                  </aside>
-
               </div>
             </TabsContent>
             <TabsContent value="reviews" className='px-4 md:px-0'>
@@ -318,6 +283,7 @@ export default async function MoviePage({
               </section>
             </TabsContent>
           </MovieDetailClient>
+          <AdminActions movie={movie} />
         </article>
       </main>
     </div>

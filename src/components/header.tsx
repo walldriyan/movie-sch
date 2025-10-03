@@ -19,6 +19,7 @@ import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
+import HeaderApprovals from './header-approvals';
 
 export default async function Header({
   children,
@@ -127,7 +128,7 @@ export default async function Header({
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-background/95 backdrop-blur-sm">
+    <header className="sticky top-0 z-40 w-full bg-transparent backdrop-blur-sm border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 flex h-16 items-center justify-between gap-8">
         {children || (
           <div className="flex items-center gap-4">
@@ -139,7 +140,8 @@ export default async function Header({
             </Link>
           </div>
         )}
-        <div className="flex items-center justify-end space-x-4">
+        <div className="flex items-center justify-end space-x-2">
+          <HeaderApprovals />
           {renderUserMenu()}
         </div>
       </div>

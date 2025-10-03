@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useTransition } from 'react';
+import React, { useTransition, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -39,7 +40,7 @@ export default function MovieDetailClient({
   const [isPending, startTransition] = useTransition();
   const [isFavoritePending, startFavoriteTransition] = useTransition();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = React.useState('about');
+  const [activeTab, setActiveTab] = useState('about');
   const heroImage =
     movie.posterUrl
       ? movie.posterUrl
@@ -107,9 +108,9 @@ export default function MovieDetailClient({
     });
   };
   
-  const isLiked = currentUser && movie.likedBy.some(user => user.id === currentUser.id);
-  const isDisliked = currentUser && movie.dislikedBy.some(user => user.id === currentUser.id);
   const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
+  const isLiked = currentUser && movie.likedBy?.some(user => user.id === currentUser.id);
+  const isDisliked = currentUser && movie.dislikedBy?.some(user => user.id === currentUser.id);
 
 
   return (
@@ -120,7 +121,7 @@ export default function MovieDetailClient({
             src={heroImage}
             alt={`Poster for ${movie.title}`}
             fill
-            className="object-cover rounded-2xl"
+            className="object-cover"
             priority
           />
         )}
@@ -225,16 +226,18 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2 pl-4">
-               <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={isPending}>
-                <ThumbsUp className={cn("w-6 h-6", isLiked && "text-primary fill-primary")} />
+              <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={isPending}>
+                <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
               </Button>
-               <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
-                <ThumbsDown className={cn("w-6 h-6", isDisliked && "text-destructive fill-destructive")} />
+              <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
+                <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
               </Button>
+
+              <Separator orientation="vertical" className="h-6 mx-2" />
+
               <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={isFavoritePending}>
                  <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
               </Button>
-              <Separator orientation="vertical" className="h-6 mx-2" />
               <Button variant="ghost" size="icon">
                 <Share2 className="w-5 h-5" />
               </Button>
