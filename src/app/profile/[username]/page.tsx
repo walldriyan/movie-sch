@@ -20,6 +20,7 @@ import { Button } from '@/components/ui/button';
 import { ROLES } from '@/lib/permissions';
 import RequestAccessDialog from '@/components/request-access-dialog';
 import { cn } from '@/lib/utils';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const PermissionStatusIndicator = ({ status }: { status: string | null }) => {
   if (!status || status === 'NONE') return null;
@@ -103,9 +104,9 @@ export default async function ProfilePage({
       <main className="max-w-4xl mx-auto px-4 py-8">
         <ProfileHeader user={profileUser} currentFilter={currentFilter} />
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
+        <div className="flex flex-col md:flex-row gap-12 mt-10">
           {/* Left side - Posts */}
-          <div className="md:col-span-2 space-y-12">
+          <div className="w-full md:w-2/3 space-y-12">
             {displayMovies.map((movie: any) => {
               const movieImageUrl =
                 movie.posterUrl ||
@@ -177,8 +178,8 @@ export default async function ProfilePage({
           </div>
 
           {/* Right side - Profile Info */}
-          <aside className="md:col-span-1">
-            <div className="sticky top-24 space-y-6 border-l pl-6">
+          <aside className="w-full md:w-1/3">
+            <div className="md:sticky top-24 space-y-6">
               <div className="flex justify-between items-start">
                 <Avatar className="w-16 h-16">
                   {userAvatar && (
@@ -233,7 +234,7 @@ export default async function ProfilePage({
               {isOwnProfile && loggedInUser && (
                 <>
                   <Separator />
-                  <Card className='border-0 shadow-none -mx-6'>
+                  <Card className='border-0 shadow-none -mx-6 bg-transparent'>
                     <CardHeader className='px-6'>
                       <CardTitle className="text-lg">My Details</CardTitle>
                     </CardHeader>
