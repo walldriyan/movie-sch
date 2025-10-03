@@ -44,31 +44,6 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: stri
   </div>
 );
 
-const LikedByAvatars = ({ users }: { users: User[] }) => {
-  const displayedUsers = users.slice(0, 5);
-
-  if (users.length === 0) {
-    return <p className="text-sm text-muted-foreground">Be the first to like this.</p>;
-  }
-
-  return (
-    <div className="flex items-center gap-2">
-       <div className="flex -space-x-2 overflow-hidden">
-        {displayedUsers.map((user, index) => (
-            <Avatar key={user.id} className="h-7 w-7 border-2 border-background">
-              <AvatarImage src={user.image || ''} alt={user.name || 'User'} />
-              <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-        ))}
-      </div>
-      <p className="text-sm text-muted-foreground">
-        {users.length > 5 ? `+${users.length - 5} more` : ''}
-      </p>
-    </div>
-  );
-};
-
-
 const TrailerSection = ({ movie }: { movie: Movie }) => {
   const trailer = movie.mediaLinks?.find(link => link.type === 'trailer');
   if (!trailer?.url) {
@@ -222,16 +197,6 @@ export default async function MoviePage({
                                 <span>{movie.googleRating || 'N/A'}%</span>
                             </div>
                         </div>
-
-                        <Separator />
-
-                        <h4 className="font-semibold pt-2">Site Likes</h4>
-                         <div className="flex items-center gap-2 text-foreground">
-                            <Heart className="h-5 w-5 text-red-500 fill-red-500"/>
-                            <span className="font-bold">{movie.likedBy.length}</span>
-                        </div>
-                        <LikedByAvatars users={movie.likedBy} />
-
                       </CardContent>
                     </Card>
                  </aside>

@@ -107,8 +107,6 @@ export default function MovieDetailClient({
     });
   };
   
-  const isLiked = currentUser && movie.likedBy.some(user => user.id === currentUser.id);
-  const isDisliked = currentUser && movie.dislikedBy.some(user => user.id === currentUser.id);
   const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
 
 
@@ -120,7 +118,7 @@ export default function MovieDetailClient({
             src={heroImage}
             alt={`Poster for ${movie.title}`}
             fill
-            className="object-cover rounded-2xl"
+            className="object-cover"
             priority
           />
         )}
@@ -225,12 +223,6 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2 pl-4">
-               <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={isPending}>
-                <ThumbsUp className={cn("w-6 h-6", isLiked && "text-primary fill-primary")} />
-              </Button>
-               <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
-                <ThumbsDown className={cn("w-6 h-6", isDisliked && "text-destructive fill-destructive")} />
-              </Button>
               <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={isFavoritePending}>
                  <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
               </Button>

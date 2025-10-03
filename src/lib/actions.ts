@@ -241,9 +241,6 @@ export async function getMovie(movieId: number) {
   
   const subtitles = await prisma.subtitle.findMany({
     where: { movieId: movieId },
-     include: {
-      author: true,
-    },
   });
 
   return {
@@ -251,8 +248,6 @@ export async function getMovie(movieId: number) {
     genres: JSON.parse(movie.genres || '[]'),
     mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
     subtitles,
-    likedBy: [], // Placeholder
-    dislikedBy: [], // Placeholder
   };
 }
 

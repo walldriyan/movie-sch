@@ -27,11 +27,9 @@ export type Movie = Omit<PrismaMovie, 'genres' | 'mediaLinks'> & {
   reviews: Review[];
   subtitles: Subtitle[];
   author: User;
-  likedBy: User[];
-  dislikedBy: User[];
   favoritedBy?: PrismaFavoriteMovie[];
 };
 
-export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'likedBy' | 'dislikedBy' | 'mediaLinks' | 'favoritedBy'> & {
+export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritedBy'> & {
   mediaLinks?: MediaLink[];
 };
