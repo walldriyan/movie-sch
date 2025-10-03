@@ -93,23 +93,26 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         className="object-cover"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent backdrop-blur-sm"></div>
+                    <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent backdrop-blur-sm"></div>
+
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
-                       <div className="w-full">
-                         <div className="flex items-end justify-between">
-                            <div>
-                                {isLarge ? (
-                                    <h3 className="text-white text-xl font-bold">{movie.title}</h3>
-                                ) : (
-                                    <h4 className="text-white text-sm font-semibold">{movie.title}</h4>
-                                )}
-                                {(isLarge || isMedium) && (
-                                    <span className="text-white/70 text-sm mt-1 line-clamp-2" >{movie.description.replace(/<[^>]*>?/gm, '')}</span>
-                                )}
-                            </div>
-                            <div className="ml-2 p-3 rounded-full bg-primary/80 group-hover:bg-primary transition-colors flex-shrink-0">
-                                <Play className="h-5 w-5 text-white" />
-                            </div>
+                      <div className="flex items-end justify-between">
+                        <div>
+                          {isLarge ? (
+                            <h3 className="text-white text-xl font-bold">
+                              {movie.title}
+                            </h3>
+                          ) : (
+                            <h4 className="text-white text-sm font-semibold">
+                              {movie.title}
+                            </h4>
+                          )}
+                          {(isLarge || isMedium) && (
+                              <span className="text-white/70 text-sm mt-1 line-clamp-2" >{movie.description.replace(/<[^>]*>?/gm, '')}</span>
+                          )}
+                        </div>
+                        <div className="ml-2 p-3 rounded-full bg-primary/80 group-hover:bg-primary transition-colors flex-shrink-0">
+                          <Play className="h-5 w-5 text-white" />
                         </div>
                       </div>
                     </div>
