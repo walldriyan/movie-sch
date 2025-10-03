@@ -3,11 +3,11 @@
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Film, Globe, Star, Tv, SlidersHorizontal, CalendarClock, CalendarDays, CalendarCheck } from 'lucide-react';
+import { Film, Globe, Star, Tv, SlidersHorizontal, CalendarClock, CalendarDays, CalendarCheck, Users } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getMovies } from '@/lib/actions';
-import type { Movie } from '@/lib/types';
+import { getMovies, getUsers } from '@/lib/actions';
+import type { Movie, User } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import type { FilterState } from '@/components/advanced-filter-dialog';
 import { format, formatRelative } from 'date-fns';
@@ -25,8 +25,12 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
   const { movies: fetchedMovies } = await getMovies({ filters: { timeFilter } });
   const movies = fetchedMovies as any[];
+  const users = (await getUsers()) as User[];
 
   const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
+  const userAvatarPlaceholder = PlaceHolderImages.find(
+    (img) => img.id === 'avatar-4'
+  );
   
   if (movies.length === 0) {
     return (
@@ -186,6 +190,32 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               );
             })}
           </div>
+
+          <Separator className="my-12" />
+
+          <section>
+            <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {users.map(user => {
+                 const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
+                return (
+                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center gap-3 group">
+                    <Avatar className="w-24 h-24 text-4xl">
+                      {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
+                       <AvatarFallback>
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className='text-center'>
+                      <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
+                      <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
+                    </div>
+                  </Link>
+                )
+              })}
+            </div>
+          </section>
+
         </main>
       </TooltipProvider>
     </div>
