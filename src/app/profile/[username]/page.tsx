@@ -104,7 +104,7 @@ export default async function ProfilePage({
       <main className="max-w-4xl mx-auto py-8">
         <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
         
-        <div className="flex flex-col md:flex-row gap-12 mt-10 px-4">
+        <div className="flex flex-col md:flex-row md:justify-between gap-12 mt-10 px-4">
           {/* Left side - Posts */}
           <div className="w-full md:w-2/3 space-y-12">
             {displayMovies.map((movie: any) => {
