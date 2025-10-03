@@ -56,7 +56,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   return (
     <div className="w-full bg-background text-foreground">
       <TooltipProvider>
-        <main className="max-w-7xl mx-auto px-4 py-8">
+        <main className="max-w-6xl mx-auto px-4 py-8">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
                   <Film />
@@ -116,8 +116,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 <Card 
                   key={movie.id} 
                   className={cn(
-                    "overflow-hidden group relative flex flex-col justify-end min-h-[450px]",
-                    index === 0 && "lg:col-span-1 lg:row-span-2 min-h-[600px]" // Make first card taller on large screens
+                    "overflow-hidden group relative flex flex-col justify-end min-h-[350px]",
+                    index === 0 && "lg:col-span-1 lg:row-span-2 lg:min-h-[500px]"
                   )}
                 >
                    {movieImageUrl && (
