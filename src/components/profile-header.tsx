@@ -21,8 +21,8 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
   PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   return (
-    <div className="sticky top-16 bg-background/95 backdrop-blur-sm z-30 -mx-4 px-4 border-b">
-       <div className="relative h-48 -mx-4 -mt-8 rounded-b-2xl overflow-hidden">
+    <div className="sticky top-16 bg-background/95 backdrop-blur-sm z-30 border-b">
+       <div className="relative h-48 -mt-8 rounded-b-2xl overflow-hidden">
         {coverImage && (
             <Image
                 src={coverImage.imageUrl}
@@ -34,7 +34,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
          <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
       </div>
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-4xl mx-auto px-4">
         <div className="flex items-end justify-between h-16 relative z-10 -mt-20">
           <div className="flex items-end gap-4">
             <Avatar className="w-24 h-24 border-4 border-background">

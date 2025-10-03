@@ -101,10 +101,10 @@ export default async function ProfilePage({
 
   return (
     <div className="w-full bg-background text-foreground">
-      <main className="max-w-4xl mx-auto px-4 py-8">
+      <main className="max-w-4xl mx-auto py-8">
         <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
         
-        <div className="flex flex-col md:flex-row gap-12 mt-10">
+        <div className="flex flex-col md:flex-row gap-12 mt-10 px-4">
           {/* Left side - Posts */}
           <div className="w-full md:w-2/3 space-y-12">
             {displayMovies.map((movie: any) => {
