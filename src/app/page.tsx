@@ -93,7 +93,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         className="object-cover"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent flex items-end p-4">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 to-transparent backdrop-blur-sm"></div>
+                    <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                        <div className="w-full">
                          <div className="flex items-end justify-between">
                             <div>
