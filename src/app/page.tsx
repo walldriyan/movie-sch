@@ -1,3 +1,4 @@
+
 'use server';
 
 import Image from 'next/image';
@@ -102,71 +103,29 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               </div>
           </div>
           
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+           <div className="columns-1 sm:columns-2 md:columns-3 gap-4">
             {movies.map((movie) => {
               const movieImageUrl =
                 movie.posterUrl ||
                 PlaceHolderImages.find(
                   (p) => p.id === 'movie-poster-placeholder'
                 )?.imageUrl;
-              
-              const authorAvatarUrl = movie.author?.image || authorAvatarPlaceholder?.imageUrl;
 
               return (
-                <Card key={movie.id} className="group overflow-hidden rounded-2xl">
-                    <CardContent className="p-4">
-                        <div className="flex gap-4">
-                            <div className="relative w-24 h-36 flex-shrink-0">
-                                {movieImageUrl && (
-                                <Link href={`/movies/${movie.id}`}>
-                                    <Image
-                                        src={movieImageUrl}
-                                        alt={movie.title}
-                                        fill
-                                        className="object-cover rounded-md transition-transform duration-300 group-hover:scale-105"
-                                    />
-                                </Link>
-                                )}
-                            </div>
-                            <div className="flex flex-col">
-                                <Link href={`/movies/${movie.id}`} className="block mb-1">
-                                    <h2 className="font-serif text-lg font-bold leading-tight group-hover:text-primary transition-colors">
-                                        {movie.title}
-                                    </h2>
-                                </Link>
-                                <div
-                                    className="prose prose-sm text-muted-foreground mt-1 line-clamp-2"
-                                    dangerouslySetInnerHTML={{ __html: movie.description }}
-                                />
-
-                                <div className="mt-auto pt-2 flex items-center justify-between text-sm">
-                                    <Link
-                                    href={`/profile/${movie.author.id}`}
-                                    className="flex items-center gap-2 group/author"
-                                    >
-                                    <Avatar className="w-6 h-6">
-                                        {authorAvatarUrl && (
-                                        <AvatarImage
-                                            src={authorAvatarUrl}
-                                            alt={movie.author.name || 'Author'}
-                                            data-ai-hint="person face"
-                                        />
-                                        )}
-                                        <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="font-medium text-muted-foreground group-hover/author:text-primary">
-                                        {movie.author.name}
-                                    </span>
-                                    </Link>
-                                    <div className="flex items-center gap-1 text-muted-foreground">
-                                    <Star className="w-4 h-4 text-yellow-400" />
-                                    <span>{movie.imdbRating.toFixed(1)}</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                <Link href={`/movies/${movie.id}`} key={movie.id} className="block mb-4 relative overflow-hidden rounded-2xl shadow-lg cursor-pointer group">
+                  {movieImageUrl && (
+                      <Image
+                          src={movieImageUrl}
+                          alt={movie.title}
+                          width={500}
+                          height={750}
+                          className="w-full rounded-2xl transition-transform duration-300 transform group-hover:scale-105"
+                      />
+                  )}
+                  <div className="absolute inset-0 bg-black/60 flex items-center justify-center text-white text-xl font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {movie.title}
+                  </div>
+                </Link>
               );
             })}
           </div>
