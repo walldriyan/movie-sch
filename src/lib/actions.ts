@@ -186,11 +186,11 @@ export async function getMovies(options: { page?: number; limit?: number, filter
       if (timeFilter) {
         const now = new Date();
         if (timeFilter === 'today') {
-          whereClause.updatedAt = { gte: startOfDay(now), lte: endOfDay(now) };
+          whereClause.createdAt = { gte: startOfDay(now), lte: endOfDay(now) };
         } else if (timeFilter === 'this_week') {
-          whereClause.updatedAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
+          whereClause.createdAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
         } else if (timeFilter === 'this_month') {
-          whereClause.updatedAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
+          whereClause.createdAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
         }
       }
     }
@@ -232,19 +232,27 @@ export async function getMovie(movieId: number) {
           user: true,
         },
       },
-      subtitles: true,
       author: true,
-      likedBy: true,
-      dislikedBy: true,
       favoritedBy: userId ? { where: { userId } } : false,
     },
   });
+  
   if (!movie) return null;
+  
+  const subtitles = await prisma.subtitle.findMany({
+    where: { movieId: movieId },
+     include: {
+      author: true,
+    },
+  });
 
   return {
     ...movie,
     genres: JSON.parse(movie.genres || '[]'),
     mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
+    subtitles,
+    likedBy: [], // Placeholder
+    dislikedBy: [], // Placeholder
   };
 }
 

@@ -9,7 +9,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies } from '@/lib/actions';
 import type { Movie } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
-import AdvancedFilterDialog from '@/components/advanced-filter-dialog';
 import type { FilterState } from '@/components/advanced-filter-dialog';
 import { format, formatRelative } from 'date-fns';
 import {
@@ -18,11 +17,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import Loading from './loading';
+import { cn } from '@/lib/utils';
 
-export default async function HomePage() {
-  
-  const { movies: fetchedMovies } = await getMovies();
+
+export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string } }) {
+  const timeFilter = searchParams?.timeFilter;
+
+  const { movies: fetchedMovies } = await getMovies({ filters: { timeFilter } });
   const movies = fetchedMovies as any[];
 
   const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
@@ -33,11 +34,14 @@ export default async function HomePage() {
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
           <div className="max-w-md">
             <h1 className="font-serif text-4xl font-bold">
-              No Movies Yet
+              No Movies Found
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              Be the first to add a movie to the collection!
+              No movies match the current filters. Try a different filter.
             </p>
+             <Button asChild className="mt-8">
+                <Link href="/">Clear Filters</Link>
+            </Button>
           </div>
         </main>
       </div>
@@ -67,30 +71,30 @@ export default async function HomePage() {
           
           <div className="flex items-center justify-between mb-8 overflow-hidden">
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-2">
-                  <Button variant={'ghost'} size="sm" className="rounded-full whitespace-nowrap">
+                  <Button asChild variant={timeFilter === 'today' ? 'secondary' : 'ghost'} size="sm" className="rounded-full whitespace-nowrap">
+                    <Link href="/?timeFilter=today">
                       <CalendarClock className="mr-2 h-4 w-4" />
                       Today
+                    </Link>
                   </Button>
-                  <Button variant={'ghost'} size="sm" className="rounded-full whitespace-nowrap">
+                  <Button asChild variant={timeFilter === 'this_week' ? 'secondary' : 'ghost'} size="sm" className="rounded-full whitespace-nowrap">
+                    <Link href="/?timeFilter=this_week">
                       <CalendarDays className="mr-2 h-4 w-4" />
                       This Week
+                    </Link>
                   </Button>
-                  <Button variant={'ghost'} size="sm" className="rounded-full whitespace-nowrap">
+                  <Button asChild variant={timeFilter === 'this_month' ? 'secondary' : 'ghost'} size="sm" className="rounded-full whitespace-nowrap">
+                    <Link href="/?timeFilter=this_month">
                       <CalendarCheck className="mr-2 h-4 w-4" />
                       This Month
+                    </Link>
                   </Button>
+                   {timeFilter && (
+                     <Button asChild variant="ghost" size="sm" className="rounded-full whitespace-nowrap text-destructive">
+                        <Link href="/">Clear</Link>
+                    </Button>
+                   )}
               </div>
-              {/* <AdvancedFilterDialog 
-                  allGenres={['Action', 'Comedy', 'Drama', 'Sci-Fi', 'Horror', 'Thriller', 'Romance', 'Animation']}
-                  currentFilters={filters}
-                  onApplyFilters={() => {}}
-                  triggerButton={
-                      <Button variant="ghost" size="sm" className="rounded-full text-muted-foreground">
-                          <SlidersHorizontal className="mr-2 h-4 w-4" />
-                          <span>Advanced Filters</span>
-                      </Button>
-                  }
-              /> */}
           </div>
           
           <div className={`space-y-12 transition-opacity`}>
@@ -163,7 +167,7 @@ export default async function HomePage() {
                             src={movieImageUrl}
                             alt={movie.title}
                             fill
-                            className="object-cover"
+                            className="object-cover rounded-2xl"
                           />
                         </Link>
                       )}
