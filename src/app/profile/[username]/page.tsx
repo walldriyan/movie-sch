@@ -147,7 +147,7 @@ export default async function ProfilePage({
                         </Link>
                       )}
                       {isOwnProfile && currentFilter === 'posts' && (
-                        <Button asChild size="sm" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button asChild size="sm" className="absolute top-2 right-2">
                             <Link href={`/manage?edit=${movie.id}`}>
                                 <Pencil className="mr-2 h-4 w-4"/>
                                 Edit
