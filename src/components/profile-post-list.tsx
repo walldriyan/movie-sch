@@ -34,7 +34,7 @@ export default function ProfilePostList({ movies, isOwnProfile, currentFilter, p
   }
 
   return (
-    <div className="h-[calc(100vh-20rem)] overflow-y-auto no-scrollbar pr-4 -mr-4">
+    <div className="h-[calc(100vh-20rem)] overflow-y-auto no-scrollbar">
       <div className="space-y-12">
         {movies.map((movie: any) => {
           const movieImageUrl =
