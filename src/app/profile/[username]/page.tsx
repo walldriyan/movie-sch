@@ -103,7 +103,7 @@ export default async function ProfilePage({
       <main className="max-w-4xl mx-auto px-4 py-8">
         <ProfileHeader user={profileUser} />
         
-        <div className="border-b mt-4">
+        <div className="mt-4">
           <div className="flex items-center gap-2 pb-[5px]">
              <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full">
                 <Link href={`/profile/${profileUser.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
