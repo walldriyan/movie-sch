@@ -1,3 +1,4 @@
+
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle, VideoOff, Bookmark, Images, Users, Grid3x3 } from 'lucide-react';
@@ -137,16 +138,14 @@ export default async function ProfilePage({
                   <div className="grid grid-cols-12 gap-8">
                     <div className="col-span-8">
                       <Link href={`/movies/${movie.id}`} className="group block">
-                        <div>
-                          <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
+                        <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
                             {movie.title}
-                          </h2>
-                          <div
-                            className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2"
-                            dangerouslySetInnerHTML={{ __html: movie.description }}
-                          />
-                        </div>
+                        </h2>
                       </Link>
+                      <div
+                        className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2"
+                        dangerouslySetInnerHTML={{ __html: movie.description }}
+                      />
                     </div>
                     <div className="col-span-4">
                       {movieImageUrl && (
