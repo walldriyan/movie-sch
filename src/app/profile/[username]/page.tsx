@@ -60,10 +60,10 @@ export default async function ProfilePage({
   const showRequestAccess = isOwnProfile && loggedInUser?.role === ROLES.USER && profileUser.permissionRequestStatus !== 'APPROVED';
 
   return (
-    <div className="w-full bg-background text-foreground">
+    <>
        <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
       <main className="max-w-4xl mx-auto">
-        <div className="flex flex-col md:flex-row md:justify-between gap-12 pt-12">
+        <div className="flex flex-col md:flex-row md:justify-between gap-12 pt-12 px-4">
           <div className="w-full md:w-2/3">
             <ProfilePostList
               movies={displayMovies}
@@ -79,6 +79,6 @@ export default async function ProfilePage({
           </aside>
         </div>
       </main>
-    </div>
+    </>
   );
 }
