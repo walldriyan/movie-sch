@@ -1,7 +1,7 @@
 
 import { notFound } from 'next/navigation';
-import { getMovie, updateMovieStatus } from '@/lib/actions';
-import type { Movie, Review, Subtitle, User } from '@/lib/types';
+import { getMovie } from '@/lib/actions';
+import type { Movie, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -18,14 +18,11 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, ThumbsUp, Heart, Clapperboard, Images } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { auth } from '@/auth';
 import AdminActions from '@/components/admin-actions';
-import AuthGuard from '@/components/auth/auth-guard';
-import { ROLES } from '@/lib/permissions';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -285,8 +282,8 @@ export default async function MoviePage({
                 </div>
               </section>
             </TabsContent>
-            <AdminActions movie={movie} />
           </MovieDetailClient>
+          <AdminActions movie={movie} />
         </article>
       </main>
     </div>

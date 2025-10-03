@@ -1,8 +1,9 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -12,19 +13,42 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { MovieStatus, ROLES } from '@/lib/permissions';
 import type { Movie } from '@/lib/types';
 import { Button } from './ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { updateMovieStatus } from '@/lib/actions';
 
 interface AdminActionsProps {
   movie: Movie;
-  handleStatusChange?: (newStatus: string) => void;
-  isStatusChanging?: boolean;
 }
 
-export default function AdminActions({ movie, handleStatusChange, isStatusChanging }: AdminActionsProps) {
+export default function AdminActions({ movie }: AdminActionsProps) {
+  const router = useRouter();
+  const { toast } = useToast();
   const authorAvatarUrl = movie.author.image;
   const [selectedStatus, setSelectedStatus] = useState(movie.status);
+  const [isStatusChanging, startStatusTransition] = useTransition();
 
+
+  const handleStatusChange = (newStatus: string) => {
+    startStatusTransition(async () => {
+      try {
+        await updateMovieStatus(movie.id, newStatus);
+        toast({
+          title: "Status Updated",
+          description: `Movie status has been changed to ${newStatus}.`,
+        });
+        router.refresh();
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Failed to update movie status.",
+        });
+      }
+    });
+  };
+  
   const onConfirmStatusChange = () => {
-    if (handleStatusChange && selectedStatus !== movie.status) {
+    if (selectedStatus !== movie.status) {
       handleStatusChange(selectedStatus);
     }
   };
