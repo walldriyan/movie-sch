@@ -1,4 +1,6 @@
 
+'use client';
+
 import Link from 'next/link';
 import {
   Link as LinkIcon,
@@ -11,12 +13,9 @@ import {
 } from 'lucide-react';
 import type { User } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import RequestAccessDialog from '@/components/request-access-dialog';
 import { ROLES } from '@/lib/permissions';
-import { ScrollArea } from './ui/scroll-area';
-import EditProfileDialog from './edit-profile-dialog';
 
 interface ProfileSidebarProps {
   profileUser: User;
@@ -69,11 +68,9 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
     return (
         <div className="space-y-6">
-           <div className="flex justify-between items-start">
-             <div>
-                <h2 className="text-2xl font-bold">{profileUser.name}</h2>
-                <p className="text-muted-foreground text-sm">{profileUser.email}</p>
-             </div>
+           <div>
+              <h2 className="text-xl font-bold">{profileUser.name}</h2>
+              <p className="text-sm text-muted-foreground">{profileUser.email}</p>
            </div>
 
           {profileUser.bio && (
@@ -81,7 +78,9 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
               {profileUser.bio}
             </p>
           )}
-          <Separator />
+          
+          {(profileUser.website || profileUser.twitter || profileUser.linkedin) && <Separator />}
+          
           <div className="flex items-center gap-4 text-muted-foreground">
             {profileUser.website && (
               <Link
@@ -118,11 +117,9 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
           {isOwnProfile && loggedInUser && (
             <>
               <Separator />
-              <Card className='border-0 shadow-none bg-transparent'>
-                <CardHeader>
-                  <CardTitle className="text-lg">My Details</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-4">My Details</h3>
+                <div className="space-y-4">
                   <div>
                     <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
                     <div className="text-sm">
@@ -161,8 +158,8 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
                     </div>
                   )}
                   <PermissionStatusIndicator status={profileUser.permissionRequestStatus} />
-                </CardContent>
-              </Card>
+                </div>
+              </div>
             </>
           )}
         </div>

@@ -1,34 +1,19 @@
 
-
-import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, Link as LinkIcon, Twitter, Linkedin, ShieldCheck, Pencil, Hourglass, CheckCircle2, XCircle, VideoOff, Bookmark, Images, Users, Grid3x3 } from 'lucide-react';
-import React from 'react';
 import type { User as PrismaUser } from '@prisma/client';
 import type { Movie } from '@/lib/types';
-import Link from 'next/link';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import ProfileHeader from '@/components/profile-header';
 import { getMovies, getUsers, getFavoriteMoviesByUserId } from '@/lib/actions';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import EditProfileDialog from '@/components/edit-profile-dialog';
-import { Button } from '@/components/ui/button';
-import { ROLES } from '@/lib/permissions';
-import RequestAccessDialog from '@/components/request-access-dialog';
-import { cn } from '@/lib/utils';
-import ProfilePostList from '@/components/profile-post-list';
-import ProfileSidebar from '@/components/profile-sidebar';
+import ProfileHeader from '@/components/profile/profile-header';
+import ProfilePostList from '@/components/profile/profile-post-list';
+import ProfileSidebar from '@/components/profile/profile-sidebar';
 
 export default async function ProfilePage({ 
   params,
   searchParams,
 }: { 
   params: { username: string },
-  searchParams: { filter?: string, edit?: string } 
+  searchParams: { filter?: string } 
 }) {
   const session = await auth();
   const loggedInUser = session?.user;
@@ -51,20 +36,13 @@ export default async function ProfilePage({
   } else if (currentFilter === 'favorites') {
     displayMovies = await getFavoriteMoviesByUserId(profileUser.id);
   }
-
   
-  const userAvatar =
-    profileUser.image ||
-    PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
-
-  const showRequestAccess = isOwnProfile && loggedInUser?.role === ROLES.USER && profileUser.permissionRequestStatus !== 'APPROVED';
-
   return (
     <>
-       <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
-      <main className="max-w-4xl mx-auto px-4">
-        <div className="flex flex-col md:flex-row md:justify-between gap-12 pt-12">
-          <div className="w-full md:w-2/3">
+      <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="md:col-span-2">
             <ProfilePostList
               movies={displayMovies}
               isOwnProfile={isOwnProfile}
@@ -72,8 +50,8 @@ export default async function ProfilePage({
               profileUser={profileUser}
             />
           </div>
-          <aside className="w-full md:w-80">
-             <div className="md:sticky top-40">
+          <aside>
+             <div className="sticky top-24">
                 <ProfileSidebar profileUser={profileUser} loggedInUser={loggedInUser} />
             </div>
           </aside>
