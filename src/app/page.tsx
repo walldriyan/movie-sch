@@ -33,6 +33,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
   );
+
+  const heroImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder');
   
   if (movies.length === 0) {
     return (
@@ -55,8 +57,19 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   }
 
   return (
-    <div className="w-full bg-background text-gray-200">
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
+    <div className="relative min-h-screen w-full bg-background text-gray-200">
+        {heroImage && (
+             <div className="absolute inset-0">
+                <Image
+                    src={heroImage.imageUrl}
+                    alt="Background"
+                    fill
+                    className="object-cover blur-xl opacity-30"
+                />
+                <div className="absolute inset-0 bg-black/60" />
+            </div>
+        )}
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
                   <Film />
