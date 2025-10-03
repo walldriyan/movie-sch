@@ -40,21 +40,23 @@ export default async function ProfilePage({
   return (
     <>
       <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-          <div className="md:col-span-2 lg:col-span-3">
-            <ProfilePostList
-              movies={displayMovies}
-              isOwnProfile={isOwnProfile}
-              currentFilter={currentFilter}
-              profileUser={profileUser}
-            />
-          </div>
-          <aside>
-             <div className="sticky top-24">
-                <ProfileSidebar profileUser={profileUser} loggedInUser={loggedInUser} />
+      <main>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
+            <div className="md:col-span-2 lg:col-span-3">
+              <ProfilePostList
+                movies={displayMovies}
+                isOwnProfile={isOwnProfile}
+                currentFilter={currentFilter}
+                profileUser={profileUser}
+              />
             </div>
-          </aside>
+            <aside>
+              <div className="sticky top-24">
+                  <ProfileSidebar profileUser={profileUser} loggedInUser={loggedInUser} />
+              </div>
+            </aside>
+          </div>
         </div>
       </main>
     </>
