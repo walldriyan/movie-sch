@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Movie, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -82,6 +82,16 @@ const SkeletonRow = () => (
     </TableCell>
   </TableRow>
 );
+
+const ClientSideDate = ({ date }: { date: Date | string }) => {
+  const [formattedDate, setFormattedDate] = useState<string | null>(null);
+
+  useEffect(() => {
+    setFormattedDate(format(new Date(date), 'MMM dd, yyyy'));
+  }, [date]);
+
+  return <>{formattedDate || <Skeleton className="h-5 w-24" />}</>;
+}
 
 
 export default function MovieList({
@@ -254,7 +264,7 @@ export default function MovieList({
                       )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                       {format(new Date(movie.createdAt), 'MMM dd, yyyy')}
+                       <ClientSideDate date={movie.createdAt} />
                     </TableCell>
                     <TableCell className="text-right">
                        <div className="flex justify-end items-center gap-4">
