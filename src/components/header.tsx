@@ -19,6 +19,7 @@ import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
+import HeaderApprovals from './header-approvals';
 
 export default async function Header({
   children,
@@ -139,7 +140,8 @@ export default async function Header({
             </Link>
           </div>
         )}
-        <div className="flex items-center justify-end space-x-4">
+        <div className="flex items-center justify-end space-x-2">
+          <HeaderApprovals />
           {renderUserMenu()}
         </div>
       </div>

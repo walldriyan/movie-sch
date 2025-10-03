@@ -663,4 +663,23 @@ export async function getFavoriteMoviesByUserId(userId: string) {
   }));
 }
 
-    
+export async function getPendingApprovals() {
+  const session = await auth();
+  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    return { pendingMovies: [], pendingUsers: [] };
+  }
+
+  const pendingMovies = await prisma.movie.findMany({
+    where: { status: MovieStatus.PENDING_APPROVAL },
+    select: { id: true, title: true, author: { select: { name: true } } },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  const pendingUsers = await prisma.user.findMany({
+    where: { permissionRequestStatus: 'PENDING' },
+    select: { id: true, name: true, email: true },
+    orderBy: { updatedAt: 'desc' },
+  });
+
+  return { pendingMovies, pendingUsers };
+}
