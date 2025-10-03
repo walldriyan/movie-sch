@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useTransition, useState, cloneElement } from 'react';
+import React, { useTransition, useState, cloneElement, ReactElement } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -15,6 +16,7 @@ import {
   ThumbsUp,
   ThumbsDown,
   ArrowLeft,
+  Loader2,
 } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -25,6 +27,8 @@ import type { Movie, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { toggleLikeMovie, toggleFavoriteMovie, updateMovieStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import AdminActions from '@/components/admin-actions';
+import { MovieStatus } from '@/lib/permissions';
 
 export default function MovieDetailClient({
   movie,
@@ -270,17 +274,17 @@ export default function MovieDetailClient({
 
       <Tabs value={activeTab} className="mt-8">
         {React.Children.map(children, (child) => {
-            if (React.isValidElement(child)) {
-                // This will pass down the props to the direct child, 
-                // which is AdminActions in this case.
-                return cloneElement(child as React.ReactElement<any>, {
-                    handleStatusChange,
-                    isStatusChanging
-                });
-            }
-            return child;
+          if (React.isValidElement(child) && child.type === AdminActions) {
+            return cloneElement(child as ReactElement<any>, {
+              handleStatusChange,
+              isStatusChanging,
+            });
+          }
+          return child;
         })}
       </Tabs>
     </>
   );
 }
+
+    

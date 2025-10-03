@@ -1,3 +1,4 @@
+
 import { notFound } from 'next/navigation';
 import { getMovie, updateMovieStatus } from '@/lib/actions';
 import type { Movie, Review, Subtitle, User } from '@/lib/types';
@@ -291,3 +292,5 @@ export default async function MoviePage({
     </div>
   );
 }
+
+    

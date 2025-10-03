@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -14,8 +15,8 @@ import { Button } from './ui/button';
 
 interface AdminActionsProps {
   movie: Movie;
-  handleStatusChange: (newStatus: string) => void;
-  isStatusChanging: boolean;
+  handleStatusChange?: (newStatus: string) => void;
+  isStatusChanging?: boolean;
 }
 
 export default function AdminActions({ movie, handleStatusChange, isStatusChanging }: AdminActionsProps) {
@@ -23,7 +24,7 @@ export default function AdminActions({ movie, handleStatusChange, isStatusChangi
   const [selectedStatus, setSelectedStatus] = useState(movie.status);
 
   const onConfirmStatusChange = () => {
-    if (selectedStatus !== movie.status) {
+    if (handleStatusChange && selectedStatus !== movie.status) {
       handleStatusChange(selectedStatus);
     }
   };
@@ -95,3 +96,5 @@ export default function AdminActions({ movie, handleStatusChange, isStatusChangi
     </AuthGuard>
   );
 }
+
+    
