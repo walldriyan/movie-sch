@@ -80,7 +80,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                     href={`/movies/${movie.id}`}
                     key={movie.id}
                     className={cn(
-                      'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer group bg-[#0b0d0f]',
+                      'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f]',
                       isLarge && 'md:col-span-2 md:row-span-2',
                       isMedium && 'md:row-span-2',
                     )}
@@ -90,10 +90,10 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         src={movieImageUrl}
                         alt={movie.title}
                         fill
-                        className="object-cover transition-transform duration-300 transform"
+                        className="object-cover"
                       />
                     )}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent flex items-end p-4">
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end p-4">
                        <div className="w-full">
                          <div className="flex items-end justify-between">
                             <div>
