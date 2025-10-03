@@ -114,7 +114,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               {users.map(user => {
                  const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                 return (
-                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center gap-3 group">
+                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center gap-2 group">
                     <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
                        <AvatarFallback>
