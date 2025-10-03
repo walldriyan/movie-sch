@@ -23,7 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Movie, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { toggleLikeMovie, toggleFavoriteMovie, updateMovieStatus } from '@/lib/actions';
+import { toggleLikeMovie, toggleFavoriteMovie } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MovieDetailClient({
@@ -38,8 +38,6 @@ export default function MovieDetailClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isFavoritePending, startFavoriteTransition] = useTransition();
-  const [isStatusChanging, startStatusTransition] = useTransition();
-
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('about');
   const heroImage =
@@ -108,38 +106,10 @@ export default function MovieDetailClient({
         });
     });
   };
-
-  const handleStatusChange = (newStatus: string) => {
-    startStatusTransition(async () => {
-      try {
-        await updateMovieStatus(movie.id, newStatus);
-        toast({
-          title: "Status Updated",
-          description: `Movie status has been changed to ${newStatus}.`,
-        });
-        // The revalidation will happen on the server, no need for client-side state update
-        router.refresh();
-      } catch (error: any) {
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: error.message || "Failed to update movie status.",
-        });
-      }
-    });
-  };
   
   const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && movie.likedBy?.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && movie.dislikedBy?.some(user => user.id === currentUser.id);
-
-  const childrenWithProps = React.Children.map(children, child => {
-    if (React.isValidElement(child)) {
-      // @ts-ignore
-      return React.cloneElement(child, { handleStatusChange, isStatusChanging });
-    }
-    return child;
-  });
 
 
   return (
@@ -279,10 +249,8 @@ export default function MovieDetailClient({
       </header>
 
       <Tabs value={activeTab} className="mt-8">
-        {childrenWithProps}
+        {children}
       </Tabs>
     </>
   );
 }
-
-    

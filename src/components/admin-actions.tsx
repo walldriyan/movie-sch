@@ -1,7 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useTransition } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Loader2, ShieldCheck } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,15 +11,37 @@ import { Separator } from '@/components/ui/separator';
 import AuthGuard from '@/components/auth/auth-guard';
 import { MovieStatus, ROLES } from '@/lib/permissions';
 import type { Movie } from '@/lib/types';
+import { updateMovieStatus } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface AdminActionsProps {
   movie: Movie;
-  handleStatusChange: (status: string) => void;
-  isStatusChanging: boolean;
 }
 
-export default function AdminActions({ movie, handleStatusChange, isStatusChanging }: AdminActionsProps) {
+export default function AdminActions({ movie }: AdminActionsProps) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [isStatusChanging, startStatusTransition] = useTransition();
   const authorAvatarUrl = movie.author.image;
+
+  const handleStatusChange = (newStatus: string) => {
+    startStatusTransition(async () => {
+      try {
+        await updateMovieStatus(movie.id, newStatus);
+        toast({
+          title: "Status Updated",
+          description: `Movie status has been changed to ${newStatus}.`,
+        });
+        router.refresh();
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Failed to update movie status.",
+        });
+      }
+    });
+  };
 
   return (
     <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
