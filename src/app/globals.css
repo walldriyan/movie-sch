@@ -88,6 +88,11 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+  
+  .mask-gradient {
+    mask-image: linear-gradient(to bottom, transparent 20%, black 80%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 20%, black 80%);
+  }
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */

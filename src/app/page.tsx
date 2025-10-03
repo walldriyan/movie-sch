@@ -93,9 +93,12 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         className="object-cover rounded-xl"
                       />
                     )}
-                    {/* Gradient + Blur Overlay */}
-                    <div className="absolute inset-x-0 top-1/2 bottom-0 bg-gradient-to-t from-black/90 to-transparent backdrop-blur-sm rounded-xl"></div>
+                     {/* Gradient overlay from transparent to dark */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent" />
 
+                    {/* Progressive blur effect */}
+                    <div className="absolute inset-0 backdrop-blur-sm mask-gradient" />
+                    
                     {/* Content */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                       <div className="flex items-end justify-between">
@@ -153,4 +156,3 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
     </div>
   );
 }
-
