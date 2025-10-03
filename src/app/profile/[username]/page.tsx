@@ -179,112 +179,116 @@ export default async function ProfilePage({
 
           {/* Right side - Profile Info */}
           <aside className="w-full md:w-1/3">
-            <div className="md:sticky top-24 space-y-6">
-              <div className="flex justify-between items-start">
-                <Avatar className="w-16 h-16">
-                  {userAvatar && (
-                    <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
+            <div className="md:sticky top-24">
+               <ScrollArea className="h-auto md:h-[calc(100vh-6rem)]">
+                <div className="space-y-6 pr-4">
+                  <div className="flex justify-between items-start">
+                    <Avatar className="w-16 h-16">
+                      {userAvatar && (
+                        <AvatarImage src={userAvatar} alt={profileUser.name || 'User'} />
+                      )}
+                      <AvatarFallback>
+                        {profileUser.name?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    {isOwnProfile && <EditProfileDialog user={profileUser} />}
+                  </div>
+                  <h2 className="text-2xl font-bold">{profileUser.name}</h2>
+                  {profileUser.bio && (
+                    <p className="text-muted-foreground text-sm">
+                      {profileUser.bio}
+                    </p>
                   )}
-                  <AvatarFallback>
-                    {profileUser.name?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                {isOwnProfile && <EditProfileDialog user={profileUser} />}
-              </div>
-              <h3 className="text-xl font-semibold">{profileUser.name}</h3>
-              {profileUser.bio && (
-                <p className="text-muted-foreground text-sm">
-                  {profileUser.bio}
-                </p>
-              )}
-              <Separator />
-              <div className="flex items-center gap-4 text-muted-foreground">
-                {profileUser.website && (
-                  <Link
-                    href={profileUser.website}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-primary"
-                  >
-                    <LinkIcon className="w-5 h-5" />
-                  </Link>
-                )}
-                {profileUser.twitter && (
-                  <Link
-                    href={profileUser.twitter}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-primary"
-                  >
-                    <Twitter className="w-5 h-5" />
-                  </Link>
-                )}
-                {profileUser.linkedin && (
-                  <Link
-                    href={profileUser.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-primary"
-                  >
-                    <Linkedin className="w-5 h-5" />
-                  </Link>
-                )}
-              </div>
-
-              {isOwnProfile && loggedInUser && (
-                <>
                   <Separator />
-                  <Card className='border-0 shadow-none -mx-6 bg-transparent'>
-                    <CardHeader className='px-6'>
-                      <CardTitle className="text-lg">My Details</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4 px-6">
-                      <div>
-                        <h4 className="text-sm font-semibold text-muted-foreground">Email</h4>
-                        <p className="text-sm">{loggedInUser.email}</p>
-                      </div>
-                      <div>
-                        <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
-                        <div className="text-sm">
-                           <Badge variant={loggedInUser.role === ROLES.SUPER_ADMIN ? 'default' : loggedInUser.role === ROLES.USER_ADMIN ? 'secondary' : 'outline'}>
-                            {loggedInUser.role}
-                          </Badge>
-                        </div>
-                      </div>
-                       <div className="mt-4">
-                        <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
-                          <ShieldCheck className="h-4 w-4"/>
-                          Permissions
-                        </h4>
-                        {loggedInUser.permissions && loggedInUser.permissions.length > 0 ? (
-                          <div className="flex flex-wrap gap-2">
-                            {loggedInUser.permissions.map(permission => (
-                              <Badge key={permission} variant="outline" className="font-mono text-xs">
-                                {permission}
-                              </Badge>
-                            ))}
+                  <div className="flex items-center gap-4 text-muted-foreground">
+                    {profileUser.website && (
+                      <Link
+                        href={profileUser.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary"
+                      >
+                        <LinkIcon className="w-5 h-5" />
+                      </Link>
+                    )}
+                    {profileUser.twitter && (
+                      <Link
+                        href={profileUser.twitter}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary"
+                      >
+                        <Twitter className="w-5 h-5" />
+                      </Link>
+                    )}
+                    {profileUser.linkedin && (
+                      <Link
+                        href={profileUser.linkedin}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="hover:text-primary"
+                      >
+                        <Linkedin className="w-5 h-5" />
+                      </Link>
+                    )}
+                  </div>
+
+                  {isOwnProfile && loggedInUser && (
+                    <>
+                      <Separator />
+                      <Card className='border-0 shadow-none -mx-6 bg-transparent'>
+                        <CardHeader className='px-6'>
+                          <CardTitle className="text-lg">My Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4 px-6">
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground">Email</h4>
+                            <p className="text-sm">{loggedInUser.email}</p>
                           </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">No special permissions.</p>
-                        )}
-                      </div>
-                       {showRequestAccess && (
-                        <div>
-                          <Separator className="my-4" />
-                          <h4 className="text-sm font-semibold text-muted-foreground mb-2">
-                            Become a Contributor
-                          </h4>
-                           <p className="text-xs text-muted-foreground mb-3">
-                            Want to add or manage movies? Request admin access to become a contributor.
-                          </p>
-                          <RequestAccessDialog user={profileUser} />
-                        </div>
-                       )}
-                       <PermissionStatusIndicator status={profileUser.permissionRequestStatus} />
-                    </CardContent>
-                  </Card>
-                </>
-              )}
+                          <div>
+                            <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
+                            <div className="text-sm">
+                              <Badge variant={loggedInUser.role === ROLES.SUPER_ADMIN ? 'default' : loggedInUser.role === ROLES.USER_ADMIN ? 'secondary' : 'outline'}>
+                                {loggedInUser.role}
+                              </Badge>
+                            </div>
+                          </div>
+                          <div className="mt-4">
+                            <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2 mb-2">
+                              <ShieldCheck className="h-4 w-4"/>
+                              Permissions
+                            </h4>
+                            {loggedInUser.permissions && loggedInUser.permissions.length > 0 ? (
+                              <div className="flex flex-wrap gap-2">
+                                {loggedInUser.permissions.map(permission => (
+                                  <Badge key={permission} variant="outline" className="font-mono text-xs">
+                                    {permission}
+                                  </Badge>
+                                ))}
+                              </div>
+                            ) : (
+                              <p className="text-xs text-muted-foreground">No special permissions.</p>
+                            )}
+                          </div>
+                          {showRequestAccess && (
+                            <div>
+                              <Separator className="my-4" />
+                              <h4 className="text-sm font-semibold text-muted-foreground mb-2">
+                                Become a Contributor
+                              </h4>
+                              <p className="text-xs text-muted-foreground mb-3">
+                                Want to add or manage movies? Request admin access to become a contributor.
+                              </p>
+                              <RequestAccessDialog user={profileUser} />
+                            </div>
+                          )}
+                          <PermissionStatusIndicator status={profileUser.permissionRequestStatus} />
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </div>
+              </ScrollArea>
             </div>
           </aside>
         </div>
