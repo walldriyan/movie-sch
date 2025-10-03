@@ -101,25 +101,8 @@ export default async function ProfilePage({
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 py-8">
-        <ProfileHeader user={profileUser} />
+        <ProfileHeader user={profileUser} currentFilter={currentFilter} />
         
-        <div className="mt-4">
-          <div className="flex items-center gap-2 pb-[5px]">
-             <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full">
-                <Link href={`/profile/${profileUser.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
-             </Button>
-              <Button asChild variant={currentFilter === 'favorites' ? 'secondary' : 'ghost'} className="rounded-full">
-                <Link href={`/profile/${profileUser.id}?filter=favorites`}><Bookmark className="mr-2 h-4 w-4" /> Favorites</Link>
-             </Button>
-              <Button variant="ghost" className="rounded-full" disabled>
-                <Users className="mr-2 h-4 w-4" /> Followers
-             </Button>
-              <Button variant="ghost" className="rounded-full" disabled>
-                <Images className="mr-2 h-4 w-4" /> Images
-             </Button>
-          </div>
-        </div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 mt-10">
           {/* Left side - Posts */}
           <div className="md:col-span-2 space-y-12">

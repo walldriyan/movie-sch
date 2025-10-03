@@ -1,14 +1,15 @@
 'use client';
 
-import { MoreHorizontal, Search } from 'lucide-react';
+import { MoreHorizontal, Search, Grid3x3, Bookmark, Users, Images } from 'lucide-react';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { User } from '@prisma/client';
+import Link from 'next/link';
 
-export default function ProfileHeader({ user }: { user: User }) {
+export default function ProfileHeader({ user, currentFilter }: { user: User, currentFilter: string }) {
   const coverImage = PlaceHolderImages.find(
     (img) => img.id === 'movie-poster-placeholder'
   );
@@ -38,6 +39,22 @@ export default function ProfileHeader({ user }: { user: User }) {
             <Button variant="ghost" size="icon">
               <MoreHorizontal />
             </Button>
+          </div>
+        </div>
+        <div className="mt-4">
+          <div className="flex items-center gap-2 pb-[5px]">
+             <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full">
+                <Link href={`/profile/${user.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
+             </Button>
+              <Button asChild variant={currentFilter === 'favorites' ? 'secondary' : 'ghost'} className="rounded-full">
+                <Link href={`/profile/${user.id}?filter=favorites`}><Bookmark className="mr-2 h-4 w-4" /> Favorites</Link>
+             </Button>
+              <Button variant="ghost" className="rounded-full" disabled>
+                <Users className="mr-2 h-4 w-4" /> Followers
+             </Button>
+              <Button variant="ghost" className="rounded-full" disabled>
+                <Images className="mr-2 h-4 w-4" /> Images
+             </Button>
           </div>
         </div>
         <Separator />
