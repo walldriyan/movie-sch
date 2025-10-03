@@ -110,7 +110,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
           <section>
             <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-0">
               {users.map(user => {
                  const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                 return (
