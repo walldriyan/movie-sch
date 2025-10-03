@@ -110,18 +110,18 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
           <section>
             <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+            <div className="flex flex-wrap gap-x-8 gap-y-4">
               {users.map(user => {
                  const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                 return (
-                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group">
+                  <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group gap-2">
                     <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
                       {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
                        <AvatarFallback>
                         {user.name?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    <div className='text-center mt-2'>
+                    <div className='text-center'>
                       <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
                       <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
                     </div>
