@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { getMovie } from '@/lib/actions';
+import { getMovie, updateMovieStatus } from '@/lib/actions';
 import type { Movie, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -22,6 +22,9 @@ import React from 'react';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { auth } from '@/auth';
+import AdminActions from '@/components/admin-actions';
+import AuthGuard from '@/components/auth/auth-guard';
+import { ROLES } from '@/lib/permissions';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -159,6 +162,8 @@ export default async function MoviePage({
                     <TrailerSection movie={movie} />
                     
                     <ImageGallerySection movie={movie} />
+
+                    <AdminActions movie={movie} />
 
                     <Separator className="my-12" />
                     <section id="recommendations">
