@@ -46,13 +46,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   }
 
   return (
-    <div className="relative min-h-screen w-full bg-[#0a0a0a] text-gray-200 overflow-hidden">
-        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
-          <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-rose-900/50 filter blur-3xl opacity-20"></div>
-          <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-20"></div>
-          <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-15"></div>
-        </div>
-
+    <div className="min-h-screen w-full text-gray-200">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">

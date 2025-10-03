@@ -36,12 +36,18 @@ export default function RootLayout({
     <html lang="en" className="dark">
       <body
         className={cn(
-          'min-h-screen bg-background font-sans antialiased',
+          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative overflow-x-hidden',
           fontSans.variable,
           fontSerif.variable,
           fontSinhala.variable
         )}
       >
+        <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+          <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-rose-900/50 filter blur-3xl opacity-20"></div>
+          <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-20"></div>
+          <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-15"></div>
+        </div>
+
         <SessionProvider>
           <Header />
           {children}
