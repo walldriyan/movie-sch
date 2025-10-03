@@ -46,7 +46,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   }
 
   return (
-    <div className="min-h-screen w-full text-gray-200">
+    <div className="w-full bg-background text-foreground">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
@@ -110,7 +110,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
           <section>
             <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {users.map(user => {
                  const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                 return (
