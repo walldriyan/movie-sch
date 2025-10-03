@@ -64,9 +64,9 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                     src={heroImage.imageUrl}
                     alt="Background"
                     fill
-                    className="object-cover blur-xl opacity-30"
+                    className="object-cover blur-2xl opacity-20"
                 />
-                <div className="absolute inset-0 bg-black/60" />
+                <div className="absolute inset-0 bg-black/70" />
             </div>
         )}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
