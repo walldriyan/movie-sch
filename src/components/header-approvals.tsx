@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, Film, RefreshCw, Users, Inbox } from 'lucide-react';
+import { Bell, Film, RefreshCw, Users, Inbox, ExternalLink } from 'lucide-react';
 import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES } from '@/lib/permissions';
 import { getPendingApprovals } from '@/lib/actions';
@@ -84,11 +84,19 @@ export default function HeaderApprovals() {
                     <DropdownMenuLabel className="flex items-center gap-2"><Film /> Pending Movies</DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {approvals.pendingMovies.map(movie => (
-                        <DropdownMenuItem key={`movie-${movie.id}`} asChild>
-                            <Link href="/manage" className="flex-col items-start">
+                        <DropdownMenuItem key={`movie-${movie.id}`} className="flex-col items-start focus:bg-transparent">
+                            <div>
                                 <div className="font-semibold">{movie.title}</div>
                                 <div className="text-xs text-muted-foreground">by {movie.author.name}</div>
-                            </Link>
+                            </div>
+                             <div className="flex items-center gap-2 mt-2">
+                                <Button asChild size="sm" variant="outline">
+                                    <Link href={`/movies/${movie.id}`} target="_blank">Read <ExternalLink className='ml-2 h-3 w-3'/></Link>
+                                </Button>
+                                <Button asChild size="sm" variant="secondary">
+                                    <Link href="/manage">Manage</Link>
+                                </Button>
+                            </div>
                         </DropdownMenuItem>
                     ))}
                 </>
