@@ -68,7 +68,7 @@ export default async function ProfilePage({
   searchParams,
 }: { 
   params: { username: string },
-  searchParams: { filter?: string } 
+  searchParams: { filter?: string, edit?: string } 
 }) {
   const session = await auth();
   const loggedInUser = session?.user;
@@ -132,7 +132,7 @@ export default async function ProfilePage({
                         dangerouslySetInnerHTML={{ __html: movie.description }}
                       />
                     </div>
-                    <div className="col-span-4">
+                    <div className="col-span-4 relative group">
                       {movieImageUrl && (
                         <Link
                           href={`/movies/${movie.id}`}
@@ -145,6 +145,14 @@ export default async function ProfilePage({
                             className="object-cover rounded-2xl"
                           />
                         </Link>
+                      )}
+                      {isOwnProfile && currentFilter === 'posts' && (
+                        <Button asChild size="sm" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <Link href={`/manage?edit=${movie.id}`}>
+                                <Pencil className="mr-2 h-4 w-4"/>
+                                Edit
+                            </Link>
+                        </Button>
                       )}
                     </div>
                   </div>
@@ -182,7 +190,14 @@ export default async function ProfilePage({
             <div className="md:sticky top-24">
                <ScrollArea className="h-auto md:h-[calc(100vh-6rem)]">
                 <div className="space-y-6 pr-4">
-                  <h2 className="text-2xl font-bold">{profileUser.name}</h2>
+                   <div className="flex justify-between items-start">
+                     <div>
+                        <h2 className="text-2xl font-bold">{profileUser.name}</h2>
+                        <p className="text-muted-foreground text-sm">{profileUser.email}</p>
+                     </div>
+                      {isOwnProfile && <EditProfileDialog user={profileUser} />}
+                   </div>
+
                   {profileUser.bio && (
                     <p className="text-muted-foreground text-sm">
                       {profileUser.bio}
@@ -230,10 +245,6 @@ export default async function ProfilePage({
                           <CardTitle className="text-lg">My Details</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4 px-6">
-                          <div>
-                            <h4 className="text-sm font-semibold text-muted-foreground">Email</h4>
-                            <p className="text-sm">{loggedInUser.email}</p>
-                          </div>
                           <div>
                             <h4 className="text-sm font-semibold text-muted-foreground">Role</h4>
                             <div className="text-sm">

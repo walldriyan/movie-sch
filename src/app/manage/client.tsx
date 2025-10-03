@@ -27,12 +27,13 @@ interface ManageMoviesClientProps {
   initialMovies: Movie[];
   initialTotalPages: number;
   user: Session['user'];
+  initialEditingMovie?: Movie | null;
 }
 
-export default function ManageMoviesClient({ initialMovies, initialTotalPages, user }: ManageMoviesClientProps) {
+export default function ManageMoviesClient({ initialMovies, initialTotalPages, user, initialEditingMovie }: ManageMoviesClientProps) {
   const [movies, setMovies] = useState<Movie[]>(initialMovies);
-  const [view, setView] = useState<'list' | 'form'>('list');
-  const [editingMovie, setEditingMovie] = useState<Movie | null>(null);
+  const [view, setView] = useState<'list' | 'form'>(initialEditingMovie ? 'form' : 'list');
+  const [editingMovie, setEditingMovie] = useState<Movie | null>(initialEditingMovie || null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [formError, setFormError] = useState<string | null>(null);
@@ -70,8 +71,10 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   };
   
   useEffect(() => {
-    fetchMovies(currentPage, statusFilter);
-  }, [currentPage, statusFilter]);
+    if (view === 'list') {
+      fetchMovies(currentPage, statusFilter);
+    }
+  }, [currentPage, statusFilter, view]);
 
   const handleAddNewMovie = () => {
     setEditingMovie(null);
@@ -158,6 +161,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const handleBackFromForm = () => {
     setView('list');
     setFormError(null);
+    // Clear edit param from URL
+    window.history.pushState({}, '', '/manage');
   };
   
   const handleRefresh = () => {
