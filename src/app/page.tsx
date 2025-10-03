@@ -55,11 +55,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   }
 
   return (
-    <div className="w-full bg-gradient-to-b from-[#091018] via-[#07121a] to-[#071014] text-gray-200">
-      <div className="absolute inset-0 pointer-events-none" aria-hidden>
-        <div className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-gradient-to-br from-primary/5 via-transparent to-transparent filter blur-3xl opacity-50"></div>
-        <div className="absolute -bottom-32 -right-32 w-72 h-72 rounded-full bg-gradient-to-br from-primary/10 via-transparent to-transparent filter blur-3xl opacity-50"></div>
-      </div>
+    <div className="w-full bg-background text-gray-200">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative">
           <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
               <Button variant={'secondary'} className="rounded-full">
