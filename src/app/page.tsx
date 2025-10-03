@@ -90,11 +90,13 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                         src={movieImageUrl}
                         alt={movie.title}
                         fill
-                        className="object-cover"
+                        className="object-cover rounded-xl"
                       />
                     )}
-                    <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent backdrop-blur-sm"></div>
+                    {/* Gradient + Blur Overlay */}
+                    <div className="absolute inset-x-0 top-1/2 bottom-0 bg-gradient-to-t from-black/90 to-transparent backdrop-blur-sm rounded-xl"></div>
 
+                    {/* Content */}
                     <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
                       <div className="flex items-end justify-between">
                         <div>
@@ -151,3 +153,4 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
     </div>
   );
 }
+
