@@ -35,9 +35,9 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
   return (
-    <SidebarProvider className="bg-green-500">
-      <Sidebar variant="inset" collapsible="icon">
-        <SidebarContent className="p-0 flex flex-col bg-red-500">
+    <SidebarProvider className="bg-transperent "  >
+      <Sidebar className="bg-transperent " variant="inset" collapsible="icon">
+        <SidebarContent className="p-0 flex flex-col bg-transperent">
           <div className="p-4">
             <Link href="/" className="flex items-center space-x-2">
               <Film className="h-7 w-7 text-primary" />
@@ -46,7 +46,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
               </span>
             </Link>
           </div>
-          <SidebarMenu className="p-4 gap-1.5">
+          <SidebarMenu className="p-4 gap-1.5 ">
             <SidebarMenuItem>
               <SidebarMenuButton asChild className="text-base">
                 <Link href="/">
@@ -121,7 +121,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
       </Sidebar>
 
       <SidebarInset>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-16">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-2">
           {children}
         </main>
       </SidebarInset>
