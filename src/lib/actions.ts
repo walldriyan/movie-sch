@@ -155,7 +155,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     
     let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
 
-    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate } = filters;
+    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type } = filters;
     
     if (authorId) {
       whereClause.authorId = authorId;
@@ -169,7 +169,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     if (sortBy) {
       const [field, direction] = sortBy.split('-');
       if (['updatedAt', 'imdbRating'].includes(field) && ['asc', 'desc'].includes(direction)) {
-        orderBy = { [field]: direction };
+        orderBy = { [field]: direction as 'asc' | 'desc' };
       }
     }
 
@@ -204,6 +204,9 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       }
     }
 
+    if (type && Object.values(PostType).includes(type)) {
+      whereClause.type = type;
+    }
 
     const posts = await prisma.post.findMany({
         where: whereClause,
@@ -288,6 +291,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     googleRating: postData.googleRating,
     viewCount: postData.viewCount,
     type: postData.type || PostType.MOVIE,
+    updatedAt: new Date(),
   };
 
   const status = MovieStatus.PENDING_APPROVAL;

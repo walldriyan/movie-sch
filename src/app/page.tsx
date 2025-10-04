@@ -3,11 +3,12 @@
 'use server';
 
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getPosts, getUsers } from '@/lib/actions';
 import type { User } from '@/lib/types';
+import { PostType } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -25,12 +26,13 @@ import {
 } from '@/components/ui/dropdown-menu';
 
 
-export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string } }) {
+export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string } }) {
   const timeFilter = searchParams?.timeFilter;
   const sortBy = searchParams?.sortBy;
+  const typeFilter = searchParams?.type;
   const currentPage = Number(searchParams?.page) || 1;
 
-  const { posts: fetchedPosts, totalPages } = await getPosts({ page: currentPage, limit: 10, filters: { timeFilter, sortBy } });
+  const { posts: fetchedPosts, totalPages } = await getPosts({ page: currentPage, limit: 10, filters: { timeFilter, sortBy, type: typeFilter } });
   const posts = fetchedPosts as any[];
   const users = (await getUsers()) as User[];
   
@@ -65,26 +67,35 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
         searchParams.set(key, String(value));
       }
     }
-    return `?${searchParams.toString()}`;
+    const queryString = searchParams.toString();
+    return queryString ? `?${queryString}` : '/';
   }
+
+  const typeFilters = [
+    { label: 'Movies', value: PostType.MOVIE, icon: <Clapperboard /> },
+    { label: 'TV Series', value: PostType.TV_SERIES, icon: <Tv /> },
+    { label: 'Other', value: PostType.OTHER, icon: <Folder /> },
+  ]
 
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                <Button variant={'secondary'} className="rounded-full">
+                <Button asChild variant={!typeFilter ? 'secondary' : 'outline'} className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                  <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })}>
                     <Film />
                     <span>All</span>
+                  </Link>
                 </Button>
-                <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
-                    <Globe />
-                    <span>International</span>
-                </Button>
-                <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
-                    <Tv />
-                    <span>Series</span>
-                </Button>
+                 {typeFilters.map(filter => (
+                    <Button key={filter.value} asChild variant={typeFilter === filter.value ? 'secondary' : 'outline'} className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                      <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })}>
+                        {filter.icon}
+                        <span>{filter.label}</span>
+                      </Link>
+                    </Button>
+                 ))}
             </div>
             
             <DropdownMenu>
@@ -97,17 +108,17 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
               <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel>Sort by</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                  <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc' })}>
+                  <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter })}>
                     <DropdownMenuRadioItem value="newest" checked={sortBy === 'updatedAt-desc' || !sortBy}>
                       <Clock className="mr-2 h-4 w-4" /> Newest
                     </DropdownMenuRadioItem>
                   </Link>
-                   <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc' })}>
+                   <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter })}>
                     <DropdownMenuRadioItem value="oldest" checked={sortBy === 'updatedAt-asc'}>
                       <Clock className="mr-2 h-4 w-4" /> Oldest
                     </DropdownMenuRadioItem>
                   </Link>
-                  <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc' })}>
+                  <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter })}>
                     <DropdownMenuRadioItem value="imdb" checked={sortBy === 'imdbRating-desc'}>
                       <Star className="mr-2 h-4 w-4" /> IMDb Rating
                     </DropdownMenuRadioItem>
@@ -116,22 +127,22 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                 <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today' })}>
+                 <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter })}>
                     <DropdownMenuRadioItem value="today" checked={timeFilter === 'today'}>
                       <Calendar className="mr-2 h-4 w-4" /> Today
                     </DropdownMenuRadioItem>
                   </Link>
-                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week' })}>
+                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter })}>
                     <DropdownMenuRadioItem value="this_week" checked={timeFilter === 'this_week'}>
                       <Calendar className="mr-2 h-4 w-4" /> This Week
                     </DropdownMenuRadioItem>
                   </Link>
-                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month' })}>
+                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter })}>
                     <DropdownMenuRadioItem value="this_month" checked={timeFilter === 'this_month'}>
                       <Calendar className="mr-2 h-4 w-4" /> This Month
                     </DropdownMenuRadioItem>
                   </Link>
-                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all' })}>
+                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter })}>
                     <DropdownMenuRadioItem value="all" checked={timeFilter === 'all' || !timeFilter}>
                       <Calendar className="mr-2 h-4 w-4" /> All Time
                     </DropdownMenuRadioItem>
@@ -148,7 +159,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious 
-                      href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1 })}
+                      href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter })}
                       className={cn(
                         "dark bg-gray-800 hover:bg-gray-700",
                         currentPage === 1 && "pointer-events-none opacity-50"
@@ -166,7 +177,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                   
                   <PaginationItem>
                     <PaginationNext
-                      href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1 })}
+                      href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter })}
                       className={cn(
                         "dark bg-gray-800 hover:bg-gray-700",
                         currentPage === totalPages && "pointer-events-none opacity-50"
