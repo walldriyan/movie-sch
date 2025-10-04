@@ -150,7 +150,9 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     const skip = (page - 1) * limit;
 
     let whereClause: Prisma.PostWhereInput = {
-      status: MovieStatus.PUBLISHED
+      status: {
+        notIn: [MovieStatus.PRIVATE, MovieStatus.PENDING_DELETION]
+      }
     };
     
     let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
@@ -282,7 +284,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: postData.year,
     duration: postData.duration,
-    genres: postData.genres?.join(',') || '',
+    genres: postData.genres,
     directors: postData.directors,
     mainCast: postData.mainCast,
     imdbRating: postData.imdbRating,

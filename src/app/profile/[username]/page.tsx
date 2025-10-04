@@ -1,4 +1,5 @@
 
+
 import type { User as PrismaUser } from '@prisma/client';
 import type { Post } from '@/lib/types';
 import { getPosts, getUsers, getFavoritePostsByUserId } from '@/lib/actions';
@@ -29,7 +30,7 @@ export default async function ProfilePage({
 
   const isOwnProfile = loggedInUser?.id === profileUser.id;
 
-  let displayPosts: Post[] = [];
+  let displayPosts: any[] = [];
   if (currentFilter === 'posts') {
     const { posts: allPosts } = await getPosts({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
     displayPosts = allPosts;
