@@ -82,14 +82,20 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                <Button asChild variant={!typeFilter ? 'secondary' : 'outline'} className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                <Button asChild variant={'outline'} className={cn(
+                  "rounded-full bg-transparent hover:bg-gray-800",
+                  !typeFilter ? 'border-primary/30 text-primary bg-gradient-to-t from-background via-red-950/10 to-background' : 'border-gray-700'
+                )}>
                   <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })}>
                     <Film />
                     <span>All</span>
                   </Link>
                 </Button>
                  {typeFilters.map(filter => (
-                    <Button key={filter.value} asChild variant={typeFilter === filter.value ? 'secondary' : 'outline'} className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                    <Button key={filter.value} asChild variant={'outline'} className={cn(
+                      "rounded-full bg-transparent hover:bg-gray-800",
+                      typeFilter === filter.value ? 'border-primary/30 text-primary bg-gradient-to-t from-background via-red-950/10 to-background' : 'border-gray-700'
+                    )}>
                       <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })}>
                         {filter.icon}
                         <span>{filter.label}</span>
