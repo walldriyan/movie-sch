@@ -7,13 +7,37 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Play } from 'lucide-react';
+import { Play, Clapperboard, Tv, Folder } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import type { Post } from '@/lib/types';
+import { PostType } from '@/lib/types';
 
 interface PostGridProps {
   posts: Post[];
 }
+
+function CategoryIcon({ type }: { type: PostType }) {
+  const getCategory = () => {
+    switch (type) {
+      case PostType.MOVIE:
+        return { icon: <Clapperboard className="w-3 h-3" />, label: 'Movie' };
+      case PostType.TV_SERIES:
+        return { icon: <Tv className="w-3 h-3" />, label: 'TV Series' };
+      default:
+        return { icon: <Folder className="w-3 h-3" />, label: 'Other' };
+    }
+  };
+
+  const { icon, label } = getCategory();
+
+  return (
+    <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
+      {icon}
+      <span>{label}</span>
+    </div>
+  );
+}
+
 
 function PostCard({ post, index }: { post: Post; index: number }) {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -55,6 +79,8 @@ function PostCard({ post, index }: { post: Post; index: number }) {
       
       {/* Blur only on the first card */}
       {isFirst && <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />}
+
+      <CategoryIcon type={post.type} />
 
       <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
         <div className="flex items-end justify-between">
