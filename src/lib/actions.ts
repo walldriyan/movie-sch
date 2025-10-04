@@ -320,7 +320,7 @@ export async function deleteMovie(id: number) {
   const session = await auth();
   const user = session?.user;
 
-  if (!user?.permissions?.includes(PERMISSIONS['post.delete'])) {
+  if (!user || !user.permissions?.includes(PERMISSIONS['post.delete'])) {
     throw new Error('Not authorized to delete movies.');
   }
 
@@ -333,8 +333,8 @@ export async function deleteMovie(id: number) {
 
   if (isPermanent) {
     // Super admin performs a hard delete
-    await deleteUploadedFile(movieToDelete.posterUrl);
     await prisma.movie.delete({ where: { id } });
+    await deleteUploadedFile(movieToDelete.posterUrl);
   } else {
     // Other admins (USER_ADMIN) perform a soft delete
     await prisma.movie.update({
@@ -463,7 +463,7 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
     const { page = 1, limit = 10, userId, userRole, status } = options;
     
     if (!userId || !userRole) {
-      throw new Error("User ID and role are required");
+        throw new Error("User ID and role are required");
     }
 
     const skip = (page - 1) * limit;
