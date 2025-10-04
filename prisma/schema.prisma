@@ -10,92 +10,66 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {
-  id                      String    @id @default(cuid())
-  name                    String?
-  email                   String?   @unique
-  emailVerified           DateTime?
-  image                   String?
-  password                String?
-  role                    String    @default("USER")
-  bio                     String?
-  website                 String?
-  twitter                 String?
-  linkedin                String?
-  permissionRequestStatus String?
-  permissionRequestMessage String?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
+model Post {
+  id                    String          @id @default(cuid())
+  title                 String
+  description           String
+  posterUrl             String?
+  year                  Int
+  duration              String
+  genres                String?
+  imdbRating            Float
+  rottenTomatoesRating  Int?
+  googleRating          Int?
+  status                String?         @default("DRAFT")
+  viewCount             Int             @default(0)
+  directors             String?
+  mainCast              String?
+  mediaLinks            String?
+  authorId              String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
 
-  accounts     Account[]
-  sessions     Session[]
-  movies       Movie[]
-  reviews      Review[]
-  likedMovies  Movie[]   @relation("MovieLikes")
-  dislikedMovies Movie[] @relation("MovieDislikes")
-  favoriteMovies FavoriteMovie[]
+  type                  PostType        @default(MOVIE)
+  episodes              Episode[]
+  metaData              MetaData[]
+
+  author                User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reviews               Review[]
+  favoritedBy           FavoritePost[]
+  likedBy               User[]          @relation("LikedPosts")
+  dislikedBy            User[]          @relation("DislikedPosts")
+  subtitles             Subtitle[]
+
+  @@index([authorId])
 }
 
-model Movie {
-  id                   Int      @id @default(autoincrement())
-  title                String
-  description          String
-  posterUrl            String?
-  year                 Int
-  duration             String
-  genres               String
-  imdbRating           Float
-  rottenTomatoesRating Int?
-  googleRating         Int?
-  status               String   @default("DRAFT")
-  viewCount            Int      @default(0)
-  directors            String?
-  mainCast             String?
-  mediaLinks           String?
-  authorId             String
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+model Episode {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  episodeNumber Int
+  seasonNumber  Int
+  releaseDate DateTime?
+  posterUrl   String?
+  postId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
-  author       User          @relation(fields: [authorId], references: [id])
-  reviews      Review[]
-  subtitles    Subtitle[]
-  likedBy      User[]        @relation("MovieLikes")
-  dislikedBy   User[]        @relation("MovieDislikes")
-  favoritedBy  FavoriteMovie[]
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
 }
 
-model Review {
-  id        Int      @id @default(autoincrement())
-  rating    Int
-  comment   String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  movieId   Int
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-}
+model MetaData {
+  id      String @id @default(cuid())
+  key     String
+  value   String
+  postId  String
+  
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  url          String
-  uploaderName String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  movie        Movie    @relation(fields: [movieId], references: [id])
-  movieId      Int
-}
-
-model FavoriteMovie {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  movieId   Int
-  createdAt DateTime @default(now())
-
-  @@unique([userId, movieId])
+  @@index([postId])
 }
 
 model Account {
@@ -115,6 +89,7 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
 }
 
 model Session {
@@ -123,6 +98,36 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER")
+  bio           String?
+  website       String?
+  twitter       String?
+  linkedin      String?
+  permissionRequestStatus String?
+  permissionRequestMessage String?
+
+  accounts      Account[]
+  sessions      Session[]
+  posts         Post[]
+  reviews       Review[]
+  favoritePosts FavoritePost[]
+  likedPosts    Post[]      @relation("LikedPosts")
+  dislikedPosts Post[]      @relation("DislikedPosts")
+  subtitles     Subtitle[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
@@ -131,4 +136,64 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Review {
+  id      String   @id @default(cuid())
+  rating  Int
+  comment String
+  postId  String
+  userId  String
+  
+  post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([userId])
+}
+
+model FavoritePost {
+  id      String @id @default(cuid())
+  userId  String
+  postId String
+
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+}
+
+model Subtitle {
+  id            String  @id @default(cuid())
+  language      String
+  uploaderName  String
+  postId        String
+  userId        String?
+  filePath      String?
+
+  post          Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  uploader      User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([postId])
+  @@index([userId])
+}
+
+
+enum PostType {
+  MOVIE
+  TV_SERIES
+  SONG
+  NOVEL
+  POEM
+  ARTICLE
 }

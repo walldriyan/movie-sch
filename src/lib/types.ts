@@ -1,11 +1,6 @@
 'use client';
 
-// This file is now mostly redundant as we should be using Prisma-generated types.
-// However, some client-side components still rely on them.
-// A future refactor could involve using tools like 'zod-prisma' to generate
-// Zod schemas from the Prisma schema, and inferring types from those.
-
-import type { Movie as PrismaMovie, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoriteMovie as PrismaFavoriteMovie } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData } from "@prisma/client";
 
 export type User = PrismaUser;
 
@@ -20,21 +15,23 @@ export type MediaLink = {
   url: string;
 }
 
-// This is now redundant with the Prisma model, but kept for client-side compatibility
-export type Movie = Omit<PrismaMovie, 'mediaLinks'> & {
+export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres'> & {
   genres: string[];
   mediaLinks: MediaLink[];
   reviews: Review[];
   subtitles: Subtitle[];
   author: User;
-  favoritedBy?: PrismaFavoriteMovie[];
+  favoritedBy?: PrismaFavoritePost[];
   likedBy?: User[];
   dislikedBy?: User[];
+  episodes?: Episode[];
+  metaData?: MetaData[];
 };
 
-export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritedBy' | 'likedBy' | 'dislikedBy' | 'genres'> & {
+export type MovieFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritedBy' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'type'> & {
   mediaLinks?: MediaLink[];
   genres?: string[];
+  type?: string;
 };
 
-    
+export type { PostType } from '@prisma/client';
