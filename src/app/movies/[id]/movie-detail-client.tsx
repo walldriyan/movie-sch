@@ -259,9 +259,11 @@ export default function MovieDetailClient({
               <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={isPending}>
                 <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
               </Button>
+              <span className="text-sm w-4 text-left">{post.likedBy?.length || 0}</span>
               <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={isPending}>
                 <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
               </Button>
+               <span className="text-sm w-4 text-left">{post.dislikedBy?.length || 0}</span>
 
               <Separator orientation="vertical" className="h-6 mx-2" />
 

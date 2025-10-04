@@ -20,11 +20,11 @@ function CategoryIcon({ type }: { type: PostType }) {
   const getCategory = () => {
     switch (type) {
       case PostType.MOVIE:
-        return { icon: <Clapperboard className="w-4 h-4" />, label: 'Movie', color: 'bg-green-600/80' };
+        return { icon: <Clapperboard className="w-4 h-4" />, label: 'Movie', color: 'bg-blue-900/50' };
       case PostType.TV_SERIES:
-        return { icon: <Tv className="w-4 h-4" />, label: 'TV Series', color: 'bg-blue-600/80' };
+        return { icon: <Tv className="w-4 h-4" />, label: 'TV Series', color: 'bg-green-900/50' };
       default:
-        return { icon: <Folder className="w-4 h-4" />, label: 'Other', color: 'bg-orange-600/80' };
+        return { icon: <Folder className="w-4 h-4" />, label: 'Other', color: 'bg-gray-900/50' };
     }
   };
 
@@ -32,7 +32,7 @@ function CategoryIcon({ type }: { type: PostType }) {
 
   return (
     <div className={cn(
-      "absolute top-2 right-2 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm",
+      "absolute top-2 right-1 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm",
       color
     )}>
       {icon}
@@ -71,14 +71,17 @@ function PostCard({ post, index }: { post: Post; index: number }) {
           alt={post.title}
           fill
           className={cn(
-            'object-cover rounded-xl transition-transform duration-300 group-hover:scale-105',
+            'object-cover rounded-2xl transition-transform duration-300 group-hover:scale-105',
             imageLoaded ? 'opacity-100' : 'opacity-0'
           )}
           onLoad={() => setImageLoaded(true)}
         />
       )}
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
-      <div className="absolute bottom-0 left-0 right-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+      <div className="absolute bottom-0 left-0 right-0 top-2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+     
+
+
       
       {/* Blur only on the first card */}
       {isFirst && <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />}
