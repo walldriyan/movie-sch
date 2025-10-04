@@ -35,9 +35,9 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
   return (
-    <SidebarProvider>
+    <SidebarProvider className="bg-green-500">
       <Sidebar variant="inset" collapsible="icon">
-        <SidebarContent className="p-0 flex flex-col">
+        <SidebarContent className="p-0 flex flex-col bg-red-500">
           <div className="p-4">
             <Link href="/" className="flex items-center space-x-2">
               <Film className="h-7 w-7 text-primary" />
