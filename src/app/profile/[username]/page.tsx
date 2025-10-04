@@ -1,7 +1,7 @@
 
 import type { User as PrismaUser } from '@prisma/client';
-import type { Movie } from '@/lib/types';
-import { getMovies, getUsers, getFavoriteMoviesByUserId } from '@/lib/actions';
+import type { Post } from '@/lib/types';
+import { getPosts, getUsers, getFavoritePostsByUserId } from '@/lib/actions';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import ProfileHeader from '@/components/profile/profile-header';
@@ -29,12 +29,12 @@ export default async function ProfilePage({
 
   const isOwnProfile = loggedInUser?.id === profileUser.id;
 
-  let displayMovies: Movie[] = [];
+  let displayPosts: Post[] = [];
   if (currentFilter === 'posts') {
-    const { movies: allMovies } = await getMovies({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
-    displayMovies = allMovies;
+    const { posts: allPosts } = await getPosts({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
+    displayPosts = allPosts;
   } else if (currentFilter === 'favorites') {
-    displayMovies = await getFavoriteMoviesByUserId(profileUser.id);
+    displayPosts = await getFavoritePostsByUserId(profileUser.id);
   }
   
   return (
@@ -45,7 +45,7 @@ export default async function ProfilePage({
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
             <div className="md:col-span-2 lg:col-span-3">
               <ProfilePostList
-                movies={displayMovies}
+                posts={displayPosts}
                 isOwnProfile={isOwnProfile}
                 currentFilter={currentFilter}
                 profileUser={profileUser}

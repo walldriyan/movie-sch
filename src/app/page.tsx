@@ -1,16 +1,17 @@
 
+
 'use server';
 
 import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getMovies, getUsers } from '@/lib/actions';
+import { getPosts, getUsers } from '@/lib/actions';
 import type { User } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import MovieGrid from '@/components/movie-grid';
+import PostGrid from '@/components/post-grid';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
@@ -29,24 +30,24 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   const sortBy = searchParams?.sortBy;
   const currentPage = Number(searchParams?.page) || 1;
 
-  const { movies: fetchedMovies, totalPages } = await getMovies({ page: currentPage, limit: 10, filters: { timeFilter, sortBy } });
-  const movies = fetchedMovies as any[];
+  const { posts: fetchedPosts, totalPages } = await getPosts({ page: currentPage, limit: 10, filters: { timeFilter, sortBy } });
+  const posts = fetchedPosts as any[];
   const users = (await getUsers()) as User[];
   
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
   );
   
-  if (movies.length === 0) {
+  if (posts.length === 0) {
     return (
       <div className="w-full bg-background text-foreground">
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
           <div className="max-w-md">
             <h1 className="font-serif text-4xl font-bold">
-              No Movies Found
+              No Posts Found
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              No movies match the current filters. Try a different filter.
+              No posts match the current filters. Try a different filter.
             </p>
              <Button asChild className="mt-8">
                 <Link href="/">Clear Filters</Link>
@@ -140,7 +141,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
           </div>
           
-          <MovieGrid movies={movies} />
+          <PostGrid posts={posts} />
 
             {totalPages > 1 && (
               <Pagination className="mt-12">

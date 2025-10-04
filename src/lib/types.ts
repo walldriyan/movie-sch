@@ -1,6 +1,6 @@
 'use client';
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, PostType } from "@prisma/client";
 
 export type User = PrismaUser;
 
@@ -28,10 +28,9 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres'> & {
   metaData?: MetaData[];
 };
 
-export type MovieFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritedBy' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'type'> & {
+export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritedBy' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData'> & {
   mediaLinks?: MediaLink[];
   genres?: string[];
-  type?: string;
 };
 
 export type { PostType } from '@prisma/client';

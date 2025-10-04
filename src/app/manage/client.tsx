@@ -1,15 +1,16 @@
 
+
 'use client';
 
 import React, { useEffect, useState, useTransition } from 'react';
-import type { Movie } from '@prisma/client';
+import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { saveMovie, deleteMovie, getMoviesForAdmin, updateMovieStatus } from '@/lib/actions';
-import type { MovieFormData } from '@/lib/types';
+import { savePost, deletePost, getPostsForAdmin, updatePostStatus } from '@/lib/actions';
+import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
-import MovieList from '@/components/manage/movie-list';
-import MovieForm from '@/components/manage/movie-form';
+import PostList from '@/components/manage/post-list';
+import PostForm from '@/components/manage/post-form';
 import type { Session } from 'next-auth';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -24,29 +25,29 @@ import {
 } from '@/components/ui/pagination';
 
 
-interface ManageMoviesClientProps {
-  initialMovies: Movie[];
+interface ManagePostsClientProps {
+  initialPosts: Post[];
   initialTotalPages: number;
   user: Session['user'];
-  initialEditingMovie?: Movie | null;
+  initialEditingPost?: Post | null;
   startInCreateMode?: boolean;
 }
 
-export default function ManageMoviesClient({ 
-  initialMovies, 
+export default function ManagePostsClient({ 
+  initialPosts, 
   initialTotalPages, 
   user, 
-  initialEditingMovie, 
+  initialEditingPost, 
   startInCreateMode = false 
-}: ManageMoviesClientProps) {
-  const [movies, setMovies] = useState<Movie[]>(initialMovies);
-  const [view, setView] = useState<'list' | 'form'>(initialEditingMovie || startInCreateMode ? 'form' : 'list');
-  const [editingMovie, setEditingMovie] = useState<Movie | null>(initialEditingMovie || null);
+}: ManagePostsClientProps) {
+  const [posts, setPosts] = useState<Post[]>(initialPosts);
+  const [view, setView] = useState<'list' | 'form'>(initialEditingPost || startInCreateMode ? 'form' : 'list');
+  const [editingPost, setEditingPost] = useState<Post | null>(initialEditingPost || null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [formError, setFormError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [statusChangingMovieId, setStatusChangingMovieId] = useState<number | null>(null);
+  const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [debugError, setDebugError] = useState<any>(null);
@@ -54,25 +55,25 @@ export default function ManageMoviesClient({
 
   const { toast } = useToast();
 
-  const fetchMovies = async (page: number, status: string | null) => {
+  const fetchPosts = async (page: number, status: string | null) => {
     setIsRefreshing(true);
     startTransition(async () => {
       try {
-        const { movies: moviesFromDb, totalPages: newTotalPages } = await getMoviesForAdmin({ 
+        const { posts: postsFromDb, totalPages: newTotalPages } = await getPostsForAdmin({ 
           page, 
           limit: 10, 
           userId: user.id, 
           userRole: user.role,
           status,
         });
-        setMovies(moviesFromDb as any);
+        setPosts(postsFromDb as any);
         setTotalPages(newTotalPages);
         setCurrentPage(page);
       } catch (error) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: 'Failed to fetch movies.',
+          description: 'Failed to fetch posts.',
         });
       } finally {
         setIsRefreshing(false);
@@ -82,51 +83,51 @@ export default function ManageMoviesClient({
   
   useEffect(() => {
     if (view === 'list') {
-      fetchMovies(currentPage, statusFilter);
+      fetchPosts(currentPage, statusFilter);
     }
   }, [currentPage, statusFilter, view]);
 
-  const handleAddNewMovie = () => {
-    setEditingMovie(null);
+  const handleAddNewPost = () => {
+    setEditingPost(null);
     setFormError(null);
     setView('form');
   };
 
-  const handleEditMovie = (movie: Movie) => {
-    setEditingMovie(movie);
+  const handleEditPost = (post: Post) => {
+    setEditingPost(post);
     setFormError(null);
     setView('form');
   };
 
   const handleFormSubmit = async (
-    movieData: MovieFormData,
+    postData: PostFormData,
     id: number | undefined
   ) => {
     try {
       setFormError(null);
-      await saveMovie(movieData, id);
-      await fetchMovies(id ? currentPage : 1, statusFilter);
+      await savePost(postData, id);
+      await fetchPosts(id ? currentPage : 1, statusFilter);
       setView('list');
       toast({
         title: 'Success',
-        description: `Movie "${movieData.title}" has been submitted for approval.`,
+        description: `Post "${postData.title}" has been submitted for approval.`,
       });
     } catch (error: any) {
-      console.error('Failed to save movie:', error);
-      setFormError(error.message || 'An unknown error occurred while saving the movie.');
+      console.error('Failed to save post:', error);
+      setFormError(error.message || 'An unknown error occurred while saving the post.');
     }
   };
 
-  const handleDeleteConfirmed = async (movieId: number) => {
+  const handleDeleteConfirmed = async (postId: number) => {
     setDebugError(null);
     try {
-      const movieToDelete = movies.find(m => m.id === movieId);
-      if (movieToDelete) {
-        await deleteMovie(movieId);
-        await fetchMovies(currentPage, statusFilter);
+      const postToDelete = posts.find(m => m.id === postId);
+      if (postToDelete) {
+        await deletePost(postId);
+        await fetchPosts(currentPage, statusFilter);
         toast({
           title: 'Success',
-          description: `Movie "${movieToDelete.title}" action has been processed.`,
+          description: `Post "${postToDelete.title}" action has been processed.`,
         });
       }
     } catch (error: any) {
@@ -135,29 +136,29 @@ export default function ManageMoviesClient({
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'Failed to delete movie.',
+        description: error.message || 'Failed to delete post.',
       });
     }
   };
 
 
-  const handleStatusChange = async (movieId: number, newStatus: string) => {
-    setStatusChangingMovieId(movieId);
+  const handleStatusChange = async (postId: number, newStatus: string) => {
+    setStatusChangingPostId(postId);
     try {
-      await updateMovieStatus(movieId, newStatus);
-      await fetchMovies(currentPage, statusFilter);
+      await updatePostStatus(postId, newStatus);
+      await fetchPosts(currentPage, statusFilter);
       toast({
         title: 'Status Updated',
-        description: `Movie status has been changed to ${newStatus}.`,
+        description: `Post status has been changed to ${newStatus}.`,
       });
     } catch (error: any) {
        toast({
         variant: 'destructive',
         title: 'Error',
-        description: error.message || 'Failed to update movie status.',
+        description: error.message || 'Failed to update post status.',
       });
     } finally {
-      setStatusChangingMovieId(null);
+      setStatusChangingPostId(null);
     }
   };
   
@@ -178,9 +179,9 @@ export default function ManageMoviesClient({
   };
   
   const handleRefresh = () => {
-    fetchMovies(currentPage, statusFilter);
+    fetchPosts(currentPage, statusFilter);
     toast({
-      title: 'Movie list refreshed',
+      title: 'Post list refreshed',
     });
   }
 
@@ -189,27 +190,27 @@ export default function ManageMoviesClient({
     setCurrentPage(1); // Reset to first page on filter change
   }
 
-  const visibleMovies = user?.permissions?.includes(
+  const visiblePosts = user?.permissions?.includes(
     PERMISSIONS['post.approve_deletion']
   )
-    ? movies
-    : movies.filter((m) => m.status !== 'PENDING_DELETION');
+    ? posts
+    : posts.filter((m) => m.status !== 'PENDING_DELETION');
 
   return (
     <>
       <ManageLayout user={user}>
         {view === 'list' ? (
           <>
-            <MovieList
-              movies={visibleMovies}
-              onAddNew={handleAddNewMovie}
-              onEdit={handleEditMovie}
+            <PostList
+              posts={visiblePosts}
+              onAddNew={handleAddNewPost}
+              onEdit={handleEditPost}
               onDeleteConfirmed={handleDeleteConfirmed}
               onStatusChange={handleStatusChange}
               onRefresh={handleRefresh}
               onFilterChange={handleFilterChange}
               isRefreshing={isRefreshing}
-              statusChangingMovieId={statusChangingMovieId}
+              statusChangingPostId={statusChangingPostId}
               currentFilter={statusFilter}
             />
             {totalPages > 1 && !isRefreshing && (
@@ -255,8 +256,8 @@ export default function ManageMoviesClient({
             )}
           </>
         ) : (
-          <MovieForm
-            editingMovie={editingMovie}
+          <PostForm
+            editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
             error={formError}

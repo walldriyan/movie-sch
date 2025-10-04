@@ -30,9 +30,9 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { Movie, User } from '@/lib/types';
+import type { Post as Movie, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { toggleLikeMovie, toggleFavoriteMovie, deleteMovie } from '@/lib/actions';
+import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
 
@@ -74,7 +74,7 @@ export default function MovieDetailClient({
       return;
     }
     startTransition(() => {
-      toggleLikeMovie(movie.id, like)
+      toggleLikePost(movie.id, like)
         .then(() => {
           toast({
             title: 'Success',
@@ -101,7 +101,7 @@ export default function MovieDetailClient({
       return;
     }
     startFavoriteTransition(() => {
-      toggleFavoriteMovie(movie.id)
+      toggleFavoritePost(movie.id)
         .then(() => {
           toast({
             title: 'Favorites Updated',
@@ -121,7 +121,7 @@ export default function MovieDetailClient({
   const handleDelete = () => {
     startDeleteTransition(async () => {
       try {
-        await deleteMovie(movie.id);
+        await deletePost(movie.id);
         toast({
           title: 'Movie Deleted',
           description: `"${movie.title}" has been submitted for deletion.`,
@@ -140,7 +140,7 @@ export default function MovieDetailClient({
   const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && movie.likedBy?.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && movie.dislikedBy?.some(user => user.id === currentUser.id);
-  const canManage = currentUser && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role);
+  const canManage = currentUser && ([ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role));
 
   return (
     <>

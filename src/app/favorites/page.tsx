@@ -6,8 +6,8 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Film, Star, CalendarDays, Clock, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getFavoriteMovies } from '@/lib/actions';
-import type { Movie } from '@/lib/types';
+import { getFavoritePosts } from '@/lib/actions';
+import type { Post } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
@@ -25,12 +25,12 @@ export default async function FavoritesPage() {
     notFound();
   }
 
-  const favoriteMovies = await getFavoriteMovies();
-  const movies = favoriteMovies as any[];
+  const favoritePosts = await getFavoritePosts();
+  const posts = favoritePosts as any[];
 
   const authorAvatarPlaceholder = PlaceHolderImages.find((img) => img.id === 'avatar-1');
   
-  if (movies.length === 0) {
+  if (posts.length === 0) {
     return (
       <div className="w-full bg-background text-foreground">
         <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
@@ -40,10 +40,10 @@ export default async function FavoritesPage() {
               No Favorites Yet
             </h1>
             <p className="mt-4 text-lg text-muted-foreground">
-              You haven't added any movies to your favorites. Click the bookmark icon on a movie to save it here.
+              You haven't added any posts to your favorites. Click the bookmark icon on a post to save it here.
             </p>
              <Button asChild className="mt-8">
-                <Link href="/">Browse Movies</Link>
+                <Link href="/">Browse Posts</Link>
             </Button>
           </div>
         </main>
@@ -57,43 +57,43 @@ export default async function FavoritesPage() {
         <main className="max-w-4xl mx-auto px-4 py-8">
            <div className="mb-8">
             <h1 className="font-serif text-4xl font-bold">My Favorites</h1>
-            <p className="text-muted-foreground mt-2">A collection of movies you've saved.</p>
+            <p className="text-muted-foreground mt-2">A collection of content you've saved.</p>
            </div>
 
           <Separator className="mb-8" />
           
           <div className={`space-y-12 transition-opacity`}>
-            {movies.map((movie) => {
-              const movieImageUrl =
-                movie.posterUrl ||
+            {posts.map((post) => {
+              const postImageUrl =
+                post.posterUrl ||
                 PlaceHolderImages.find(
                   (p) => p.id === 'movie-poster-placeholder'
                 )?.imageUrl;
               
-              const authorAvatarUrl = movie.author?.image || authorAvatarPlaceholder?.imageUrl;
-              const postDate = new Date(movie.updatedAt);
+              const authorAvatarUrl = post.author?.image || authorAvatarPlaceholder?.imageUrl;
+              const postDate = new Date(post.updatedAt);
               const now = new Date();
               const relativeDate = formatRelative(postDate, now);
 
               return (
-                <article key={movie.id}>
+                <article key={post.id}>
                   <div className="flex items-center space-x-3 mb-4 text-sm">
                     <Link
-                      href={`/profile/${movie.author.id}`}
+                      href={`/profile/${post.author.id}`}
                       className="flex items-center gap-3 group"
                     >
                       <Avatar className="w-6 h-6">
                         {authorAvatarUrl && (
                           <AvatarImage
                             src={authorAvatarUrl}
-                            alt={movie.author.name || 'Author'}
+                            alt={post.author.name || 'Author'}
                             data-ai-hint="person face"
                           />
                         )}
-                        <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                        <AvatarFallback>{post.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
                       </Avatar>
                       <span className="font-medium text-foreground group-hover:text-primary">
-                        {movie.author.name}
+                        {post.author.name}
                       </span>
                     </Link>
 
@@ -112,25 +112,25 @@ export default async function FavoritesPage() {
 
                   <div className="grid grid-cols-12 gap-8">
                     <div className="col-span-8">
-                      <Link href={`/movies/${movie.id}`} className="group block">
+                      <Link href={`/movies/${post.id}`} className="group block">
                         <h2 className="font-serif text-2xl font-bold leading-snug group-hover:text-primary transition-colors">
-                            {movie.title}
+                            {post.title}
                         </h2>
                       </Link>
                       <div
                         className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
-                        dangerouslySetInnerHTML={{ __html: movie.description }}
+                        dangerouslySetInnerHTML={{ __html: post.description }}
                       />
                     </div>
                     <div className="col-span-4">
-                      {movieImageUrl && (
+                      {postImageUrl && (
                         <Link
-                          href={`/movies/${movie.id}`}
+                          href={`/movies/${post.id}`}
                           className="block aspect-video relative overflow-hidden rounded-md"
                         >
                           <Image
-                            src={movieImageUrl}
-                            alt={movie.title}
+                            src={postImageUrl}
+                            alt={post.title}
                             fill
                             className="object-cover"
                           />
@@ -142,10 +142,10 @@ export default async function FavoritesPage() {
                   <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-yellow-400" />
-                      <span>{movie.imdbRating.toFixed(1)}</span>
+                      <span>{post.imdbRating.toFixed(1)}</span>
                     </div>
                     <span>&middot;</span>
-                    <span>{movie.duration}</span>
+                    <span>{post.duration}</span>
                   </div>
                 </article>
               );

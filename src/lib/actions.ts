@@ -2,10 +2,10 @@
 
 'use server';
 
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, PostType } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
-import { MovieFormData } from './types';
+import { PostFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
@@ -145,15 +145,15 @@ export async function registerUser(
 }
 
 
-export async function getMovies(options: { page?: number; limit?: number, filters?: any } = {}) {
+export async function getPosts(options: { page?: number; limit?: number, filters?: any } = {}) {
     const { page = 1, limit = 10, filters = {} } = options;
     const skip = (page - 1) * limit;
 
-    let whereClause: Prisma.MovieWhereInput = {
+    let whereClause: Prisma.PostWhereInput = {
       status: MovieStatus.PUBLISHED
     };
     
-    let orderBy: Prisma.MovieOrderByWithRelationInput = { updatedAt: 'desc' };
+    let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
 
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate } = filters;
     
@@ -206,7 +206,7 @@ export async function getMovies(options: { page?: number; limit?: number, filter
     }
 
 
-    const movies = await prisma.movie.findMany({
+    const posts = await prisma.post.findMany({
         where: whereClause,
         skip: skip,
         take: limit,
@@ -216,26 +216,26 @@ export async function getMovies(options: { page?: number; limit?: number, filter
         },
     });
 
-    const totalMovies = await prisma.movie.count({ where: whereClause });
-    const totalPages = Math.ceil(totalMovies / limit);
+    const totalPosts = await prisma.post.count({ where: whereClause });
+    const totalPages = Math.ceil(totalPosts / limit);
 
     return {
-        movies: movies.map((movie) => ({
-            ...movie,
-            genres: movie.genres ? (movie.genres as string).split(',') : [],
-            mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
+        posts: posts.map((post) => ({
+            ...post,
+            genres: post.genres ? (post.genres as string).split(',') : [],
+            mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
-        totalMovies,
+        totalPosts,
     };
 }
 
-export async function getMovie(movieId: number) {
+export async function getPost(postId: number) {
   const session = await auth();
   const userId = session?.user?.id;
 
-  const movie = await prisma.movie.findUnique({
-    where: { id: movieId },
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
     include: {
       reviews: {
         include: {
@@ -249,21 +249,21 @@ export async function getMovie(movieId: number) {
     },
   });
   
-  if (!movie) return null;
+  if (!post) return null;
   
   const subtitles = await prisma.subtitle.findMany({
-    where: { movieId: movieId },
+    where: { postId: postId },
   });
 
   return {
-    ...movie,
-    genres: movie.genres ? (movie.genres as string).split(',') : [],
-    mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
+    ...post,
+    genres: post.genres ? (post.genres as string).split(',') : [],
+    mediaLinks: JSON.parse(post.mediaLinks || '[]'),
     subtitles,
   };
 }
 
-export async function saveMovie(movieData: MovieFormData, id?: number) {
+export async function savePost(postData: PostFormData, id?: number) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
@@ -271,85 +271,79 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
   const userId = session.user.id;
 
   // Handle image upload
-  let finalPosterUrl = movieData.posterUrl;
-  if (movieData.posterUrl && movieData.posterUrl.startsWith('data:image')) {
-    finalPosterUrl = await saveImageFromDataUrl(movieData.posterUrl, 'movies');
+  let finalPosterUrl = postData.posterUrl;
+  if (postData.posterUrl && postData.posterUrl.startsWith('data:image')) {
+    finalPosterUrl = await saveImageFromDataUrl(postData.posterUrl, 'posts');
   }
   
   const data = {
-    title: movieData.title,
-    description: movieData.description,
+    title: postData.title,
+    description: postData.description,
     posterUrl: finalPosterUrl,
-    year: movieData.year,
-    duration: movieData.duration,
-    genres: movieData.genres?.join(',') || '',
-    directors: movieData.directors,
-    mainCast: movieData.mainCast,
-    imdbRating: movieData.imdbRating,
-    rottenTomatoesRating: movieData.rottenTomatoesRating,
-    googleRating: movieData.googleRating,
-    viewCount: movieData.viewCount,
-    mediaLinks: JSON.stringify(movieData.mediaLinks || []),
+    year: postData.year,
+    duration: postData.duration,
+    genres: postData.genres?.join(',') || '',
+    directors: postData.directors,
+    mainCast: postData.mainCast,
+    imdbRating: postData.imdbRating,
+    rottenTomatoesRating: postData.rottenTomatoesRating,
+    googleRating: postData.googleRating,
+    viewCount: postData.viewCount,
+    mediaLinks: JSON.stringify(postData.mediaLinks || []),
+    type: postData.type || PostType.MOVIE,
   };
 
   const status = MovieStatus.PENDING_APPROVAL;
 
   if (id) {
-    const existingMovie = await prisma.movie.findUnique({ where: { id } });
-    if (!existingMovie) {
-        throw new Error('Movie not found');
+    const existingPost = await prisma.post.findUnique({ where: { id } });
+    if (!existingPost) {
+        throw new Error('Post not found');
     }
     // If posterUrl is changing and the old one was an uploaded file, delete it.
-    if (finalPosterUrl !== existingMovie?.posterUrl) {
-      await deleteUploadedFile(existingMovie?.posterUrl);
+    if (finalPosterUrl !== existingPost?.posterUrl) {
+      await deleteUploadedFile(existingPost?.posterUrl);
     }
     
-    await prisma.movie.update({ 
+    await prisma.post.update({ 
         where: { id }, 
         data: { ...data, status: status } as any
     });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.movie.create({ data: { ...data, status: status, authorId: userId } as any });
+    await prisma.post.create({ data: { ...data, status: status, authorId: userId } as any });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
 }
 
-export async function deleteMovie(id: number) {
+export async function deletePost(id: number) {
   const session = await auth();
   const user = session?.user;
 
   if (!user || !user.permissions?.includes(PERMISSIONS['post.delete'])) {
-    throw new Error('Not authorized to delete movies.');
+    throw new Error('Not authorized to delete posts.');
   }
 
-  const movieToDelete = await prisma.movie.findUnique({ where: { id } });
-  if (!movieToDelete) {
-    throw new Error('Movie not found');
+  const postToDelete = await prisma.post.findUnique({ where: { id } });
+  if (!postToDelete) {
+    throw new Error('Post not found');
   }
 
   const isPermanent = user.permissions.includes(PERMISSIONS['post.hard_delete']);
 
   if (isPermanent) {
-    // Super admin performs a hard delete
-    // Use a transaction to ensure all related data is deleted before the movie itself
     await prisma.$transaction([
-      // Delete related FavoriteMovie entries
-      prisma.favoriteMovie.deleteMany({ where: { movieId: id } }),
-      // Delete related Review entries
-      prisma.review.deleteMany({ where: { movieId: id } }),
-       // Delete related Subtitle entries
-      prisma.subtitle.deleteMany({ where: { movieId: id } }),
-      // Finally, delete the movie
-      prisma.movie.delete({ where: { id } }),
+      prisma.favoritePost.deleteMany({ where: { postId: id } }),
+      prisma.review.deleteMany({ where: { postId: id } }),
+      prisma.subtitle.deleteMany({ where: { postId: id } }),
+      prisma.post.delete({ where: { id } }),
     ]);
 
-    await deleteUploadedFile(movieToDelete.posterUrl);
+    await deleteUploadedFile(postToDelete.posterUrl);
   } else {
-    // Other admins (USER_ADMIN) perform a soft delete
-    await prisma.movie.update({
+    await prisma.post.update({
       where: { id },
       data: { status: 'PENDING_DELETION' },
     });
@@ -471,7 +465,7 @@ export async function updateUserRole(
   revalidatePath(`/profile/${userId}`);
 }
 
-export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null } = {}) {
+export async function getPostsForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null } = {}) {
     const { page = 1, limit = 10, userId, userRole, status } = options;
     const skip = (page - 1) * limit;
     
@@ -479,7 +473,7 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
         throw new Error("User ID and role are required");
     }
 
-    let whereClause: Prisma.MovieWhereInput = {};
+    let whereClause: Prisma.PostWhereInput = {};
 
     if (userRole === ROLES.USER_ADMIN) {
         whereClause = { authorId: userId };
@@ -489,7 +483,7 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
       whereClause.status = status;
     }
 
-    const movies = await prisma.movie.findMany({
+    const posts = await prisma.post.findMany({
         where: whereClause,
         skip: skip,
         take: limit,
@@ -502,71 +496,71 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
         },
     });
 
-    const totalMovies = await prisma.movie.count({ where: whereClause });
-    const totalPages = Math.ceil(totalMovies / limit);
+    const totalPosts = await prisma.post.count({ where: whereClause });
+    const totalPages = Math.ceil(totalPosts / limit);
 
     return {
-        movies: movies.map((movie) => ({
-            ...movie,
-            genres: movie.genres ? (movie.genres as string).split(',') : [],
-            mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
+        posts: posts.map((post) => ({
+            ...post,
+            genres: post.genres ? (post.genres as string).split(',') : [],
+            mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
-        totalMovies,
+        totalPosts,
     };
 }
 
 
-export async function updateMovieStatus(movieId: number, status: string) {
+export async function updatePostStatus(postId: number, status: string) {
   const session = await auth();
   if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
-    throw new Error('Not authorized to change movie status.');
+    throw new Error('Not authorized to change post status.');
   }
 
   if (!Object.values(MovieStatus).includes(status as any)) {
     throw new Error(`Invalid status: ${status}`);
   }
 
-  await prisma.movie.update({
-    where: { id: movieId },
+  await prisma.post.update({
+    where: { id: postId },
     data: { status },
   });
 
   revalidatePath('/manage');
 }
 
-export async function toggleLikeMovie(movieId: number, like: boolean) {
+export async function toggleLikePost(postId: number, like: boolean) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
   }
   const userId = session.user.id;
 
-  const movie = await prisma.movie.findUnique({
-    where: { id: movieId },
+  const post = await prisma.post.findUnique({
+    where: { id: postId },
     include: { likedBy: true, dislikedBy: true },
   });
 
-  if (!movie) {
-    throw new Error('Movie not found');
+  if (!post) {
+    throw new Error('Post not found');
   }
 
-  const isLiked = movie.likedBy.some(user => user.id === userId);
-  const isDisliked = movie.dislikedBy.some(user => user.id === userId);
+  const isLiked = post.likedBy.some(user => user.id === userId);
+  const isDisliked = post.dislikedBy.some(user => user.id === userId);
 
   if (like) { // Handle Like action
     if (isLiked) {
       // User is un-liking
-      await prisma.movie.update({
-        where: { id: movieId },
+      await prisma.post.update({
+        where: { id: postId },
         data: {
           likedBy: { disconnect: { id: userId } },
         },
       });
     } else {
       // User is liking
-      await prisma.movie.update({
-        where: { id: movieId },
+      await prisma.post.update({
+        where: { id: postId },
         data: {
           likedBy: { connect: { id: userId } },
           dislikedBy: { disconnect: isDisliked ? { id: userId } : undefined }, // Remove from dislikes if it was disliked
@@ -576,16 +570,16 @@ export async function toggleLikeMovie(movieId: number, like: boolean) {
   } else { // Handle Dislike action
     if (isDisliked) {
       // User is un-disliking
-      await prisma.movie.update({
-        where: { id: movieId },
+      await prisma.post.update({
+        where: { id: postId },
         data: {
           dislikedBy: { disconnect: { id: userId } },
         },
       });
     } else {
       // User is disliking
-      await prisma.movie.update({
-        where: { id: movieId },
+      await prisma.post.update({
+        where: { id: postId },
         data: {
           dislikedBy: { connect: { id: userId } },
           likedBy: { disconnect: isLiked ? { id: userId } : undefined }, // Remove from likes if it was liked
@@ -594,59 +588,59 @@ export async function toggleLikeMovie(movieId: number, like: boolean) {
     }
   }
 
-  revalidatePath(`/movies/${movieId}`);
+  revalidatePath(`/movies/${postId}`);
 }
 
-export async function toggleFavoriteMovie(movieId: number) {
+export async function toggleFavoritePost(postId: number) {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
   }
   const userId = session.user.id;
 
-  const existingFavorite = await prisma.favoriteMovie.findUnique({
+  const existingFavorite = await prisma.favoritePost.findUnique({
     where: {
-      userId_movieId: {
+      userId_postId: {
         userId,
-        movieId,
+        postId,
       },
     },
   });
 
   if (existingFavorite) {
-    await prisma.favoriteMovie.delete({
+    await prisma.favoritePost.delete({
       where: {
-        userId_movieId: {
+        userId_postId: {
           userId,
-          movieId,
+          postId,
         },
       },
     });
   } else {
-    await prisma.favoriteMovie.create({
+    await prisma.favoritePost.create({
       data: {
         userId,
-        movieId,
+        postId,
       },
     });
   }
 
-  revalidatePath(`/movies/${movieId}`);
+  revalidatePath(`/movies/${postId}`);
   revalidatePath('/favorites');
   revalidatePath(`/profile/${userId}`);
 }
 
-export async function getFavoriteMovies() {
+export async function getFavoritePosts() {
   const session = await auth();
   if (!session?.user?.id) {
     return [];
   }
   const userId = session.user.id;
 
-  const favoriteMovies = await prisma.favoriteMovie.findMany({
+  const favoritePosts = await prisma.favoritePost.findMany({
     where: { userId },
     include: {
-      movie: {
+      post: {
         include: {
           author: true,
         },
@@ -657,18 +651,18 @@ export async function getFavoriteMovies() {
     },
   });
 
-  return favoriteMovies.map(fav => ({
-    ...fav.movie,
-    genres: fav.movie.genres ? (fav.movie.genres as string).split(',') : [],
-    mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
+  return favoritePosts.map(fav => ({
+    ...fav.post,
+    genres: fav.post.genres ? (fav.post.genres as string).split(',') : [],
+    mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
 
-export async function getFavoriteMoviesByUserId(userId: string) {
-  const favoriteMovies = await prisma.favoriteMovie.findMany({
+export async function getFavoritePostsByUserId(userId: string) {
+  const favoritePosts = await prisma.favoritePost.findMany({
     where: { userId },
     include: {
-      movie: {
+      post: {
         include: {
           author: true,
         },
@@ -679,20 +673,20 @@ export async function getFavoriteMoviesByUserId(userId: string) {
     },
   });
 
-  return favoriteMovies.map(fav => ({
-    ...fav.movie,
-    genres: fav.movie.genres ? (fav.movie.genres as string).split(',') : [],
-    mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
+  return favoritePosts.map(fav => ({
+    ...fav.post,
+    genres: fav.post.genres ? (fav.post.genres as string).split(',') : [],
+    mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
 
 export async function getPendingApprovals() {
   const session = await auth();
   if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
-    return { pendingMovies: [], pendingUsers: [] };
+    return { pendingPosts: [], pendingUsers: [] };
   }
 
-  const pendingMovies = await prisma.movie.findMany({
+  const pendingPosts = await prisma.post.findMany({
     where: { status: MovieStatus.PENDING_APPROVAL },
     select: { id: true, title: true, author: { select: { name: true } } },
     orderBy: { createdAt: 'desc' },
@@ -704,5 +698,5 @@ export async function getPendingApprovals() {
     orderBy: { updatedAt: 'desc' },
   });
 
-  return { pendingMovies, pendingUsers };
+  return { pendingPosts, pendingUsers };
 }
