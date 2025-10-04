@@ -30,7 +30,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
       href={`/movies/${movie.id}`}
       key={movie.id}
       className={cn(
-        'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group',
+        'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group min-h-[152px] md:min-h-0',
         isFirst ? 'col-span-2 row-span-2' : 'col-span-1',
         isFirst ? 'md:col-span-2 md:row-span-2' : 
         (index % 5 === 1 ? 'md:row-span-2' : 'md:col-span-1')
