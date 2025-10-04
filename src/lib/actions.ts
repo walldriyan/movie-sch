@@ -328,12 +328,23 @@ export async function deleteMovie(id: number) {
   if (!movieToDelete) {
     throw new Error('Movie not found');
   }
-  
+
   const isPermanent = user.permissions.includes(PERMISSIONS['post.hard_delete']);
 
   if (isPermanent) {
     // Super admin performs a hard delete
-    await prisma.movie.delete({ where: { id } });
+    // Use a transaction to ensure all related data is deleted before the movie itself
+    await prisma.$transaction([
+      // Delete related FavoriteMovie entries
+      prisma.favoriteMovie.deleteMany({ where: { movieId: id } }),
+      // Delete related Review entries
+      prisma.review.deleteMany({ where: { movieId: id } }),
+       // Delete related Subtitle entries
+      prisma.subtitle.deleteMany({ where: { movieId: id } }),
+      // Finally, delete the movie
+      prisma.movie.delete({ where: { id } }),
+    ]);
+
     await deleteUploadedFile(movieToDelete.posterUrl);
   } else {
     // Other admins (USER_ADMIN) perform a soft delete
@@ -465,8 +476,6 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
     if (!userId || !userRole) {
         throw new Error("User ID and role are required");
     }
-
-    const skip = (page - 1) * limit;
 
     let whereClause: Prisma.MovieWhereInput = {};
 
