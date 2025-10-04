@@ -11,37 +11,59 @@ datasource db {
 }
 
 model Post {
-  id                    Int           @id @default(autoincrement())
-  title                 String
-  description           String
-  posterUrl             String?
-  year                  Int?
-  duration              String?
-  genres                String?
-  imdbRating            Float?
-  rottenTomatoesRating  Int?
-  googleRating          Int?
-  viewCount             Int           @default(0)
-  createdAt             DateTime      @default(now())
-  updatedAt             DateTime      @updatedAt
-  status                String?
-  type                  PostType      @default(MOVIE)
-  directors             String?
-  mainCast              String?
-  mediaLinks            String?
+  id                   Int            @id @default(autoincrement())
+  title                String
+  description          String
+  posterUrl            String?
+  year                 Int?
+  duration             String?
+  genres               String? // Comma-separated
+  directors            String?
+  mainCast             String?
+  imdbRating           Float?
+  rottenTomatoesRating Int?
+  googleRating         Int?
+  status               String         @default("DRAFT")
+  viewCount            Int            @default(0)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  type                 PostType       @default(MOVIE)
+  mediaLinks           String?
+  episodes             Episode[]
+  metaData             MetaData[]
+  author               User           @relation(fields: [authorId], references: [id])
+  authorId             String
+  reviews              Review[]
+  subtitles            Subtitle[]
+  favoritedBy          FavoritePost[]
+  likedBy              User[]         @relation("LikedPosts")
+  dislikedBy           User[]         @relation("DislikedPosts")
+}
 
-  authorId              String
-  author                User          @relation(fields: [authorId], references: [id])
+model Episode {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  episodeNo   Int
+  seasonNo    Int
+  releaseDate DateTime?
+  post        Post     @relation(fields: [postId], references: [id])
+  postId      Int
+}
 
-  reviews               Review[]
-  subtitles             Subtitle[]
-  favoritedBy           FavoritePost[]
+model MetaData {
+  id     Int     @id @default(autoincrement())
+  key    String
+  value  String
+  post   Post    @relation(fields: [postId], references: [id])
+  postId Int
+}
 
-  likedBy               User[]        @relation("LikedPosts")
-  dislikedBy            User[]        @relation("DislikedPosts")
-  
-  episodes              Episode[]
-  metaData              MetaData[]
+enum PostType {
+  MOVIE
+  TV_SERIES
+  SONG
+  OTHER
 }
 
 model Review {
@@ -49,57 +71,24 @@ model Review {
   rating    Int
   comment   String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  postId    Int
   post      Post     @relation(fields: [postId], references: [id])
-  
-  userId    String
+  postId    Int
   user      User     @relation(fields: [userId], references: [id])
+  userId    String
 }
 
 model Subtitle {
   id            Int      @id @default(autoincrement())
   language      String
+  url           String
   uploaderName  String
+  downloadCount Int      @default(0)
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  filePath      String?
-
-  postId        Int
   post          Post     @relation(fields: [postId], references: [id])
+  postId        Int
 }
 
-model Episode {
-  id          Int     @id @default(autoincrement())
-  title       String
-  episodeNumber Int
-  seasonNumber  Int
-  releaseDate DateTime?
-  description String?
-  
-  postId      Int
-  post        Post    @relation(fields: [postId], references: [id])
-}
-
-model MetaData {
-  id          Int     @id @default(autoincrement())
-  heading     String
-  value       String
-  
-  postId      Int
-  post        Post    @relation(fields: [postId], references: [id])
-}
-
-enum PostType {
-  MOVIE
-  TV_SERIES
-  SONG
-  NOVEL
-  POEM
-}
-
-// NextAuth models
+// Model for NextAuth.js
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -113,12 +102,12 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
- 
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
- 
+
   @@unique([provider, providerAccountId])
 }
- 
+
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -126,49 +115,48 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
- 
+
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  role          String    @default("USER")
-  permissionRequestStatus String? @default("NONE")
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String?   @unique
+  emailVerified           DateTime?
+  image                   String?
+  password                String?
+  role                    String    @default("USER")
+  permissionRequestStatus String?
   permissionRequestMessage String?
+  bio                     String?
+  website                 String?
+  twitter                 String?
+  linkedin                String?
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
 
   accounts      Account[]
   sessions      Session[]
   posts         Post[]
   reviews       Review[]
   favoritePosts FavoritePost[]
-  likedPosts    Post[]    @relation("LikedPosts")
-  dislikedPosts Post[]    @relation("DislikedPosts")
-
-  bio           String?
-  website       String?
-  twitter       String?
-  linkedin      String?
+  likedPosts    Post[]         @relation("LikedPosts")
+  dislikedPosts Post[]         @relation("DislikedPosts")
 }
- 
+
 model VerificationToken {
   identifier String
   token      String   @unique
   expires    DateTime
- 
+
   @@unique([identifier, token])
 }
 
 model FavoritePost {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-
-  userId    String
   user      User     @relation(fields: [userId], references: [id])
-
-  postId    Int
+  userId    String
   post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  createdAt DateTime @default(now())
 
   @@unique([userId, postId])
 }

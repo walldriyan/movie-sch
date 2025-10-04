@@ -213,6 +213,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         posts: posts.map((post) => ({
             ...post,
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -247,6 +248,7 @@ export async function getPost(postId: number) {
   return {
     ...post,
     mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+    genres: post.genres ? post.genres.split(',') : [],
     subtitles,
   };
 }
@@ -270,7 +272,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: postData.year,
     duration: postData.duration,
-    genres: postData.genres,
+    genres: postData.genres?.join(','),
     directors: postData.directors,
     mainCast: postData.mainCast,
     imdbRating: postData.imdbRating,
@@ -502,6 +504,7 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
         posts: posts.map((post) => ({
             ...post,
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -666,17 +669,21 @@ export async function getFavoritePosts() {
   return favoritePosts.map(fav => ({
     ...fav.post,
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
+    genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
 
 export async function getPostsByUserId(userId: string, includePrivate: boolean = false) {
   let where: Prisma.PostWhereInput = {
-    authorId: userId
+    authorId: userId,
+    status: {
+      not: MovieStatus.PENDING_DELETION
+    }
   };
 
   if (!includePrivate) {
     where.status = {
-      in: ['PUBLISHED', 'PENDING_DELETION']
+      in: [MovieStatus.PUBLISHED]
     }
   }
   
@@ -693,6 +700,7 @@ export async function getPostsByUserId(userId: string, includePrivate: boolean =
   return userPosts.map(post => ({
     ...post,
     mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+    genres: post.genres ? post.genres.split(',') : [],
   }));
 }
 
@@ -715,6 +723,7 @@ export async function getFavoritePostsByUserId(userId: string) {
   return favoritePosts.map(fav => ({
     ...fav.post,
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
+    genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
 
@@ -727,7 +736,9 @@ export async function getPendingApprovals() {
   const pendingPosts = await prisma.post.findMany({
     where: { status: MovieStatus.PENDING_APPROVAL },
     select: { id: true, title: true, author: { select: { name: true } } },
-    orderBy: { createdAt: 'desc' },
+    orderBy: {
+      createdAt: 'desc',
+    },
   });
 
   const pendingUsers = await prisma.user.findMany({
