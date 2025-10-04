@@ -58,11 +58,11 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
       <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10">
         <div className="flex items-end justify-between">
           <div>
-            <h3 className={cn("font-bold", isFirst ? "text-xl" : "text-sm")}>
+            <h3 className={cn("font-bold", isFirst ? "text-lg md:text-xl" : "text-xs md:text-sm")}>
               {movie.title}
             </h3>
             {(isFirst) && (
-              <span className="text-white/70 text-sm mt-1 line-clamp-2">
+              <span className="text-white/70 text-xs md:text-sm mt-1 line-clamp-2">
                 {movie.description.replace(/<[^>]*>?/gm, '')}
               </span>
             )}
