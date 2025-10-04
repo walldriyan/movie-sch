@@ -21,7 +21,7 @@ export type MediaLink = {
 }
 
 // This is now redundant with the Prisma model, but kept for client-side compatibility
-export type Movie = Omit<PrismaMovie, 'genres' | 'mediaLinks'> & {
+export type Movie = Omit<PrismaMovie, 'mediaLinks'> & {
   genres: string[];
   mediaLinks: MediaLink[];
   reviews: Review[];
@@ -32,8 +32,9 @@ export type Movie = Omit<PrismaMovie, 'genres' | 'mediaLinks'> & {
   dislikedBy?: User[];
 };
 
-export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritedBy' | 'likedBy' | 'dislikedBy'> & {
+export type MovieFormData = Omit<Movie, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritedBy' | 'likedBy' | 'dislikedBy' | 'genres'> & {
   mediaLinks?: MediaLink[];
+  genres?: string[];
 };
 
     

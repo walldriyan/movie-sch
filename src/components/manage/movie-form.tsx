@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -45,7 +46,7 @@ const movieSchema = z.object({
 
 type MovieFormValues = z.infer<typeof movieSchema>;
 
-type MovieWithLinks = Movie & { mediaLinks: MediaLink[] };
+type MovieWithLinks = Movie & { mediaLinks: MediaLink[], genres: string[] };
 interface MovieFormProps {
   editingMovie: MovieWithLinks | null;
   onFormSubmit: (movieData: MovieFormData, id?: number) => Promise<void>;
@@ -70,7 +71,7 @@ export default function MovieForm({
           description: editingMovie.description,
           year: editingMovie.year,
           duration: editingMovie.duration,
-          genres: editingMovie.genres as any,
+          genres: editingMovie.genres || [],
           directors: editingMovie.directors || '',
           mainCast: editingMovie.mainCast || '',
           imdbRating: editingMovie.imdbRating,
@@ -109,7 +110,7 @@ export default function MovieForm({
       posterUrl: values.posterUrl || null,
       year: values.year,
       duration: values.duration,
-      genres: values.genres as any,
+      genres: values.genres,
       directors: values.directors || null,
       mainCast: values.mainCast || null,
       imdbRating: values.imdbRating,

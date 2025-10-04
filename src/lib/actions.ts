@@ -222,6 +222,7 @@ export async function getMovies(options: { page?: number; limit?: number, filter
     return {
         movies: movies.map((movie) => ({
             ...movie,
+            genres: movie.genres ? (movie.genres as string).split(',') : [],
             mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
         })),
         totalPages,
@@ -256,6 +257,7 @@ export async function getMovie(movieId: number) {
 
   return {
     ...movie,
+    genres: movie.genres ? (movie.genres as string).split(',') : [],
     mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
     subtitles,
   };
@@ -280,7 +282,7 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: movieData.year,
     duration: movieData.duration,
-    genres: (movieData.genres as any).join(','),
+    genres: movieData.genres?.join(',') || '',
     directors: movieData.directors,
     mainCast: movieData.mainCast,
     imdbRating: movieData.imdbRating,
@@ -506,6 +508,7 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
     return {
         movies: movies.map((movie) => ({
             ...movie,
+            genres: movie.genres ? (movie.genres as string).split(',') : [],
             mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
         })),
         totalPages,
@@ -656,6 +659,7 @@ export async function getFavoriteMovies() {
 
   return favoriteMovies.map(fav => ({
     ...fav.movie,
+    genres: fav.movie.genres ? (fav.movie.genres as string).split(',') : [],
     mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
   }));
 }
@@ -677,6 +681,7 @@ export async function getFavoriteMoviesByUserId(userId: string) {
 
   return favoriteMovies.map(fav => ({
     ...fav.movie,
+    genres: fav.movie.genres ? (fav.movie.genres as string).split(',') : [],
     mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
   }));
 }
