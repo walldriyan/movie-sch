@@ -84,7 +84,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <Button asChild variant={'outline'} className={cn(
                   "rounded-full hover:bg-gray-800",
-                  !typeFilter ? 'border-primary/30 text-primary bg-white/5 backdrop-blur-sm' : 'border-gray-700 bg-transparent'
+                  !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                 )}>
                   <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })}>
                     <Film />
@@ -94,7 +94,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                  {typeFilters.map(filter => (
                     <Button key={filter.value} asChild variant={'outline'} className={cn(
                       "rounded-full hover:bg-gray-800",
-                      typeFilter === filter.value ? 'border-primary/30 text-primary bg-white/5 backdrop-blur-sm' : 'border-gray-700 bg-transparent'
+                      typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
                       <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })}>
                         {filter.icon}
