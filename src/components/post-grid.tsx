@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState } from 'react';
@@ -8,17 +9,17 @@ import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Play } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
-import type { Movie } from '@/lib/types';
+import type { Post } from '@/lib/types';
 
-interface MovieGridProps {
-  movies: Movie[];
+interface PostGridProps {
+  posts: Post[];
 }
 
-function MovieCard({ movie, index }: { movie: Movie; index: number }) {
+function PostCard({ post, index }: { post: Post; index: number }) {
   const [imageLoaded, setImageLoaded] = useState(false);
 
-  const movieImageUrl =
-    movie.posterUrl ||
+  const postImageUrl =
+    post.posterUrl ||
     PlaceHolderImages.find(
       (p) => p.id === 'movie-poster-placeholder'
     )?.imageUrl;
@@ -27,8 +28,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
 
   return (
     <Link
-      href={`/movies/${movie.id}`}
-      key={movie.id}
+      href={`/movies/${post.id}`}
+      key={post.id}
       className={cn(
         'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group min-h-[152px] md:min-h-0',
         isFirst ? 'col-span-2 row-span-2' : 'col-span-1',
@@ -37,10 +38,10 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
       )}
     >
       {!imageLoaded && <Skeleton className="absolute inset-0" />}
-      {movieImageUrl && (
+      {postImageUrl && (
         <Image
-          src={movieImageUrl}
-          alt={movie.title}
+          src={postImageUrl}
+          alt={post.title}
           fill
           className={cn(
             'object-cover rounded-xl transition-transform duration-300 group-hover:scale-105',
@@ -59,11 +60,11 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
         <div className="flex items-end justify-between">
           <div>
             <h3 className={cn("font-bold", isFirst ? "text-lg md:text-xl" : "text-xs md:text-sm")}>
-              {movie.title}
+              {post.title}
             </h3>
             {(isFirst) && (
               <span className="text-white/70 text-xs md:text-sm mt-1 line-clamp-2">
-                {movie.description.replace(/<[^>]*>?/gm, '')}
+                {post.description.replace(/<[^>]*>?/gm, '')}
               </span>
             )}
           </div>
@@ -76,7 +77,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
   );
 }
 
-export default function MovieGrid({ movies }: MovieGridProps) {
+export default function PostGrid({ posts }: PostGridProps) {
   const patternLogic = (index: number) => {
     // This logic is for md screens and up
     const i = index % 5;
@@ -87,11 +88,11 @@ export default function MovieGrid({ movies }: MovieGridProps) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 md:auto-rows-[152px] gap-4">
-      {movies.map((movie, index) => {
+      {posts.map((post, index) => {
         return (
-          <MovieCard
-            key={movie.id}
-            movie={movie as Movie}
+          <PostCard
+            key={post.id}
+            post={post as Post}
             index={index}
           />
         );

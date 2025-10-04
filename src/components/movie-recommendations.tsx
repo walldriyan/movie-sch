@@ -1,7 +1,8 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { Movie } from '@/lib/types';
+import type { Post } from '@/lib/types';
 import { getMovieRecommendations, MovieRecommendationOutput } from '@/ai/flows/ai-movie-recommendation';
 import { Skeleton } from './ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
@@ -12,10 +13,10 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 
 interface MovieRecommendationsProps {
-  currentMovie: Movie;
+  currentPost: Post;
 }
 
-export default function MovieRecommendations({ currentMovie }: MovieRecommendationsProps) {
+export default function MovieRecommendations({ currentPost }: MovieRecommendationsProps) {
   const [recommendations, setRecommendations] = useState<MovieRecommendationOutput | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,12 +31,12 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
         setError(null);
 
         // Ensure movie description is a string
-        const movieDescription = Array.isArray(currentMovie.description)
-          ? currentMovie.description.join('\n')
-          : currentMovie.description;
+        const movieDescription = Array.isArray(currentPost.description)
+          ? currentPost.description.join('\n')
+          : currentPost.description;
 
         const result = await getMovieRecommendations({
-          movieTitle: currentMovie.title,
+          movieTitle: currentPost.title,
           movieDescription: movieDescription,
         });
         setRecommendations(result);
@@ -47,7 +48,7 @@ export default function MovieRecommendations({ currentMovie }: MovieRecommendati
       }
     }
     fetchRecommendations();
-  }, [currentMovie]);
+  }, [currentPost]);
 
   if (loading) {
     return (

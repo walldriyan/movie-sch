@@ -21,63 +21,66 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import QuillEditor from '@/components/quill-editor';
 import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import type { Movie } from '@prisma/client';
-import type { MovieFormData, MediaLink } from '@/lib/types';
+import type { Post } from '@prisma/client';
+import { PostType } from '@prisma/client';
+import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
 
-const movieSchema = z.object({
+const postSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   posterUrl: z.string().optional(),
   description: z.string().min(10, 'Description is required'),
-  year: z.coerce.number().min(1800, 'Invalid year'),
-  duration: z.string().min(1, 'Duration is required'),
-  genres: z.array(z.string()).min(1, 'At least one genre is required'),
+  year: z.coerce.number().min(1800, 'Invalid year').optional(),
+  duration: z.string().optional(),
+  genres: z.array(z.string()).optional(),
   directors: z.string().optional(),
   mainCast: z.string().optional(),
-  imdbRating: z.coerce.number().min(0).max(10),
+  imdbRating: z.coerce.number().min(0).max(10).optional(),
   rottenTomatoesRating: z.coerce.number().min(0).max(100).optional(),
   googleRating: z.coerce.number().min(0).max(100).optional(),
   mediaLinks: z.array(z.object({
     type: z.enum(['trailer', 'image']),
     url: z.string().url('Please enter a valid URL.').min(1, 'URL is required.'),
   })).optional(),
+  type: z.nativeEnum(PostType)
 });
 
-type MovieFormValues = z.infer<typeof movieSchema>;
+type PostFormValues = z.infer<typeof postSchema>;
 
-type MovieWithLinks = Movie & { mediaLinks: MediaLink[], genres: string[] };
-interface MovieFormProps {
-  editingMovie: MovieWithLinks | null;
-  onFormSubmit: (movieData: MovieFormData, id?: number) => Promise<void>;
+type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
+interface PostFormProps {
+  editingPost: PostWithLinks | null;
+  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
   error?: string | null;
 }
 
-export default function MovieForm({
-  editingMovie,
+export default function PostForm({
+  editingPost,
   onFormSubmit,
   onBack,
   error,
-}: MovieFormProps) {
+}: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const form = useForm<MovieFormValues>({
-    resolver: zodResolver(movieSchema),
-    defaultValues: editingMovie
+  const form = useForm<PostFormValues>({
+    resolver: zodResolver(postSchema),
+    defaultValues: editingPost
       ? {
-          title: editingMovie.title,
-          posterUrl: editingMovie.posterUrl || '',
-          description: editingMovie.description,
-          year: editingMovie.year,
-          duration: editingMovie.duration,
-          genres: editingMovie.genres || [],
-          directors: editingMovie.directors || '',
-          mainCast: editingMovie.mainCast || '',
-          imdbRating: editingMovie.imdbRating,
-          rottenTomatoesRating: editingMovie.rottenTomatoesRating || undefined,
-          googleRating: editingMovie.googleRating || undefined,
-          mediaLinks: editingMovie.mediaLinks || [],
+          title: editingPost.title,
+          posterUrl: editingPost.posterUrl || '',
+          description: editingPost.description,
+          year: editingPost.year || undefined,
+          duration: editingPost.duration || '',
+          genres: editingPost.genres || [],
+          directors: editingPost.directors || '',
+          mainCast: editingPost.mainCast || '',
+          imdbRating: editingPost.imdbRating || undefined,
+          rottenTomatoesRating: editingPost.rottenTomatoesRating || undefined,
+          googleRating: editingPost.googleRating || undefined,
+          mediaLinks: editingPost.mediaLinks || [],
+          type: editingPost.type,
         }
       : {
           title: '',
@@ -92,35 +95,38 @@ export default function MovieForm({
           rottenTomatoesRating: undefined,
           googleRating: undefined,
           mediaLinks: [],
+          type: PostType.MOVIE
         },
   });
   
-  const { control, formState } = form;
-  const posterUrlValue = form.watch('posterUrl');
+  const { control, formState, watch } = form;
+  const posterUrlValue = watch('posterUrl');
+  const postType = watch('type');
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'mediaLinks',
   });
 
-  const handleSubmit = async (values: MovieFormValues) => {
-    const movieData: MovieFormData = {
+  const handleSubmit = async (values: PostFormValues) => {
+    const postData: PostFormData = {
       title: values.title,
       description: values.description,
       posterUrl: values.posterUrl || null,
-      year: values.year,
-      duration: values.duration,
-      genres: values.genres,
+      year: values.year || null,
+      duration: values.duration || null,
+      genres: values.genres || [],
       directors: values.directors || null,
       mainCast: values.mainCast || null,
-      imdbRating: values.imdbRating,
+      imdbRating: values.imdbRating || null,
       rottenTomatoesRating: values.rottenTomatoesRating || null,
       googleRating: values.googleRating || null,
-      status: editingMovie?.status || 'DRAFT',
-      viewCount: editingMovie?.viewCount || 0,
+      status: editingPost?.status || 'DRAFT',
+      viewCount: editingPost?.viewCount || 0,
       mediaLinks: values.mediaLinks,
+      type: values.type,
     };
-    await onFormSubmit(movieData, editingMovie?.id);
+    await onFormSubmit(postData, editingPost?.id);
   };
 
   const handleFileChange = (
@@ -150,7 +156,7 @@ export default function MovieForm({
         </Button>
         <div>
           <h1 className="text-2xl font-bold">
-            {editingMovie ? 'Edit Movie' : 'Add New Movie'}
+            {editingPost ? 'Edit Post' : 'Add New Post'}
           </h1>
         </div>
       </div>
@@ -243,173 +249,204 @@ export default function MovieForm({
 
           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
             <h3 className="text-lg font-semibold text-muted-foreground">
-              Movie Details
+              Post Details
             </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="year"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">Year</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="2024"
-                        {...field}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="duration"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      Duration
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="2h 28m"
-                        {...field}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+
              <FormField
                 control={form.control}
-                name="directors"
+                name="type"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      Director(s) (comma-separated)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Christopher Nolan"
-                        {...field}
-                         value={field.value || ''}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
+                    <FormLabel>Content Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a content type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Object.values(PostType).map((type) => (
+                           <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-               <FormField
-                control={form.control}
-                name="mainCast"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      Main Cast (comma-separated)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Cillian Murphy, Emily Blunt"
-                        {...field}
-                         value={field.value || ''}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            <FormField
-              control={form.control}
-              name="genres"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-muted-foreground">
-                    Genres
-                  </FormLabel>
-                  <FormControl>
-                    <GenreInput 
-                      value={field.value}
-                      onChange={field.onChange}
-                      placeholder="Select one or more genres"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <h3 className="text-lg font-semibold text-muted-foreground pt-4">
-              Ratings
-            </h3>
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <FormField
-                control={form.control}
-                name="imdbRating"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      IMDb Rating
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        step="0.1"
-                        {...field}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="rottenTomatoesRating"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      Rotten Tomatoes (%)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="93"
-                        {...field}
-                        value={field.value ?? ''}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-                 <FormField
-                control={form.control}
-                name="googleRating"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      Google Users (%)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="91"
-                        {...field}
-                        value={field.value ?? ''}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+
+            {(postType === PostType.MOVIE || postType === PostType.TV_SERIES) && (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="year"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">Year</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="2024"
+                            {...field}
+                             value={field.value ?? ''}
+                            className="bg-transparent border-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="duration"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">
+                          Duration
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="2h 28m"
+                            {...field}
+                            value={field.value ?? ''}
+                            className="bg-transparent border-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                    control={form.control}
+                    name="directors"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">
+                          Director(s) (comma-separated)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Christopher Nolan"
+                            {...field}
+                            value={field.value || ''}
+                            className="bg-transparent border-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="mainCast"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">
+                          Main Cast (comma-separated)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder="Cillian Murphy, Emily Blunt"
+                            {...field}
+                            value={field.value || ''}
+                            className="bg-transparent border-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                <FormField
+                  control={form.control}
+                  name="genres"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">
+                        Genres
+                      </FormLabel>
+                      <FormControl>
+                        <GenreInput 
+                          value={field.value || []}
+                          onChange={field.onChange}
+                          placeholder="Select one or more genres"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <h3 className="text-lg font-semibold text-muted-foreground pt-4">
+                  Ratings
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="imdbRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">
+                          IMDb Rating
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            {...field}
+                             value={field.value ?? ''}
+                            className="bg-transparent border-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="rottenTomatoesRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">
+                          Rotten Tomatoes (%)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="93"
+                            {...field}
+                            value={field.value ?? ''}
+                            className="bg-transparent border-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                    <FormField
+                    control={form.control}
+                    name="googleRating"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-muted-foreground">
+                          Google Users (%)
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            placeholder="91"
+                            {...field}
+                            value={field.value ?? ''}
+                            className="bg-transparent border-input"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </>
+            )}
           </div>
 
           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
@@ -488,9 +525,9 @@ export default function MovieForm({
               {formState.isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {editingMovie ? 'Saving...' : 'Publishing...'}
+                  {editingPost ? 'Saving...' : 'Publishing...'}
                 </>
-              ) : editingMovie ? (
+              ) : editingPost ? (
                 'Save Changes'
               ) : (
                 'Publish'

@@ -10,68 +10,78 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model User {
-  id                      String    @id @default(cuid())
-  name                    String?
-  email                   String?   @unique
-  emailVerified           DateTime?
-  image                   String?
-  password                String?
-  role                    String    @default("USER")
-  bio                     String?
-  website                 String?
-  twitter                 String?
-  linkedin                String?
-  permissionRequestStatus String?
-  permissionRequestMessage String?
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-
-  accounts     Account[]
-  sessions     Session[]
-  movies       Movie[]
-  reviews      Review[]
-  likedMovies  Movie[]   @relation("MovieLikes")
-  dislikedMovies Movie[] @relation("MovieDislikes")
-  favoriteMovies FavoriteMovie[]
+model Post {
+  id                    Int             @id @default(autoincrement())
+  title                 String
+  description           String
+  posterUrl             String?
+  year                  Int?
+  duration              String?
+  genres                String?
+  directors             String?
+  mainCast              String?
+  imdbRating            Float?
+  rottenTomatoesRating  Int?
+  googleRating          Int?
+  status                String          @default("DRAFT")
+  viewCount             Int             @default(0)
+  author                User            @relation(fields: [authorId], references: [id])
+  authorId              String
+  createdAt             DateTime        @default(now())
+  updatedAt             DateTime        @updatedAt
+  reviews               Review[]
+  subtitles             Subtitle[]
+  favoritePosts         FavoritePost[]
+  likedBy               User[]          @relation("LikedPosts")
+  dislikedBy            User[]          @relation("DislikedPosts")
+  episodes              Episode[]
+  metaData              MetaData[]
+  type                  PostType        @default(MOVIE)
+  mediaLinks            MediaLink[]
 }
 
-model Movie {
-  id                   Int      @id @default(autoincrement())
-  title                String
-  description          String
-  posterUrl            String?
-  year                 Int
-  duration             String
-  genres               String
-  imdbRating           Float
-  rottenTomatoesRating Int?
-  googleRating         Int?
-  status               String   @default("DRAFT")
-  viewCount            Int      @default(0)
-  directors            String?
-  mainCast             String?
-  mediaLinks           String?
-  authorId             String
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-
-  author       User          @relation(fields: [authorId], references: [id])
-  reviews      Review[]
-  subtitles    Subtitle[]
-  likedBy      User[]        @relation("MovieLikes")
-  dislikedBy   User[]        @relation("MovieDislikes")
-  favoritedBy  FavoriteMovie[]
+model Episode {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String
+  episodeNumber Int
+  seasonNumber  Int
+  releaseDate DateTime
+  post        Post     @relation(fields: [postId], references: [id])
+  postId      Int
 }
+
+model MetaData {
+  id      Int    @id @default(autoincrement())
+  key     String
+  value   String
+  post    Post   @relation(fields: [postId], references: [id])
+  postId  Int
+}
+
+enum PostType {
+  MOVIE
+  TV_SERIES
+  OTHER
+}
+
+
+model MediaLink {
+  id      Int    @id @default(autoincrement())
+  postId  Int
+  post    Post   @relation(fields: [postId], references: [id])
+  type    String // 'trailer' or 'image'
+  url     String
+}
+
 
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  movieId   Int
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
   user      User     @relation(fields: [userId], references: [id])
   userId    String
 }
@@ -82,20 +92,8 @@ model Subtitle {
   url          String
   uploaderName String
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  movie        Movie    @relation(fields: [movieId], references: [id])
-  movieId      Int
-}
-
-model FavoriteMovie {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  movie     Movie    @relation(fields: [movieId], references: [id])
-  movieId   Int
-  createdAt DateTime @default(now())
-
-  @@unique([userId, movieId])
+  post         Post     @relation(fields: [postId], references: [id])
+  postId       Int
 }
 
 model Account {
@@ -123,6 +121,41 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  password      String?
+  role          String    @default("USER")
+  permissionRequestStatus String?
+  permissionRequestMessage String?
+  bio           String?
+  website       String?
+  twitter       String?
+  linkedin      String?
+  accounts      Account[]
+  sessions      Session[]
+  posts         Post[]
+  reviews       Review[]
+  favoritePosts FavoritePost[]
+  likedPosts    Post[]    @relation("LikedPosts")
+  dislikedPosts Post[]    @relation("DislikedPosts")
+  updatedAt     DateTime  @updatedAt
+}
+
+model FavoritePost {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
 }
 
 model VerificationToken {

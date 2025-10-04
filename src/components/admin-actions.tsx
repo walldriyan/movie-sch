@@ -11,44 +11,44 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import AuthGuard from '@/components/auth/auth-guard';
 import { MovieStatus, ROLES } from '@/lib/permissions';
-import type { Movie } from '@/lib/types';
+import type { Post } from '@/lib/types';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { updateMovieStatus } from '@/lib/actions';
+import { updatePostStatus } from '@/lib/actions';
 
 interface AdminActionsProps {
-  movie: Movie;
+  post: Post;
 }
 
-export default function AdminActions({ movie }: AdminActionsProps) {
+export default function AdminActions({ post }: AdminActionsProps) {
   const router = useRouter();
   const { toast } = useToast();
-  const authorAvatarUrl = movie.author.image;
-  const [selectedStatus, setSelectedStatus] = useState(movie.status);
+  const authorAvatarUrl = post.author.image;
+  const [selectedStatus, setSelectedStatus] = useState(post.status);
   const [isStatusChanging, startStatusTransition] = useTransition();
 
 
   const handleStatusChange = (newStatus: string) => {
     startStatusTransition(async () => {
       try {
-        await updateMovieStatus(movie.id, newStatus);
+        await updatePostStatus(post.id, newStatus);
         toast({
           title: "Status Updated",
-          description: `Movie status has been changed to ${newStatus}.`,
+          description: `Post status has been changed to ${newStatus}.`,
         });
         router.refresh();
       } catch (error: any) {
         toast({
           variant: "destructive",
           title: "Error",
-          description: error.message || "Failed to update movie status.",
+          description: error.message || "Failed to update post status.",
         });
       }
     });
   };
   
   const onConfirmStatusChange = () => {
-    if (selectedStatus !== movie.status) {
+    if (selectedStatus !== post.status) {
       handleStatusChange(selectedStatus);
     }
   };
@@ -69,11 +69,11 @@ export default function AdminActions({ movie }: AdminActionsProps) {
             <div>
               <h4 className="font-semibold mb-2">Change Status</h4>
               <p className="text-sm text-muted-foreground mb-4">
-                Update the visibility and status of this movie post.
+                Update the visibility and status of this post.
               </p>
               <div className="flex items-center gap-2">
                 <Select
-                  defaultValue={movie.status}
+                  defaultValue={post.status}
                   onValueChange={setSelectedStatus}
                   disabled={isStatusChanging}
                 >
@@ -88,7 +88,7 @@ export default function AdminActions({ movie }: AdminActionsProps) {
                 </Select>
                 <Button
                     onClick={onConfirmStatusChange}
-                    disabled={isStatusChanging || selectedStatus === movie.status}
+                    disabled={isStatusChanging || selectedStatus === post.status}
                 >
                     {isStatusChanging ? (
                         <>
@@ -103,14 +103,14 @@ export default function AdminActions({ movie }: AdminActionsProps) {
             </div>
             <div>
               <h4 className="font-semibold mb-2">Author Details</h4>
-              <Link href={`/profile/${movie.author.id}`} className="flex items-center gap-3 group">
+              <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3 group">
                 <Avatar>
-                  {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={movie.author.name || 'Author'} />}
-                  <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase()}</AvatarFallback>
+                  {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author.name || 'Author'} />}
+                  <AvatarFallback>{post.author.name?.charAt(0).toUpperCase()}</AvatarFallback>
                 </Avatar>
                 <div>
-                  <p className="font-medium group-hover:text-primary">{movie.author.name}</p>
-                  <p className="text-sm text-muted-foreground">{movie.author.email}</p>
+                  <p className="font-medium group-hover:text-primary">{post.author.name}</p>
+                  <p className="text-sm text-muted-foreground">{post.author.email}</p>
                 </div>
               </Link>
             </div>

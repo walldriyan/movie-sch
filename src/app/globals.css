@@ -46,6 +46,21 @@
     --sidebar-accent: 240 3.7% 15.9%;
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-ring: 142 76% 45%;
+
+    /* Z-index hierarchy */
+    --z-index-header: 50;
+    --z-index-dropdown: 51;
+    --z-index-dialog: 52;
+    --z-index-popover: 53;
+    --z-index-tooltip: 54;
+    --z-index-toast: 60;
+  }
+}
+
+@layer components {
+  /* Applying z-index hierarchy */
+  .z-header {
+    z-index: var(--z-index-header);
   }
 }
 

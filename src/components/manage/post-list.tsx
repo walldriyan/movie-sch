@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import React, from 'react';
-import type { Movie, User } from '@prisma/client';
+import type { Post, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -53,23 +54,23 @@ import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import ClientSideDate from './client-side-date';
 
-type MovieWithDetails = Movie & { author: User, _count: { likedBy: number }};
+type PostWithDetails = Post & { author: User, _count: { likedBy: number }};
 
-interface MovieListProps {
-  movies: MovieWithDetails[];
+interface PostListProps {
+  posts: PostWithDetails[];
   onAddNew: () => void;
-  onEdit: (movie: MovieWithDetails) => void;
-  onDeleteConfirmed: (movieId: number) => void;
-  onStatusChange: (movieId: number, newStatus: string) => void;
+  onEdit: (post: PostWithDetails) => void;
+  onDeleteConfirmed: (postId: number) => void;
+  onStatusChange: (postId: number, newStatus: string) => void;
   onRefresh: () => void;
   onFilterChange: (status: string | null) => void;
   isRefreshing: boolean;
-  statusChangingMovieId: number | null;
+  statusChangingPostId: number | null;
   currentFilter: string | null;
 }
 
-export default function MovieList({
-  movies,
+export default function PostList({
+  posts,
   onAddNew,
   onEdit,
   onDeleteConfirmed,
@@ -77,23 +78,23 @@ export default function MovieList({
   onRefresh,
   onFilterChange,
   isRefreshing,
-  statusChangingMovieId,
+  statusChangingPostId,
   currentFilter,
-}: MovieListProps) {
+}: PostListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = React.useState(false);
-  const [movieToDelete, setMovieToDelete] = React.useState<MovieWithDetails | null>(null);
+  const [postToDelete, setPostToDelete] = React.useState<PostWithDetails | null>(null);
 
-  const handleDeleteClick = (movie: MovieWithDetails) => {
-    setMovieToDelete(movie);
+  const handleDeleteClick = (post: PostWithDetails) => {
+    setPostToDelete(post);
     setDeleteAlertOpen(true);
   };
 
   const confirmDelete = () => {
-    if (movieToDelete) {
-      onDeleteConfirmed(movieToDelete.id);
+    if (postToDelete) {
+      onDeleteConfirmed(postToDelete.id);
     }
     setDeleteAlertOpen(false);
-    setMovieToDelete(null);
+    setPostToDelete(null);
   };
 
   const getStatusVariant = (status: string | null) => {
@@ -114,14 +115,14 @@ export default function MovieList({
   return (
     <>
       <div className="flex items-center">
-        <h1 className="font-semibold text-lg md:text-2xl">Manage Movies</h1>
+        <h1 className="font-semibold text-lg md:text-2xl">Manage Posts</h1>
         <AuthGuard 
           requiredPermissions={[PERMISSIONS['post.create']]}
           fallback={<Skeleton className="ml-auto h-9 w-[150px] rounded-full" />}
         >
           <Button className="ml-auto" size="sm" onClick={onAddNew}>
             <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Movie
+            Add New Post
           </Button>
         </AuthGuard>
       </div>
@@ -129,9 +130,9 @@ export default function MovieList({
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle>Movies</CardTitle>
+              <CardTitle>Posts</CardTitle>
               <CardDescription>
-                A list of all movies in the catalog.
+                A list of all content in the catalog.
               </CardDescription>
             </div>
             <div className='flex items-center gap-2'>
@@ -181,24 +182,24 @@ export default function MovieList({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {movies.length > 0 ? (
-                movies.map((movie) => (
+              {posts.length > 0 ? (
+                posts.map((post) => (
                   <TableRow
-                    key={movie.id}
+                    key={post.id}
                     className={
-                      movie.status === MovieStatus.PENDING_DELETION
+                      post.status === MovieStatus.PENDING_DELETION
                         ? 'opacity-50'
                         : ''
                     }
                   >
                     <TableCell className="font-medium">
                        <div className="flex items-center gap-3">
-                         {movie.posterUrl ? (
+                         {post.posterUrl ? (
                           <Image
-                            alt={movie.title}
+                            alt={post.title}
                             className="aspect-square rounded-md object-cover flex-shrink-0"
                             height="40"
-                            src={movie.posterUrl}
+                            src={post.posterUrl}
                             width="40"
                           />
                         ) : (
@@ -207,46 +208,46 @@ export default function MovieList({
                           </div>
                         )}
                         <Link
-                          href={`/movies/${movie.id}`}
+                          href={`/movies/${post.id}`}
                           className="hover:underline line-clamp-2"
                         >
-                          {movie.title}
+                          {post.title}
                         </Link>
                        </div>
                     </TableCell>
                      <TableCell>
                       <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9 hidden sm:flex">
-                            <AvatarImage src={movie.author.image || ''} alt={movie.author.name || ''} />
-                            <AvatarFallback>{movie.author.name?.charAt(0) || 'U'}</AvatarFallback>
+                            <AvatarImage src={post.author.image || ''} alt={post.author.name || ''} />
+                            <AvatarFallback>{post.author.name?.charAt(0) || 'U'}</AvatarFallback>
                           </Avatar>
                           <div>
-                            <div className="font-medium">{movie.author.name}</div>
-                            <div className="text-xs text-muted-foreground hidden md:block">{movie.author.email}</div>
+                            <div className="font-medium">{post.author.name}</div>
+                            <div className="text-xs text-muted-foreground hidden md:block">{post.author.email}</div>
                           </div>
                       </div>
                     </TableCell>
                     <TableCell>
-                      {statusChangingMovieId === movie.id ? (
+                      {statusChangingPostId === post.id ? (
                         <Skeleton className="h-5 w-24 rounded-full" />
                       ) : (
-                        <Badge variant={getStatusVariant(movie.status)}>
-                          {movie.status || 'DRAFT'}
+                        <Badge variant={getStatusVariant(post.status)}>
+                          {post.status || 'DRAFT'}
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                       <ClientSideDate date={movie.createdAt} />
+                       <ClientSideDate date={post.createdAt} />
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-right">
                        <div className="flex justify-end items-center gap-4">
                           <div className="flex items-center gap-1">
                             <Eye className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{movie.viewCount}</span>
+                            <span className="text-sm">{post.viewCount}</span>
                           </div>
                            <div className="flex items-center gap-1">
                             <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{movie._count.likedBy}</span>
+                            <span className="text-sm">{post._count.likedBy}</span>
                           </div>
                         </div>
                     </TableCell>
@@ -267,22 +268,22 @@ export default function MovieList({
                           <AuthGuard
                             requiredPermissions={[PERMISSIONS['post.update']]}
                           >
-                            <DropdownMenuItem onClick={() => onEdit(movie)}>
+                            <DropdownMenuItem onClick={() => onEdit(post)}>
                               Edit
                             </DropdownMenuItem>
                           </AuthGuard>
 
                           <AuthGuard requiredPermissions={[PERMISSIONS['post.change_status']]}>
                              <DropdownMenuSub>
-                              <DropdownMenuSubTrigger disabled={statusChangingMovieId === movie.id}>
+                              <DropdownMenuSubTrigger disabled={statusChangingPostId === post.id}>
                                 Change Status
                               </DropdownMenuSubTrigger>
                               <DropdownMenuPortal>
                                 <DropdownMenuSubContent>
                                   <DropdownMenuRadioGroup
-                                    value={movie.status || ''}
+                                    value={post.status || ''}
                                     onValueChange={(newStatus) =>
-                                      onStatusChange(movie.id, newStatus)
+                                      onStatusChange(post.id, newStatus)
                                     }
                                   >
                                     {Object.values(MovieStatus).map((status) => (
@@ -304,7 +305,7 @@ export default function MovieList({
                             requiredPermissions={[PERMISSIONS['post.delete']]}
                           >
                             <DropdownMenuItem
-                              onClick={() => handleDeleteClick(movie)}
+                              onClick={() => handleDeleteClick(post)}
                               className="text-destructive"
                             >
                               Delete
@@ -318,7 +319,7 @@ export default function MovieList({
               ) : (
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">
-                    No movies found for the selected filter.
+                    No posts found for the selected filter.
                   </TableCell>
                 </TableRow>
               )}
@@ -331,8 +332,8 @@ export default function MovieList({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will affect the movie &quot;
-              {movieToDelete?.title}&quot;.
+              This action cannot be undone. This will affect the post &quot;
+              {postToDelete?.title}&quot;.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

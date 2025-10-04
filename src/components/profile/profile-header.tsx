@@ -20,7 +20,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
   PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   return (
-    <div className="border-b bg-background">
+    <div className="border-b bg-background overflow-hidden ">
       <div className="relative h-48">
         {coverImage && (
             <Image
@@ -48,7 +48,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
                   <p className="text-sm text-muted-foreground">1.2K Followers</p>
                 </div>
             </div>
-            <div className="flex items-center gap-2 pb-4">
+            <div className="flex items-center gap-2 pb-4 overflow-hidden ">
                 {isOwnProfile ? (
                 <EditProfileDialog user={user} />
                 ) : (
@@ -59,7 +59,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
                 </Button>
             </div>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 mb-4">
           <div className="flex items-center gap-2 pb-px overflow-x-auto no-scrollbar">
              <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full whitespace-nowrap">
                 <Link href={`/profile/${user.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
