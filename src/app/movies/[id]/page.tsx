@@ -24,7 +24,7 @@ import React from 'react';
 import Image from 'next/image';
 import { auth } from '@/auth';
 import AdminActions from '@/components/admin-actions';
-import { PostType } from '@/lib/types';
+import { PostType } from '@prisma/client';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -178,7 +178,7 @@ export default async function MoviePage({
                         <CardTitle>Details</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        {(post.type === PostType.MOVIE || post.type === PostType.TV_SERIES) ? (
+                        {post.type === PostType.MOVIE || post.type === PostType.TV_SERIES ? (
                           <>
                             <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
                             <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N/A'} />
