@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, from 'react';
 import type { Movie, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -32,7 +32,6 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu';
 import {
   AlertDialog,
@@ -51,8 +50,8 @@ import { Badge } from '@/components/ui/badge';
 import AuthGuard from '@/components/auth/auth-guard';
 import { PERMISSIONS, MovieStatus } from '@/lib/permissions';
 import { Skeleton } from '../ui/skeleton';
-import { format } from 'date-fns';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
+import ClientSideDate from './client-side-date';
 
 type MovieWithDetails = Movie & { author: User, _count: { likedBy: number }};
 
@@ -69,31 +68,6 @@ interface MovieListProps {
   currentFilter: string | null;
 }
 
-const SkeletonRow = () => (
-  <TableRow>
-    <TableCell colSpan={6}>
-      <div className="flex items-center gap-3">
-        <Skeleton className="h-10 w-10 rounded-md" />
-        <div className="space-y-2">
-            <Skeleton className="h-4 w-[250px]" />
-            <Skeleton className="h-4 w-[200px]" />
-        </div>
-      </div>
-    </TableCell>
-  </TableRow>
-);
-
-const ClientSideDate = ({ date }: { date: Date | string }) => {
-  const [formattedDate, setFormattedDate] = useState<string | null>(null);
-
-  useEffect(() => {
-    setFormattedDate(format(new Date(date), 'MMM dd, yyyy'));
-  }, [date]);
-
-  return <>{formattedDate || <Skeleton className="h-5 w-24" />}</>;
-}
-
-
 export default function MovieList({
   movies,
   onAddNew,
@@ -106,8 +80,8 @@ export default function MovieList({
   statusChangingMovieId,
   currentFilter,
 }: MovieListProps) {
-  const [deleteAlertOpen, setDeleteAlertOpen] = useState(false);
-  const [movieToDelete, setMovieToDelete] = useState<MovieWithDetails | null>(null);
+  const [deleteAlertOpen, setDeleteAlertOpen] = React.useState(false);
+  const [movieToDelete, setMovieToDelete] = React.useState<MovieWithDetails | null>(null);
 
   const handleDeleteClick = (movie: MovieWithDetails) => {
     setMovieToDelete(movie);
@@ -137,8 +111,6 @@ export default function MovieList({
     }
   };
   
-  const statusOptions = [null, ...Object.values(MovieStatus)];
-
   return (
     <>
       <div className="flex items-center">
@@ -198,11 +170,11 @@ export default function MovieList({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Title</TableHead>
+                <TableHead className="w-[40%]">Title</TableHead>
                 <TableHead>Author</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead className="text-right">Stats</TableHead>
+                <TableHead className="hidden lg:table-cell text-right">Stats</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -219,24 +191,24 @@ export default function MovieList({
                         : ''
                     }
                   >
-                    <TableCell className="font-medium max-w-xs">
+                    <TableCell className="font-medium">
                        <div className="flex items-center gap-3">
                          {movie.posterUrl ? (
                           <Image
                             alt={movie.title}
-                            className="aspect-square rounded-md object-cover"
+                            className="aspect-square rounded-md object-cover flex-shrink-0"
                             height="40"
                             src={movie.posterUrl}
                             width="40"
                           />
                         ) : (
-                          <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground">
+                          <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground flex-shrink-0">
                             <ImageIcon />
                           </div>
                         )}
                         <Link
                           href={`/movies/${movie.id}`}
-                          className="hover:underline truncate"
+                          className="hover:underline line-clamp-2"
                         >
                           {movie.title}
                         </Link>
@@ -244,13 +216,13 @@ export default function MovieList({
                     </TableCell>
                      <TableCell>
                       <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
+                          <Avatar className="h-9 w-9 hidden sm:flex">
                             <AvatarImage src={movie.author.image || ''} alt={movie.author.name || ''} />
                             <AvatarFallback>{movie.author.name?.charAt(0) || 'U'}</AvatarFallback>
                           </Avatar>
                           <div>
                             <div className="font-medium">{movie.author.name}</div>
-                            <div className="text-xs text-muted-foreground">{movie.author.email}</div>
+                            <div className="text-xs text-muted-foreground hidden md:block">{movie.author.email}</div>
                           </div>
                       </div>
                     </TableCell>
@@ -266,7 +238,7 @@ export default function MovieList({
                     <TableCell className="hidden md:table-cell">
                        <ClientSideDate date={movie.createdAt} />
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="hidden lg:table-cell text-right">
                        <div className="flex justify-end items-center gap-4">
                           <div className="flex items-center gap-1">
                             <Eye className="h-4 w-4 text-muted-foreground" />
