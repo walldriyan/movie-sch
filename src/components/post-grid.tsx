@@ -20,18 +20,21 @@ function CategoryIcon({ type }: { type: PostType }) {
   const getCategory = () => {
     switch (type) {
       case PostType.MOVIE:
-        return { icon: <Clapperboard className="w-3 h-3" />, label: 'Movie' };
+        return { icon: <Clapperboard className="w-4 h-4" />, label: 'Movie', color: 'bg-green-600/80' };
       case PostType.TV_SERIES:
-        return { icon: <Tv className="w-3 h-3" />, label: 'TV Series' };
+        return { icon: <Tv className="w-4 h-4" />, label: 'TV Series', color: 'bg-blue-600/80' };
       default:
-        return { icon: <Folder className="w-3 h-3" />, label: 'Other' };
+        return { icon: <Folder className="w-4 h-4" />, label: 'Other', color: 'bg-orange-600/80' };
     }
   };
 
-  const { icon, label } = getCategory();
+  const { icon, label, color } = getCategory();
 
   return (
-    <div className="absolute top-2 right-2 z-20 flex items-center gap-1.5 rounded-full bg-black/50 px-2 py-1 text-xs text-white backdrop-blur-sm">
+    <div className={cn(
+      "absolute top-2 right-2 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold text-white backdrop-blur-sm",
+      color
+    )}>
       {icon}
       <span>{label}</span>
     </div>
