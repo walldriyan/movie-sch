@@ -16,7 +16,15 @@ import {
   ThumbsUp,
   ThumbsDown,
   ArrowLeft,
+  Edit,
+  Trash2
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -24,8 +32,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Movie, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { toggleLikeMovie, toggleFavoriteMovie } from '@/lib/actions';
+import { toggleLikeMovie, toggleFavoriteMovie, deleteMovie } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { ROLES } from '@/lib/permissions';
 
 export default function MovieDetailClient({
   movie,
@@ -39,6 +48,7 @@ export default function MovieDetailClient({
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [isFavoritePending, startFavoriteTransition] = useTransition();
+  const [isDeleting, startDeleteTransition] = useTransition();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('about');
   const heroImage =
@@ -108,10 +118,29 @@ export default function MovieDetailClient({
     });
   };
   
+  const handleDelete = () => {
+    startDeleteTransition(async () => {
+      try {
+        await deleteMovie(movie.id);
+        toast({
+          title: 'Movie Deleted',
+          description: `"${movie.title}" has been submitted for deletion.`,
+        });
+        router.push('/manage');
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'Failed to delete movie.',
+        });
+      }
+    });
+  };
+
   const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && movie.likedBy?.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && movie.dislikedBy?.some(user => user.id === currentUser.id);
-
+  const canManage = currentUser && (currentUser.role === ROLES.SUPER_ADMIN || (currentUser.role === ROLES.USER_ADMIN && currentUser.id === movie.authorId));
 
   return (
     <>
@@ -241,9 +270,27 @@ export default function MovieDetailClient({
               <Button variant="ghost" size="icon">
                 <Share2 className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="w-5 h-5" />
-              </Button>
+              {canManage && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem asChild>
+                      <Link href={`/manage?edit=${movie.id}`}>
+                        <Edit className="mr-2 h-4 w-4" />
+                        <span>Edit</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleDelete} disabled={isDeleting} className="text-destructive">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         </div>
