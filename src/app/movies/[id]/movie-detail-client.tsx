@@ -162,7 +162,7 @@ export default function MovieDetailClient({
           variant="ghost"
           size="icon"
           onClick={() => router.back()}
-          className="absolute top-4 left-4 z-10 rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20"
+          className="absolute top-4 left-4 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
         >
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">Back</span>
@@ -256,12 +256,12 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2 pl-4">
-               <Button variant="ghost" size="sm" onClick={() => handleLike(true)} disabled={isPending} className={cn("px-3", isLiked && "bg-white/10 backdrop-blur-sm")}>
+               <Button variant="ghost" size="sm" onClick={() => handleLike(true)} disabled={isPending} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                 <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
                 <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>
               </Button>
               
-              <Button variant="ghost" size="sm" onClick={() => handleLike(false)} disabled={isPending} className={cn("px-3", isDisliked && "bg-white/10 backdrop-blur-sm")}>
+              <Button variant="ghost" size="sm" onClick={() => handleLike(false)} disabled={isPending} className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                 <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
                 <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>
               </Button>
