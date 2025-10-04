@@ -150,7 +150,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     const skip = (page - 1) * limit;
 
     let whereClause: Prisma.PostWhereInput = {
-      status: MovieStatus.PUBLISHED
+      status: MovieStatus.PUBLISHED,
     };
     
     let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
@@ -176,7 +176,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 
     if (genres && genres.length > 0) {
         whereClause.genres = {
-            hasSome: genres,
+            has: genres.join(','),
         };
     }
 
@@ -223,6 +223,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         posts: posts.map((post) => ({
             ...post,
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -257,6 +258,7 @@ export async function getPost(postId: number) {
   return {
     ...post,
     mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+    genres: post.genres ? post.genres.split(',') : [],
     subtitles,
   };
 }
@@ -280,7 +282,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: postData.year,
     duration: postData.duration,
-    genres: postData.genres,
+    genres: postData.genres?.join(','),
     directors: postData.directors,
     mainCast: postData.mainCast,
     imdbRating: postData.imdbRating,
@@ -501,6 +503,7 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
         posts: posts.map((post) => ({
             ...post,
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -525,7 +528,7 @@ export async function updatePostStatus(postId: number, status: string) {
   
   // USER_ADMIN can only approve their own posts or move them to draft/private
   if (session.user.role === ROLES.USER_ADMIN) {
-    if (postToUpdate.authorId !== session.user.id && ![MovieStatus.PUBLISHED, MovieStatus.PENDING_DELETION].includes(status)) {
+    if (postToUpdate.authorId !== session.user.id && ![MovieStatus.PUBLISHED, MovieStatus.PENDING_DELETION].includes(status as any)) {
        throw new Error('You can only manage status for your own posts.');
     }
     // They cannot directly publish or reject deletion
@@ -672,6 +675,7 @@ export async function getFavoritePosts() {
   return favoritePosts.map(fav => ({
     ...fav.post,
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
+    genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
 
@@ -693,6 +697,7 @@ export async function getFavoritePostsByUserId(userId: string) {
   return favoritePosts.map(fav => ({
     ...fav.post,
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
+    genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
 
