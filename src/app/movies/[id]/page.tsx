@@ -1,5 +1,4 @@
 
-
 import { notFound } from 'next/navigation';
 import { getPost } from '@/lib/actions';
 import type { Post, Review, Subtitle } from '@/lib/types';
@@ -301,3 +300,5 @@ export default async function MoviePage({
     </div>
   );
 }
+
+    
