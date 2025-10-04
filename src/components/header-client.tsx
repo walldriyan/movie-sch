@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -7,7 +8,6 @@ import {
   User,
   Users,
   Bookmark,
-  PlusCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -31,10 +31,10 @@ import HeaderApprovals from './header-approvals';
 
 export default function HeaderClient({
   session,
-  children,
+  createButton,
 }: {
   session: Session | null;
-  children?: ReactNode;
+  createButton?: ReactNode;
 }) {
   const user = session?.user;
 
@@ -53,21 +53,6 @@ export default function HeaderClient({
       default:
         return 'outline';
     }
-  };
-
-  const renderCreateButton = () => {
-    if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
-      return null;
-    }
-
-    return (
-      <Button asChild variant="ghost">
-        <Link href="/manage">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          <span>Create</span>
-        </Link>
-      </Button>
-    );
   };
 
   const renderUserMenu = () => {
@@ -163,10 +148,9 @@ export default function HeaderClient({
   };
 
   return (
-    <header className="sticky top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-[101]">
+    <header className="sticky top-0 z-[101] w-full bg-background/80 backdrop-blur-lg border-b border-white/10">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
-        {children || (
-          <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4">
             <Link href="/" className="flex items-center space-x-2">
               <Film className="h-7 w-7 text-primary" />
               <span className="inline-block font-bold font-serif text-2xl">
@@ -174,9 +158,8 @@ export default function HeaderClient({
               </span>
             </Link>
           </div>
-        )}
         <div className="flex items-center justify-end space-x-2">
-          {renderCreateButton()}
+          {createButton}
           <HeaderApprovals />
           {renderUserMenu()}
         </div>
