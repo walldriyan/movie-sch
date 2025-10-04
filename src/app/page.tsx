@@ -83,8 +83,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <Button asChild variant={'outline'} className={cn(
-                  "rounded-full bg-transparent hover:bg-gray-800",
-                  !typeFilter ? 'border-primary/30 text-primary bg-gradient-to-t from-background via-red-950/10 to-background' : 'border-gray-700'
+                  "rounded-full hover:bg-gray-800",
+                  !typeFilter ? 'border-primary/30 text-primary bg-white/5 backdrop-blur-sm' : 'border-gray-700 bg-transparent'
                 )}>
                   <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })}>
                     <Film />
@@ -93,8 +93,8 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 </Button>
                  {typeFilters.map(filter => (
                     <Button key={filter.value} asChild variant={'outline'} className={cn(
-                      "rounded-full bg-transparent hover:bg-gray-800",
-                      typeFilter === filter.value ? 'border-primary/30 text-primary bg-gradient-to-t from-background via-red-950/10 to-background' : 'border-gray-700'
+                      "rounded-full hover:bg-gray-800",
+                      typeFilter === filter.value ? 'border-primary/30 text-primary bg-white/5 backdrop-blur-sm' : 'border-gray-700 bg-transparent'
                     )}>
                       <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })}>
                         {filter.icon}
