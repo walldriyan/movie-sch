@@ -91,12 +91,16 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton className="text-base">
-                <Settings />
-                <span>Settings</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+             <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild className="text-base">
+                  <Link href="/admin/settings">
+                    <Settings />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </AuthGuard>
           </SidebarMenu>
           <div className="flex-grow" />
         </SidebarContent>
