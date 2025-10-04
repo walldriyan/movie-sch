@@ -140,11 +140,11 @@ export default function MovieDetailClient({
   const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && movie.likedBy?.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && movie.dislikedBy?.some(user => user.id === currentUser.id);
-  const canManage = currentUser && (currentUser.role === ROLES.SUPER_ADMIN || (currentUser.role === ROLES.USER_ADMIN && currentUser.id === movie.authorId));
+  const canManage = currentUser && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role);
 
   return (
     <>
-      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end">
+      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end z-50">
         {heroImage && (
           <Image
             src={heroImage}
