@@ -144,7 +144,7 @@ export default function MovieDetailClient({
 
   return (
     <>
-      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end z-50">
+      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end">
         {heroImage && (
           <Image
             src={heroImage}
