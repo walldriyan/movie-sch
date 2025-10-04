@@ -155,16 +155,10 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     
     let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
 
-    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate } = filters;
+    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId } = filters;
     
     if (authorId) {
       whereClause.authorId = authorId;
-      if (!includePrivate) {
-         whereClause.status = MovieStatus.PUBLISHED;
-      } else {
-        // If including private, don't filter by status unless specified
-        delete whereClause.status;
-      }
     }
     
     if (sortBy) {
@@ -307,12 +301,12 @@ export async function savePost(postData: PostFormData, id?: number) {
     
     await prisma.post.update({ 
         where: { id }, 
-        data: { ...data, status: status } as any
+        data: { ...data, status: status }
     });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.post.create({ data: { ...data, status: status, authorId: userId } as any });
+    await prisma.post.create({ data: { ...data, status: status, authorId: userId } });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
@@ -416,7 +410,7 @@ export async function updateUserProfile(
 
   await prisma.user.update({
     where: { id: userId },
-    data: updateData as any,
+    data: updateData,
   });
 
   revalidatePath(`/profile/${userId}`);
