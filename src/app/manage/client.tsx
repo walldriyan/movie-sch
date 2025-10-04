@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useTransition } from 'react';
@@ -41,6 +42,8 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const [statusChangingMovieId, setStatusChangingMovieId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [debugError, setDebugError] = useState<any>(null);
+
 
   const { toast } = useToast();
 
@@ -108,6 +111,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   };
 
   const handleDeleteConfirmed = async (movieId: number) => {
+    setDebugError(null);
     try {
       const movieToDelete = movies.find(m => m.id === movieId);
       if (movieToDelete) {
@@ -118,11 +122,13 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
           description: `Movie "${movieToDelete.title}" action has been processed.`,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Delete error caught in client:", error);
+      setDebugError(error);
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'Failed to delete movie.',
+        description: error.message || 'Failed to delete movie.',
       });
     }
   };
@@ -180,71 +186,85 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
     : movies.filter((m) => m.status !== 'PENDING_DELETION');
 
   return (
-    <ManageLayout user={user}>
-      {view === 'list' ? (
-        <>
-          <MovieList
-            movies={visibleMovies}
-            onAddNew={handleAddNewMovie}
-            onEdit={handleEditMovie}
-            onDeleteConfirmed={handleDeleteConfirmed}
-            onStatusChange={handleStatusChange}
-            onRefresh={handleRefresh}
-            onFilterChange={handleFilterChange}
-            isRefreshing={isRefreshing}
-            statusChangingMovieId={statusChangingMovieId}
-            currentFilter={statusFilter}
-          />
-          {totalPages > 1 && !isRefreshing && (
-             <Pagination>
-                <PaginationContent>
-                  <PaginationItem>
-                    <PaginationPrevious 
-                      href="#" 
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handlePageChange(currentPage - 1);
-                      }}
-                      className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-                    />
-                  </PaginationItem>
-                   {Array.from({ length: totalPages }, (_, i) => (
-                      <PaginationItem key={i}>
-                        <PaginationLink 
-                          href="#"
-                          isActive={currentPage === i + 1}
-                          onClick={(e) => {
-                            e.preventDefault();
-                            handlePageChange(i + 1);
-                          }}
-                        >
-                          {i + 1}
-                        </PaginationLink>
-                      </PaginationItem>
-                   ))}
+    <>
+      <ManageLayout user={user}>
+        {view === 'list' ? (
+          <>
+            <MovieList
+              movies={visibleMovies}
+              onAddNew={handleAddNewMovie}
+              onEdit={handleEditMovie}
+              onDeleteConfirmed={handleDeleteConfirmed}
+              onStatusChange={handleStatusChange}
+              onRefresh={handleRefresh}
+              onFilterChange={handleFilterChange}
+              isRefreshing={isRefreshing}
+              statusChangingMovieId={statusChangingMovieId}
+              currentFilter={statusFilter}
+            />
+            {totalPages > 1 && !isRefreshing && (
+               <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        href="#" 
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(currentPage - 1);
+                        }}
+                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                      />
+                    </PaginationItem>
+                     {Array.from({ length: totalPages }, (_, i) => (
+                        <PaginationItem key={i}>
+                          <PaginationLink 
+                            href="#"
+                            isActive={currentPage === i + 1}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              handlePageChange(i + 1);
+                            }}
+                          >
+                            {i + 1}
+                          </PaginationLink>
+                        </PaginationItem>
+                     ))}
 
-                  <PaginationItem>
-                    <PaginationNext 
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        handlePageChange(currentPage + 1);
-                      }}
-                      className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
-                    />
-                  </PaginationItem>
-                </PaginationContent>
-              </Pagination>
-          )}
-        </>
-      ) : (
-        <MovieForm
-          editingMovie={editingMovie}
-          onFormSubmit={handleFormSubmit}
-          onBack={handleBackFromForm}
-          error={formError}
-        />
+                    <PaginationItem>
+                      <PaginationNext 
+                        href="#"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handlePageChange(currentPage + 1);
+                        }}
+                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+            )}
+          </>
+        ) : (
+          <MovieForm
+            editingMovie={editingMovie}
+            onFormSubmit={handleFormSubmit}
+            onBack={handleBackFromForm}
+            error={formError}
+          />
+        )}
+      </ManageLayout>
+      {debugError && (
+        <div className="mt-8 p-4 border border-dashed rounded-lg text-left bg-card">
+            <h2 className="text-lg font-semibold mb-2 text-destructive">Debug Error Information</h2>
+            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+              {JSON.stringify({
+                  message: debugError.message,
+                  stack: debugError.stack,
+                  ...debugError
+              }, null, 2)}
+            </pre>
+          </div>
       )}
-    </ManageLayout>
+    </>
   );
 }
