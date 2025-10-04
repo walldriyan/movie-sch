@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -123,7 +124,7 @@ export default function HeaderApprovals() {
     <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon" className="relative">
+          <Button variant="outline" size="icon" className="relative">
             <Bell />
             {totalApprovals > 0 && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{totalApprovals}</Badge>
