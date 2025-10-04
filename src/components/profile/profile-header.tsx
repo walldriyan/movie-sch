@@ -20,7 +20,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
   PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   return (
-    <div className="border-b bg-background">
+    <div className="border-b bg-background overflow-hidden ">
       <div className="relative h-48">
         {coverImage && (
             <Image

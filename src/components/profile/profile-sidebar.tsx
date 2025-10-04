@@ -67,7 +67,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
     const showRequestAccess = isOwnProfile && loggedInUser?.role === ROLES.USER && profileUser.permissionRequestStatus !== 'APPROVED';
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 overflow-hidden">
            <div>
               <h2 className="text-xl font-bold">{profileUser.name}</h2>
               <p className="text-sm text-muted-foreground">{profileUser.email}</p>
