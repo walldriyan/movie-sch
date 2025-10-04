@@ -155,7 +155,16 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     
     let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
 
-    const { sortBy, genres, yearRange, ratingRange, timeFilter } = filters;
+    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate } = filters;
+    
+    if (authorId) {
+      whereClause.authorId = authorId;
+      if (!includePrivate) {
+         whereClause.status = {
+            in: [MovieStatus.PUBLISHED]
+         }
+      }
+    }
     
     if (sortBy) {
       const [field, direction] = sortBy.split('-');
