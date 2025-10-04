@@ -48,7 +48,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
                   <p className="text-sm text-muted-foreground">1.2K Followers</p>
                 </div>
             </div>
-            <div className="flex items-center gap-2 pb-4">
+            <div className="flex items-center gap-2 pb-4 overflow-hidden ">
                 {isOwnProfile ? (
                 <EditProfileDialog user={user} />
                 ) : (
