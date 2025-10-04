@@ -22,7 +22,7 @@ import type { Post, User } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 
-type PendingPost = Pick<Post, 'id' | 'title'> & { author: Pick<User, 'name'> };
+type PendingPost = Pick<Post, 'id' | 'title'> & { author: Pick<User, 'name'> | null };
 type PendingUser = Pick<User, 'id' | 'name' | 'email'>;
 
 interface ApprovalsState {
@@ -41,11 +41,14 @@ export default function HeaderApprovals() {
         const data = await getPendingApprovals();
         setApprovals(data as any);
       } catch (error) {
+        console.error("Failed to fetch approvals:", error);
         toast({
           variant: 'destructive',
           title: 'Error',
           description: 'Could not fetch approvals.',
         });
+        // Set empty state on error to avoid crash
+        setApprovals({ pendingPosts: [], pendingUsers: [] });
       }
     });
   };
@@ -54,7 +57,9 @@ export default function HeaderApprovals() {
     fetchApprovals();
   }, []);
 
-  const totalApprovals = (approvals?.pendingPosts.length || 0) + (approvals?.pendingUsers.length || 0);
+  const safePendingPosts = approvals?.pendingPosts?.filter(p => p) || [];
+  const safePendingUsers = approvals?.pendingUsers?.filter(u => u) || [];
+  const totalApprovals = safePendingPosts.length + safePendingUsers.length;
 
   const renderContent = () => {
     if (isPending && !approvals) {
@@ -80,15 +85,15 @@ export default function HeaderApprovals() {
 
     return (
         <ScrollArea className="max-h-96">
-            {approvals?.pendingPosts.length > 0 && (
+            {safePendingPosts.length > 0 && (
                 <>
                     <DropdownMenuLabel className="flex items-center gap-2"><Film /> Pending Posts</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {approvals.pendingPosts.map(post => (
+                    {safePendingPosts.map(post => (
                         <DropdownMenuItem key={`movie-${post.id}`} className="flex-col items-start focus:bg-transparent">
                             <div>
                                 <div className="font-semibold">{post.title}</div>
-                                <div className="text-xs text-muted-foreground">by {post.author.name}</div>
+                                <div className="text-xs text-muted-foreground">by {post.author?.name || 'Unknown'}</div>
                             </div>
                              <div className="flex items-center gap-2 mt-2">
                                 <Button asChild size="sm" variant="outline">
@@ -102,14 +107,14 @@ export default function HeaderApprovals() {
                     ))}
                 </>
             )}
-             {approvals?.pendingUsers.length > 0 && (
+             {safePendingUsers.length > 0 && (
                 <>
                     <DropdownMenuLabel className="flex items-center gap-2 pt-4"><Users /> Pending Users</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {approvals.pendingUsers.map(user => (
+                    {safePendingUsers.map(user => (
                         <DropdownMenuItem key={`user-${user.id}`} asChild>
                             <Link href="/admin/users" className="flex-col items-start">
-                                 <div className="font-semibold">{user.name}</div>
+                                 <div className="font-semibold">{user.name || 'Unknown User'}</div>
                                 <div className="text-xs text-muted-foreground">{user.email}</div>
                             </Link>
                         </DropdownMenuItem>
@@ -126,7 +131,7 @@ export default function HeaderApprovals() {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
             <Bell />
-            {totalApprovals > 0 && (
+            {totalApprovals > 0 && !isPending && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{totalApprovals}</Badge>
             )}
             <span className="sr-only">Toggle approvals</span>
@@ -141,6 +146,13 @@ export default function HeaderApprovals() {
             </div>
             <DropdownMenuSeparator />
             {renderContent()}
+            <DropdownMenuSeparator />
+             <div className="p-2 text-xs text-muted-foreground">
+                <p className="font-bold">Debug Information:</p>
+                <pre className="mt-1 text-[10px] bg-muted p-1 rounded-sm overflow-x-auto">
+                    {JSON.stringify(approvals, null, 2)}
+                </pre>
+            </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </AuthGuard>
