@@ -150,9 +150,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     const skip = (page - 1) * limit;
 
     let whereClause: Prisma.PostWhereInput = {
-      status: {
-        notIn: [MovieStatus.PRIVATE, MovieStatus.PENDING_DELETION]
-      }
+      status: MovieStatus.PUBLISHED
     };
     
     let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
@@ -162,9 +160,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     if (authorId) {
       whereClause.authorId = authorId;
       if (!includePrivate) {
-         whereClause.status = {
-            notIn: [MovieStatus.PRIVATE, MovieStatus.PENDING_DELETION]
-         };
+         whereClause.status = MovieStatus.PUBLISHED;
       } else {
         // If including private, don't filter by status unless specified
         delete whereClause.status;
@@ -179,11 +175,9 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     }
 
     if (genres && genres.length > 0) {
-      whereClause.genres = {
-        // This is a simplified search for comma-separated string.
-        // For better performance, a full-text search index would be ideal.
-        contains: genres.join(','),
-      };
+        whereClause.genres = {
+            hasSome: genres,
+        };
     }
 
     if (yearRange) {
@@ -228,7 +222,6 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: (post.genres as string)?.split(',') || [],
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
@@ -263,7 +256,6 @@ export async function getPost(postId: number) {
 
   return {
     ...post,
-    genres: (post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(post.mediaLinks || '[]'),
     subtitles,
   };
@@ -288,7 +280,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: postData.year,
     duration: postData.duration,
-    genres: postData.genres?.join(',') || null,
+    genres: postData.genres,
     directors: postData.directors,
     mainCast: postData.mainCast,
     imdbRating: postData.imdbRating,
@@ -508,7 +500,6 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: (post.genres as string)?.split(',') || [],
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
@@ -680,7 +671,6 @@ export async function getFavoritePosts() {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    genres: (fav.post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
@@ -702,7 +692,6 @@ export async function getFavoritePostsByUserId(userId: string) {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    genres: (fav.post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
