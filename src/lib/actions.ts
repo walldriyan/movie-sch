@@ -162,7 +162,9 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     if (authorId) {
       whereClause.authorId = authorId;
       if (!includePrivate) {
-        whereClause.status = MovieStatus.PUBLISHED;
+         whereClause.status = {
+            notIn: [MovieStatus.PRIVATE, MovieStatus.PENDING_DELETION]
+         };
       } else {
         // If including private, don't filter by status unless specified
         delete whereClause.status;
@@ -178,7 +180,9 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 
     if (genres && genres.length > 0) {
       whereClause.genres = {
-        hasSome: genres,
+        // This is a simplified search for comma-separated string.
+        // For better performance, a full-text search index would be ideal.
+        contains: genres.join(','),
       };
     }
 
@@ -224,7 +228,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: Array.isArray(post.genres) ? post.genres : (post.genres as string)?.split(',') || [],
+            genres: (post.genres as string)?.split(',') || [],
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
@@ -259,7 +263,7 @@ export async function getPost(postId: number) {
 
   return {
     ...post,
-    genres: Array.isArray(post.genres) ? post.genres : (post.genres as string)?.split(',') || [],
+    genres: (post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(post.mediaLinks || '[]'),
     subtitles,
   };
@@ -284,7 +288,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: postData.year,
     duration: postData.duration,
-    genres: postData.genres,
+    genres: postData.genres?.join(',') || null,
     directors: postData.directors,
     mainCast: postData.mainCast,
     imdbRating: postData.imdbRating,
@@ -504,7 +508,7 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: Array.isArray(post.genres) ? post.genres : (post.genres as string)?.split(',') || [],
+            genres: (post.genres as string)?.split(',') || [],
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
@@ -515,13 +519,33 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
 
 export async function updatePostStatus(postId: number, status: string) {
   const session = await auth();
-  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+  if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
     throw new Error('Not authorized to change post status.');
   }
 
   if (!Object.values(MovieStatus).includes(status as any)) {
     throw new Error(`Invalid status: ${status}`);
   }
+  
+  const postToUpdate = await prisma.post.findUnique({ where: { id: postId } });
+  if (!postToUpdate) {
+    throw new Error('Post not found');
+  }
+  
+  // USER_ADMIN can only approve their own posts or move them to draft/private
+  if (session.user.role === ROLES.USER_ADMIN) {
+    if (postToUpdate.authorId !== session.user.id && ![MovieStatus.PUBLISHED, MovieStatus.PENDING_DELETION].includes(status)) {
+       throw new Error('You can only manage status for your own posts.');
+    }
+    // They cannot directly publish or reject deletion
+    if (status === MovieStatus.PUBLISHED || (postToUpdate.status === MovieStatus.PENDING_DELETION && status !== 'PUBLISHED')) {
+       // Allow SUPER_ADMIN to do this
+       if (session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('You do not have permission for this status change.');
+       }
+    }
+  }
+
 
   await prisma.post.update({
     where: { id: postId },
@@ -529,6 +553,7 @@ export async function updatePostStatus(postId: number, status: string) {
   });
 
   revalidatePath('/manage');
+  revalidatePath(`/movies/${postId}`);
 }
 
 export async function toggleLikePost(postId: number, like: boolean) {
@@ -655,7 +680,7 @@ export async function getFavoritePosts() {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    genres: Array.isArray(fav.post.genres) ? fav.post.genres : (fav.post.genres as string)?.split(',') || [],
+    genres: (fav.post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
@@ -677,7 +702,7 @@ export async function getFavoritePostsByUserId(userId: string) {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    genres: Array.isArray(fav.post.genres) ? fav.post.genres : (fav.post.genres as string)?.split(',') || [],
+    genres: (fav.post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
