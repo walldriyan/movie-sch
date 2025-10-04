@@ -33,9 +33,10 @@ export default async function ProfilePage({
   let displayPosts: any[] = [];
   if (currentFilter === 'posts') {
     const { posts: allPosts } = await getPosts({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
-    displayPosts = allPosts;
+    displayPosts = allPosts || [];
   } else if (currentFilter === 'favorites') {
-    displayPosts = await getFavoritePostsByUserId(profileUser.id);
+    const favoritePosts = await getFavoritePostsByUserId(profileUser.id);
+    displayPosts = favoritePosts || [];
   }
   
   return (
