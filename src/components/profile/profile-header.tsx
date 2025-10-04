@@ -59,7 +59,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
                 </Button>
             </div>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 mb-4">
           <div className="flex items-center gap-2 pb-px overflow-x-auto no-scrollbar">
              <Button asChild variant={currentFilter === 'posts' ? 'secondary' : 'ghost'} className="rounded-full whitespace-nowrap">
                 <Link href={`/profile/${user.id}?filter=posts`}><Grid3x3 className="mr-2 h-4 w-4" /> My Posts</Link>
