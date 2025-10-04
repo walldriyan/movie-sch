@@ -256,12 +256,12 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2 pl-4">
-               <Button variant="ghost" size="sm" onClick={() => handleLike(true)} disabled={isPending} className={cn("px-3", isLiked && "bg-accent")}>
+               <Button variant="ghost" size="sm" onClick={() => handleLike(true)} disabled={isPending} className={cn("px-3", isLiked && "bg-white/10 backdrop-blur-sm")}>
                 <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
                 <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>
               </Button>
               
-              <Button variant="ghost" size="sm" onClick={() => handleLike(false)} disabled={isPending} className={cn("px-3", isDisliked && "bg-accent")}>
+              <Button variant="ghost" size="sm" onClick={() => handleLike(false)} disabled={isPending} className={cn("px-3", isDisliked && "bg-white/10 backdrop-blur-sm")}>
                 <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
                 <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>
               </Button>
