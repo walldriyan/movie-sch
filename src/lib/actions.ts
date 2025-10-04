@@ -731,23 +731,33 @@ export async function getFavoritePostsByUserId(userId: string) {
 
 export async function getPendingApprovals() {
   const session = await auth();
-  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+  const user = session?.user;
+  if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     return { pendingPosts: [], pendingUsers: [] };
   }
 
+  let whereClause: Prisma.PostWhereInput = { status: MovieStatus.PENDING_APPROVAL };
+  if (user.role === ROLES.USER_ADMIN) {
+    whereClause.authorId = user.id;
+  }
+  
   const pendingPosts = await prisma.post.findMany({
-    where: { status: MovieStatus.PENDING_APPROVAL },
+    where: whereClause,
     select: { id: true, title: true, author: { select: { name: true } } },
     orderBy: {
       createdAt: 'desc',
     },
   });
 
-  const pendingUsers = await prisma.user.findMany({
-    where: { permissionRequestStatus: 'PENDING' },
-    select: { id: true, name: true, email: true },
-    orderBy: { updatedAt: 'desc' },
-  });
+  let pendingUsers = [];
+  if (user.role === ROLES.SUPER_ADMIN) {
+    pendingUsers = await prisma.user.findMany({
+      where: { permissionRequestStatus: 'PENDING' },
+      select: { id: true, name: true, email: true },
+      orderBy: { updatedAt: 'desc' },
+    });
+  }
+
 
   return { pendingPosts, pendingUsers };
 }

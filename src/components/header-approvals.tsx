@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -126,7 +127,7 @@ export default function HeaderApprovals() {
   };
 
   return (
-    <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+    <AuthGuard requiredRole={ROLES.SUPER_ADMIN || ROLES.USER_ADMIN}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
@@ -146,13 +147,6 @@ export default function HeaderApprovals() {
             </div>
             <DropdownMenuSeparator />
             {renderContent()}
-            <DropdownMenuSeparator />
-             <div className="p-2 text-xs text-muted-foreground">
-                <p className="font-bold">Debug Information:</p>
-                <pre className="mt-1 text-[10px] bg-muted p-1 rounded-sm overflow-x-auto">
-                    {JSON.stringify(approvals, null, 2)}
-                </pre>
-            </div>
         </DropdownMenuContent>
       </DropdownMenu>
     </AuthGuard>
