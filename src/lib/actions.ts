@@ -153,7 +153,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       status: MovieStatus.PUBLISHED,
     };
     
-    let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
+    let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
 
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate } = filters;
     
@@ -244,6 +244,7 @@ export async function getPost(postId: number) {
       favoritePosts: userId ? { where: { userId } } : false,
       likedBy: true,
       dislikedBy: true,
+      mediaLinks: true,
     },
   });
   
@@ -255,7 +256,6 @@ export async function getPost(postId: number) {
 
   return {
     ...post,
-    mediaLinks: JSON.parse(post.mediaLinks || '[]'),
     genres: post.genres ? post.genres.split(',') : [],
     subtitles,
   };
@@ -304,7 +304,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     
     await prisma.post.update({ 
         where: { id }, 
-        data: { ...data, status: status, mediaLinks: { set: postData.mediaLinks } } as any
+        data: { ...data, status: status, mediaLinks: { set: postData.mediaLinks?.map(l => ({id: l.id, type: l.type, url: l.url})) } } as any
     });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
