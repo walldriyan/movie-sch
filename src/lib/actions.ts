@@ -280,7 +280,7 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: movieData.year,
     duration: movieData.duration,
-    genres: movieData.genres,
+    genres: (movieData.genres as any).join(','),
     directors: movieData.directors,
     mainCast: movieData.mainCast,
     imdbRating: movieData.imdbRating,
