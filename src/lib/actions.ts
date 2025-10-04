@@ -221,7 +221,6 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     return {
         posts: posts.map((post) => ({
             ...post,
-            mediaLinks: JSON.parse(post.mediaLinks || '[]'),
             genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
@@ -242,7 +241,7 @@ export async function getPost(postId: number) {
         },
       },
       author: true,
-      favoritedBy: userId ? { where: { userId } } : false,
+      favoritePosts: userId ? { where: { userId } } : false,
       likedBy: true,
       dislikedBy: true,
     },
@@ -288,7 +287,6 @@ export async function savePost(postData: PostFormData, id?: number) {
     rottenTomatoesRating: postData.rottenTomatoesRating,
     googleRating: postData.googleRating,
     viewCount: postData.viewCount,
-    mediaLinks: JSON.stringify(postData.mediaLinks || []),
     type: postData.type || PostType.MOVIE,
   };
 
@@ -306,12 +304,12 @@ export async function savePost(postData: PostFormData, id?: number) {
     
     await prisma.post.update({ 
         where: { id }, 
-        data: { ...data, status: status }
+        data: { ...data, status: status, mediaLinks: { set: postData.mediaLinks } } as any
     });
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.post.create({ data: { ...data, status: status, authorId: userId } });
+    await prisma.post.create({ data: { ...data, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } as any });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
@@ -367,7 +365,6 @@ export async function deletePost(id: number) {
 export async function getUsers(): Promise<User[]> {
   const users = await prisma.user.findMany({
     orderBy: { name: 'asc' },
-    take: 5,
   });
   return users;
 }
@@ -512,7 +509,6 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     return {
         posts: posts.map((post) => ({
             ...post,
-            mediaLinks: JSON.parse(post.mediaLinks || '[]'),
             genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
@@ -677,7 +673,6 @@ export async function getFavoritePosts() {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
     genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
@@ -708,7 +703,6 @@ export async function getPostsByUserId(userId: string, includePrivate: boolean =
   
   return userPosts.map(post => ({
     ...post,
-    mediaLinks: JSON.parse(post.mediaLinks || '[]'),
     genres: post.genres ? post.genres.split(',') : [],
   }));
 }
@@ -731,7 +725,6 @@ export async function getFavoritePostsByUserId(userId: string) {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
     genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }

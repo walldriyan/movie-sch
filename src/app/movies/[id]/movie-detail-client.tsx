@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useTransition, useState } from 'react';
@@ -137,7 +138,7 @@ export default function MovieDetailClient({
     });
   };
 
-  const isFavorited = currentUser && post.favoritedBy && post.favoritedBy.some(fav => fav.userId === currentUser?.id);
+  const isFavorited = currentUser && post.favoritePosts && post.favoritePosts.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && post.likedBy?.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && post.dislikedBy?.some(user => user.id === currentUser.id);
   const canManage = currentUser && ([ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role));
