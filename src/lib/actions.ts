@@ -9,7 +9,7 @@ import { PostFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
-import { ROLES, MovieStatus, PERMISSIONS } from './permissions';
+import { ROLES, MovieStatus } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
@@ -155,11 +155,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     
     let orderBy: Prisma.PostOrderByWithRelationInput = { updatedAt: 'desc' };
 
-    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId } = filters;
-    
-    if (authorId) {
-      whereClause.authorId = authorId;
-    }
+    const { sortBy, genres, yearRange, ratingRange, timeFilter } = filters;
     
     if (sortBy) {
       const [field, direction] = sortBy.split('-');
@@ -170,7 +166,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 
     if (genres && genres.length > 0) {
         whereClause.genres = {
-            has: genres.join(','),
+            hasSome: genres,
         };
     }
 
@@ -217,7 +213,6 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         posts: posts.map((post) => ({
             ...post,
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
-            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -252,7 +247,6 @@ export async function getPost(postId: number) {
   return {
     ...post,
     mediaLinks: JSON.parse(post.mediaLinks || '[]'),
-    genres: post.genres ? post.genres.split(',') : [],
     subtitles,
   };
 }
@@ -276,7 +270,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: postData.year,
     duration: postData.duration,
-    genres: postData.genres?.join(','),
+    genres: postData.genres,
     directors: postData.directors,
     mainCast: postData.mainCast,
     imdbRating: postData.imdbRating,
@@ -316,16 +310,26 @@ export async function deletePost(id: number) {
   const session = await auth();
   const user = session?.user;
 
-  if (!user || !user.permissions?.includes(PERMISSIONS['post.delete'])) {
-    throw new Error('Not authorized to delete posts.');
+  if (!user) {
+    throw new Error('Not authorized.');
   }
-
+  
   const postToDelete = await prisma.post.findUnique({ where: { id } });
   if (!postToDelete) {
     throw new Error('Post not found');
   }
 
-  const isPermanent = user.permissions.includes(PERMISSIONS['post.hard_delete']);
+  // Check permissions
+  const canDelete = 
+    user.role === ROLES.SUPER_ADMIN || 
+    (user.role === ROLES.USER_ADMIN && postToDelete.authorId === user.id);
+  
+  if (!canDelete) {
+     throw new Error('Not authorized to delete this post.');
+  }
+
+  const isPermanent = user.role === ROLES.SUPER_ADMIN;
+
 
   if (isPermanent) {
     await prisma.$transaction([
@@ -352,6 +356,7 @@ export async function deletePost(id: number) {
 export async function getUsers(): Promise<User[]> {
   const users = await prisma.user.findMany({
     orderBy: { name: 'asc' },
+    take: 5,
   });
   return users;
 }
@@ -497,7 +502,6 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
         posts: posts.map((post) => ({
             ...post,
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
-            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -522,15 +526,8 @@ export async function updatePostStatus(postId: number, status: string) {
   
   // USER_ADMIN can only approve their own posts or move them to draft/private
   if (session.user.role === ROLES.USER_ADMIN) {
-    if (postToUpdate.authorId !== session.user.id && ![MovieStatus.PUBLISHED, MovieStatus.PENDING_DELETION].includes(status as any)) {
+    if (postToUpdate.authorId !== session.user.id) {
        throw new Error('You can only manage status for your own posts.');
-    }
-    // They cannot directly publish or reject deletion
-    if (status === MovieStatus.PUBLISHED || (postToUpdate.status === MovieStatus.PENDING_DELETION && status !== 'PUBLISHED')) {
-       // Allow SUPER_ADMIN to do this
-       if (session.user.role !== ROLES.SUPER_ADMIN) {
-        throw new Error('You do not have permission for this status change.');
-       }
     }
   }
 
@@ -669,13 +666,40 @@ export async function getFavoritePosts() {
   return favoritePosts.map(fav => ({
     ...fav.post,
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
-    genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
 
+export async function getPostsByUserId(userId: string, includePrivate: boolean = false) {
+  let where: Prisma.PostWhereInput = {
+    authorId: userId
+  };
+
+  if (!includePrivate) {
+    where.status = {
+      in: ['PUBLISHED', 'PENDING_DELETION']
+    }
+  }
+  
+  const userPosts = await prisma.post.findMany({
+    where,
+    include: {
+      author: true,
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+  });
+  
+  return userPosts.map(post => ({
+    ...post,
+    mediaLinks: JSON.parse(post.mediaLinks || '[]'),
+  }));
+}
+
+
 export async function getFavoritePostsByUserId(userId: string) {
   const favoritePosts = await prisma.favoritePost.findMany({
-    where: { userId },
+    where: { userId, post: { status: 'PUBLISHED' } },
     include: {
       post: {
         include: {
@@ -691,7 +715,6 @@ export async function getFavoritePostsByUserId(userId: string) {
   return favoritePosts.map(fav => ({
     ...fav.post,
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
-    genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
 
