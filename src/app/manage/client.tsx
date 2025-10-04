@@ -29,11 +29,18 @@ interface ManageMoviesClientProps {
   initialTotalPages: number;
   user: Session['user'];
   initialEditingMovie?: Movie | null;
+  startInCreateMode?: boolean;
 }
 
-export default function ManageMoviesClient({ initialMovies, initialTotalPages, user, initialEditingMovie }: ManageMoviesClientProps) {
+export default function ManageMoviesClient({ 
+  initialMovies, 
+  initialTotalPages, 
+  user, 
+  initialEditingMovie, 
+  startInCreateMode = false 
+}: ManageMoviesClientProps) {
   const [movies, setMovies] = useState<Movie[]>(initialMovies);
-  const [view, setView] = useState<'list' | 'form'>(initialEditingMovie ? 'form' : 'list');
+  const [view, setView] = useState<'list' | 'form'>(initialEditingMovie || startInCreateMode ? 'form' : 'list');
   const [editingMovie, setEditingMovie] = useState<Movie | null>(initialEditingMovie || null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
@@ -163,8 +170,11 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const handleBackFromForm = () => {
     setView('list');
     setFormError(null);
-    // Clear edit param from URL
-    window.history.pushState({}, '', '/manage');
+    // Clear edit and create params from URL
+    const url = new URL(window.location.href);
+    url.searchParams.delete('edit');
+    url.searchParams.delete('create');
+    window.history.pushState({}, '', url.toString());
   };
   
   const handleRefresh = () => {

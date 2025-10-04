@@ -20,7 +20,7 @@ export default async function Header() {
 
     return (
       <Button asChild variant="ghost">
-        <Link href="/manage">
+        <Link href="/manage?create=true">
           <PlusCircle className="mr-2 h-5 w-5" />
           <span>Create</span>
         </Link>

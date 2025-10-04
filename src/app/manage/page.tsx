@@ -1,3 +1,4 @@
+
 'use server';
 
 import { auth } from '@/auth';
@@ -8,7 +9,7 @@ import { getMoviesForAdmin, getMovie } from '@/lib/actions';
 import type { Movie } from '@prisma/client';
 import Loading from './loading';
 
-export default async function ManageMoviesPage({ searchParams }: { searchParams?: { edit?: string } }) {
+export default async function ManageMoviesPage({ searchParams }: { searchParams?: { edit?: string, create?: string } }) {
   const session = await auth();
   const user = session?.user;
 
@@ -30,6 +31,8 @@ export default async function ManageMoviesPage({ searchParams }: { searchParams?
        console.warn(`User ${user.id} tried to edit movie ${editingMovieId} without permission.`);
     }
   }
+  
+  const startInCreateMode = searchParams?.create === 'true' && !editingMovieId;
 
   // Fetch initial data on the server.
   const { movies, totalPages } = await getMoviesForAdmin({ 
@@ -46,6 +49,7 @@ export default async function ManageMoviesPage({ searchParams }: { searchParams?
       initialTotalPages={totalPages} 
       user={user} 
       initialEditingMovie={editingMovie as any}
+      startInCreateMode={startInCreateMode}
     />
   );
 }
