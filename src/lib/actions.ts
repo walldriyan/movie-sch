@@ -7,7 +7,7 @@ import { MovieFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
-import { ROLES, MovieStatus } from './permissions';
+import { ROLES, MovieStatus, PERMISSIONS } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
@@ -315,13 +315,22 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
   revalidatePath('/');
 }
 
-export async function deleteMovie(id: number, permanent: boolean) {
-  const movieToDelete = await prisma.movie.findUnique({ where: { id } });
-  if (!movieToDelete) {
-    throw new Error("Movie not found");
+export async function deleteMovie(id: number) {
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user?.permissions) {
+    throw new Error('Not authorized');
   }
 
-  if (permanent) {
+  const movieToDelete = await prisma.movie.findUnique({ where: { id } });
+  if (!movieToDelete) {
+    throw new Error('Movie not found');
+  }
+  
+  const isPermanent = user.permissions.includes(PERMISSIONS['post.hard_delete']);
+
+  if (isPermanent) {
     await deleteUploadedFile(movieToDelete.posterUrl);
     await prisma.movie.delete({ where: { id } });
   } else {
@@ -334,6 +343,7 @@ export async function deleteMovie(id: number, permanent: boolean) {
   revalidatePath(`/movies/${id}`);
   revalidatePath('/');
 }
+
 
 export async function getUsers(): Promise<User[]> {
   const users = await prisma.user.findMany({
@@ -449,7 +459,7 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
     const { page = 1, limit = 10, userId, userRole, status } = options;
     
     if (!userId || !userRole) {
-        return { movies: [], totalPages: 0, totalMovies: 0 };
+      throw new Error("User ID and role are required");
     }
 
     const skip = (page - 1) * limit;

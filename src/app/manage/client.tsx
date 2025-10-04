@@ -110,17 +110,12 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
   const handleDeleteConfirmed = async (movieId: number) => {
     try {
       const movieToDelete = movies.find(m => m.id === movieId);
-      if (movieToDelete && user?.permissions) {
-        const isPermanent = user.permissions.includes(
-          PERMISSIONS['post.hard_delete']
-        );
-        await deleteMovie(movieId, isPermanent);
+      if (movieToDelete) {
+        await deleteMovie(movieId);
         await fetchMovies(currentPage, statusFilter);
         toast({
           title: 'Success',
-          description: `Movie "${movieToDelete.title}" has been ${
-            isPermanent ? 'permanently deleted' : 'marked for deletion'
-          }.`,
+          description: `Movie "${movieToDelete.title}" action has been processed.`,
         });
       }
     } catch (error) {
@@ -131,6 +126,7 @@ export default function ManageMoviesClient({ initialMovies, initialTotalPages, u
       });
     }
   };
+
 
   const handleStatusChange = async (movieId: number, newStatus: string) => {
     setStatusChangingMovieId(movieId);
