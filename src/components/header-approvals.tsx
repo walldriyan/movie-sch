@@ -18,15 +18,15 @@ import { Bell, Film, RefreshCw, Users, Inbox, ExternalLink } from 'lucide-react'
 import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES } from '@/lib/permissions';
 import { getPendingApprovals } from '@/lib/actions';
-import type { Movie, User } from '@prisma/client';
+import type { Post, User } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 
-type PendingMovie = Pick<Movie, 'id' | 'title'> & { author: Pick<User, 'name'> };
+type PendingPost = Pick<Post, 'id' | 'title'> & { author: Pick<User, 'name'> };
 type PendingUser = Pick<User, 'id' | 'name' | 'email'>;
 
 interface ApprovalsState {
-  pendingMovies: PendingMovie[];
+  pendingPosts: PendingPost[];
   pendingUsers: PendingUser[];
 }
 
@@ -54,7 +54,7 @@ export default function HeaderApprovals() {
     fetchApprovals();
   }, []);
 
-  const totalApprovals = (approvals?.pendingMovies.length || 0) + (approvals?.pendingUsers.length || 0);
+  const totalApprovals = (approvals?.pendingPosts.length || 0) + (approvals?.pendingUsers.length || 0);
 
   const renderContent = () => {
     if (isPending && !approvals) {
@@ -80,19 +80,19 @@ export default function HeaderApprovals() {
 
     return (
         <ScrollArea className="max-h-96">
-            {approvals?.pendingMovies.length > 0 && (
+            {approvals?.pendingPosts.length > 0 && (
                 <>
-                    <DropdownMenuLabel className="flex items-center gap-2"><Film /> Pending Movies</DropdownMenuLabel>
+                    <DropdownMenuLabel className="flex items-center gap-2"><Film /> Pending Posts</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    {approvals.pendingMovies.map(movie => (
-                        <DropdownMenuItem key={`movie-${movie.id}`} className="flex-col items-start focus:bg-transparent">
+                    {approvals.pendingPosts.map(post => (
+                        <DropdownMenuItem key={`movie-${post.id}`} className="flex-col items-start focus:bg-transparent">
                             <div>
-                                <div className="font-semibold">{movie.title}</div>
-                                <div className="text-xs text-muted-foreground">by {movie.author.name}</div>
+                                <div className="font-semibold">{post.title}</div>
+                                <div className="text-xs text-muted-foreground">by {post.author.name}</div>
                             </div>
                              <div className="flex items-center gap-2 mt-2">
                                 <Button asChild size="sm" variant="outline">
-                                    <Link href={`/movies/${movie.id}`}>Read</Link>
+                                    <Link href={`/movies/${post.id}`}>Read</Link>
                                 </Button>
                                 <Button asChild size="sm" variant="secondary">
                                     <Link href="/manage">Manage</Link>

@@ -222,7 +222,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: post.genres ? (post.genres as string).split(',') : [],
+            genres: Array.isArray(post.genres) ? post.genres : (post.genres as string)?.split(',') || [],
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
@@ -257,7 +257,7 @@ export async function getPost(postId: number) {
 
   return {
     ...post,
-    genres: post.genres ? (post.genres as string).split(',') : [],
+    genres: Array.isArray(post.genres) ? post.genres : (post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(post.mediaLinks || '[]'),
     subtitles,
   };
@@ -502,7 +502,7 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: post.genres ? (post.genres as string).split(',') : [],
+            genres: Array.isArray(post.genres) ? post.genres : (post.genres as string)?.split(',') || [],
             mediaLinks: JSON.parse(post.mediaLinks || '[]'),
         })),
         totalPages,
@@ -653,7 +653,7 @@ export async function getFavoritePosts() {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    genres: fav.post.genres ? (fav.post.genres as string).split(',') : [],
+    genres: Array.isArray(fav.post.genres) ? fav.post.genres : (fav.post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
@@ -675,7 +675,7 @@ export async function getFavoritePostsByUserId(userId: string) {
 
   return favoritePosts.map(fav => ({
     ...fav.post,
-    genres: fav.post.genres ? (fav.post.genres as string).split(',') : [],
+    genres: Array.isArray(fav.post.genres) ? fav.post.genres : (fav.post.genres as string)?.split(',') || [],
     mediaLinks: JSON.parse(fav.post.mediaLinks || '[]'),
   }));
 }
