@@ -1,3 +1,4 @@
+
 'use server';
 
 import { PrismaClient, Prisma } from '@prisma/client';
@@ -319,8 +320,8 @@ export async function deleteMovie(id: number) {
   const session = await auth();
   const user = session?.user;
 
-  if (!user?.permissions) {
-    throw new Error('Not authorized');
+  if (!user?.permissions?.includes(PERMISSIONS['post.delete'])) {
+    throw new Error('Not authorized to delete movies.');
   }
 
   const movieToDelete = await prisma.movie.findUnique({ where: { id } });
@@ -331,14 +332,17 @@ export async function deleteMovie(id: number) {
   const isPermanent = user.permissions.includes(PERMISSIONS['post.hard_delete']);
 
   if (isPermanent) {
+    // Super admin performs a hard delete
     await deleteUploadedFile(movieToDelete.posterUrl);
     await prisma.movie.delete({ where: { id } });
   } else {
+    // Other admins (USER_ADMIN) perform a soft delete
     await prisma.movie.update({
       where: { id },
       data: { status: 'PENDING_DELETION' },
     });
   }
+  
   revalidatePath(`/manage`);
   revalidatePath(`/movies/${id}`);
   revalidatePath('/');
@@ -468,8 +472,6 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
 
     if (userRole === ROLES.USER_ADMIN) {
         whereClause = { authorId: userId };
-    } else if (userRole !== ROLES.SUPER_ADMIN) {
-      return { movies: [], totalPages: 0, totalMovies: 0 };
     }
 
     if(status) {
