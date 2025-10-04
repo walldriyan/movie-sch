@@ -1,7 +1,7 @@
 
 import { notFound } from 'next/navigation';
-import { getMovie } from '@/lib/actions';
-import type { Movie, Review, Subtitle } from '@/lib/types';
+import { getPost } from '@/lib/actions';
+import type { Post, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -45,8 +45,8 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: stri
   </div>
 );
 
-const TrailerSection = ({ movie }: { movie: Movie }) => {
-  const trailer = movie.mediaLinks?.find(link => link.type === 'trailer');
+const TrailerSection = ({ post }: { post: Post }) => {
+  const trailer = post.mediaLinks?.find(link => link.type === 'trailer');
   if (!trailer?.url) {
     return null;
   }
@@ -94,8 +94,8 @@ const TrailerSection = ({ movie }: { movie: Movie }) => {
   );
 };
 
-const ImageGallerySection = ({ movie }: { movie: Movie }) => {
-  const images = movie.mediaLinks?.filter(link => link.type === 'image') || [];
+const ImageGallerySection = ({ post }: { post: Post }) => {
+  const images = post.mediaLinks?.filter(link => link.type === 'image') || [];
   if (images.length === 0) {
     return null;
   }
@@ -113,7 +113,7 @@ const ImageGallerySection = ({ movie }: { movie: Movie }) => {
             <div key={index} className="aspect-video relative overflow-hidden rounded-lg">
               <Image
                 src={image.url}
-                alt={`Gallery image ${index + 1} for ${movie.title}`}
+                alt={`Gallery image ${index + 1} for ${post.title}`}
                 fill
                 className="object-cover transition-transform duration-300 hover:scale-105"
               />
@@ -131,16 +131,16 @@ export default async function MoviePage({
 }: {
   params: { id: string };
 }) {
-  const movieId = Number(params.id);
-  if (isNaN(movieId)) {
+  const postId = Number(params.id);
+  if (isNaN(postId)) {
     notFound();
   }
 
-  const movie = (await getMovie(movieId)) as Movie | null;
+  const post = (await getPost(postId)) as Post | null;
   const session = await auth();
   const currentUser = session?.user;
 
-  if (!movie) {
+  if (!post) {
     notFound();
   }
 
@@ -148,25 +148,25 @@ export default async function MoviePage({
     <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
-          <MovieDetailClient movie={movie} currentUser={currentUser}>
+          <MovieDetailClient post={post} currentUser={currentUser}>
             <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                  <div className="md:col-span-3">
                     <div
                       className="prose prose-invert max-w-none text-foreground/80"
-                      dangerouslySetInnerHTML={{ __html: movie.description }}
+                      dangerouslySetInnerHTML={{ __html: post.description }}
                     />
 
-                    <TrailerSection movie={movie} />
+                    <TrailerSection post={post} />
                     
-                    <ImageGallerySection movie={movie} />
+                    <ImageGallerySection post={post} />
 
                     <Separator className="my-12" />
                     <section id="recommendations">
                       <h2 className="font-serif text-3xl font-bold mb-8">
                         More Like This
                       </h2>
-                      <MovieRecommendations currentMovie={movie} />
+                      <MovieRecommendations currentPost={post} />
                     </section>
                  </div>
 
@@ -176,10 +176,10 @@ export default async function MoviePage({
                         <CardTitle>Details</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={movie.year} />
-                        <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={movie.duration} />
-                        <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={movie.directors || 'N/A'} />
-                        <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={movie.mainCast || 'N/A'} />
+                        <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year} />
+                        <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration} />
+                        <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
+                        <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
                         
                         <Separator />
                         
@@ -187,15 +187,15 @@ export default async function MoviePage({
                         <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
                                 <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
-                                <span className="font-bold">{movie.imdbRating.toFixed(1)}</span>
+                                <span className="font-bold">{post.imdbRating?.toFixed(1)}</span>
                             </div>
                              <div className="flex items-center gap-2 text-sm">
                                 <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                <span>{movie.rottenTomatoesRating || 'N/A'}%</span>
+                                <span>{post.rottenTomatoesRating || 'N/A'}%</span>
                             </div>
                              <div className="flex items-center gap-2 text-sm">
                                <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1h-9.2V16h5.28c-.45 1.6-1.9 2.7-3.73 2.7-2.2 0-4-1.8-4-4s1.8-4 4-4c1.08 0 2.05.4 2.8.9l2.7-2.7C18.6 6.3 16.5 5 14.15 5c-3.96 0-7.15 3.2-7.15 7.15s3.19 7.15 7.15 7.15c3.8 0 6.9-2.9 6.9-6.9 0-.6-.05-1.1-.15-1.6z"></path></svg>
-                                <span>{movie.googleRating || 'N/A'}%</span>
+                                <span>{post.googleRating || 'N/A'}%</span>
                             </div>
                         </div>
                       </CardContent>
@@ -206,11 +206,11 @@ export default async function MoviePage({
             <TabsContent value="reviews" className='px-4 md:px-0'>
               <section id="reviews" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
-                  Responses ({movie.reviews.length})
+                  Responses ({post.reviews.length})
                 </h2>
                 <div className="space-y-8">
-                  {movie.reviews.length > 0 ? (
-                    movie.reviews.map((review: Review) => (
+                  {post.reviews.length > 0 ? (
+                    post.reviews.map((review: Review) => (
                       <ReviewCard key={review.id} review={review} />
                     ))
                   ) : (
@@ -231,8 +231,8 @@ export default async function MoviePage({
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                   <div className="lg:col-span-2">
                     <div className="space-y-4">
-                      {movie.subtitles.length > 0 ? (
-                        movie.subtitles.map((subtitle: Subtitle) => (
+                      {post.subtitles.length > 0 ? (
+                        post.subtitles.map((subtitle: Subtitle) => (
                           <div
                             key={subtitle.id}
                             className="flex items-center justify-between rounded-lg border p-4"
@@ -254,7 +254,7 @@ export default async function MoviePage({
                         ))
                       ) : (
                         <p className="text-muted-foreground">
-                          No subtitles available for this movie yet.
+                          No subtitles available for this post yet.
                         </p>
                       )}
                     </div>
@@ -275,7 +275,7 @@ export default async function MoviePage({
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <SubtitleRequestForm movieTitle={movie.title} />
+                        <SubtitleRequestForm movieTitle={post.title} />
                       </CardContent>
                     </Card>
                   </div>
@@ -283,7 +283,7 @@ export default async function MoviePage({
               </section>
             </TabsContent>
           </MovieDetailClient>
-          <AdminActions movie={movie} />
+          <AdminActions post={post} />
         </article>
       </main>
     </div>

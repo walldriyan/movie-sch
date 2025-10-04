@@ -30,18 +30,18 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { Post as Movie, User } from '@/lib/types';
+import type { Post, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
 
 export default function MovieDetailClient({
-  movie,
+  post,
   currentUser,
   children,
 }: {
-  movie: Movie;
+  post: Post;
   currentUser?: User;
   children: React.ReactNode;
 }) {
@@ -52,12 +52,12 @@ export default function MovieDetailClient({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('about');
   const heroImage =
-    movie.posterUrl
-      ? movie.posterUrl
+    post.posterUrl
+      ? post.posterUrl
       : PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')
           ?.imageUrl;
 
-  const authorAvatarUrl = movie.author.image || PlaceHolderImages.find((img) => img.id === 'avatar-1')?.imageUrl;
+  const authorAvatarUrl = post.author.image || PlaceHolderImages.find((img) => img.id === 'avatar-1')?.imageUrl;
 
   const tabButtonStyle =
     'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2 whitespace-nowrap';
@@ -69,12 +69,12 @@ export default function MovieDetailClient({
       toast({
         variant: 'destructive',
         title: 'Authentication required',
-        description: 'You must be logged in to like or dislike a movie.',
+        description: 'You must be logged in to like or dislike a post.',
       });
       return;
     }
     startTransition(() => {
-      toggleLikePost(movie.id, like)
+      toggleLikePost(post.id, like)
         .then(() => {
           toast({
             title: 'Success',
@@ -96,16 +96,16 @@ export default function MovieDetailClient({
       toast({
         variant: 'destructive',
         title: 'Authentication required',
-        description: 'You must be logged in to add a movie to favorites.',
+        description: 'You must be logged in to add a post to favorites.',
       });
       return;
     }
     startFavoriteTransition(() => {
-      toggleFavoritePost(movie.id)
+      toggleFavoritePost(post.id)
         .then(() => {
           toast({
             title: 'Favorites Updated',
-            description: `Movie has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`,
+            description: `Post has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`,
           });
         })
         .catch((err) => {
@@ -121,25 +121,25 @@ export default function MovieDetailClient({
   const handleDelete = () => {
     startDeleteTransition(async () => {
       try {
-        await deletePost(movie.id);
+        await deletePost(post.id);
         toast({
-          title: 'Movie Deleted',
-          description: `"${movie.title}" has been submitted for deletion.`,
+          title: 'Post Deleted',
+          description: `"${post.title}" has been submitted for deletion.`,
         });
         router.push('/manage');
       } catch (error: any) {
         toast({
           variant: 'destructive',
           title: 'Error',
-          description: error.message || 'Failed to delete movie.',
+          description: error.message || 'Failed to delete post.',
         });
       }
     });
   };
 
-  const isFavorited = currentUser && movie.favoritedBy && movie.favoritedBy.some(fav => fav.userId === currentUser?.id);
-  const isLiked = currentUser && movie.likedBy?.some(user => user.id === currentUser.id);
-  const isDisliked = currentUser && movie.dislikedBy?.some(user => user.id === currentUser.id);
+  const isFavorited = currentUser && post.favoritedBy && post.favoritedBy.some(fav => fav.userId === currentUser?.id);
+  const isLiked = currentUser && post.likedBy?.some(user => user.id === currentUser.id);
+  const isDisliked = currentUser && post.dislikedBy?.some(user => user.id === currentUser.id);
   const canManage = currentUser && ([ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role));
 
   return (
@@ -148,7 +148,7 @@ export default function MovieDetailClient({
         {heroImage && (
           <Image
             src={heroImage}
-            alt={`Poster for ${movie.title}`}
+            alt={`Poster for ${post.title}`}
             fill
             className="object-cover"
             priority
@@ -168,7 +168,7 @@ export default function MovieDetailClient({
         </Button>
 
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
-            {movie.genres.map((genre: string) => (
+            {post.genres.map((genre: string) => (
             <Button key={genre} variant="outline" size="sm" className="rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20">
                 <Tag className="mr-2 h-4 w-4" />
                 {genre}
@@ -178,32 +178,32 @@ export default function MovieDetailClient({
 
         <div className="relative z-10 text-foreground flex flex-col items-start text-left pb-0 w-full pr-8">
           <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4 text-left">
-            {movie.title}
+            {post.title}
           </h1>
 
           <div className="flex items-center space-x-4 text-sm text-muted-foreground mt-2.5">
             <Link
-              href={`/profile/${movie.author.id}`}
+              href={`/profile/${post.author.id}`}
               className="flex items-center gap-4 group"
             >
               <Avatar className='w-16 h-16'>
                 {authorAvatarUrl && (
                   <AvatarImage
                     src={authorAvatarUrl}
-                    alt={movie.author.name || 'Author'}
+                    alt={post.author.name || 'Author'}
                     data-ai-hint="person face"
                   />
                 )}
-                <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                <AvatarFallback>{post.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
               </Avatar>
               <div>
                 <p className="text-foreground group-hover:text-primary">
-                  {movie.author.name}
+                  {post.author.name}
                 </p>
                 <div className="flex items-center gap-2">
-                  <span>{movie.year}</span>
+                  <span>{post.year}</span>
                   <span>&middot;</span>
-                  <span>{movie.duration}</span>
+                  <span>{post.duration}</span>
                 </div>
               </div>
             </Link>
@@ -225,7 +225,7 @@ export default function MovieDetailClient({
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-400" />
                   <span className="text-foreground">
-                    {movie.imdbRating.toFixed(1)}
+                    {post.imdbRating?.toFixed(1)}
                   </span>
                 </div>
               </button>
@@ -239,7 +239,7 @@ export default function MovieDetailClient({
                 )}
               >
                 <MessageCircle className="w-5 h-5" />
-                <span className="text-foreground">{movie.reviews.length}</span>
+                <span className="text-foreground">{post.reviews.length}</span>
               </button>
               <button
                 onClick={() => setActiveTab('subtitles')}
@@ -279,7 +279,7 @@ export default function MovieDetailClient({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
                     <DropdownMenuItem asChild>
-                      <Link href={`/manage?edit=${movie.id}`}>
+                      <Link href={`/manage?edit=${post.id}`}>
                         <Edit className="mr-2 h-4 w-4" />
                         <span>Edit</span>
                       </Link>
