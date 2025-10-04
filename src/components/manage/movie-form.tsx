@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -22,6 +23,7 @@ import Image from 'next/image';
 import type { Movie } from '@prisma/client';
 import type { MovieFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { GenreInput } from './genre-input';
 
 const movieSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -29,7 +31,7 @@ const movieSchema = z.object({
   description: z.string().min(10, 'Description is required'),
   year: z.coerce.number().min(1800, 'Invalid year'),
   duration: z.string().min(1, 'Duration is required'),
-  genres: z.string().min(1, 'Genres are required'),
+  genres: z.array(z.string()).min(1, 'At least one genre is required'),
   directors: z.string().optional(),
   mainCast: z.string().optional(),
   imdbRating: z.coerce.number().min(0).max(10),
@@ -68,7 +70,7 @@ export default function MovieForm({
           description: editingMovie.description,
           year: editingMovie.year,
           duration: editingMovie.duration,
-          genres: (editingMovie.genres as any).join(', '),
+          genres: editingMovie.genres as any,
           directors: editingMovie.directors || '',
           mainCast: editingMovie.mainCast || '',
           imdbRating: editingMovie.imdbRating,
@@ -82,7 +84,7 @@ export default function MovieForm({
           description: '',
           year: new Date().getFullYear(),
           duration: '',
-          genres: '',
+          genres: [],
           directors: '',
           mainCast: '',
           imdbRating: 0,
@@ -107,7 +109,7 @@ export default function MovieForm({
       posterUrl: values.posterUrl || null,
       year: values.year,
       duration: values.duration,
-      genres: values.genres.split(',').map((g) => g.trim()) as any,
+      genres: values.genres as any,
       directors: values.directors || null,
       mainCast: values.mainCast || null,
       imdbRating: values.imdbRating,
@@ -327,13 +329,13 @@ export default function MovieForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-muted-foreground">
-                    Genres (comma-separated)
+                    Genres
                   </FormLabel>
                   <FormControl>
-                    <Input
-                      placeholder="Sci-Fi, Action, Thriller"
-                      {...field}
-                      className="bg-transparent border-input"
+                    <GenreInput 
+                      value={field.value}
+                      onChange={field.onChange}
+                      placeholder="Select one or more genres"
                     />
                   </FormControl>
                   <FormMessage />

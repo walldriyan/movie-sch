@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { PrismaClient, Prisma } from '@prisma/client';
@@ -175,7 +176,7 @@ export async function getMovies(options: { page?: number; limit?: number, filter
 
     if (genres && genres.length > 0) {
       whereClause.genres = {
-        search: genres.join(' & '),
+        hasSome: genres,
       };
     }
 
@@ -221,7 +222,6 @@ export async function getMovies(options: { page?: number; limit?: number, filter
     return {
         movies: movies.map((movie) => ({
             ...movie,
-            genres: JSON.parse(movie.genres || '[]'),
             mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
         })),
         totalPages,
@@ -256,7 +256,6 @@ export async function getMovie(movieId: number) {
 
   return {
     ...movie,
-    genres: JSON.parse(movie.genres || '[]'),
     mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
     subtitles,
   };
@@ -281,7 +280,7 @@ export async function saveMovie(movieData: MovieFormData, id?: number) {
     posterUrl: finalPosterUrl,
     year: movieData.year,
     duration: movieData.duration,
-    genres: JSON.stringify(movieData.genres),
+    genres: movieData.genres,
     directors: movieData.directors,
     mainCast: movieData.mainCast,
     imdbRating: movieData.imdbRating,
@@ -507,7 +506,6 @@ export async function getMoviesForAdmin(options: { page?: number; limit?: number
     return {
         movies: movies.map((movie) => ({
             ...movie,
-            genres: JSON.parse(movie.genres || '[]'),
             mediaLinks: JSON.parse(movie.mediaLinks || '[]'),
         })),
         totalPages,
@@ -658,7 +656,6 @@ export async function getFavoriteMovies() {
 
   return favoriteMovies.map(fav => ({
     ...fav.movie,
-    genres: JSON.parse(fav.movie.genres || '[]'),
     mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
   }));
 }
@@ -680,7 +677,6 @@ export async function getFavoriteMoviesByUserId(userId: string) {
 
   return favoriteMovies.map(fav => ({
     ...fav.movie,
-    genres: JSON.parse(fav.movie.genres || '[]'),
     mediaLinks: JSON.parse(fav.movie.mediaLinks || '[]'),
   }));
 }
