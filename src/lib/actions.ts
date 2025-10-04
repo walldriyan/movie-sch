@@ -472,6 +472,7 @@ export async function updateUserRole(
 
 export async function getMoviesForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null } = {}) {
     const { page = 1, limit = 10, userId, userRole, status } = options;
+    const skip = (page - 1) * limit;
     
     if (!userId || !userRole) {
         throw new Error("User ID and role are required");
