@@ -193,7 +193,7 @@ export async function getMovies(options: { page?: number; limit?: number, filter
       };
     }
 
-    if (timeFilter) {
+    if (timeFilter && timeFilter !== 'all') {
       const now = new Date();
       if (timeFilter === 'today') {
         whereClause.createdAt = { gte: startOfDay(now), lte: endOfDay(now) };

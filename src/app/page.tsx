@@ -2,7 +2,7 @@
 'use server';
 
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getMovies, getUsers } from '@/lib/actions';
@@ -12,13 +12,24 @@ import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import MovieGrid from '@/components/movie-grid';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 
-export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string } }) {
+export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string } }) {
   const timeFilter = searchParams?.timeFilter;
+  const sortBy = searchParams?.sortBy;
   const currentPage = Number(searchParams?.page) || 1;
 
-  const { movies: fetchedMovies, totalPages } = await getMovies({ page: currentPage, limit: 10, filters: { timeFilter } });
+  const { movies: fetchedMovies, totalPages } = await getMovies({ page: currentPage, limit: 10, filters: { timeFilter, sortBy } });
   const movies = fetchedMovies as any[];
   const users = (await getUsers()) as User[];
   
@@ -46,22 +57,87 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
     );
   }
 
+  const buildQueryString = (params: Record<string, string | number | undefined>) => {
+    const searchParams = new URLSearchParams();
+    for (const [key, value] of Object.entries(params)) {
+      if (value) {
+        searchParams.set(key, String(value));
+      }
+    }
+    return `?${searchParams.toString()}`;
+  }
+
   return (
     <div className="w-full bg-background text-foreground">
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-          <div className="flex items-center gap-2 mb-8 overflow-x-auto no-scrollbar">
-              <Button variant={'secondary'} className="rounded-full">
-                  <Film />
-                  <span>All</span>
-              </Button>
-              <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
-                  <Globe />
-                  <span>International</span>
-              </Button>
-              <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
-                  <Tv />
-                  <span>Series</span>
-              </Button>
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                <Button variant={'secondary'} className="rounded-full">
+                    <Film />
+                    <span>All</span>
+                </Button>
+                <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                    <Globe />
+                    <span>International</span>
+                </Button>
+                <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                    <Tv />
+                    <span>Series</span>
+                </Button>
+            </div>
+            
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                  <ListFilter className="mr-2 h-4 w-4" />
+                  Filter
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56" align="end">
+                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                  <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc' })}>
+                    <DropdownMenuRadioItem value="newest" checked={sortBy === 'updatedAt-desc' || !sortBy}>
+                      <Clock className="mr-2 h-4 w-4" /> Newest
+                    </DropdownMenuRadioItem>
+                  </Link>
+                   <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc' })}>
+                    <DropdownMenuRadioItem value="oldest" checked={sortBy === 'updatedAt-asc'}>
+                      <Clock className="mr-2 h-4 w-4" /> Oldest
+                    </DropdownMenuRadioItem>
+                  </Link>
+                  <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc' })}>
+                    <DropdownMenuRadioItem value="imdb" checked={sortBy === 'imdbRating-desc'}>
+                      <Star className="mr-2 h-4 w-4" /> IMDb Rating
+                    </DropdownMenuRadioItem>
+                  </Link>
+
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                 <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today' })}>
+                    <DropdownMenuRadioItem value="today" checked={timeFilter === 'today'}>
+                      <Calendar className="mr-2 h-4 w-4" /> Today
+                    </DropdownMenuRadioItem>
+                  </Link>
+                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week' })}>
+                    <DropdownMenuRadioItem value="this_week" checked={timeFilter === 'this_week'}>
+                      <Calendar className="mr-2 h-4 w-4" /> This Week
+                    </DropdownMenuRadioItem>
+                  </Link>
+                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month' })}>
+                    <DropdownMenuRadioItem value="this_month" checked={timeFilter === 'this_month'}>
+                      <Calendar className="mr-2 h-4 w-4" /> This Month
+                    </DropdownMenuRadioItem>
+                  </Link>
+                  <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all' })}>
+                    <DropdownMenuRadioItem value="all" checked={timeFilter === 'all' || !timeFilter}>
+                      <Calendar className="mr-2 h-4 w-4" /> All Time
+                    </DropdownMenuRadioItem>
+                  </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
           </div>
           
           <MovieGrid movies={movies} />
@@ -71,7 +147,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 <PaginationContent>
                   <PaginationItem>
                     <PaginationPrevious 
-                      href={`/?page=${currentPage - 1}`}
+                      href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1 })}
                       className={cn(
                         "dark bg-gray-800 hover:bg-gray-700",
                         currentPage === 1 && "pointer-events-none opacity-50"
@@ -82,14 +158,14 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                   </PaginationItem>
 
                   <PaginationItem>
-                    <Link href="#" className="px-4 py-2 rounded-md text-sm font-medium">
-                      All Posts
-                    </Link>
+                    <span className="px-4 py-2 rounded-md text-sm font-medium">
+                      Page {currentPage} of {totalPages}
+                    </span>
                   </PaginationItem>
                   
                   <PaginationItem>
                     <PaginationNext
-                      href={`/?page=${currentPage + 1}`}
+                      href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1 })}
                       className={cn(
                         "dark bg-gray-800 hover:bg-gray-700",
                         currentPage === totalPages && "pointer-events-none opacity-50"
