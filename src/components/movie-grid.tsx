@@ -6,13 +6,39 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Play } from 'lucide-react';
+import { Play, Clapperboard, Tv, Folder } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import type { Post as Movie } from '@/lib/types';
+import { PostType } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface MovieGridProps {
   movies: Movie[];
+}
+
+function CategoryIcon({ type }: { type: PostType }) {
+  const getCategory = () => {
+    switch (type) {
+      case PostType.MOVIE:
+        return { icon: <Clapperboard className="w-4 h-4" />, label: 'Movie', color: 'bg-blue-900/50' };
+      case PostType.TV_SERIES:
+        return { icon: <Tv className="w-4 h-4" />, label: 'TV Series', color: 'bg-green-900/50' };
+      default:
+        return { icon: <Folder className="w-4 h-4" />, label: 'Other', color: 'bg-gray-900/50' };
+    }
+  };
+
+  const { icon, label, color } = getCategory();
+
+  return (
+    <div className={cn(
+      "absolute top-2 right-2 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm",
+      color
+    )}>
+      {icon}
+      <span className='hidden sm:inline'>{label}</span>
+    </div>
+  );
 }
 
 function MovieCard({ movie, index }: { movie: Movie; index: number }) {
@@ -55,6 +81,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
       <div className="absolute bottom-0 left-0 right-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
       
       {isFirst && <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />}
+
+      <CategoryIcon type={movie.type} />
 
       <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10 flex items-end justify-between">
         <div className="[text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">

@@ -13,6 +13,7 @@ export type Review = PrismaReview & {
 export type Subtitle = PrismaSubtitle;
 
 export type MediaLink = {
+  id: number;
   type: 'trailer' | 'image';
   url: string;
 }
@@ -31,7 +32,6 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres'> & {
 };
 
 export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData'> & {
-  mediaLinks?: MediaLink[];
+  mediaLinks?: Omit<MediaLink, 'id'>[];
   genres?: string[];
 };
-
