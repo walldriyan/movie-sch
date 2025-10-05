@@ -51,7 +51,7 @@ export default function RootLayout({
 
         <SessionProvider>
           {/* <div className='pt-16 bg-red-950/70 filter blur-3xl '></div> */}
-          <div className="  pt-16 bg-gradient-to-t from-red-950/10 to-purple-800/20 backdrop-blur-md"></div>
+          <div className="  pt-16 bg-gradient-to-t from-red-950/5 to-purple-800/2 backdrop-blur-md"></div>
 
           <Header />
           {children}
