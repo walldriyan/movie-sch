@@ -96,7 +96,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
                 <TooltipTrigger>
                 <span className="text-muted-foreground cursor-default">
                     {relativeDate ? (
-                        relativeDate.charAt(0).toUpperCase() + relativeDate.slice(1)
+                        relativeDate
                     ) : <Skeleton className="h-3 w-16" />}
                 </span>
                 </TooltipTrigger>
@@ -110,9 +110,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
           key={post.id}
           className={cn(
             'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group min-h-[152px] md:min-h-0',
-            isFirst ? 'col-span-2 row-span-2' : 'col-span-1',
-            isFirst ? 'md:col-span-2 md:row-span-2' : 
-            (index % 5 === 1 ? 'md:row-span-2' : 'md:col-span-1')
+             isFirst ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1'
           )}
         >
           {!imageLoaded && <Skeleton className="absolute inset-0" />}
@@ -161,7 +159,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
 
 export default function PostGrid({ posts }: PostGridProps) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 md:auto-rows-auto gap-x-4 gap-y-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
       {posts.map((post, index) => {
         return (
           <PostCard
