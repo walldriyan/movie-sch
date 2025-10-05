@@ -13,7 +13,8 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 142 76% 40%; /* Retain spotify green for accent */
+    --primary: 142 76% 40%;
+    /* Retain spotify green for accent */
     --primary-foreground: 0 0% 98%;
 
     --secondary: 240 3.7% 15.9%;
@@ -31,7 +32,7 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 142 76% 45%;
-    
+
     --radius: 1rem;
 
     --chart-1: 12 76% 61%;
@@ -58,6 +59,7 @@
 }
 
 @layer components {
+
   /* Applying z-index hierarchy */
   .z-header {
     z-index: var(--z-index-header);
@@ -68,11 +70,14 @@
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
   }
+
   .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
@@ -81,11 +86,11 @@
     height: 0;
   }
 
-  .tiptap > *:first-child {
+  .tiptap>*:first-child {
     margin-top: 0;
   }
-  
-  .tiptap > *:last-child {
+
+  .tiptap>*:last-child {
     margin-bottom: 0;
   }
 
@@ -103,21 +108,24 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .mask-gradient {
-    mask-image: linear-gradient(to bottom, transparent 20%, black 80%);
+    mask-image: linear-gradient(to bottom, transparent 20%, rgb(0, 0, 0) 80%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 20%, black 80%);
   }
 }
 
 /* Hide scrollbar for Chrome, Safari and Opera */
 ::-webkit-scrollbar {
-    display: none;
+  display: none;
 }
 
 /* Hide scrollbar for IE, Edge and Firefox */
 body {
-  -ms-overflow-style: none;  /* IE and Edge */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
   overflow: hidden;
+
 }
