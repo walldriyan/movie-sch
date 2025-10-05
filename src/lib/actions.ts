@@ -306,10 +306,14 @@ export async function savePost(postData: PostFormData, id?: number) {
       await deleteUploadedFile(existingPost?.posterUrl);
     }
     
-    await prisma.post.update({ 
-        where: { id }, 
-        data: { ...data, status: status, mediaLinks: { set: postData.mediaLinks?.map(l => ({id: l.id, type: l.type, url: l.url})) } } as any
-    });
+    await prisma.$transaction([
+      prisma.mediaLink.deleteMany({ where: { postId: id } }),
+      prisma.post.update({ 
+          where: { id }, 
+          data: { ...data, status: status, mediaLinks: { create: postData.mediaLinks } } as any
+      })
+    ]);
+
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
