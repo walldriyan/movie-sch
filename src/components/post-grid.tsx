@@ -63,21 +63,6 @@ function PostCard({ post, index }: { post: Post; index: number }) {
   const authorAvatarUrl = post.author?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   const isFirst = index === 0;
-  
-  const [relativeDate, setRelativeDate] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (post.updatedAt) {
-      const date = new Date(post.updatedAt);
-      const formatted = new Intl.DateTimeFormat('en-US', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-      }).format(date);
-      setRelativeDate(formatted);
-    }
-  }, [post.updatedAt]);
-
 
   return (
     <div className="group relative">
@@ -94,11 +79,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
              <span className='text-muted-foreground'>&middot;</span>
              <Tooltip>
                 <TooltipTrigger>
-                <span className="text-muted-foreground cursor-default">
-                    {relativeDate ? (
-                        relativeDate
-                    ) : <Skeleton className="h-3 w-16" />}
-                </span>
+                  <ClientRelativeDate date={new Date(post.updatedAt)} />
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>{new Date(post.updatedAt).toLocaleString()}</p>
@@ -109,7 +90,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
           href={`/movies/${post.id}`}
           key={post.id}
           className={cn(
-            'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group min-h-[152px] md:min-h-0',
+            'relative block aspect-video overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group',
              isFirst ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1'
           )}
         >
