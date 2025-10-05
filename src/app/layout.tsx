@@ -37,7 +37,7 @@ export default function RootLayout({
     <html lang="en" className="dark overflow-x-hidden">
       <body
         className={cn(
-          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative',
+          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative pt-16',
           fontSans.variable,
           fontSerif.variable,
           fontSinhala.variable
