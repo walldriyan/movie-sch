@@ -12,7 +12,7 @@ import { PostType } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import PostGrid from '@/components/post-grid';
+import MovieGrid from '@/components/movie-grid';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
@@ -160,7 +160,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
             </div>
             
-            <PostGrid posts={posts} />
+            <MovieGrid movies={posts} />
 
               {totalPages > 1 && (
                 <Pagination className="mt-12">
