@@ -37,7 +37,7 @@ export default function RootLayout({
     <html lang="en" className="dark overflow-x-hidden">
       <body
         className={cn(
-          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative pt-16',
+          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative ',
           fontSans.variable,
           fontSerif.variable,
           fontSinhala.variable
@@ -50,6 +50,9 @@ export default function RootLayout({
         </div>
 
         <SessionProvider>
+          {/* <div className='pt-16 bg-red-950/70 filter blur-3xl '></div> */}
+          <div className="  pt-16 bg-gradient-to-t from-red-950/10 to-purple-800/20 backdrop-blur-md"></div>
+
           <Header />
           {children}
           <Toaster />
