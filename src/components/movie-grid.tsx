@@ -9,6 +9,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Play } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import type { Post as Movie } from '@/lib/types';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface MovieGridProps {
   movies: Movie[];
@@ -22,6 +23,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
     PlaceHolderImages.find(
       (p) => p.id === 'movie-poster-placeholder'
     )?.imageUrl;
+
+  const authorAvatarUrl = movie.author?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   const isFirst = index === 0;
 
@@ -66,9 +69,10 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
               />
             )}
           </div>
-          <div className="ml-2 p-3 rounded-full bg-primary/80 group-hover:bg-primary transition-colors flex-shrink-0">
-            <Play className="h-5 w-5 text-white" />
-          </div>
+          <Avatar className="h-10 w-10 border-2 border-background flex-shrink-0">
+            {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={movie.author.name || 'Author'} />}
+            <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+          </Avatar>
         </div>
       </div>
     </Link>
