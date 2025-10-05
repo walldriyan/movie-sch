@@ -1,3 +1,4 @@
+
 'use server';
 
 import Image from 'next/image';
@@ -18,6 +19,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { format, formatRelative } from 'date-fns';
+import ClientRelativeDate from '@/components/client-relative-date';
 
 export default async function FavoritesPage() {
   const session = await auth();
@@ -72,9 +74,7 @@ export default async function FavoritesPage() {
               
               const authorAvatarUrl = post.author?.image || authorAvatarPlaceholder?.imageUrl;
               const postDate = new Date(post.updatedAt);
-              const now = new Date();
-              const relativeDate = formatRelative(postDate, now);
-
+              
               return (
                 <article key={post.id}>
                   <div className="flex items-center space-x-3 mb-4 text-sm">
@@ -99,9 +99,7 @@ export default async function FavoritesPage() {
 
                     <Tooltip>
                       <TooltipTrigger>
-                        <span className="text-muted-foreground cursor-default">
-                          {relativeDate.charAt(0).toUpperCase() + relativeDate.slice(1)}
-                        </span>
+                        <ClientRelativeDate date={postDate} />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{format(postDate, "MMMM d, yyyy 'at' h:mm a")}</p>
@@ -142,7 +140,7 @@ export default async function FavoritesPage() {
                   <div className="flex items-center space-x-4 mt-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Star className="w-4 h-4 text-yellow-400" />
-                      <span>{post.imdbRating.toFixed(1)}</span>
+                      <span>{post.imdbRating ? post.imdbRating.toFixed(1) : 'N/A'}</span>
                     </div>
                     <span>&middot;</span>
                     <span>{post.duration}</span>
