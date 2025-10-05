@@ -177,7 +177,7 @@ export default function MovieDetailClient({
             ))}
         </div>
 
-        <div className="relative z-10 text-foreground flex flex-col items-start text-left pb-0 w-full pr-8">
+        <div className="relative z-10 text-foreground flex flex-col items-start text-left pb-0 w-full overflow-hidden pr-8">
           <h1 className="font-serif text-3xl md:text-5xl font-bold leading-tight mb-4 text-left">
             {post.title}
           </h1>
@@ -255,7 +255,7 @@ export default function MovieDetailClient({
                 <span className="text-foreground">Subtitles</span>
               </button>
             </div>
-            <div className="flex items-center gap-2 pl-4">
+            <div className="flex items-center gap-2 pl-4 flex-shrink-0">
                <Button variant="ghost" size="sm" onClick={() => handleLike(true)} disabled={isPending} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                 <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
                 <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>
