@@ -65,7 +65,13 @@ function PostCard({ post, index }: { post: Post; index: number }) {
   const isFirst = index === 0;
 
   return (
-    <div className="group relative">
+    <div
+      className={cn(
+        'group relative min-h-[152px]',
+        isFirst ? 'md:col-span-2 md:row-span-2' : 
+        (index % 5 === 1 ? 'md:row-span-2' : 'md:col-span-1')
+      )}
+    >
         <div className="mb-2 flex items-center space-x-2 text-xs">
              <Link href={`/profile/${post.author.id}`} className="flex items-center gap-2 group/author">
                 <Avatar className="h-5 w-5">
@@ -78,8 +84,10 @@ function PostCard({ post, index }: { post: Post; index: number }) {
             </Link>
              <span className='text-muted-foreground'>&middot;</span>
              <Tooltip>
-                <TooltipTrigger>
-                  <ClientRelativeDate date={new Date(post.updatedAt)} />
+                <TooltipTrigger asChild>
+                  <div>
+                    <ClientRelativeDate date={new Date(post.updatedAt)} />
+                  </div>
                 </TooltipTrigger>
                 <TooltipContent>
                     <p>{new Date(post.updatedAt).toLocaleString()}</p>
@@ -90,8 +98,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
           href={`/movies/${post.id}`}
           key={post.id}
           className={cn(
-            'relative block aspect-video overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group',
-             isFirst ? 'col-span-2 row-span-2' : 'col-span-1 row-span-1'
+            'relative block aspect-video overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group h-full'
           )}
         >
           {!imageLoaded && <Skeleton className="absolute inset-0" />}
@@ -140,7 +147,7 @@ function PostCard({ post, index }: { post: Post; index: number }) {
 
 export default function PostGrid({ posts }: PostGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-8">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 md:auto-rows-min gap-x-4 gap-y-8">
       {posts.map((post, index) => {
         return (
           <PostCard
