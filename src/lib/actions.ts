@@ -2,7 +2,7 @@
 
 'use server';
 
-import { PrismaClient, Prisma, PostType } from '@prisma/client';
+import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
 import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -248,6 +248,7 @@ export async function getPost(postId: number) {
       likedBy: true,
       dislikedBy: true,
       mediaLinks: true,
+      series: true,
     },
   });
   
@@ -291,6 +292,8 @@ export async function savePost(postData: PostFormData, id?: number) {
     googleRating: postData.googleRating,
     viewCount: postData.viewCount,
     type: postData.type || PostType.MOVIE,
+    seriesId: postData.seriesId,
+    orderInSeries: postData.orderInSeries,
     updatedAt: new Date(),
   };
 
@@ -655,7 +658,7 @@ export async function toggleFavoritePost(postId: number) {
 
   revalidatePath(`/movies/${postId}`);
   revalidatePath('/favorites');
-  revalidatePath(`/profile/${userId}`);
+revalidatePath(`/profile/${userId}`);
 }
 
 export async function getFavoritePosts() {
@@ -768,4 +771,11 @@ export async function getPendingApprovals() {
 
 
   return { pendingPosts, pendingUsers };
+}
+
+export async function getSeries(): Promise<Series[]> {
+  const series = await prisma.series.findMany({
+    orderBy: { title: 'asc' },
+  });
+  return series;
 }

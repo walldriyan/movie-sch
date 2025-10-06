@@ -2,7 +2,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -21,11 +21,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import QuillEditor from '@/components/quill-editor';
 import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import type { Post } from '@prisma/client';
+import type { Post, Series } from '@prisma/client';
 import { PostType } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
+import { getSeries } from '@/lib/actions';
 
 const postSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -43,7 +44,9 @@ const postSchema = z.object({
     type: z.enum(['trailer', 'image']),
     url: z.string().url('Please enter a valid URL.').min(1, 'URL is required.'),
   })).optional(),
-  type: z.nativeEnum(PostType)
+  type: z.nativeEnum(PostType),
+  seriesId: z.coerce.number().optional(),
+  orderInSeries: z.coerce.number().optional(),
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -63,6 +66,15 @@ export default function PostForm({
   error,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [series, setSeries] = useState<Series[]>([]);
+
+  useEffect(() => {
+    async function fetchSeries() {
+      const seriesList = await getSeries();
+      setSeries(seriesList);
+    }
+    fetchSeries();
+  }, []);
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -81,6 +93,8 @@ export default function PostForm({
           googleRating: editingPost.googleRating || undefined,
           mediaLinks: editingPost.mediaLinks || [],
           type: editingPost.type,
+          seriesId: editingPost.seriesId || undefined,
+          orderInSeries: editingPost.orderInSeries || undefined,
         }
       : {
           title: '',
@@ -95,7 +109,9 @@ export default function PostForm({
           rottenTomatoesRating: undefined,
           googleRating: undefined,
           mediaLinks: [],
-          type: PostType.MOVIE
+          type: PostType.MOVIE,
+          seriesId: undefined,
+          orderInSeries: undefined,
         },
   });
   
@@ -125,6 +141,8 @@ export default function PostForm({
       viewCount: editingPost?.viewCount || 0,
       mediaLinks: values.mediaLinks,
       type: values.type,
+      seriesId: values.seriesId,
+      orderInSeries: values.orderInSeries,
     };
     await onFormSubmit(postData, editingPost?.id);
   };
@@ -275,6 +293,51 @@ export default function PostForm({
                 )}
               />
 
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                  control={form.control}
+                  name="seriesId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Series</FormLabel>
+                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a series (optional)" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="null">None</SelectItem>
+                          {series.map((s) => (
+                            <SelectItem key={s.id} value={s.id.toString()}>{s.title}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="orderInSeries"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Order in Series</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 1"
+                          {...field}
+                          value={field.value ?? ''}
+                          className="bg-transparent border-input"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+            </div>
+            
             {(postType === PostType.MOVIE || postType === PostType.TV_SERIES) && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

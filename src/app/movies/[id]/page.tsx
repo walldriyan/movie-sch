@@ -1,4 +1,5 @@
 
+
 import { notFound } from 'next/navigation';
 import { getPost } from '@/lib/actions';
 import type { Post, Review, Subtitle } from '@/lib/types';
@@ -18,12 +19,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
 import { auth } from '@/auth';
 import AdminActions from '@/components/admin-actions';
 import { PostType } from '@prisma/client';
+import Link from 'next/link';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -153,6 +155,18 @@ export default async function MoviePage({
             <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                  <div className="md:col-span-3">
+                    {post.series && (
+                      <div className="mb-8 p-4 rounded-lg bg-card/50 border">
+                        <h3 className="font-semibold flex items-center gap-2">
+                          <List className="h-5 w-5 text-primary" />
+                          Part of the series:
+                           <Link href={`/series/${post.series.id}`} className="text-primary hover:underline">
+                             {post.series.title}
+                           </Link>
+                           (Part {post.orderInSeries})
+                        </h3>
+                      </div>
+                    )}
                     <div
                       className="prose prose-invert max-w-none text-foreground/80"
                       dangerouslySetInnerHTML={{ __html: post.description }}
@@ -300,5 +314,3 @@ export default async function MoviePage({
     </div>
   );
 }
-
-    
