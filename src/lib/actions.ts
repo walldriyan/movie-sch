@@ -383,7 +383,7 @@ export async function deletePost(id: number) {
     await prisma.$transaction([
       prisma.favoritePost.deleteMany({ where: { postId: id } }),
       prisma.review.deleteMany({ where: { postId: id } }),
-      prisma.subtitle.deleteMany({ where: { id } }),
+      prisma.subtitle.deleteMany({ where: { postId: id } }),
       prisma.mediaLink.deleteMany({ where: { postId: id } }),
       prisma.post.delete({ where: { id } }),
     ]);
@@ -999,7 +999,7 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   return { series: processedSeries, totalSeries };
 }
 
-export async function uploadSubtitle(formData: FormData): Promise<Subtitle> {
+export async function uploadSubtitle(formData: FormData) {
   const session = await auth();
   const user = session?.user;
   if (!user?.id || !user.name) {
@@ -1089,6 +1089,7 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
   const session = await auth();
   return !!session?.user;
 }
+
 
 
 
