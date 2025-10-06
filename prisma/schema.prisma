@@ -7,7 +7,7 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 model Post {
@@ -25,45 +25,63 @@ model Post {
   googleRating          Int?
   status                String         @default("DRAFT")
   viewCount             Int            @default(0)
-  author                User           @relation(fields: [authorId], references: [id])
   authorId              String
   createdAt             DateTime       @default(now())
   updatedAt             DateTime       @updatedAt
-  reviews               Review[]
-  subtitles             Subtitle[]
-  mediaLinks            MediaLink[]
-  favoritePosts         FavoritePost[]
-  likedBy               User[]         @relation("LikedBy")
-  dislikedBy            User[]         @relation("DislikedBy")
   type                  PostType       @default(MOVIE)
   seriesId              Int?
-  series                Series?        @relation(fields: [seriesId], references: [id])
   orderInSeries         Int?
-  Episode               Episode[]
-  MetaData              MetaData[]
+
+  author         User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  reviews        Review[]
+  subtitles      Subtitle[]
+  mediaLinks     MediaLink[]
+  favoritePosts  FavoritePost[]
+  episodes       Episode[]
+  metaData       MetaData[]
+  series         Series?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+
+  likedBy      User[] @relation("LikedBy")
+  dislikedBy   User[] @relation("DislikedBy")
 }
 
 model Episode {
-  id          Int      @id @default(autoinautoincrement())
+  id          Int      @id @default(autoincrement())
   title       String
   description String?
-  episode     Int
-  season      Int
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  episodeNumber Int
+  seasonNumber Int
+  releaseDate DateTime?
+  posterUrl   String?
+  duration    String?
+  viewCount   Int      @default(0)
+  
   postId      Int
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  @@unique([postId, seasonNumber, episodeNumber])
 }
 
 model MetaData {
-  id        Int      @id @default(autoincrement())
-  type      String
-  value     String
+  id          Int    @id @default(autoincrement())
+  key         String
+  value       String
+  
   postId    Int
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  
+  @@unique([postId, key])
 }
+
+model Series {
+  id          Int    @id @default(autoincrement())
+  title       String @unique
+  description String?
+  posterUrl   String?
+  
+  posts       Post[]
+}
+
 
 model Account {
   id                String  @id @default(cuid())
@@ -99,17 +117,22 @@ model User {
   emailVerified             DateTime?
   image                     String?
   password                  String?
-  accounts                  Account[]
-  sessions                  Session[]
-  posts                     Post[]
-  reviews                   Review[]
-  favoritePosts             FavoritePost[]
-  permissionRequestStatus   String?        @default("NONE")
-  permissionRequestMessage  String?
   role                      String         @default("USER")
-  likedPosts                Post[]         @relation("LikedBy")
-  dislikedPosts             Post[]         @relation("DislikedBy")
-  updatedAt                 DateTime       @updatedAt
+  permissionRequestStatus   String?        @default("NONE") // NONE, PENDING, APPROVED, REJECTED
+  permissionRequestMessage  String?
+  bio                       String?
+  website                   String?
+  twitter                   String?
+  linkedin                  String?
+
+  accounts      Account[]
+  sessions      Session[]
+  posts         Post[]
+  reviews       Review[]
+  favoritePosts FavoritePost[]
+  likedPosts    Post[]    @relation("LikedBy")
+  dislikedPosts Post[]    @relation("DislikedBy")
+  updatedAt     DateTime  @updatedAt
 }
 
 model VerificationToken {
@@ -126,13 +149,16 @@ model Review {
   comment   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId    Int
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  parentId  Int?
-  parent    Review?  @relation("Replies", fields: [parentId], references: [id], onDelete: Cascade)
-  replies   Review[] @relation("Replies")
+  postId    Int
+
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post   Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  // Self-relation for replies
+  parentId Int?
+  parent   Review?   @relation("replies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  replies  Review[]  @relation("replies")
 }
 
 model Subtitle {
@@ -141,37 +167,28 @@ model Subtitle {
   url          String
   uploaderName String
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId       Int
+  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model MediaLink {
   id     Int    @id @default(autoincrement())
-  type   String // "trailer" or "image"
+  type   String // e.g., 'trailer', 'image'
   url    String
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId Int
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model FavoritePost {
   id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    String
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int
   createdAt DateTime @default(now())
 
-  @@unique([userId, postId])
-}
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-model Series {
-  id          Int      @id @default(autoincrement())
-  title       String   @unique
-  description String?
-  posts       Post[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  @@unique([userId, postId])
 }
 
 enum PostType {
