@@ -17,7 +17,7 @@ export default function SeriesCard({ series }: SeriesCardProps) {
   const seriesImage = series.posts[0]?.posterUrl || PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
   const totalPosts = series._count.posts;
   // This is a placeholder for watched posts count
-  const watchedPosts = Math.floor(Math.random() * (totalPosts + 1)); 
+  const watchedPosts = Math.floor(totalPosts / 2); 
   const progressPercentage = totalPosts > 0 ? (watchedPosts / totalPosts) * 100 : 0;
 
   return (
@@ -45,7 +45,7 @@ export default function SeriesCard({ series }: SeriesCardProps) {
                 <span>Progress</span>
                 <span>{watchedPosts} / {totalPosts}</span>
             </div>
-            <Progress value={progressPercentage} className="h-2" />
+            <Progress value={progressPercentage} className="h-1" />
         </CardContent>
       </Card>
     </Link>
