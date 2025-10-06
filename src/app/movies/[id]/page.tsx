@@ -1,4 +1,5 @@
 
+'use client';
 
 import { notFound } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle } from '@/lib/actions';
@@ -18,15 +19,26 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock, Trash2 } from 'lucide-react';
-import React from 'react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock, Trash2, Loader2 } from 'lucide-react';
+import React, { useState, useTransition, useEffect } from 'react';
 import Image from 'next/image';
-import { auth } from '@/auth';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 import AdminActions from '@/components/admin-actions';
 import { PostType } from '@prisma/client';
 import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
+import { useToast } from '@/hooks/use-toast';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -131,30 +143,85 @@ const ImageGallerySection = ({ post }: { post: Post }) => {
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
-export default async function MoviePage({
+export default function MoviePage({
   params,
 }: {
   params: { id: string };
 }) {
   const postId = Number(params.id);
-  if (isNaN(postId)) {
-    notFound();
+  const currentUser = useCurrentUser();
+  const { toast } = useToast();
+
+  const [post, setPost] = useState<Post | null>(null);
+  const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [subtitleToDelete, setSubtitleToDelete] = useState<Subtitle | null>(null);
+  const [isDeleting, startDeleteTransition] = useTransition();
+
+  useEffect(() => {
+    if (isNaN(postId)) {
+      notFound();
+    }
+    
+    async function fetchData() {
+      setIsLoading(true);
+      const postData = (await getPost(postId)) as Post | null;
+      
+      if (!postData) {
+        notFound();
+      }
+
+      const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
+        (postData.subtitles || []).map(async (subtitle: any) => ({
+          ...subtitle,
+          canDownload: await canUserDownloadSubtitle(subtitle.id),
+        }))
+      );
+      
+      setPost(postData);
+      setSubtitles(subtitlesWithPermissions);
+      setIsLoading(false);
+    }
+    fetchData();
+  }, [postId]);
+  
+  const handleDeleteClick = (subtitle: Subtitle) => {
+    setSubtitleToDelete(subtitle);
+    setDialogOpen(true);
+  };
+  
+  const handleConfirmDelete = () => {
+    if (!subtitleToDelete) return;
+
+    startDeleteTransition(async () => {
+      try {
+        await deleteSubtitle(subtitleToDelete.id);
+        toast({
+          title: "Subtitle Deleted",
+          description: "The subtitle has been successfully removed.",
+        });
+        setSubtitles(subs => subs.filter(s => s.id !== subtitleToDelete.id));
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error Deleting Subtitle",
+          description: error.message || "An unexpected error occurred.",
+        });
+      } finally {
+        setDialogOpen(false);
+        setSubtitleToDelete(null);
+      }
+    });
+  };
+
+  if (isLoading || !post) {
+    return (
+      // You might want to use your existing loading component here
+      <div>Loading...</div>
+    )
   }
-
-  const post = (await getPost(postId)) as Post | null;
-  const session = await auth();
-  const currentUser = session?.user;
-
-  if (!post) {
-    notFound();
-  }
-
-  const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
-    (post.subtitles || []).map(async (subtitle: any) => ({
-      ...subtitle,
-      canDownload: await canUserDownloadSubtitle(subtitle.id),
-    }))
-  );
 
   return (
     <div className="min-h-screen w-full bg-transparent">
@@ -265,9 +332,11 @@ export default async function MoviePage({
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                   <div className="lg:col-span-2">
                     <div className="space-y-4">
-                      {subtitlesWithPermissions.length > 0 ? (
-                        subtitlesWithPermissions.map((subtitle) => {
+                      {subtitles.length > 0 ? (
+                        subtitles.map((subtitle) => {
                           const canDelete = currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.name === subtitle.uploaderName;
+                          const isCurrentlyDeleting = isDeleting && subtitleToDelete?.id === subtitle.id;
+
                           return (
                             <div
                               key={subtitle.id}
@@ -292,14 +361,13 @@ export default async function MoviePage({
                                   <Lock className="h-5 w-5 text-muted-foreground" title="You don't have permission to download this file" />
                                 )}
                                 {canDelete && (
-                                  <form action={async () => {
-                                    "use server";
-                                    await deleteSubtitle(subtitle.id);
-                                  }}>
-                                    <Button variant="ghost" size="icon" type="submit" title="Delete subtitle">
-                                      <Trash2 className="h-5 w-5 text-destructive" />
+                                    <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(subtitle)} disabled={isCurrentlyDeleting} title="Delete subtitle">
+                                        {isCurrentlyDeleting ? (
+                                            <Loader2 className="h-5 w-5 animate-spin text-destructive" />
+                                        ) : (
+                                            <Trash2 className="h-5 w-5 text-destructive" />
+                                        )}
                                     </Button>
-                                  </form>
                                 )}
                               </div>
                             </div>
@@ -338,6 +406,24 @@ export default async function MoviePage({
           </MovieDetailClient>
           <AdminActions post={post} />
         </article>
+        
+        <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This action cannot be undone. This will permanently delete the subtitle file for &quot;{subtitleToDelete?.language}&quot;.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting}>
+                        {isDeleting ? "Deleting..." : "Continue"}
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
       </main>
     </div>
   );
