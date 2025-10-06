@@ -40,8 +40,8 @@ export default function SeriesPageClient({
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Left Sidebar: Series Tracker */}
-            <aside className="md:col-span-1 md:order-first">
-                <div className="sticky top-24">
+            <aside className="md:col-span-1 md:order-first md:h-screen">
+                <div className="md:sticky md:top-24 overflow-y-auto">
                     <h1 className="text-2xl font-bold font-serif mb-4">{series.title}</h1>
                     <SeriesTracker
                         seriesId={series.id}
@@ -102,4 +102,3 @@ export default function SeriesPageClient({
     </div>
   );
 }
-
