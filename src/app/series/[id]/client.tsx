@@ -50,7 +50,7 @@ export default function SeriesPageClient({
                           <span>{series.title}</span>
                       </h1>
                       {author && (
-                        <div className="flex items-center gap-2 mt-3 w-full justify-between">
+                        <div className="flex flex-col items-start gap-3 mt-3 w-full">
                           <div className='flex items-center gap-2'>
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={author.image || ''} alt={author.name || ''} />
