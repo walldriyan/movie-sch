@@ -286,7 +286,7 @@ export default async function MoviePage({
                                   </a>
                                 </Button>
                               ) : (
-                                <Lock className="h-5 w-5 text-muted-foreground" titleAccess="You don't have permission to download this file" />
+                                <Lock className="h-5 w-5 text-muted-foreground" title="You don't have permission to download this file" />
                               )}
                             </div>
                           </div>

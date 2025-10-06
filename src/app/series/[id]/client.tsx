@@ -249,7 +249,7 @@ export default function SeriesPageClient({
                                       </a>
                                     </Button>
                                   ) : (
-                                    <Lock className="h-5 w-5 text-muted-foreground" titleAccess="Login to download" />
+                                    <Lock className="h-5 w-5 text-muted-foreground" title="Login to download" />
                                   )}
                                 </div>
                               </div>
