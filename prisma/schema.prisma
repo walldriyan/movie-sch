@@ -10,125 +10,6 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Post {
-  id                    Int              @id @default(autoincrement())
-  title                 String
-  description           String
-  posterUrl             String?
-  year                  Int?
-  duration              String?
-  genres                String?
-  directors             String?
-  mainCast              String?
-  imdbRating            Float?
-  rottenTomatoesRating  Int?
-  googleRating          Int?
-  viewCount             Int              @default(0)
-  status                String           @default("DRAFT")
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  author                User             @relation(fields: [authorId], references: [id])
-  authorId              String
-  reviews               Review[]
-  subtitles             Subtitle[]
-  favoritePosts         FavoritePost[]
-  likedBy               User[]           @relation("UserLikes")
-  dislikedBy            User[]           @relation("UserDislikes")
-  episodes              Episode[]
-  metaData              MetaData[]
-  mediaLinks            MediaLink[]
-  type                  PostType         @default(MOVIE)
-  series                Series?          @relation(fields: [seriesId], references: [id])
-  seriesId              Int?
-  orderInSeries         Int?
-
-  @@index([authorId])
-  @@index([seriesId])
-}
-
-model Series {
-  id          Int      @id @default(autoincrement())
-  title       String   @unique
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  author      User     @relation(fields: [authorId], references: [id])
-  authorId    String
-  posts       Post[]
-
-  @@index([authorId])
-}
-
-enum PostType {
-  MOVIE
-  TV_SERIES
-  OTHER
-}
-
-model Episode {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  episodeNum  Int
-  seasonNum   Int
-  post        Post     @relation(fields: [postId], references: [id])
-  postId      Int
-
-  @@index([postId])
-}
-
-model MetaData {
-  id     Int    @id @default(autoincrement())
-  key    String
-  value  String
-  post   Post   @relation(fields: [postId], references: [id])
-  postId Int
-
-  @@index([postId])
-}
-
-model Review {
-  id        Int      @id @default(autoincrement())
-  comment   String
-  rating    Int
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  post      Post     @relation(fields: [postId], references: [id])
-  postId    Int
-  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id])
-  parentId  Int?
-  replies   Review[] @relation("ReviewReplies")
-
-  @@index([userId])
-  @@index([postId])
-  @@index([parentId])
-}
-
-model Subtitle {
-  id              Int                   @id @default(autoincrement())
-  language        String
-  uploaderName    String
-  url             String
-  createdAt       DateTime              @default(now())
-  post            Post                  @relation(fields: [postId], references: [id])
-  postId          Int
-  accessLevel     SubtitleAccessLevel   @default(PUBLIC)
-  authorizedUsers User[]
-
-  @@index([postId])
-}
-
-model MediaLink {
-  id     Int    @id @default(autoincrement())
-  type   String // e.g., 'trailer', 'image'
-  url    String
-  post   Post   @relation(fields: [postId], references: [id])
-  postId Int
-
-  @@index([postId])
-}
-
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -146,7 +27,6 @@ model Account {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId])
 }
 
 model Session {
@@ -155,8 +35,6 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
 model User {
@@ -165,39 +43,26 @@ model User {
   email                    String?         @unique
   emailVerified            DateTime?
   image                    String?
-  coverImage               String?
   password                 String?
   bio                      String?
   website                  String?
   twitter                  String?
   linkedin                 String?
+  coverImage               String?
   role                     String          @default("USER")
-  isSubscriber             Boolean         @default(false)
-  permissionRequestStatus  String?
+  permissionsRequestStatus String?
   permissionRequestMessage String?
   accounts                 Account[]
   sessions                 Session[]
   posts                    Post[]
   reviews                  Review[]
   favoritePosts            FavoritePost[]
-  likedPosts               Post[]          @relation("UserLikes")
-  dislikedPosts            Post[]          @relation("UserDislikes")
+  likedPosts               Post[]          @relation("LikedPosts")
+  dislikedPosts            Post[]          @relation("DislikedPosts")
   createdSeries            Series[]
-  authorizedSubtitles      Subtitle[]
-  createdAt                DateTime        @default(now())
-  updatedAt                DateTime        @updatedAt
-}
 
-model FavoritePost {
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  post      Post     @relation(fields: [postId], references: [id])
-  postId    Int
   createdAt DateTime @default(now())
-
-  @@id([userId, postId])
-  @@index([userId])
-  @@index([postId])
+  updatedAt DateTime @updatedAt
 }
 
 model VerificationToken {
@@ -208,8 +73,130 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-enum SubtitleAccessLevel {
-  PUBLIC
-  SUBSCRIBER_ONLY
-  AUTHORIZED_ONLY
+model Post {
+  id                   Int            @id @default(autoincrement())
+  title                String
+  description          String
+  posterUrl            String?
+  year                 Int?
+  duration             String?
+  genres               String?
+  directors            String?
+  mainCast             String?
+  imdbRating           Float?
+  rottenTomatoesRating Int?
+  googleRating         Int?
+  status               String         @default("DRAFT")
+  viewCount            Int            @default(0)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  authorId             String
+  author               User           @relation(fields: [authorId], references: [id])
+  reviews              Review[]
+  subtitles            Subtitle[]
+  favoritePosts        FavoritePost[]
+  likedBy              User[]         @relation("LikedPosts")
+  dislikedBy           User[]         @relation("DislikedPosts")
+  mediaLinks           MediaLink[]
+  episodes             Episode[]
+  metaData             MetaData[]
+  seriesId             Int?
+  series               Series?        @relation(fields: [seriesId], references: [id])
+  orderInSeries        Int?
+  type                 String         @default("OTHER")
+
+  @@index([authorId])
+  @@index([seriesId])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  rating    Int
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id])
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  parentId  Int?
+  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies   Review[] @relation("ReviewReplies")
+
+  @@index([postId])
+  @@index([userId])
+  @@index([parentId])
+}
+
+model Subtitle {
+  id            Int      @id @default(autoincrement())
+  language      String
+  url           String
+  uploaderName  String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  postId        Int
+  post          Post     @relation(fields: [postId], references: [id])
+
+  @@index([postId])
+}
+
+model FavoritePost {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  postId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id])
+
+  @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
+}
+
+model MediaLink {
+  id     Int    @id @default(autoincrement())
+  type   String // e.g., 'trailer', 'image'
+  url    String
+  postId Int
+  post   Post   @relation(fields: [postId], references: [id])
+
+  @@index([postId])
+}
+
+model Episode {
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String?
+  episodeNumber Int
+  seasonNumber  Int
+  releaseDate   DateTime?
+  posterUrl     String?
+  postId        Int
+  post          Post     @relation(fields: [postId], references: [id])
+
+  @@index([postId])
+}
+
+model MetaData {
+  id     Int    @id @default(autoincrement())
+  key    String
+  value  String
+  postId Int
+  post   Post   @relation(fields: [postId], references: [id])
+
+  @@index([postId])
+}
+
+model Series {
+  id          Int      @id @default(autoincrement())
+  title       String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  posts       Post[]
+
+  @@index([authorId])
 }
