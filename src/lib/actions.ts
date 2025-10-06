@@ -1,6 +1,5 @@
 
 
-
 'use server';
 
 import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
@@ -950,8 +949,8 @@ export async function getSeriesByAuthorId(authorId: string) {
 export async function uploadSubtitle(formData: FormData) {
   const session = await auth();
   const user = session?.user;
-  if (!user?.id) {
-    throw new Error('Not authenticated');
+  if (!user?.id || !user.name) {
+    throw new Error('Not authenticated or user name is missing');
   }
 
   const file = formData.get('file') as File;
@@ -979,6 +978,7 @@ export async function uploadSubtitle(formData: FormData) {
     language,
     url,
     accessLevel,
+    uploaderName: user.name,
     uploader: { connect: { id: user.id } },
     post: { connect: { id: postId } },
   };
@@ -1016,7 +1016,8 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
     case SubtitleAccessLevel.SUBSCRIBER_ONLY:
       if (!user) return false;
       const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      return dbUser?.isSubscriber ?? false;
+      // Assuming you have an 'isSubscriber' field on your User model
+      return (dbUser as any)?.isSubscriber ?? false;
 
     case SubtitleAccessLevel.AUTHORIZED_ONLY:
       if (!user) return false;
