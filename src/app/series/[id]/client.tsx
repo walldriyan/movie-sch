@@ -44,28 +44,26 @@ export default function SeriesPageClient({
             {/* Left Sidebar: Series Tracker */}
             <aside className="md:col-span-1 md:order-first md:h-screen">
                 <div className="md:sticky md:top-24 overflow-y-auto">
-                    <div className="flex justify-between items-start mb-4">
-                      <div className='flex-grow'>
-                        <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-                            <List className="h-6 w-6 text-primary" />
-                            <span>{series.title}</span>
-                        </h1>
-                        {author && (
-                          <div className="flex items-center gap-2 mt-3">
+                    <div className="flex flex-col items-start gap-4 mb-4">
+                      <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                          <List className="h-6 w-6 text-primary" />
+                          <span>{series.title}</span>
+                      </h1>
+                      {author && (
+                        <div className="flex items-center gap-2 mt-3 w-full justify-between">
+                          <div className='flex items-center gap-2'>
                             <Avatar className="h-6 w-6">
                               <AvatarImage src={author.image || ''} alt={author.name || ''} />
                               <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
                             </Avatar>
                             <span className="text-sm font-medium">{author.name}</span>
                           </div>
-                        )}
-                      </div>
-                       {author && (
-                        <Button variant="outline" size="sm">
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Follow
-                        </Button>
-                       )}
+                          <Button variant="outline" size="sm">
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Follow
+                          </Button>
+                        </div>
+                      )}
                     </div>
                     <SeriesTracker
                         seriesId={series.id}
