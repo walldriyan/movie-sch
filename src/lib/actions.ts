@@ -585,6 +585,13 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
             author: true,
             _count: {
               select: { likedBy: true },
+            },
+            series: {
+              include: {
+                _count: {
+                  select: { posts: true }
+                }
+              }
             }
         },
     });
@@ -749,6 +756,13 @@ export async function getFavoritePosts() {
       post: {
         include: {
           author: true,
+           series: {
+              include: {
+                _count: {
+                  select: { posts: true }
+                }
+              }
+            }
         },
       },
     },
@@ -781,6 +795,13 @@ export async function getPostsByUserId(userId: string, includePrivate: boolean =
     where,
     include: {
       author: true,
+       series: {
+          include: {
+            _count: {
+              select: { posts: true }
+            }
+          }
+        }
     },
     orderBy: {
       updatedAt: 'desc',
@@ -801,6 +822,13 @@ export async function getFavoritePostsByUserId(userId: string) {
       post: {
         include: {
           author: true,
+           series: {
+              include: {
+                _count: {
+                  select: { posts: true }
+                }
+              }
+            }
         },
       },
     },
