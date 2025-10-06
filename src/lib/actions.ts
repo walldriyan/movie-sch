@@ -82,7 +82,8 @@ export async function authenticate(
 }
 
 export async function doSignOut() {
-  await signOut({ redirectTo: '/' });
+  await signOut({redirect: false});
+  redirect('/');
 }
 
 export async function registerUser(
