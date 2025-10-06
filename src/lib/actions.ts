@@ -413,6 +413,18 @@ export async function uploadProfileImage(formData: FormData): Promise<string | n
     return saveImageFromDataUrl(dataUrl, 'avatars');
 }
 
+export async function uploadProfileCoverImage(formData: FormData): Promise<string | null> {
+    const file = formData.get('image') as File;
+    if (!file || file.size === 0) {
+      return null;
+    }
+    const dataUrl = await file.arrayBuffer().then(buffer => 
+        `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
+    );
+    return saveImageFromDataUrl(dataUrl, 'covers');
+}
+
+
 export async function updateUserProfile(
   userId: string,
   data: {
@@ -421,7 +433,8 @@ export async function updateUserProfile(
     website?: string;
     twitter?: string;
     linkedin?: string;
-    image?: string;
+    image?: string | null;
+    coverImage?: string | null;
   }
 ) {
   const session = await auth();
@@ -431,19 +444,24 @@ export async function updateUserProfile(
   
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
-    select: { image: true },
+    select: { image: true, coverImage: true },
   });
 
   let finalImageUrl = data.image;
-  // If a new data URL is provided for the image
   if (data.image && data.image.startsWith('data:image')) {
       finalImageUrl = await saveImageFromDataUrl(data.image, 'avatars');
-      // If there was an old image and it was an uploaded file, delete it
       if (currentUser?.image && currentUser.image.startsWith('/uploads/')) {
         await deleteUploadedFile(currentUser.image);
       }
   }
 
+  let finalCoverImageUrl = data.coverImage;
+  if (data.coverImage && data.coverImage.startsWith('data:image')) {
+      finalCoverImageUrl = await saveImageFromDataUrl(data.coverImage, 'covers');
+      if (currentUser?.coverImage && currentUser.coverImage.startsWith('/uploads/')) {
+        await deleteUploadedFile(currentUser.coverImage);
+      }
+  }
 
   const updateData = {
     name: data.name,
@@ -452,6 +470,7 @@ export async function updateUserProfile(
     twitter: data.twitter,
     linkedin: data.linkedin,
     image: finalImageUrl,
+    coverImage: finalCoverImageUrl,
   };
 
   await prisma.user.update({

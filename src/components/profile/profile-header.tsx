@@ -2,7 +2,7 @@
 
 'use client';
 
-import { MoreHorizontal, Grid3x3, Bookmark, Users, Images, Clapperboard } from 'lucide-react';
+import { MoreHorizontal, Grid3x3, Bookmark, Users, Images, Clapperboard, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
@@ -12,9 +12,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import EditProfileDialog from '@/components/edit-profile-dialog';
 
 export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { user: User, currentFilter: string, isOwnProfile: boolean }) {
-  const coverImage = PlaceHolderImages.find(
+  const coverImage = user.coverImage || PlaceHolderImages.find(
     (img) => img.id === 'movie-poster-placeholder'
-  );
+  )?.imageUrl;
   
   const userAvatar =
   user.image ||
@@ -22,16 +22,29 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
 
   return (
     <div className="border-b bg-background overflow-hidden ">
-      <div className="relative h-48">
+      <div className="relative h-48 group">
         {coverImage && (
             <Image
-                src={coverImage.imageUrl}
+                src={coverImage}
                 alt="Cover image"
                 fill
                 className="object-cover"
             />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        {isOwnProfile && (
+           <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+              <EditProfileDialog
+                  user={user}
+                  triggerButton={
+                    <Button variant="outline" className="bg-background/80">
+                      <Camera className="mr-2 h-4 w-4" />
+                      Change Images
+                    </Button>
+                  }
+              />
+          </div>
+        )}
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="relative -mt-16 sm:-mt-20 flex items-end justify-between">
@@ -51,9 +64,9 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
             </div>
             <div className="flex items-center gap-2 pb-4 overflow-hidden ">
                 {isOwnProfile ? (
-                <EditProfileDialog user={user} />
+                  <EditProfileDialog user={user} />
                 ) : (
-                <Button variant="outline">Follow</Button>
+                  <Button variant="outline">Follow</Button>
                 )}
                 <Button variant="ghost" size="icon">
                 <MoreHorizontal />

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -16,6 +17,8 @@ import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import RequestAccessDialog from '@/components/request-access-dialog';
 import { ROLES } from '@/lib/permissions';
+import EditProfileDialog from '../edit-profile-dialog';
+import { Button } from '../ui/button';
 
 interface ProfileSidebarProps {
   profileUser: User;
@@ -68,9 +71,12 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
     return (
         <div className="space-y-6 overflow-hidden">
-           <div>
-              <h2 className="text-xl font-bold">{profileUser.name}</h2>
-              <p className="text-sm text-muted-foreground">{profileUser.email}</p>
+           <div className="flex justify-between items-start">
+             <div>
+                <h2 className="text-xl font-bold">{profileUser.name}</h2>
+                <p className="text-sm text-muted-foreground">{profileUser.email}</p>
+             </div>
+             {isOwnProfile && <EditProfileDialog user={profileUser} />}
            </div>
 
           {profileUser.bio && (
