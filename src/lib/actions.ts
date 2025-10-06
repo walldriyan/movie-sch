@@ -3,7 +3,7 @@
 'use server';
 
 import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
-import type { User } from '@prisma/client';
+import type { User, Review } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
@@ -239,9 +239,23 @@ export async function getPost(postId: number) {
     where: { id: postId },
     include: {
       reviews: {
+        where: { parentId: null }, // Only fetch top-level comments
         include: {
           user: true,
+          replies: { // Include replies for each comment
+            include: {
+              user: true,
+              replies: { // Nested replies level 2
+                include: {
+                  user: true
+                }
+              }
+            }
+          }
         },
+        orderBy: {
+          createdAt: 'desc'
+        }
       },
       author: true,
       favoritePosts: userId ? { where: { userId } } : false,
@@ -778,4 +792,31 @@ export async function getSeries(): Promise<Series[]> {
     orderBy: { title: 'asc' },
   });
   return series;
+}
+
+export async function createReview(
+  postId: number,
+  comment: string,
+  rating: number,
+  parentId?: number
+) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('You must be logged in to post a review.');
+  }
+  const userId = session.user.id;
+
+  const review = await prisma.review.create({
+    data: {
+      comment,
+      rating,
+      post: { connect: { id: postId } },
+      user: { connect: { id: userId } },
+      ...(parentId && { parent: { connect: { id: parentId } } }),
+    },
+  });
+
+  revalidatePath(`/movies/${postId}`);
+
+  return review;
 }

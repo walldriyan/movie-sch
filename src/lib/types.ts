@@ -9,6 +9,7 @@ export type User = PrismaUser;
 
 export type Review = PrismaReview & {
   user: User;
+  replies?: Review[];
 };
 
 export type Subtitle = PrismaSubtitle;
