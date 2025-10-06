@@ -59,16 +59,19 @@ export default function SeriesStepper({ series }: { series: Series }) {
   }
   
   const displayedPosts = series.posts.slice(0, 3);
+  const totalPosts = series._count?.posts ?? series.posts.length;
 
   return (
     <section>
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-bold font-serif">{series.title}</h3>
-        <Button asChild variant="outline" size="sm">
-          <Link href={`/series/${series.id}`}>
-            View Series <ArrowRight className="ml-2 h-4 w-4" />
-          </Link>
-        </Button>
+        {totalPosts > 3 && (
+            <Button asChild variant="outline" size="sm">
+              <Link href={`/series/${series.id}`}>
+                View All {totalPosts} Posts <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+        )}
       </div>
 
       <ul>
