@@ -2,16 +2,19 @@
 'use client';
 
 import { notFound, useRouter, useSearchParams, usePathname } from 'next/navigation';
-import type { Post, Series } from '@/lib/types';
+import type { Post, Review, Series } from '@/lib/types';
 import SeriesTracker from '@/components/series-tracker';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, List, UserPlus } from 'lucide-react';
+import { ArrowLeft, Home, List, UserPlus, MessageCircle } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import Loading from './loading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Separator } from '@/components/ui/separator';
+import ReviewCard from '@/components/review-card';
+import ReviewForm from '@/components/review-form';
 
 
 export default function SeriesPageClient({
@@ -115,8 +118,29 @@ export default function SeriesPageClient({
                       className="prose prose-lg prose-invert max-w-none text-foreground/80"
                       dangerouslySetInnerHTML={{ __html: currentPost.description }}
                     />
+                    
+                    <Separator className="my-12" />
 
-                    {/* You can add more details from fullCurrentPost here, like reviews, etc. */}
+                    <section id="reviews" className="my-12">
+                      <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
+                        <MessageCircle className="w-8 h-8 text-primary" />
+                        Responses ({currentPost.reviews.length})
+                      </h2>
+                      <div className="space-y-8">
+                        {currentPost.reviews.length > 0 ? (
+                          currentPost.reviews.map((review: Review) => (
+                            <ReviewCard key={review.id} review={review} postId={currentPost.id} />
+                          ))
+                        ) : (
+                          <p className="text-muted-foreground">
+                            Be the first to share your thoughts!
+                          </p>
+                        )}
+                      </div>
+                      <Separator className="my-8" />
+                      <ReviewForm postId={currentPost.id} />
+                    </section>
+
                 </article>
             </div>
         </div>
