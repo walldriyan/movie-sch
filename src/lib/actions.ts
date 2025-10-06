@@ -810,7 +810,7 @@ export async function getPendingApprovals() {
     },
   });
 
-  let pendingUsers: User[] = [];
+  let pendingUsers: Partial<User>[] = [];
   if (user.role === ROLES.SUPER_ADMIN) {
     pendingUsers = await prisma.user.findMany({
       where: { permissionRequestStatus: 'PENDING' },
@@ -886,9 +886,14 @@ export async function createReview(
   const newReview = await prisma.review.create({
     data: reviewData,
     include: {
-      user: true, // Include the user data in the returned object
-      replies: true,
-    }
+      user: true,
+      replies: {
+        include: {
+          user: true,
+          replies: true,
+        },
+      },
+    },
   });
 
   revalidatePath(`/movies/${postId}`);

@@ -18,7 +18,8 @@ import {
   ThumbsDown,
   ArrowLeft,
   Edit,
-  Trash2
+  Trash2,
+  Loader2,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -31,27 +32,31 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { Post, User } from '@/lib/types';
+import type { Post as PostType, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MovieDetailClient({
-  post,
+  post: initialPost,
   currentUser,
   children,
 }: {
-  post: Post;
+  post: PostType;
   currentUser?: User;
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isLikeTransitioning, startLikeTransition] = useTransition();
   const [isFavoritePending, startFavoriteTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('about');
+  
+  const [post, setPost] = useState(initialPost);
+
   const heroImage =
     post.posterUrl
       ? post.posterUrl
@@ -65,7 +70,7 @@ export default function MovieDetailClient({
   const activeTabButtonStyle = 'text-primary font-semibold border-primary';
   const inactiveTabButtonStyle = 'border-transparent';
   
-  const handleLike = (like: boolean) => {
+  const handleLike = (likeAction: 'like' | 'dislike') => {
     if (!currentUser) {
       toast({
         variant: 'destructive',
@@ -74,19 +79,40 @@ export default function MovieDetailClient({
       });
       return;
     }
-    startTransition(() => {
-      toggleLikePost(post.id, like)
-        .then(() => {
-          toast({
-            title: 'Success',
-            description: `Your preference has been updated.`,
-          });
-        })
+
+    const currentIsLiked = post.likedBy?.some(user => user.id === currentUser.id);
+    const currentIsDisliked = post.dislikedBy?.some(user => user.id === currentUser.id);
+
+    // Create optimistic state
+    let optimisticPost = { ...post };
+    let wasLiked = currentIsLiked;
+    let wasDisliked = currentIsDisliked;
+
+    if (likeAction === 'like') {
+        // Optimistically update UI
+        optimisticPost = {
+            ...optimisticPost,
+            likedBy: currentIsLiked ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) : [...(optimisticPost.likedBy || []), currentUser],
+            dislikedBy: currentIsDisliked ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) : optimisticPost.dislikedBy,
+        };
+    } else { // dislike action
+        optimisticPost = {
+            ...optimisticPost,
+            dislikedBy: currentIsDisliked ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) : [...(optimisticPost.dislikedBy || []), currentUser],
+            likedBy: currentIsLiked ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) : optimisticPost.likedBy,
+        };
+    }
+    setPost(optimisticPost);
+
+    startLikeTransition(() => {
+      toggleLikePost(post.id, likeAction === 'like')
         .catch((err) => {
+          // Revert optimistic update on error
+          setPost(initialPost);
           toast({
             variant: 'destructive',
             title: 'An error occurred',
-            description: err.message,
+            description: err.message || "Could not update your preference.",
           });
         });
     });
@@ -256,20 +282,20 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-               <Button variant="ghost" size="sm" onClick={() => handleLike(true)} disabled={isPending} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
+               <Button variant="ghost" size="sm" onClick={() => handleLike('like')} disabled={isLikeTransitioning} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                 <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
-                <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>
+                {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>}
               </Button>
               
-              <Button variant="ghost" size="sm" onClick={() => handleLike(false)} disabled={isPending} className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
+              <Button variant="ghost" size="sm" onClick={() => handleLike('dislike')} disabled={isLikeTransitioning} className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                 <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
-                <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>
+                {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>}
               </Button>
 
               <Separator orientation="vertical" className="h-6 mx-2" />
 
               <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={isFavoritePending}>
-                 <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
+                 {isFavoritePending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />}
               </Button>
               <Button variant="ghost" size="icon">
                 <Share2 className="w-5 h-5" />
