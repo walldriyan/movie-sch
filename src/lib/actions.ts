@@ -802,7 +802,7 @@ export async function createSeries(title: string): Promise<Series> {
   }
 
   const existingSeries = await prisma.series.findFirst({
-    where: { title: { equals: title, mode: 'insensitive' } },
+    where: { title: { equals: title } },
   });
 
   if (existingSeries) {
