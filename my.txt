@@ -35,7 +35,7 @@ mee@sch.com
 # - Always confirm before editing existing logic.
 
 
-  "Never modify UI, Tailwind, or Framer Motion animations.",
+      "Never modify UI, Tailwind, or Framer Motion animations.",
       "Do not change or delete existing files.",
       "Do not modify database configuration or paths.",
       "Only add or edit code related to explicitly requested features.",
@@ -43,8 +43,9 @@ mee@sch.com
       "Never edit environment files or Firebase configs.",
       "Do not alter layouts or styles."
 
-      parana kisima deyak ahanne natiwa change kranna epa, awashayanam change kranna magen ahala inna
- sinhalen respond kranna 
+      parana kisima deyak ahanne natiwa change kranna epa, 
+      awashayanam change kranna magen ahala inna
+      sinhalen respond kranna 
 
  
   git branch -D v10
