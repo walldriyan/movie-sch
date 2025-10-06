@@ -210,8 +210,8 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       }
     }
 
-    if (type && Object.values(PostType).includes(type)) {
-      whereClause.type = type;
+    if (type && ['MOVIE', 'TV_SERIES', 'OTHER'].includes(type)) {
+      whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
     }
 
     const posts = await prisma.post.findMany({
@@ -276,7 +276,7 @@ export async function getPost(postId: number) {
   if (!post) return null;
   
   const subtitles = await prisma.subtitle.findMany({
-    where: { postId: postId },
+    where: { postId: postId }
   });
 
   return {
@@ -493,7 +493,7 @@ export async function requestAdminAccess(
   await prisma.user.update({
     where: { id: userId },
     data: {
-      permissionRequestStatus: 'PENDING',
+      permissionsRequestStatus: 'PENDING',
       permissionRequestMessage: message,
     },
   });
@@ -516,7 +516,7 @@ export async function updateUserRole(
     where: { id: userId },
     data: {
       role: role,
-      permissionRequestStatus: status,
+      permissionsRequestStatus: status,
     },
   });
 
@@ -804,7 +804,7 @@ export async function getPendingApprovals() {
   let pendingUsers = [];
   if (user.role === ROLES.SUPER_ADMIN) {
     pendingUsers = await prisma.user.findMany({
-      where: { permissionRequestStatus: 'PENDING' },
+      where: { permissionsRequestStatus: 'PENDING' },
       select: { id: true, name: true, email: true },
       orderBy: { updatedAt: 'desc' },
     });
