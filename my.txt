@@ -1,0 +1,11 @@
+npm uninstall prisma @prisma/client
+npm install prisma @prisma/client
+
+npx prisma generate
+npx prisma db push --force-reset
+
+
+npx prisma generate
+npx prisma db push
+
+mee@sch.com
