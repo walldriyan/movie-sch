@@ -12,7 +12,7 @@ import bcrypt from 'bcryptjs';
 import { ROLES, MovieStatus, SubtitleAccessLevel } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink, stat } from 'fs/promises';
-import { join } from 'path';
+import { join, extname } from 'path';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
 const prisma = new PrismaClient();
@@ -376,7 +376,7 @@ export async function deletePost(id: number) {
     await prisma.$transaction([
       prisma.favoritePost.deleteMany({ where: { postId: id } }),
       prisma.review.deleteMany({ where: { postId: id } }),
-      prisma.subtitle.deleteMany({ where: { postId: id } }),
+      prisma.subtitle.deleteMany({ where: { id } }),
       prisma.mediaLink.deleteMany({ where: { postId: id } }),
       prisma.post.delete({ where: { id } }),
     ]);
@@ -961,28 +961,36 @@ export async function uploadSubtitle(formData: FormData) {
     throw new Error('Missing required fields.');
   }
 
-  // Handle file upload
+  // 1. Create subtitle record to get an ID
+  const subtitleRecord = await prisma.subtitle.create({
+    data: {
+      language,
+      uploaderName: user.name,
+      url: '', // Temporary empty URL
+      post: { connect: { id: postId } },
+      uploader: { connect: { id: user.id } },
+    }
+  });
+
+  // 2. Construct filename from ID and save file
+  const fileExtension = extname(file.name);
+  const filename = `${subtitleRecord.id}${fileExtension}`;
   const directory = join(process.cwd(), `public/uploads/subtitles`);
   await mkdir(directory, { recursive: true });
-  const filename = `${Date.now()}-${file.name}`;
   const path = join(directory, filename);
+  
   const bytes = await file.arrayBuffer();
   const buffer = Buffer.from(bytes);
   await writeFile(path, buffer);
+  
   const url = `/uploads/subtitles/${filename}`;
 
-  // Create subtitle record in DB
-  const subtitleData: Prisma.SubtitleCreateInput = {
-    language,
-    url,
-    uploaderName: user.name,
-    uploader: { connect: { id: user.id } },
-    post: { connect: { id: postId } },
-  };
-
-  await prisma.subtitle.create({
-    data: subtitleData,
+  // 3. Update the record with the final URL
+  await prisma.subtitle.update({
+    where: { id: subtitleRecord.id },
+    data: { url: url },
   });
+
 
   revalidatePath(`/movies/${postId}`);
 }
