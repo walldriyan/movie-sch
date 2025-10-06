@@ -1,7 +1,7 @@
 
 
 import { notFound } from 'next/navigation';
-import { getPost, canUserDownloadSubtitle, getUsers } from '@/lib/actions';
+import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle } from '@/lib/actions';
 import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -19,13 +19,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock, Trash2 } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
 import { auth } from '@/auth';
 import AdminActions from '@/components/admin-actions';
 import { PostType } from '@prisma/client';
 import Link from 'next/link';
+import { ROLES } from '@/lib/permissions';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -265,32 +266,45 @@ export default async function MoviePage({
                   <div className="lg:col-span-2">
                     <div className="space-y-4">
                       {subtitlesWithPermissions.length > 0 ? (
-                        subtitlesWithPermissions.map((subtitle) => (
-                          <div
-                            key={subtitle.id}
-                            className="flex items-center justify-between rounded-lg border p-4"
-                          >
-                            <div>
-                              <p className="font-semibold">
-                                {subtitle.language}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                by {subtitle.uploaderName}
-                              </p>
+                        subtitlesWithPermissions.map((subtitle) => {
+                          const canDelete = currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.name === subtitle.uploaderName;
+                          return (
+                            <div
+                              key={subtitle.id}
+                              className="flex items-center justify-between rounded-lg border p-4"
+                            >
+                              <div>
+                                <p className="font-semibold">
+                                  {subtitle.language}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  by {subtitle.uploaderName}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {subtitle.canDownload ? (
+                                  <Button variant="ghost" size="icon" asChild>
+                                    <a href={subtitle.url} download>
+                                      <Download className="h-5 w-5" />
+                                    </a>
+                                  </Button>
+                                ) : (
+                                  <Lock className="h-5 w-5 text-muted-foreground" title="You don't have permission to download this file" />
+                                )}
+                                {canDelete && (
+                                  <form action={async () => {
+                                    "use server";
+                                    await deleteSubtitle(subtitle.id);
+                                  }}>
+                                    <Button variant="ghost" size="icon" type="submit" title="Delete subtitle">
+                                      <Trash2 className="h-5 w-5 text-destructive" />
+                                    </Button>
+                                  </form>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center space-x-4">
-                              {subtitle.canDownload ? (
-                                <Button variant="ghost" size="icon" asChild>
-                                  <a href={subtitle.url} download>
-                                    <Download className="h-5 w-5" />
-                                  </a>
-                                </Button>
-                              ) : (
-                                <Lock className="h-5 w-5 text-muted-foreground" title="You don't have permission to download this file" />
-                              )}
-                            </div>
-                          </div>
-                        ))
+                          )
+                        })
                       ) : (
                         <p className="text-muted-foreground">
                           No subtitles available for this post yet.

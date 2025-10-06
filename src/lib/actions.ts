@@ -1039,6 +1039,41 @@ export async function uploadSubtitle(formData: FormData) {
   revalidatePath(`/movies/${postId}`);
 }
 
+export async function deleteSubtitle(subtitleId: number) {
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user) {
+    throw new Error('Not authenticated.');
+  }
+
+  const subtitle = await prisma.subtitle.findUnique({
+    where: { id: subtitleId },
+  });
+
+  if (!subtitle) {
+    throw new Error('Subtitle not found.');
+  }
+
+  const isOwner = user.name === subtitle.uploaderName;
+  const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
+
+  if (!isOwner && !isSuperAdmin) {
+    throw new Error('You are not authorized to delete this subtitle.');
+  }
+
+  // Delete file from filesystem
+  await deleteUploadedFile(subtitle.url);
+
+  // Delete record from database
+  await prisma.subtitle.delete({
+    where: { id: subtitleId },
+  });
+
+  revalidatePath(`/movies/${subtitle.postId}`);
+}
+
+
 export async function canUserDownloadSubtitle(subtitleId: number): Promise<boolean> {
   // Since the advanced permission system is not in the schema,
   // we'll default to a simple check: is the user logged in?
@@ -1046,5 +1081,6 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
   const session = await auth();
   return !!session?.user;
 }
+
 
 
