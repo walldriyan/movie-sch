@@ -474,7 +474,7 @@ export async function requestAdminAccess(
   await prisma.user.update({
     where: { id: userId },
     data: {
-      permissionRequestStatus: 'PENDING',
+      permissionsRequestStatus: 'PENDING',
       permissionRequestMessage: message,
     },
   });
@@ -497,7 +497,7 @@ export async function updateUserRole(
     where: { id: userId },
     data: {
       role: role,
-      permissionRequestStatus: status,
+      permissionsRequestStatus: status,
     },
   });
 
@@ -785,7 +785,7 @@ export async function getPendingApprovals() {
   let pendingUsers = [];
   if (user.role === ROLES.SUPER_ADMIN) {
     pendingUsers = await prisma.user.findMany({
-      where: { permissionRequestStatus: 'PENDING' },
+      where: { permissionsRequestStatus: 'PENDING' },
       select: { id: true, name: true, email: true },
       orderBy: { updatedAt: 'desc' },
     });
@@ -823,6 +823,7 @@ export async function createSeries(title: string): Promise<Series> {
   const newSeries = await prisma.series.create({
     data: {
       title,
+      authorId: session.user.id,
     },
   });
   
