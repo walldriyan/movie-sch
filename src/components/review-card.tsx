@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -24,11 +23,14 @@ import {
 interface ReviewCardProps {
   review: Review;
   postId: number;
+  onReviewSubmit: (comment: string, rating: number, parentId?: number) => Promise<void>;
 }
 
-export default function ReviewCard({ review, postId }: ReviewCardProps) {
+export default function ReviewCard({ review, postId, onReviewSubmit }: ReviewCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [isSubmittingReply, startReplyTransition] = useTransition();
+
   const currentUser = useCurrentUser();
   const { toast } = useToast();
   
@@ -106,13 +108,15 @@ export default function ReviewCard({ review, postId }: ReviewCardProps) {
                     parentId={review.id} 
                     onSuccess={handleReplySuccess}
                     showAvatar={false}
+                    isSubmitting={isSubmittingReply}
+                    onSubmitReview={onReviewSubmit}
                 />
             </div>
         )}
         {review.replies && review.replies.length > 0 && (
           <div className="mt-4 space-y-6 border-l pl-6">
             {review.replies.map(reply => (
-              <ReviewCard key={reply.id} review={reply} postId={postId} />
+              <ReviewCard key={reply.id} review={reply} postId={postId} onReviewSubmit={onReviewSubmit} />
             ))}
           </div>
         )}

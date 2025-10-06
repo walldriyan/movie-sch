@@ -2,7 +2,7 @@
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
-import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle } from '@/lib/actions';
+import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle, createReview } from '@/lib/actions';
 import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -40,6 +40,7 @@ import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 import Loading from './loading';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
@@ -153,11 +154,13 @@ export default function MoviePage() {
 
   const [post, setPost] = useState<Post | null>(null);
   const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [subtitleToDelete, setSubtitleToDelete] = useState<Subtitle | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [isSubmittingReview, startReviewTransition] = useTransition();
 
   useEffect(() => {
     if (isNaN(postId)) {
@@ -181,10 +184,87 @@ export default function MoviePage() {
       
       setPost(postData);
       setSubtitles(subtitlesWithPermissions);
+      setReviews(postData.reviews || []);
       setIsLoading(false);
     }
     fetchData();
   }, [postId]);
+
+  const handleReviewSubmit = async (comment: string, rating: number, parentId?: number) => {
+    if (!currentUser) {
+      toast({ variant: "destructive", title: "You must be logged in." });
+      return;
+    }
+    
+    startReviewTransition(async () => {
+      try {
+        // Optimistically create a review object
+        const optimisticReview: Review = {
+          id: Date.now(), // Temporary ID
+          comment,
+          rating,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          userId: currentUser.id,
+          postId: postId,
+          parentId: parentId || null,
+          user: currentUser as User,
+          replies: [],
+        };
+        
+        // Add to state
+        setReviews(prevReviews => {
+          if (parentId) {
+            // This is a reply, find the parent and add it
+            const addReplyToTree = (nodes: Review[]): Review[] => {
+              return nodes.map(node => {
+                if (node.id === parentId) {
+                  return { ...node, replies: [...(node.replies || []), optimisticReview] };
+                }
+                if (node.replies) {
+                  return { ...node, replies: addReplyToTree(node.replies) };
+                }
+                return node;
+              });
+            };
+            return addReplyToTree(prevReviews);
+          }
+          // This is a top-level review
+          return [optimisticReview, ...prevReviews];
+        });
+
+        const newReview = await createReview(postId, comment, rating, parentId);
+        
+        // Replace optimistic review with the actual one from the server
+        setReviews(prevReviews => {
+           const replaceInTree = (nodes: Review[]): Review[] => {
+              return nodes.map(node => {
+                if (node.id === optimisticReview.id) return newReview;
+                if (node.replies) {
+                  return { ...node, replies: replaceInTree(node.replies) };
+                }
+                return node;
+              });
+            };
+           return replaceInTree(prevReviews);
+        });
+
+        toast({
+          title: "Response Submitted!",
+          description: "Thanks for sharing your thoughts.",
+        });
+
+      } catch (error: any) {
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: error.message || "Could not submit your review.",
+        });
+        // Revert optimistic update
+        setReviews(prevReviews => prevReviews.filter(r => r.id !== optimisticReview.id));
+      }
+    });
+  };
   
   const handleUploadSuccess = (newSubtitle: SubtitleWithPermission) => {
     setSubtitles(prevSubtitles => [...prevSubtitles, newSubtitle]);
@@ -298,7 +378,7 @@ export default function MoviePage() {
                           <>
                              <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={post.viewCount.toLocaleString()} />
                              <DetailItem icon={<ThumbsUp className="h-5 w-5" />} label="Likes" value={post.likedBy?.length || 0} />
-                             <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={post.reviews.length} />
+                             <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={reviews.length} />
                           </>
                         )}
                       </CardContent>
@@ -309,21 +389,38 @@ export default function MoviePage() {
             <TabsContent value="reviews" className='px-4 md:px-0'>
               <section id="reviews" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
-                  Responses ({post.reviews.length})
+                  Responses ({reviews.length})
                 </h2>
                 <div className="space-y-8">
-                  {post.reviews.length > 0 ? (
-                    post.reviews.map((review: Review) => (
-                      <ReviewCard key={review.id} review={review} postId={post.id} />
+                  {reviews.length > 0 ? (
+                    reviews.map((review: Review) => (
+                      <ReviewCard key={review.id} review={review} postId={post.id} onReviewSubmit={handleReviewSubmit} />
                     ))
                   ) : (
-                    <p className="text-muted-foreground">
-                      Be the first to share your thoughts!
-                    </p>
+                     !isSubmittingReview && (
+                        <p className="text-muted-foreground">
+                            Be the first to share your thoughts!
+                        </p>
+                     )
+                  )}
+                  {isSubmittingReview && (
+                    <div className="flex items-start gap-4">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="w-full space-y-2">
+                          <Skeleton className="h-4 w-1/4" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
+                    </div>
                   )}
                 </div>
                 <Separator className="my-8" />
-                <ReviewForm postId={post.id} />
+                <ReviewForm 
+                    postId={post.id} 
+                    onSuccess={() => {}}
+                    isSubmitting={isSubmittingReview}
+                    onSubmitReview={handleReviewSubmit}
+                 />
               </section>
             </TabsContent>
             <TabsContent value="subtitles" className='px-4 md:px-0'>
@@ -430,5 +527,3 @@ export default function MoviePage() {
     </div>
   );
 }
-
-    

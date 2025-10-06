@@ -14,13 +14,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import RatingStars from './rating-stars';
-import { Send } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { createReview } from '@/lib/actions';
-import { useTransition } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 const reviewFormSchema = z.object({
@@ -40,13 +37,20 @@ interface ReviewFormProps {
   parentId?: number;
   onSuccess?: () => void;
   showAvatar?: boolean;
+  isSubmitting: boolean;
+  onSubmitReview: (comment: string, rating: number, parentId?: number) => Promise<void>;
 }
 
-export default function ReviewForm({ postId, parentId, onSuccess, showAvatar = true }: ReviewFormProps) {
-  const { toast } = useToast();
+export default function ReviewForm({ 
+    postId, 
+    parentId, 
+    onSuccess, 
+    showAvatar = true,
+    isSubmitting,
+    onSubmitReview,
+}: ReviewFormProps) {
   const user = useCurrentUser();
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
-  const [isPending, startTransition] = useTransition();
 
   const form = useForm<z.infer<typeof reviewFormSchema>>({
     resolver: zodResolver(reviewFormSchema),
@@ -56,30 +60,12 @@ export default function ReviewForm({ postId, parentId, onSuccess, showAvatar = t
     },
   });
 
-  function onSubmit(values: z.infer<typeof reviewFormSchema>) {
-    startTransition(async () => {
-      try {
-        if (!user) {
-          toast({ variant: 'destructive', title: 'You must be logged in.' });
-          return;
-        }
-        await createReview(postId, values.comment, values.rating, parentId);
-        toast({
-          title: 'Response Submitted!',
-          description: "Thanks for sharing your thoughts.",
-        });
-        form.reset();
-        if (onSuccess) {
-          onSuccess();
-        }
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message || "Could not submit your review.",
-        });
-      }
-    });
+  async function onSubmit(values: z.infer<typeof reviewFormSchema>) {
+    await onSubmitReview(values.comment, values.rating, parentId);
+    form.reset();
+    if (onSuccess) {
+      onSuccess();
+    }
   }
 
   return (
@@ -130,8 +116,15 @@ export default function ReviewForm({ postId, parentId, onSuccess, showAvatar = t
               )}
             />
             <div className='flex justify-end'>
-              <Button type="submit" variant='ghost' disabled={isPending}>
-                {isPending ? 'Replying...' : 'Respond'}
+              <Button type="submit" variant='ghost' disabled={isSubmitting}>
+                {isSubmitting ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Replying...
+                    </>
+                ) : (
+                    'Respond'
+                )}
               </Button>
             </div>
           </form>
