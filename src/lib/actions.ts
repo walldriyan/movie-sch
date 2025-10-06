@@ -968,8 +968,7 @@ export async function uploadSubtitle(formData: FormData) {
       uploaderName: user.name,
       url: '', // Temporary empty URL
       post: { connect: { id: postId } },
-      uploader: { connect: { id: user.id } },
-    }
+    },
   });
 
   // 2. Construct filename from ID and save file
