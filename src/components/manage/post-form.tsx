@@ -33,7 +33,6 @@ import QuillEditor from '@/components/quill-editor';
 import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Series } from '@prisma/client';
-import { PostType } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
@@ -57,7 +56,7 @@ const postSchema = z.object({
     type: z.enum(['trailer', 'image']),
     url: z.string().url('Please enter a valid URL.').min(1, 'URL is required.'),
   })).optional(),
-  type: z.nativeEnum(PostType),
+  type: z.enum(['MOVIE', 'TV_SERIES', 'OTHER']),
   seriesId: z.coerce.number().optional(),
   orderInSeries: z.coerce.number().optional(),
 });
@@ -201,7 +200,7 @@ export default function PostForm({
           rottenTomatoesRating: editingPost.rottenTomatoesRating || undefined,
           googleRating: editingPost.googleRating || undefined,
           mediaLinks: editingPost.mediaLinks || [],
-          type: editingPost.type,
+          type: editingPost.type as 'MOVIE' | 'TV_SERIES' | 'OTHER',
           seriesId: editingPost.seriesId || undefined,
           orderInSeries: editingPost.orderInSeries || undefined,
         }
@@ -218,7 +217,7 @@ export default function PostForm({
           rottenTomatoesRating: undefined,
           googleRating: undefined,
           mediaLinks: [],
-          type: PostType.MOVIE,
+          type: 'MOVIE',
           seriesId: undefined,
           orderInSeries: undefined,
         },
@@ -392,7 +391,7 @@ export default function PostForm({
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        {Object.values(PostType).map((type) => (
+                        {(['MOVIE', 'TV_SERIES', 'OTHER'] as const).map((type) => (
                            <SelectItem key={type} value={type}>{type}</SelectItem>
                         ))}
                       </SelectContent>
@@ -435,7 +434,7 @@ export default function PostForm({
                 />
             </div>
             
-            {(postType === PostType.MOVIE || postType === PostType.TV_SERIES) && (
+            {(postType === 'MOVIE' || postType === 'TV_SERIES') && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <FormField

@@ -8,7 +8,6 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { getPosts, getUsers } from '@/lib/actions';
 import type { User } from '@/lib/types';
-import { PostType } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -73,9 +72,9 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   }
 
   const typeFilters = [
-    { label: 'Movies', value: PostType.MOVIE, icon: <Clapperboard /> },
-    { label: 'TV Series', value: PostType.TV_SERIES, icon: <Tv /> },
-    { label: 'Other', value: PostType.OTHER, icon: <Folder /> },
+    { label: 'Movies', value: 'MOVIE', icon: <Clapperboard /> },
+    { label: 'TV Series', value: 'TV_SERIES', icon: <Tv /> },
+    { label: 'Other', value: 'OTHER', icon: <Folder /> },
   ]
 
   return (

@@ -3,7 +3,6 @@
 'use client';
 
 import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries } from "@prisma/client";
-export { PostType } from '@prisma/client';
 
 export type User = PrismaUser;
 
@@ -33,6 +32,7 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres'> & {
   dislikedBy?: User[];
   episodes?: Episode[];
   metaData?: MetaData[];
+  type: 'MOVIE' | 'TV_SERIES' | 'OTHER';
 };
 
 export type Series = Omit<PrismaSeries, 'posts'> & {
@@ -45,5 +45,5 @@ export type Series = Omit<PrismaSeries, 'posts'> & {
 export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series'> & {
   mediaLinks?: Omit<MediaLink, 'id'>[];
   genres?: string[];
-  seriesId?: number | null;
+  seriesId?: number | null | undefined;
 };

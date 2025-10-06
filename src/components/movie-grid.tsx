@@ -9,19 +9,18 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Play, Clapperboard, Tv, Folder } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import type { Post as Movie } from '@/lib/types';
-import { PostType } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 interface MovieGridProps {
   movies: Movie[];
 }
 
-function CategoryIcon({ type }: { type: PostType }) {
+function CategoryIcon({ type }: { type: Movie['type'] }) {
   const getCategory = () => {
     switch (type) {
-      case PostType.MOVIE:
+      case 'MOVIE':
         return { icon: <Clapperboard className="w-4 h-4" />, label: 'Movie', color: 'bg-blue-900/50' };
-      case PostType.TV_SERIES:
+      case 'TV_SERIES':
         return { icon: <Tv className="w-4 h-4" />, label: 'TV Series', color: 'bg-green-900/50' };
       default:
         return { icon: <Folder className="w-4 h-4" />, label: 'Other', color: 'bg-gray-900/50' };
