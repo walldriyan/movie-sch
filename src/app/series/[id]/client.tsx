@@ -16,9 +16,10 @@ import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import { useToast } from '@/hooks/use-toast';
-import { toggleLikePost, toggleFavoritePost } from '@/lib/actions';
+import { toggleLikePost, toggleFavoritePost, createReview, deleteReview } from '@/lib/actions';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 export default function SeriesPageClient({
@@ -38,9 +39,17 @@ export default function SeriesPageClient({
   
   const [likeTransition, startLikeTransition] = useTransition();
   const [favoriteTransition, startFavoriteTransition] = useTransition();
+  const [isSubmittingReview, startReviewTransition] = useTransition();
 
-  const currentPost = initialPost;
+  const [currentPost, setCurrentPost] = useState(initialPost);
+  const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
+  
   const author = postsInSeries[0]?.author;
+
+  useEffect(() => {
+    setCurrentPost(initialPost);
+    setReviews(initialPost.reviews);
+  }, [initialPost]);
 
   const heroImage =
     currentPost.posterUrl ||
@@ -62,6 +71,9 @@ export default function SeriesPageClient({
             title: 'Success',
             description: `Your preference has been updated.`,
           });
+          // Note: This won't re-render the like count immediately without more state management.
+          // For a full optimistic update, we'd manage the post state here.
+          router.refresh(); 
         })
         .catch((err) => {
           toast({
@@ -89,6 +101,7 @@ export default function SeriesPageClient({
             title: 'Favorites Updated',
             description: `Post has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`,
           });
+           router.refresh();
         })
         .catch((err) => {
           toast({
@@ -99,6 +112,90 @@ export default function SeriesPageClient({
         });
     });
   };
+
+  const handleReviewSubmit = async (comment: string, rating: number, parentId?: number) => {
+    if (!currentUser) {
+      toast({ variant: "destructive", title: "You must be logged in." });
+      return;
+    }
+    
+    startReviewTransition(async () => {
+      const optimisticReview: Review = {
+        id: Date.now(),
+        comment,
+        rating: parentId ? 0 : rating,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: currentUser.id,
+        postId: currentPost.id,
+        parentId: parentId || null,
+        user: currentUser,
+        replies: [],
+      };
+      
+      const originalReviews = reviews;
+
+      if (parentId) {
+        const addReply = (nodes: Review[]): Review[] => {
+          return nodes.map(node => {
+            if (node.id === parentId) {
+              return { ...node, replies: [...(node.replies || []), optimisticReview] };
+            }
+            if (node.replies && node.replies.length > 0) {
+              return { ...node, replies: addReply(node.replies) };
+            }
+            return node;
+          });
+        };
+        setReviews(prev => addReply(prev));
+      } else {
+        setReviews(prev => [optimisticReview, ...prev]);
+      }
+
+      try {
+        const newReview = await createReview(currentPost.id, comment, rating, parentId);
+        
+        const replaceOptimistic = (nodes: Review[]): Review[] => {
+          return nodes.map(node => {
+            if (node.id === optimisticReview.id) return newReview;
+            if (node.replies && node.replies.length > 0) {
+              return { ...node, replies: replaceOptimistic(node.replies) };
+            }
+            return node;
+          });
+        };
+        
+        setReviews(prev => replaceOptimistic(prev));
+        toast({ title: "Response Submitted!", description: "Thanks for sharing your thoughts." });
+      } catch (error: any) {
+        toast({ variant: "destructive", title: "Error", description: error.message || "Could not submit your review." });
+        setReviews(originalReviews);
+      }
+    });
+  };
+  
+  const handleReviewDelete = async (reviewId: number) => {
+    const originalReviews = [...reviews];
+    
+    const removeReviewFromTree = (nodes: Review[], idToRemove: number): Review[] => {
+      return nodes.filter(node => node.id !== idToRemove).map(node => {
+        if (node.replies && node.replies.length > 0) {
+          return { ...node, replies: removeReviewFromTree(node.replies, idToRemove) };
+        }
+        return node;
+      });
+    };
+    setReviews(prevReviews => removeReviewFromTree(prevReviews, reviewId));
+
+    try {
+      await deleteReview(reviewId);
+      toast({ title: "Review Deleted", description: "The review has been successfully removed." });
+    } catch (error: any) {
+      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to delete the review." });
+      setReviews(originalReviews);
+    }
+  };
+
 
   const isFavorited = currentUser && currentPost.favoritePosts && currentPost.favoritePosts.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && currentPost.likedBy?.some(user => user.id === currentUser.id);
@@ -263,21 +360,42 @@ export default function SeriesPageClient({
                     <section id="reviews" className="my-12">
                       <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
                         <MessageCircle className="w-8 h-8 text-primary" />
-                        Responses ({currentPost.reviews.length})
+                        Responses ({reviews.length})
                       </h2>
+                      <ReviewForm 
+                        postId={currentPost.id} 
+                        isSubmitting={isSubmittingReview}
+                        onSubmitReview={handleReviewSubmit}
+                      />
+                      <Separator className="my-8" />
                       <div className="space-y-8">
-                        {currentPost.reviews.length > 0 ? (
-                          currentPost.reviews.map((review: Review) => (
-                            <ReviewCard key={review.id} review={review} postId={currentPost.id} />
+                        {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
+                          <div className="flex items-start gap-4">
+                              <Skeleton className="h-8 w-8 rounded-full" />
+                              <div className="w-full space-y-2">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
+                              </div>
+                          </div>
+                        )}
+                        {reviews.length > 0 ? (
+                          reviews.map((review: Review) => (
+                            <ReviewCard 
+                              key={review.id} 
+                              review={review} 
+                              onReviewSubmit={handleReviewSubmit}
+                              onReviewDelete={handleReviewDelete}
+                            />
                           ))
                         ) : (
-                          <p className="text-muted-foreground">
-                            Be the first to share your thoughts!
-                          </p>
+                          !isSubmittingReview && (
+                            <p className="text-muted-foreground">
+                              Be the first to share your thoughts!
+                            </p>
+                          )
                         )}
                       </div>
-                      <Separator className="my-8" />
-                      <ReviewForm postId={currentPost.id} />
                     </section>
 
                 </article>

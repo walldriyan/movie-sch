@@ -31,6 +31,12 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
 
   const currentUser = useCurrentUser();
   
+  if (!review.user) {
+    // This can happen with optimistic updates if user data isn't available.
+    // Render a placeholder or null.
+    return null;
+  }
+  
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-2');
 
   const canDelete = currentUser && (currentUser.id === review.userId || currentUser.role === ROLES.SUPER_ADMIN);
@@ -109,5 +115,3 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
     </div>
   );
 }
-
-    
