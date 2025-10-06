@@ -8,12 +8,18 @@ import RatingStars from '@/components/rating-stars';
 import type { Review } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from './ui/button';
-import { MessageSquare, Trash2 } from 'lucide-react';
+import { MessageSquare, Trash2, MoreHorizontal } from 'lucide-react';
 import ReviewForm from './review-form';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLES } from '@/lib/permissions';
 import { deleteReview } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface ReviewCardProps {
   review: Review;
@@ -54,15 +60,36 @@ export default function ReviewCard({ review, postId }: ReviewCardProps) {
 
   return (
     <div className="flex flex-col">
-      <div className="flex items-center space-x-3 mb-2">
-        <Avatar className="h-8 w-8">
-          <AvatarImage src={review.user.image || userAvatar?.imageUrl} alt={review.user.name || ''} data-ai-hint="person face" />
-          <AvatarFallback>{review.user.name?.charAt(0) || 'U'}</AvatarFallback>
-        </Avatar>
-        <div>
-          <p className="font-semibold text-sm">{review.user.name}</p>
-          {review.rating > 0 && <RatingStars rating={review.rating} size={14} />}
+      <div className="flex items-start justify-between">
+        <div className="flex items-center space-x-3 mb-2">
+            <Avatar className="h-8 w-8">
+              <AvatarImage src={review.user.image || userAvatar?.imageUrl} alt={review.user.name || ''} data-ai-hint="person face" />
+              <AvatarFallback>{review.user.name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-semibold text-sm">{review.user.name}</p>
+              {review.rating > 0 && <RatingStars rating={review.rating} size={14} />}
+            </div>
         </div>
+        {canDelete && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="text-destructive"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
       </div>
       <div className="text-foreground/80 pl-11">
         <p>{review.comment}</p>
@@ -71,12 +98,6 @@ export default function ReviewCard({ review, postId }: ReviewCardProps) {
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Reply
             </Button>
-            {canDelete && (
-                 <Button variant="ghost" size="sm" onClick={handleDelete} disabled={isDeleting}>
-                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
-                    <span className="text-destructive">{isDeleting ? 'Deleting...' : 'Delete'}</span>
-                </Button>
-            )}
         </div>
         {showReplyForm && (
             <div className="mt-4">
