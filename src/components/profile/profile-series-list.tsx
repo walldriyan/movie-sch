@@ -4,10 +4,10 @@
 import type { User, Series } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Clapperboard } from 'lucide-react';
-import SeriesCard from './series-card';
+import SeriesStepper from './series-stepper';
 
 interface ProfileSeriesListProps {
-  series: (Series & { _count: { posts: number }, posts: { posterUrl: string | null }[] })[];
+  series: Series[];
   isOwnProfile: boolean;
   profileUser: User;
 }
@@ -30,9 +30,9 @@ export default function ProfileSeriesList({ series, isOwnProfile, profileUser }:
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-12">
       {series.map((s) => (
-        <SeriesCard key={s.id} series={s} />
+        <SeriesStepper key={s.id} series={s} />
       ))}
     </div>
   );

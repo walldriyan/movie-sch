@@ -896,11 +896,7 @@ export async function getPostsBySeriesId(seriesId: number) {
 export async function getSeriesByAuthorId(authorId: string) {
   const series = await prisma.series.findMany({
     where: {
-      posts: {
-        some: {
-          authorId: authorId,
-        },
-      },
+      authorId: authorId,
     },
     include: {
       _count: {
@@ -908,18 +904,25 @@ export async function getSeriesByAuthorId(authorId: string) {
       },
       posts: {
         orderBy: {
-          orderInSeries: 'asc'
+          orderInSeries: 'asc',
         },
-        take: 1,
-        select: {
-          posterUrl: true
-        }
-      }
+        include: {
+          author: true,
+        },
+      },
     },
     orderBy: {
       updatedAt: 'desc',
     },
   });
 
-  return series;
+  const processedSeries = series.map(s => ({
+    ...s,
+    posts: s.posts.map(p => ({
+      ...p,
+      genres: p.genres ? p.genres.split(',') : [],
+    }))
+  }))
+
+  return processedSeries;
 }
