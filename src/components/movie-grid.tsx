@@ -105,7 +105,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
           </Avatar>
         </div>
       </Link>
-      {series && series._count && series._count.posts > 0 && (
+      {series && series?._count?.posts > 0 && (
           <Button asChild size="sm" variant="outline" className="absolute bottom-4 left-4 z-20 h-7 rounded-full bg-black/30 backdrop-blur-sm border-white/20 hover:bg-white/20">
               <Link href={`/series/${series.id}`} onClick={(e) => e.stopPropagation()}>
                   <List className="h-3 w-3" />
