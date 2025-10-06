@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark } from 'lucide-react';
+import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock } from 'lucide-react';
 import { useEffect, useState, useMemo, useTransition } from 'react';
 import Loading from './loading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -218,6 +218,46 @@ export default function SeriesPageClient({
                            </Button>
                         </div>
                     </section>
+                    
+                    {currentPost.subtitles && currentPost.subtitles.length > 0 && (
+                      <>
+                        <Separator className="my-12" />
+                        <section id="downloads">
+                           <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
+                              <Download className="w-8 h-8 text-primary" />
+                              Downloads
+                           </h2>
+                           <div className="space-y-4">
+                            {currentPost.subtitles.map((subtitle) => (
+                              <div
+                                key={subtitle.id}
+                                className="flex items-center justify-between rounded-lg border p-4"
+                              >
+                                <div>
+                                  <p className="font-semibold">
+                                    {subtitle.language}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    by {subtitle.uploaderName}
+                                  </p>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                  {currentUser ? (
+                                    <Button variant="ghost" size="icon" asChild>
+                                      <a href={subtitle.url} download>
+                                        <Download className="h-5 w-5" />
+                                      </a>
+                                    </Button>
+                                  ) : (
+                                    <Lock className="h-5 w-5 text-muted-foreground" titleAccess="Login to download" />
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                           </div>
+                        </section>
+                      </>
+                    )}
 
 
                     <section id="reviews" className="my-12">
