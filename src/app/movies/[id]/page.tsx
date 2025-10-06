@@ -1,7 +1,7 @@
 
 'use client';
 
-import { notFound } from 'next/navigation';
+import { notFound, useParams } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle } from '@/lib/actions';
 import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
@@ -39,6 +39,8 @@ import { PostType } from '@prisma/client';
 import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
+import Loading from './loading';
+
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -143,11 +145,8 @@ const ImageGallerySection = ({ post }: { post: Post }) => {
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
-export default function MoviePage({
-  params,
-}: {
-  params: { id: string };
-}) {
+export default function MoviePage() {
+  const params = useParams();
   const postId = Number(params.id);
   const currentUser = useCurrentUser();
   const { toast } = useToast();
@@ -218,8 +217,7 @@ export default function MoviePage({
 
   if (isLoading || !post) {
     return (
-      // You might want to use your existing loading component here
-      <div>Loading...</div>
+      <Loading />
     )
   }
 
@@ -428,3 +426,5 @@ export default function MoviePage({
     </div>
   );
 }
+
+    
