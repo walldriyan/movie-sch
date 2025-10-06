@@ -30,7 +30,7 @@ export default function ProfileSeriesList({ series, isOwnProfile, profileUser }:
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+    <div className="space-y-4">
       {series.map((s) => (
         <SeriesCard key={s.id} series={s} />
       ))}
