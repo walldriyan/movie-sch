@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
@@ -197,42 +198,42 @@ export default function MoviePage() {
     }
     
     startReviewTransition(async () => {
-      try {
-        // Optimistically create a review object
-        const optimisticReview: Review = {
-          id: Date.now(), // Temporary ID
-          comment,
-          rating,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          userId: currentUser.id,
-          postId: postId,
-          parentId: parentId || null,
-          user: currentUser as User,
-          replies: [],
-        };
-        
-        // Add to state
-        setReviews(prevReviews => {
-          if (parentId) {
-            // This is a reply, find the parent and add it
-            const addReplyToTree = (nodes: Review[]): Review[] => {
-              return nodes.map(node => {
-                if (node.id === parentId) {
-                  return { ...node, replies: [...(node.replies || []), optimisticReview] };
-                }
-                if (node.replies) {
-                  return { ...node, replies: addReplyToTree(node.replies) };
-                }
-                return node;
-              });
-            };
-            return addReplyToTree(prevReviews);
-          }
-          // This is a top-level review
-          return [optimisticReview, ...prevReviews];
-        });
+      // Optimistically create a review object
+      const optimisticReview: Review = {
+        id: Date.now(), // Temporary ID
+        comment,
+        rating: parentId ? 0 : rating,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        userId: currentUser.id,
+        postId: postId,
+        parentId: parentId || null,
+        user: currentUser as User,
+        replies: [],
+      };
+      
+      // Add to state
+      setReviews(prevReviews => {
+        if (parentId) {
+          // This is a reply, find the parent and add it
+          const addReplyToTree = (nodes: Review[]): Review[] => {
+            return nodes.map(node => {
+              if (node.id === parentId) {
+                return { ...node, replies: [...(node.replies || []), optimisticReview] };
+              }
+              if (node.replies) {
+                return { ...node, replies: addReplyToTree(node.replies) };
+              }
+              return node;
+            });
+          };
+          return addReplyToTree(prevReviews);
+        }
+        // This is a top-level review
+        return [optimisticReview, ...prevReviews];
+      });
 
+      try {
         const newReview = await createReview(postId, comment, rating, parentId);
         
         // Replace optimistic review with the actual one from the server
@@ -240,8 +241,12 @@ export default function MoviePage() {
            const replaceInTree = (nodes: Review[]): Review[] => {
               return nodes.map(node => {
                 if (node.id === optimisticReview.id) return newReview;
-                if (node.replies) {
-                  return { ...node, replies: replaceInTree(node.replies) };
+                if (node.replies && node.replies.length > 0) {
+                   const updatedReplies = node.replies.map(reply => {
+                     if (reply.id === optimisticReview.id) return newReview;
+                     return reply;
+                   });
+                   return { ...node, replies: replaceInTree(updatedReplies) };
                 }
                 return node;
               });

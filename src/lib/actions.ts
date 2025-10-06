@@ -2,7 +2,7 @@
 
 'use server';
 
-import { PrismaClient, Prisma, PostType, Series, Group } from '@prisma/client';
+import { PrismaClient, Prisma, PostType, Series, Group, Subtitle } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -323,6 +323,8 @@ export async function savePost(postData: PostFormData, id?: number) {
     seriesId: postData.seriesId,
     orderInSeries: postData.orderInSeries,
     updatedAt: new Date(),
+    visibility: postData.visibility,
+    groupId: postData.groupId,
   };
 
   const status = MovieStatus.PENDING_APPROVAL;
@@ -808,7 +810,7 @@ export async function getPendingApprovals() {
     },
   });
 
-  let pendingUsers = [];
+  let pendingUsers: User[] = [];
   if (user.role === ROLES.SUPER_ADMIN) {
     pendingUsers = await prisma.user.findMany({
       where: { permissionRequestStatus: 'PENDING' },
@@ -872,7 +874,7 @@ export async function createReview(
 
   const reviewData: Prisma.ReviewCreateInput = {
     comment,
-    rating,
+    rating: parentId ? 0 : rating, // Replies don't have ratings
     post: { connect: { id: postId } },
     user: { connect: { id: userId } },
   };
@@ -881,13 +883,17 @@ export async function createReview(
     reviewData.parent = { connect: { id: parentId } };
   }
 
-  const review = await prisma.review.create({
+  const newReview = await prisma.review.create({
     data: reviewData,
+    include: {
+      user: true, // Include the user data in the returned object
+      replies: true,
+    }
   });
 
   revalidatePath(`/movies/${postId}`);
 
-  return review;
+  return newReview;
 }
 
 export async function deleteReview(reviewId: number) {
