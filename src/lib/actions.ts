@@ -277,9 +277,6 @@ export async function getPost(postId: number) {
   
   const subtitles = await prisma.subtitle.findMany({
     where: { postId: postId },
-    include: {
-      uploader: true,
-    }
   });
 
   return {
@@ -315,7 +312,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     rottenTomatoesRating: postData.rottenTomatoesRating,
     googleRating: postData.googleRating,
     viewCount: postData.viewCount,
-    type: postData.type || PostType.MOVIE,
+    type: postData.type || 'MOVIE',
     seriesId: postData.seriesId,
     orderInSeries: postData.orderInSeries,
     updatedAt: new Date(),
@@ -519,7 +516,7 @@ export async function updateUserRole(
     where: { id: userId },
     data: {
       role: role,
-      permissionsRequestStatus: status,
+      permissionRequestStatus: status,
     },
   });
 
@@ -807,7 +804,7 @@ export async function getPendingApprovals() {
   let pendingUsers = [];
   if (user.role === ROLES.SUPER_ADMIN) {
     pendingUsers = await prisma.user.findMany({
-      where: { permissionsRequestStatus: 'PENDING' },
+      where: { permissionRequestStatus: 'PENDING' },
       select: { id: true, name: true, email: true },
       orderBy: { updatedAt: 'desc' },
     });

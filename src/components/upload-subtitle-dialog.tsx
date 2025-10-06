@@ -69,10 +69,23 @@ export default function UploadSubtitleDialog({ postId }: UploadSubtitleDialogPro
   });
 
   React.useEffect(() => {
-    if (isOpen) {
-      getUsers().then(setAllUsers);
+    async function fetchUsers() {
+        if (isOpen) {
+            try {
+                const users = await getUsers();
+                setAllUsers(users);
+            } catch (error) {
+                console.error("Failed to fetch users:", error);
+                toast({
+                    variant: "destructive",
+                    title: "Error",
+                    description: "Could not load user list."
+                });
+            }
+        }
     }
-  }, [isOpen]);
+    fetchUsers();
+  }, [isOpen, toast]);
 
   const accessLevel = form.watch('accessLevel');
 

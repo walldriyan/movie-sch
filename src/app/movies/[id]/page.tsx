@@ -1,8 +1,8 @@
 
 
 import { notFound } from 'next/navigation';
-import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
-import type { Post, Review, Subtitle } from '@/lib/types';
+import { getPost, canUserDownloadSubtitle, getUsers } from '@/lib/actions';
+import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -128,7 +128,7 @@ const ImageGallerySection = ({ post }: { post: Post }) => {
   );
 };
 
-type SubtitleWithPermission = Subtitle & { canDownload: boolean };
+type SubtitleWithPermission = Subtitle & { canDownload: boolean, uploader: User };
 
 export default async function MoviePage({
   params,
@@ -147,12 +147,29 @@ export default async function MoviePage({
   if (!post) {
     notFound();
   }
+  
+  const allUsers = await getUsers();
+  const getUploader = (userId: string) => allUsers.find(u => u.id === userId);
+
 
   const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
-    post.subtitles.map(async (subtitle) => ({
-      ...subtitle,
-      canDownload: await canUserDownloadSubtitle(subtitle.id),
-    }))
+    (post.subtitles || []).map(async (subtitle: any) => {
+      const uploader = getUploader(subtitle.uploaderId);
+      if (!uploader) {
+        // Handle case where uploader is not found, though this should ideally not happen
+        // if database integrity is maintained.
+        return {
+          ...subtitle,
+          canDownload: await canUserDownloadSubtitle(subtitle.id),
+          uploader: { name: 'Unknown' } as User,
+        };
+      }
+      return {
+        ...subtitle,
+        canDownload: await canUserDownloadSubtitle(subtitle.id),
+        uploader: uploader,
+      };
+    })
   );
 
   return (
@@ -199,7 +216,7 @@ export default async function MoviePage({
                         <CardTitle>Details</CardTitle>
                       </CardHeader>
                       <CardContent className="space-y-6">
-                        {post.type === PostType.MOVIE || post.type === PostType.TV_SERIES ? (
+                        {post.type === 'MOVIE' || post.type === 'TV_SERIES' ? (
                           <>
                             <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
                             <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N/A'} />
