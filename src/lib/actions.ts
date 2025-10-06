@@ -9,7 +9,7 @@ import { PostFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
-import { ROLES, MovieStatus, SubtitleAccessLevel } from './permissions';
+import { ROLES, MovieStatus } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink, stat } from 'fs/promises';
 import { join, extname } from 'path';
@@ -221,6 +221,13 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         orderBy,
         include: {
             author: true,
+            series: {
+              include: {
+                _count: {
+                  select: { posts: true }
+                }
+              }
+            }
         },
     });
 
@@ -1001,3 +1008,4 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
   const session = await auth();
   return !!session?.user;
 }
+
