@@ -30,13 +30,13 @@ import {
 } from "@/components/ui/command";
 
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users } from 'lucide-react';
 import Image from 'next/image';
-import type { Post, Series } from '@prisma/client';
+import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries, createSeries } from '@/lib/actions';
+import { getSeries, createSeries, getGroups } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -59,6 +59,8 @@ const postSchema = z.object({
   type: z.enum(['MOVIE', 'TV_SERIES', 'OTHER']),
   seriesId: z.coerce.number().optional(),
   orderInSeries: z.coerce.number().optional(),
+  visibility: z.enum(['PUBLIC', 'GROUP_ONLY']).default('PUBLIC'),
+  groupId: z.coerce.number().optional(),
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -71,7 +73,7 @@ interface PostFormProps {
   error?: string | null;
 }
 
-function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: Series[], onSeriesCreated: (newSeries: Series) => void }) {
+function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [isPending, startTransition] = useTransition();
@@ -170,17 +172,21 @@ export default function PostForm({
   error,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
-  const [seriesList, setSeriesList] = useState<Series[]>([]);
+  const [seriesList, setSeriesList] = useState<any[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
+
 
   useEffect(() => {
-    async function fetchSeries() {
+    async function fetchData() {
       const seriesData = await getSeries();
       setSeriesList(seriesData);
+      const groupData = await getGroups();
+      setGroups(groupData as any);
     }
-    fetchSeries();
+    fetchData();
   }, []);
   
-  const handleSeriesCreated = (newSeries: Series) => {
+  const handleSeriesCreated = (newSeries: any) => {
     setSeriesList((prev) => [...prev, newSeries]);
   }
 
@@ -203,6 +209,8 @@ export default function PostForm({
           type: editingPost.type as 'MOVIE' | 'TV_SERIES' | 'OTHER',
           seriesId: editingPost.seriesId || undefined,
           orderInSeries: editingPost.orderInSeries || undefined,
+          visibility: editingPost.visibility as 'PUBLIC' | 'GROUP_ONLY',
+          groupId: editingPost.groupId || undefined,
         }
       : {
           title: '',
@@ -220,12 +228,15 @@ export default function PostForm({
           type: 'MOVIE',
           seriesId: undefined,
           orderInSeries: undefined,
+          visibility: 'PUBLIC',
+          groupId: undefined,
         },
   });
   
   const { control, formState, watch } = form;
   const posterUrlValue = watch('posterUrl');
   const postType = watch('type');
+  const visibility = watch('visibility');
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -251,6 +262,8 @@ export default function PostForm({
       type: values.type,
       seriesId: values.seriesId,
       orderInSeries: values.orderInSeries,
+      visibility: values.visibility,
+      groupId: values.groupId,
     };
     await onFormSubmit(postData, editingPost?.id);
   };
@@ -607,6 +620,62 @@ export default function PostForm({
               </>
             )}
           </div>
+          
+           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
+              <h3 className="text-lg font-semibold text-muted-foreground">
+                Access Control
+              </h3>
+               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                 <FormField
+                    control={form.control}
+                    name="visibility"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Visibility</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select visibility" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="PUBLIC"><div className='flex items-center gap-2'><Eye/> Public</div></SelectItem>
+                            <SelectItem value="GROUP_ONLY"><div className='flex items-center gap-2'><Users/> Group Only</div></SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  {visibility === 'GROUP_ONLY' && (
+                    <FormField
+                      control={form.control}
+                      name="groupId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Group</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={String(field.value || '')}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {groups.length > 0 ? groups.map(group => (
+                                <SelectItem key={group.id} value={String(group.id)}>{group.name}</SelectItem>
+                              )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
+                            </SelectContent>
+                          </Select>
+                           <FormDescription>
+                             This post will only be visible to members of this group.
+                           </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+              </div>
+           </div>
 
           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
             <h3 className="text-lg font-semibold text-muted-foreground">

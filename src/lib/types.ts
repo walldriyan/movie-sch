@@ -45,8 +45,10 @@ export type Series = Omit<PrismaSeries, 'posts'> & {
   }
 }
 
-export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series'> & {
+export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series' | 'visibility' | 'groupId'> & {
   mediaLinks?: Omit<MediaLink, 'id'>[];
   genres?: string[];
   seriesId?: number | null | undefined;
+  visibility: 'PUBLIC' | 'GROUP_ONLY';
+  groupId?: number | null | undefined;
 };

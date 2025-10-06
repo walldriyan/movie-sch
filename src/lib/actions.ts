@@ -148,10 +148,34 @@ export async function registerUser(
 export async function getPosts(options: { page?: number; limit?: number, filters?: any } = {}) {
     const { page = 1, limit = 10, filters = {} } = options;
     const skip = (page - 1) * limit;
+    const session = await auth();
+    const user = session?.user;
 
     let whereClause: Prisma.PostWhereInput = {
       status: MovieStatus.PUBLISHED,
     };
+    
+    // Visibility Logic
+    if (user && user.role === ROLES.SUPER_ADMIN) {
+      // Super admin sees everything
+    } else if (user) {
+      // Logged-in user sees PUBLIC posts and posts for their groups
+      const userGroupIds = await prisma.groupMember.findMany({
+        where: { userId: user.id },
+        select: { groupId: true },
+      }).then(members => members.map(m => m.groupId));
+
+      whereClause.OR = [
+        { visibility: 'PUBLIC' },
+        { 
+          visibility: 'GROUP_ONLY',
+          groupId: { in: userGroupIds }
+        }
+      ];
+    } else {
+      // Anonymous user only sees PUBLIC posts
+      whereClause.visibility = 'PUBLIC';
+    }
     
     let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
 
@@ -306,7 +330,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     finalPosterUrl = await saveImageFromDataUrl(postData.posterUrl, 'posts');
   }
   
-  const data = {
+  const data: any = {
     title: postData.title,
     description: postData.description,
     posterUrl: finalPosterUrl,
@@ -324,7 +348,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     orderInSeries: postData.orderInSeries,
     updatedAt: new Date(),
     visibility: postData.visibility,
-    groupId: postData.groupId,
+    groupId: postData.visibility === 'GROUP_ONLY' ? postData.groupId : null,
   };
 
   const status = MovieStatus.PENDING_APPROVAL;
@@ -343,14 +367,14 @@ export async function savePost(postData: PostFormData, id?: number) {
       prisma.mediaLink.deleteMany({ where: { postId: id } }),
       prisma.post.update({ 
           where: { id }, 
-          data: { ...data, status: status, mediaLinks: { create: postData.mediaLinks } } as any
+          data: { ...data, status: status, mediaLinks: { create: postData.mediaLinks } }
       })
     ]);
 
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.post.create({ data: { ...data, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } as any });
+    await prisma.post.create({ data: { ...data, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
