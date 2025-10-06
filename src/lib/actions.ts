@@ -1100,7 +1100,7 @@ export async function getGroups(): Promise<Group[]> {
     return prisma.group.findMany({
         include: {
             _count: {
-                select: { users: true },
+                select: { members: true },
             },
         },
         orderBy: { name: 'asc' },
@@ -1117,6 +1117,7 @@ export async function createGroup(name: string, description: string | null): Pro
         data: {
             name,
             description,
+            authorId: session.user.id
         },
     });
     revalidatePath('/admin/groups');
