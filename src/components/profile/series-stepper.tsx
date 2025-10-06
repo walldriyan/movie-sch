@@ -57,6 +57,8 @@ export default function SeriesStepper({ series }: { series: Series }) {
   if (!series.posts || series.posts.length === 0) {
     return null;
   }
+  
+  const displayedPosts = series.posts.slice(0, 3);
 
   return (
     <section>
@@ -70,11 +72,11 @@ export default function SeriesStepper({ series }: { series: Series }) {
       </div>
 
       <ul>
-        {series.posts.map((post, index) => (
+        {displayedPosts.map((post, index) => (
           <Step
             key={post.id}
             post={post}
-            isLast={index === series.posts.length - 1}
+            isLast={index === displayedPosts.length - 1}
           />
         ))}
       </ul>
