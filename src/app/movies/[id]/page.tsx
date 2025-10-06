@@ -155,7 +155,6 @@ export default async function MoviePage({
     }))
   );
 
-
   return (
     <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
@@ -204,7 +203,7 @@ export default async function MoviePage({
                           <>
                             <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
                             <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N/A'} />
-                            <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N'A'} />
+                            <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
                             <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
                             
                             <Separator />
