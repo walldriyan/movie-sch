@@ -1,8 +1,8 @@
 
 
 import { notFound } from 'next/navigation';
-import { getPost } from '@/lib/actions';
-import type { Post, Review } from '@/lib/types';
+import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
+import type { Post, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -19,7 +19,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock } from 'lucide-react';
 import React from 'react';
 import Image from 'next/image';
 import { auth } from '@/auth';
@@ -128,6 +128,7 @@ const ImageGallerySection = ({ post }: { post: Post }) => {
   );
 };
 
+type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
 export default async function MoviePage({
   params,
@@ -146,6 +147,14 @@ export default async function MoviePage({
   if (!post) {
     notFound();
   }
+
+  const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
+    post.subtitles.map(async (subtitle) => ({
+      ...subtitle,
+      canDownload: await canUserDownloadSubtitle(subtitle.id),
+    }))
+  );
+
 
   return (
     <div className="min-h-screen w-full bg-transparent">
@@ -195,7 +204,7 @@ export default async function MoviePage({
                           <>
                             <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
                             <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N/A'} />
-                            <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
+                            <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N'A'} />
                             <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
                             
                             <Separator />
@@ -256,8 +265,8 @@ export default async function MoviePage({
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                   <div className="lg:col-span-2">
                     <div className="space-y-4">
-                      {post.subtitles.length > 0 ? (
-                        post.subtitles.map((subtitle: Subtitle) => (
+                      {subtitlesWithPermissions.length > 0 ? (
+                        subtitlesWithPermissions.map((subtitle) => (
                           <div
                             key={subtitle.id}
                             className="flex items-center justify-between rounded-lg border p-4"
@@ -267,13 +276,19 @@ export default async function MoviePage({
                                 {subtitle.language}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                by {subtitle.uploaderName}
+                                by {subtitle.uploader.name}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
-                              <Button variant="ghost" size="icon">
-                                <Download className="h-5 w-5" />
-                              </Button>
+                              {subtitle.canDownload ? (
+                                <Button variant="ghost" size="icon" asChild>
+                                  <a href={subtitle.url} download>
+                                    <Download className="h-5 w-5" />
+                                  </a>
+                                </Button>
+                              ) : (
+                                <Lock className="h-5 w-5 text-muted-foreground" titleAccess="You don't have permission to download this file" />
+                              )}
                             </div>
                           </div>
                         ))
@@ -284,7 +299,7 @@ export default async function MoviePage({
                       )}
                     </div>
                     <div className="mt-6 flex">
-                      <UploadSubtitleDialog />
+                      <UploadSubtitleDialog postId={post.id} />
                     </div>
                   </div>
                   <div>

@@ -2,7 +2,7 @@
 
 'use server';
 
-import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
+import { PrismaClient, Prisma, PostType, Series, SubtitleAccessLevel } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -11,7 +11,7 @@ import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
 import { ROLES, MovieStatus } from './permissions';
 import { redirect } from 'next/navigation';
-import { writeFile, mkdir, unlink } from 'fs/promises';
+import { writeFile, mkdir, unlink, stat } from 'fs/promises';
 import { join } from 'path';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
 
@@ -277,6 +277,10 @@ export async function getPost(postId: number) {
   
   const subtitles = await prisma.subtitle.findMany({
     where: { postId: postId },
+    include: {
+      uploader: true,
+      authorizedUsers: true,
+    }
   });
 
   return {
@@ -493,7 +497,7 @@ export async function requestAdminAccess(
   await prisma.user.update({
     where: { id: userId },
     data: {
-      permissionsRequestStatus: 'PENDING',
+      permissionRequestStatus: 'PENDING',
       permissionRequestMessage: message,
     },
   });
@@ -944,4 +948,84 @@ export async function getSeriesByAuthorId(authorId: string) {
   }))
 
   return processedSeries;
+}
+
+export async function uploadSubtitle(formData: FormData) {
+  const session = await auth();
+  const user = session?.user;
+  if (!user?.id) {
+    throw new Error('Not authenticated');
+  }
+
+  const file = formData.get('file') as File;
+  const language = formData.get('language') as string;
+  const postId = Number(formData.get('postId'));
+  const accessLevel = formData.get('accessLevel') as SubtitleAccessLevel;
+  const authorizedUsers = formData.getAll('authorizedUsers') as string[];
+
+  if (!file || !language || !postId || !accessLevel) {
+    throw new Error('Missing required fields.');
+  }
+
+  // Handle file upload
+  const directory = join(process.cwd(), `public/uploads/subtitles`);
+  await mkdir(directory, { recursive: true });
+  const filename = `${Date.now()}-${file.name}`;
+  const path = join(directory, filename);
+  const bytes = await file.arrayBuffer();
+  const buffer = Buffer.from(bytes);
+  await writeFile(path, buffer);
+  const url = `/uploads/subtitles/${filename}`;
+
+  // Create subtitle record in DB
+  const subtitleData: Prisma.SubtitleCreateInput = {
+    language,
+    url,
+    accessLevel,
+    uploader: { connect: { id: user.id } },
+    post: { connect: { id: postId } },
+  };
+
+  if (accessLevel === 'AUTHORIZED_ONLY' && authorizedUsers.length > 0) {
+    subtitleData.authorizedUsers = {
+      connect: authorizedUsers.map(id => ({ id })),
+    };
+  }
+
+  await prisma.subtitle.create({
+    data: subtitleData,
+  });
+
+  revalidatePath(`/movies/${postId}`);
+}
+
+export async function canUserDownloadSubtitle(subtitleId: number): Promise<boolean> {
+  const session = await auth();
+  const user = session?.user;
+
+  const subtitle = await prisma.subtitle.findUnique({
+    where: { id: subtitleId },
+    include: { authorizedUsers: { select: { id: true } } },
+  });
+
+  if (!subtitle) {
+    return false; // Subtitle doesn't exist
+  }
+
+  switch (subtitle.accessLevel) {
+    case SubtitleAccessLevel.PUBLIC:
+      return true;
+    
+    case SubtitleAccessLevel.SUBSCRIBER_ONLY:
+      if (!user) return false;
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      return dbUser?.isSubscriber ?? false;
+
+    case SubtitleAccessLevel.AUTHORIZED_ONLY:
+      if (!user) return false;
+      return subtitle.authorizedUsers.some(authUser => authUser.id === user.id);
+
+    default:
+      return false;
+  }
 }

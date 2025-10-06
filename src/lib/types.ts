@@ -2,7 +2,7 @@
 
 'use client';
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, SubtitleAccessLevel } from "@prisma/client";
 
 export type User = PrismaUser;
 
@@ -12,7 +12,10 @@ export type Review = Omit<PrismaReview, 'parentId'> & {
   parentId?: number | null;
 };
 
-export type Subtitle = PrismaSubtitle;
+export type Subtitle = Omit<PrismaSubtitle, 'authorizedUsers'> & {
+  uploader: User;
+  authorizedUsers: Pick<User, 'id'>[];
+};
 
 export type MediaLink = {
   id: number;
@@ -20,7 +23,7 @@ export type MediaLink = {
   url: string;
 }
 
-export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres'> & {
+export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres' | 'subtitles'> & {
   genres: string[];
   mediaLinks: MediaLink[];
   reviews: Review[];
