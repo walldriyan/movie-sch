@@ -956,10 +956,8 @@ export async function uploadSubtitle(formData: FormData) {
   const file = formData.get('file') as File;
   const language = formData.get('language') as string;
   const postId = Number(formData.get('postId'));
-  const accessLevel = formData.get('accessLevel') as keyof typeof SubtitleAccessLevel;
-  const authorizedUsers = formData.getAll('authorizedUsers') as string[];
 
-  if (!file || !language || !postId || !accessLevel) {
+  if (!file || !language || !postId) {
     throw new Error('Missing required fields.');
   }
 
@@ -977,17 +975,10 @@ export async function uploadSubtitle(formData: FormData) {
   const subtitleData: Prisma.SubtitleCreateInput = {
     language,
     url,
-    accessLevel,
     uploaderName: user.name,
     uploader: { connect: { id: user.id } },
     post: { connect: { id: postId } },
   };
-
-  if (accessLevel === SubtitleAccessLevel.AUTHORIZED_ONLY && authorizedUsers.length > 0) {
-    subtitleData.authorizedUsers = {
-      connect: authorizedUsers.map(id => ({ id })),
-    };
-  }
 
   await prisma.subtitle.create({
     data: subtitleData,
@@ -997,33 +988,9 @@ export async function uploadSubtitle(formData: FormData) {
 }
 
 export async function canUserDownloadSubtitle(subtitleId: number): Promise<boolean> {
+  // Since the advanced permission system is not in the schema,
+  // we'll default to a simple check: is the user logged in?
+  // This can be expanded later if the schema is updated.
   const session = await auth();
-  const user = session?.user;
-
-  const subtitle = await prisma.subtitle.findUnique({
-    where: { id: subtitleId },
-    include: { authorizedUsers: { select: { id: true } } },
-  });
-
-  if (!subtitle) {
-    return false; // Subtitle doesn't exist
-  }
-
-  switch (subtitle.accessLevel) {
-    case SubtitleAccessLevel.PUBLIC:
-      return true;
-    
-    case SubtitleAccessLevel.SUBSCRIBER_ONLY:
-      if (!user) return false;
-      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
-      // Assuming you have an 'isSubscriber' field on your User model
-      return (dbUser as any)?.isSubscriber ?? false;
-
-    case SubtitleAccessLevel.AUTHORIZED_ONLY:
-      if (!user) return false;
-      return subtitle.authorizedUsers.some(authUser => authUser.id === user.id);
-
-    default:
-      return false;
-  }
+  return !!session?.user;
 }

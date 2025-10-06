@@ -128,7 +128,7 @@ const ImageGallerySection = ({ post }: { post: Post }) => {
   );
 };
 
-type SubtitleWithPermission = Subtitle & { canDownload: boolean, uploader: User };
+type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
 export default async function MoviePage({
   params,
@@ -147,29 +147,12 @@ export default async function MoviePage({
   if (!post) {
     notFound();
   }
-  
-  const allUsers = await getUsers();
-  const getUploader = (userId: string) => allUsers.find(u => u.id === userId);
-
 
   const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
-    (post.subtitles || []).map(async (subtitle: any) => {
-      const uploader = getUploader(subtitle.uploaderId);
-      if (!uploader) {
-        // Handle case where uploader is not found, though this should ideally not happen
-        // if database integrity is maintained.
-        return {
-          ...subtitle,
-          canDownload: await canUserDownloadSubtitle(subtitle.id),
-          uploader: { name: 'Unknown' } as User,
-        };
-      }
-      return {
-        ...subtitle,
-        canDownload: await canUserDownloadSubtitle(subtitle.id),
-        uploader: uploader,
-      };
-    })
+    (post.subtitles || []).map(async (subtitle: any) => ({
+      ...subtitle,
+      canDownload: await canUserDownloadSubtitle(subtitle.id),
+    }))
   );
 
   return (
@@ -292,7 +275,7 @@ export default async function MoviePage({
                                 {subtitle.language}
                               </p>
                               <p className="text-sm text-muted-foreground">
-                                by {subtitle.uploader.name}
+                                by {subtitle.uploaderName}
                               </p>
                             </div>
                             <div className="flex items-center space-x-4">
