@@ -3,7 +3,7 @@
 'use server';
 
 import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
-import type { User } from '@prisma/client';
+import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
@@ -247,7 +247,8 @@ export async function getPost(postId: number) {
               user: true,
               replies: { // Nested replies level 2
                 include: {
-                  user: true
+                  user: true,
+                  replies: true, // You can continue nesting if needed
                 }
               }
             }
@@ -794,6 +795,31 @@ export async function getSeries(): Promise<Series[]> {
   return series;
 }
 
+export async function createSeries(title: string): Promise<Series> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    throw new Error('Not authorized: You must be logged in to create a series.');
+  }
+
+  const existingSeries = await prisma.series.findFirst({
+    where: { title: { equals: title, mode: 'insensitive' } },
+  });
+
+  if (existingSeries) {
+    throw new Error(`A series with the title "${title}" already exists.`);
+  }
+
+  const newSeries = await prisma.series.create({
+    data: {
+      title,
+    },
+  });
+  
+  revalidatePath('/manage');
+  return newSeries;
+}
+
+
 export async function createReview(
   postId: number,
   comment: string,
@@ -806,14 +832,19 @@ export async function createReview(
   }
   const userId = session.user.id;
 
+  const reviewData: Prisma.ReviewCreateInput = {
+    comment,
+    rating,
+    post: { connect: { id: postId } },
+    user: { connect: { id: userId } },
+  };
+
+  if (parentId) {
+    reviewData.parent = { connect: { id: parentId } };
+  }
+
   const review = await prisma.review.create({
-    data: {
-      comment,
-      rating,
-      post: { connect: { id: postId } },
-      user: { connect: { id: userId } },
-      ...(parentId && { parent: { connect: { id: parentId } } }),
-    },
+    data: reviewData,
   });
 
   revalidatePath(`/movies/${postId}`);

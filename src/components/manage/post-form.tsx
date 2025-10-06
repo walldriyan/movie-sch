@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useTransition } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -18,15 +18,28 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+} from "@/components/ui/command";
+
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Series } from '@prisma/client';
 import { PostType } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries } from '@/lib/actions';
+import { getSeries, createSeries } from '@/lib/actions';
+import { cn } from '@/lib/utils';
+import { useToast } from '@/hooks/use-toast';
 
 const postSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -59,6 +72,96 @@ interface PostFormProps {
   error?: string | null;
 }
 
+function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: Series[], onSeriesCreated: (newSeries: Series) => void }) {
+  const [open, setOpen] = React.useState(false);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const handleCreateSeries = (seriesTitle: string) => {
+    startTransition(async () => {
+      try {
+        const newSeries = await createSeries(seriesTitle);
+        toast({ title: "Series created", description: `"${newSeries.title}" has been created.` });
+        onSeriesCreated(newSeries);
+        field.onChange(newSeries.id);
+        setOpen(false);
+      } catch (e: any) {
+        toast({ variant: "destructive", title: "Error creating series", description: e.message });
+      }
+    });
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <FormControl>
+          <Button
+            variant="outline"
+            role="combobox"
+            className={cn(
+              "w-full justify-between",
+              !field.value && "text-muted-foreground"
+            )}
+          >
+            {field.value
+              ? seriesList.find(
+                  (s) => s.id === field.value
+                )?.title
+              : "Select a series (optional)"}
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </FormControl>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput placeholder="Search series or create new..." />
+          <CommandList>
+            <CommandEmpty>
+               <Button
+                  onClick={() => {
+                    const input = document.querySelector('[cmdk-input]') as HTMLInputElement;
+                    if (input.value) {
+                       handleCreateSeries(input.value);
+                    }
+                  }}
+                  disabled={isPending}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Create a new series
+                </Button>
+            </CommandEmpty>
+            <CommandGroup>
+              {seriesList.map((s) => (
+                <CommandItem
+                  value={s.title}
+                  key={s.id}
+                  onSelect={() => {
+                    field.onChange(s.id);
+                    setOpen(false);
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      s.id === field.value
+                        ? "opacity-100"
+                        : "opacity-0"
+                    )}
+                  />
+                  {s.title}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 export default function PostForm({
   editingPost,
   onFormSubmit,
@@ -66,15 +169,19 @@ export default function PostForm({
   error,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
-  const [series, setSeries] = useState<Series[]>([]);
+  const [seriesList, setSeriesList] = useState<Series[]>([]);
 
   useEffect(() => {
     async function fetchSeries() {
-      const seriesList = await getSeries();
-      setSeries(seriesList);
+      const seriesData = await getSeries();
+      setSeriesList(seriesData);
     }
     fetchSeries();
   }, []);
+  
+  const handleSeriesCreated = (newSeries: Series) => {
+    setSeriesList((prev) => [...prev, newSeries]);
+  }
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -294,25 +401,13 @@ export default function PostForm({
               />
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <FormField
+               <FormField
                   control={form.control}
                   name="seriesId"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem className="flex flex-col">
                       <FormLabel>Series</FormLabel>
-                      <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString()}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a series (optional)" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="null">None</SelectItem>
-                          {series.map((s) => (
-                            <SelectItem key={s.id} value={s.id.toString()}>{s.title}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                       <SeriesCombobox field={field} seriesList={seriesList} onSeriesCreated={handleSeriesCreated}/>
                       <FormMessage />
                     </FormItem>
                   )}
