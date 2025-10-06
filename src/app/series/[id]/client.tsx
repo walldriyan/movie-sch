@@ -40,7 +40,7 @@ export default function SeriesPageClient({
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
             {/* Left Sidebar: Series Tracker */}
-            <aside className="md:col-span-1">
+            <aside className="md:col-span-1 md:order-first">
                 <div className="sticky top-24">
                     <h1 className="text-2xl font-bold font-serif mb-4">{series.title}</h1>
                     <SeriesTracker
@@ -52,7 +52,7 @@ export default function SeriesPageClient({
             </aside>
 
             {/* Right Content: Current Post Details */}
-            <div className="md:col-span-3">
+            <div className="md:col-span-3 order-first">
                 <article>
                     <div className="relative h-[400px] w-full rounded-xl overflow-hidden mb-8">
                         <Button
