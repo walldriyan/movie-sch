@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home } from 'lucide-react';
+import { ArrowLeft, Home, List } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import Loading from './loading';
 
@@ -42,7 +42,10 @@ export default function SeriesPageClient({
             {/* Left Sidebar: Series Tracker */}
             <aside className="md:col-span-1 md:order-first md:h-screen">
                 <div className="md:sticky md:top-24 overflow-y-auto">
-                    <h1 className="text-2xl font-bold font-serif mb-4">{series.title}</h1>
+                    <h1 className="text-2xl font-bold font-serif mb-4 flex items-center gap-2">
+                        <List className="h-6 w-6 text-primary" />
+                        <span>{series.title}</span>
+                    </h1>
                     <SeriesTracker
                         seriesId={series.id}
                         posts={postsInSeries}
