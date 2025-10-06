@@ -28,7 +28,23 @@ npx prisma db push
 
 mee@sch.com
 
+# 🔐 Developer Rules:
+# - Do NOT edit styles, UI, or Tailwind layouts.
+# - Do NOT touch Firebase configuration files.
+# - All new features go under /features or /modules.
+# - Always confirm before editing existing logic.
 
+
+  "Never modify UI, Tailwind, or Framer Motion animations.",
+      "Do not change or delete existing files.",
+      "Do not modify database configuration or paths.",
+      "Only add or edit code related to explicitly requested features.",
+      "Always confirm before refactoring or adding dependencies.",
+      "Never edit environment files or Firebase configs.",
+      "Do not alter layouts or styles."
+
+      parana kisima deyak ahanne natiwa change kranna epa, awashayanam change kranna magen ahala inna
+ sinhalen respond kranna 
 
  
   git branch -D v10
