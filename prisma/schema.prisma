@@ -1,19 +1,16 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  url      = env("DATABASE_URL")
 }
 
 model Post {
-  id                    Int      @id @default(autoincrement())
+  id                    Int              @id @default(autoincrement())
   title                 String
-  description           String   @db.Text
+  description           String
   posterUrl             String?
   year                  Int?
   duration              String?
@@ -23,29 +20,33 @@ model Post {
   imdbRating            Float?
   rottenTomatoesRating  Int?
   googleRating          Int?
-  status                String   @default("DRAFT")
-  viewCount             Int      @default(0)
+  status                String           @default("DRAFT")
+  viewCount             Int              @default(0)
   authorId              String
-  author                User     @relation("UserPosts", fields: [authorId], references: [id])
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+  author                User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
   reviews               Review[]
   subtitles             Subtitle[]
   favoritePosts         FavoritePost[]
-  mediaLinks            MediaLink[]
+  type                  PostType         @default(MOVIE)
   seriesId              Int?
-  series                Series?  @relation(fields: [seriesId], references: [id])
+  series                Series?          @relation(fields: [seriesId], references: [id])
   orderInSeries         Int?
-
-  @@index([authorId])
-  @@index([seriesId])
+  mediaLinks            MediaLink[]
+  episodes              Episode[]
+  metaData              MetaData[]
+  likedBy               User[]           @relation("LikedBy")
+  dislikedBy            User[]           @relation("DislikedBy")
 }
 
 model Series {
-  id            Int     @id @default(autoincrement())
-  title         String
-  description   String?
-  posts         Post[]
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  posts       Post[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Episode {
@@ -54,14 +55,20 @@ model Episode {
   description String?
   episodeNumber Int
   seasonNumber  Int
-  releaseDate DateTime?
-  duration    String?
   postId      Int
   post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
-  @@index([postId])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
+model MediaLink {
+  id        Int      @id @default(autoincrement())
+  type      String // e.g., 'trailer', 'image'
+  url       String
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
 
 model MetaData {
   id        Int      @id @default(autoincrement())
@@ -69,19 +76,8 @@ model MetaData {
   value     String
   postId    Int
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([postId])
 }
 
-model MediaLink {
-  id      Int    @id @default(autoincrement())
-  type    String // e.g., 'trailer', 'image', 'download'
-  url     String
-  postId  Int
-  post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([postId])
-}
 
 model Account {
   id                String  @id @default(cuid())
@@ -89,18 +85,17 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
-  @@index([userId])
 }
 
 model Session {
@@ -109,8 +104,6 @@ model Session {
   userId       String
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
 }
 
 model User {
@@ -121,15 +114,11 @@ model User {
   image         String?
   password      String?
   role          String    @default("USER")
-  permissionRequestStatus String? @default("NONE") // NONE, PENDING, APPROVED, REJECTED
+  permissionRequestStatus String? @default("NONE")
   permissionRequestMessage String?
-  bio           String?
-  website       String?
-  twitter       String?
-  linkedin      String?
   accounts      Account[]
   sessions      Session[]
-  posts         Post[]    @relation("UserPosts")
+  posts         Post[]
   reviews       Review[]
   favoritePosts FavoritePost[]
   likedPosts    Post[]    @relation("LikedBy")
@@ -141,44 +130,37 @@ model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
-  createdAt DateTime @default(now())
   postId    Int
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   userId    String
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  @@index([postId])
-  @@index([userId])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Subtitle {
-  id          Int      @id @default(autoincrement())
-  language    String
-  url         String
+  id           Int      @id @default(autoincrement())
+  language     String
+  url          String
   uploaderName String
-  createdAt   DateTime @default(now())
-  postId      Int
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-
-  @@index([postId])
+  postId       Int
+  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
 }
 
 model FavoritePost {
+  id        Int      @id @default(autoincrement())
   userId    String
   postId    Int
-  createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
 
-  @@id([userId, postId])
-  @@index([userId])
-  @@index([postId])
+  @@unique([userId, postId])
 }
 
-model VerificationToken {
-  identifier String
-  token      String   @unique
-  expires    DateTime
-
-  @@unique([identifier, token])
+enum PostType {
+  MOVIE
+  TV_SERIES
+  OTHER
 }
