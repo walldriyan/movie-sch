@@ -15,11 +15,12 @@ export default async function ProfilePage({
   searchParams,
 }: { 
   params: { username: string },
-  searchParams: { filter?: string } 
+  searchParams: { filter?: string, 'show-all-series'?: string } 
 }) {
   const session = await auth();
   const loggedInUser = session?.user;
   const currentFilter = searchParams.filter || 'posts';
+  const showAllSeries = searchParams['show-all-series'] === 'true';
 
   // Fetch the user whose profile is being viewed
   const allUsers = await getUsers();
@@ -33,6 +34,7 @@ export default async function ProfilePage({
 
   let displayPosts: any[] = [];
   let displaySeries: any[] = [];
+  let totalSeriesCount = 0;
 
   if (currentFilter === 'posts') {
     const { posts: allPosts } = await getPosts({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
@@ -41,8 +43,9 @@ export default async function ProfilePage({
     const favoritePosts = await getFavoritePostsByUserId(profileUser.id);
     displayPosts = favoritePosts || [];
   } else if (currentFilter === 'series') {
-    const series = await getSeriesByAuthorId(profileUser.id);
+    const { series, totalSeries } = await getSeriesByAuthorId(profileUser.id, showAllSeries ? undefined : 3);
     displaySeries = series || [];
+    totalSeriesCount = totalSeries;
   }
   
   return (
@@ -57,6 +60,8 @@ export default async function ProfilePage({
                     series={displaySeries}
                     isOwnProfile={isOwnProfile}
                     profileUser={profileUser}
+                    totalSeries={totalSeriesCount}
+                    showAll={showAllSeries}
                   />
               ) : (
                 <ProfilePostList

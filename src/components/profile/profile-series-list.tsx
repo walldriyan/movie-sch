@@ -3,16 +3,20 @@
 
 import type { User, Series } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Clapperboard } from 'lucide-react';
 import SeriesStepper from './series-stepper';
+import Link from 'next/link';
 
 interface ProfileSeriesListProps {
   series: Series[];
   isOwnProfile: boolean;
   profileUser: User;
+  totalSeries: number;
+  showAll: boolean;
 }
 
-export default function ProfileSeriesList({ series, isOwnProfile, profileUser }: ProfileSeriesListProps) {
+export default function ProfileSeriesList({ series, isOwnProfile, profileUser, totalSeries, showAll }: ProfileSeriesListProps) {
   if (series.length === 0) {
     return (
       <Card className="text-center border-dashed">
@@ -34,6 +38,16 @@ export default function ProfileSeriesList({ series, isOwnProfile, profileUser }:
       {series.map((s) => (
         <SeriesStepper key={s.id} series={s} />
       ))}
+      
+      {!showAll && totalSeries > 3 && (
+        <div className="text-center mt-12">
+            <Button asChild variant="outline">
+                <Link href={`/profile/${profileUser.id}?filter=series&show-all-series=true`}>
+                    View All {totalSeries} Series
+                </Link>
+            </Button>
+        </div>
+      )}
     </div>
   );
 }

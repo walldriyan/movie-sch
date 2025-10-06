@@ -957,11 +957,11 @@ export async function getPostsBySeriesId(seriesId: number) {
   }));
 }
 
-export async function getSeriesByAuthorId(authorId: string) {
-  const series = await prisma.series.findMany({
-    where: {
-      authorId: authorId,
-    },
+export async function getSeriesByAuthorId(authorId: string, limit?: number) {
+  const where = { authorId: authorId };
+  
+  const seriesQuery = {
+    where,
     include: {
       _count: {
         select: { posts: true },
@@ -978,7 +978,15 @@ export async function getSeriesByAuthorId(authorId: string) {
     orderBy: {
       updatedAt: 'desc',
     },
+  };
+  
+  const series = await prisma.series.findMany({
+    ...seriesQuery,
+    ...(limit && { take: limit }),
   });
+  
+  const totalSeries = await prisma.series.count({ where });
+
 
   const processedSeries = series.map(s => ({
     ...s,
@@ -988,10 +996,10 @@ export async function getSeriesByAuthorId(authorId: string) {
     }))
   }))
 
-  return processedSeries;
+  return { series: processedSeries, totalSeries };
 }
 
-export async function uploadSubtitle(formData: FormData) {
+export async function uploadSubtitle(formData: FormData): Promise<Subtitle> {
   const session = await auth();
   const user = session?.user;
   if (!user?.id || !user.name) {
@@ -1081,6 +1089,7 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
   const session = await auth();
   return !!session?.user;
 }
+
 
 
 
