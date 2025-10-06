@@ -8,9 +8,10 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, List } from 'lucide-react';
+import { ArrowLeft, Home, List, UserPlus } from 'lucide-react';
 import { useEffect, useState, useMemo } from 'react';
 import Loading from './loading';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 
 export default function SeriesPageClient({
@@ -30,6 +31,7 @@ export default function SeriesPageClient({
   // No need for client-side state for the current post itself,
   // as navigation will trigger a re-render of the parent server component.
   const currentPost = initialPost;
+  const author = postsInSeries[0]?.author;
 
   const heroImage =
     currentPost.posterUrl ||
@@ -42,10 +44,29 @@ export default function SeriesPageClient({
             {/* Left Sidebar: Series Tracker */}
             <aside className="md:col-span-1 md:order-first md:h-screen">
                 <div className="md:sticky md:top-24 overflow-y-auto">
-                    <h1 className="text-2xl font-bold font-serif mb-4 flex items-center gap-2">
-                        <List className="h-6 w-6 text-primary" />
-                        <span>{series.title}</span>
-                    </h1>
+                    <div className="flex justify-between items-start mb-4">
+                      <div className='flex-grow'>
+                        <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                            <List className="h-6 w-6 text-primary" />
+                            <span>{series.title}</span>
+                        </h1>
+                        {author && (
+                          <div className="flex items-center gap-2 mt-3">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={author.image || ''} alt={author.name || ''} />
+                              <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium">{author.name}</span>
+                          </div>
+                        )}
+                      </div>
+                       {author && (
+                        <Button variant="outline" size="sm">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Follow
+                        </Button>
+                       )}
+                    </div>
                     <SeriesTracker
                         seriesId={series.id}
                         posts={postsInSeries}
