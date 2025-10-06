@@ -4,7 +4,8 @@ import type {NextConfig} from 'next';
 const nextConfig: NextConfig = {
   /* config options here */
   serverActions: {
-    bodySizeLimit: '2mb',
+    bodySizeLimit: '4mb',
+    allowedOrigins: ['localhost:9002', 'studio.choreo.dev'],
   },
   typescript: {
     ignoreBuildErrors: true,
