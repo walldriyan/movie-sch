@@ -7,12 +7,10 @@ import RatingStars from '@/components/rating-stars';
 import type { Review } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from './ui/button';
-import { MessageSquare, Trash2, MoreHorizontal } from 'lucide-react';
+import { MessageSquare, Trash2, MoreHorizontal, Loader2 } from 'lucide-react';
 import ReviewForm from './review-form';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLES } from '@/lib/permissions';
-import { deleteReview } from '@/lib/actions';
-import { useToast } from '@/hooks/use-toast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,17 +20,16 @@ import {
 
 interface ReviewCardProps {
   review: Review;
-  postId: number;
   onReviewSubmit: (comment: string, rating: number, parentId?: number) => Promise<void>;
+  onReviewDelete: (reviewId: number) => Promise<void>;
 }
 
-export default function ReviewCard({ review, postId, onReviewSubmit }: ReviewCardProps) {
+export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: ReviewCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSubmittingReply, startReplyTransition] = useTransition();
 
   const currentUser = useCurrentUser();
-  const { toast } = useToast();
   
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-2');
 
@@ -44,19 +41,7 @@ export default function ReviewCard({ review, postId, onReviewSubmit }: ReviewCar
 
   const handleDelete = () => {
     startDeleteTransition(async () => {
-        try {
-            await deleteReview(review.id);
-            toast({
-                title: "Review Deleted",
-                description: "The review has been successfully removed.",
-            });
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: error.message || "Failed to delete the review.",
-            });
-        }
+        await onReviewDelete(review.id);
     });
   }
 
@@ -86,7 +71,7 @@ export default function ReviewCard({ review, postId, onReviewSubmit }: ReviewCar
                   disabled={isDeleting}
                   className="text-destructive"
                 >
-                  <Trash2 className="mr-2 h-4 w-4" />
+                  {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                   <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -104,7 +89,7 @@ export default function ReviewCard({ review, postId, onReviewSubmit }: ReviewCar
         {showReplyForm && (
             <div className="mt-4">
                 <ReviewForm 
-                    postId={postId} 
+                    postId={review.postId} 
                     parentId={review.id} 
                     onSuccess={handleReplySuccess}
                     showAvatar={false}
@@ -116,7 +101,7 @@ export default function ReviewCard({ review, postId, onReviewSubmit }: ReviewCar
         {review.replies && review.replies.length > 0 && (
           <div className="mt-4 space-y-6 border-l pl-6">
             {review.replies.map(reply => (
-              <ReviewCard key={reply.id} review={reply} postId={postId} onReviewSubmit={onReviewSubmit} />
+              <ReviewCard key={reply.id} review={reply} onReviewSubmit={onReviewSubmit} onReviewDelete={onReviewDelete} />
             ))}
           </div>
         )}
@@ -124,3 +109,5 @@ export default function ReviewCard({ review, postId, onReviewSubmit }: ReviewCar
     </div>
   );
 }
+
+    

@@ -3,7 +3,7 @@
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
-import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle, createReview } from '@/lib/actions';
+import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle, createReview, deleteReview } from '@/lib/actions';
 import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -208,10 +208,12 @@ export default function MoviePage() {
         userId: currentUser.id,
         postId: postId,
         parentId: parentId || null,
-        user: currentUser as User,
+        user: currentUser,
         replies: [],
       };
       
+      const originalReviews = reviews;
+
       // Add to state
       setReviews(prevReviews => {
         if (parentId) {
@@ -244,6 +246,10 @@ export default function MoviePage() {
                 if (node.replies && node.replies.length > 0) {
                    const updatedReplies = node.replies.map(reply => {
                      if (reply.id === optimisticReview.id) return newReview;
+                     // This is a bit tricky, if the reply itself has replies, we need to recurse
+                     if (reply.replies) {
+                       return {...reply, replies: replaceInTree(reply.replies)}
+                     }
                      return reply;
                    });
                    return { ...node, replies: replaceInTree(updatedReplies) };
@@ -266,9 +272,40 @@ export default function MoviePage() {
           description: error.message || "Could not submit your review.",
         });
         // Revert optimistic update
-        setReviews(prevReviews => prevReviews.filter(r => r.id !== optimisticReview.id));
+        setReviews(originalReviews);
       }
     });
+  };
+
+  const handleReviewDelete = async (reviewId: number) => {
+    const originalReviews = [...reviews];
+    
+    // Optimistically remove the review
+    const removeReviewFromTree = (nodes: Review[], idToRemove: number): Review[] => {
+      return nodes.filter(node => node.id !== idToRemove).map(node => {
+        if (node.replies && node.replies.length > 0) {
+          return { ...node, replies: removeReviewFromTree(node.replies, idToRemove) };
+        }
+        return node;
+      });
+    };
+    setReviews(prevReviews => removeReviewFromTree(prevReviews, reviewId));
+
+    try {
+      await deleteReview(reviewId);
+      toast({
+        title: "Review Deleted",
+        description: "The review has been successfully removed.",
+      });
+    } catch (error: any) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to delete the review.",
+      });
+      // Revert on error
+      setReviews(originalReviews);
+    }
   };
   
   const handleUploadSuccess = (newSubtitle: SubtitleWithPermission) => {
@@ -392,14 +429,14 @@ export default function MoviePage() {
               </div>
             </TabsContent>
             <TabsContent value="reviews" className='px-4 md:px-0'>
-              <section id="reviews" className="my-12">
+               <section id="reviews" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
                   Responses ({reviews.length})
                 </h2>
                 <div className="space-y-8">
                   {reviews.length > 0 ? (
                     reviews.map((review: Review) => (
-                      <ReviewCard key={review.id} review={review} postId={post.id} onReviewSubmit={handleReviewSubmit} />
+                      <ReviewCard key={review.id} review={review} onReviewSubmit={handleReviewSubmit} onReviewDelete={handleReviewDelete} />
                     ))
                   ) : (
                      !isSubmittingReview && (
@@ -532,3 +569,5 @@ export default function MoviePage() {
     </div>
   );
 }
+
+    
