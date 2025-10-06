@@ -279,7 +279,6 @@ export async function getPost(postId: number) {
     where: { postId: postId },
     include: {
       uploader: true,
-      authorizedUsers: true,
     }
   });
 
