@@ -70,7 +70,7 @@ export default function ReviewForm({
 
   return (
     <div className='flex items-start gap-4'>
-      {showAvatar && (
+      {showAvatar && user && (
         <Avatar className='mt-2'>
           <AvatarImage src={user?.image || userAvatar?.imageUrl} alt={user?.name || 'User'} data-ai-hint="person face" />
           <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
@@ -117,10 +117,15 @@ export default function ReviewForm({
             />
             <div className='flex justify-end'>
               <Button type="submit" variant='ghost' disabled={isSubmitting}>
-                {isSubmitting ? (
+                {isSubmitting && parentId ? (
                     <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Replying...
+                    </>
+                ) : isSubmitting ? (
+                   <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
                     </>
                 ) : (
                     'Respond'
@@ -133,3 +138,5 @@ export default function ReviewForm({
     </div>
   );
 }
+
+    

@@ -213,46 +213,43 @@ export default function MoviePage() {
       
       const originalReviews = reviews;
 
-      setReviews(prevReviews => {
-        if (parentId) {
-          const addReplyToTree = (nodes: Review[]): Review[] => {
-            return nodes.map(node => {
-              if (node.id === parentId) {
-                return { ...node, replies: [...(node.replies || []), optimisticReview] };
-              }
-              if (node.replies) {
-                return { ...node, replies: addReplyToTree(node.replies) };
-              }
-              return node;
-            });
-          };
-          return addReplyToTree(prevReviews);
-        }
-        return [optimisticReview, ...prevReviews];
-      });
+      if (parentId) {
+        // This is a reply, add it to the parent.
+        const addReply = (nodes: Review[]): Review[] => {
+          return nodes.map(node => {
+            if (node.id === parentId) {
+              return { ...node, replies: [...(node.replies || []), optimisticReview] };
+            }
+            if (node.replies && node.replies.length > 0) {
+              return { ...node, replies: addReply(node.replies) };
+            }
+            return node;
+          });
+        };
+        setReviews(prev => addReply(prev));
+      } else {
+        // This is a top-level review.
+        setReviews(prev => [optimisticReview, ...prev]);
+      }
+
 
       try {
         const newReview = await createReview(postId, comment, rating, parentId);
         
-        setReviews(prevReviews => {
-           const replaceInTree = (nodes: Review[]): Review[] => {
-              return nodes.map(node => {
-                if (node.id === optimisticReview.id) return newReview;
-                if (node.replies && node.replies.length > 0) {
-                   const updatedReplies = node.replies.map(reply => {
-                     if (reply.id === optimisticReview.id) return newReview;
-                     if (reply.replies) {
-                       return {...reply, replies: replaceInTree(reply.replies)}
-                     }
-                     return reply;
-                   });
-                   return { ...node, replies: replaceInTree(updatedReplies) };
-                }
-                return node;
-              });
-            };
-           return replaceInTree(prevReviews);
-        });
+        // Replace optimistic review with the real one from the server
+        const replaceOptimistic = (nodes: Review[]): Review[] => {
+          return nodes.map(node => {
+            if (node.id === optimisticReview.id) {
+              return newReview;
+            }
+            if (node.replies && node.replies.length > 0) {
+              return { ...node, replies: replaceOptimistic(node.replies) };
+            }
+            return node;
+          });
+        };
+        
+        setReviews(prev => replaceOptimistic(prev));
 
         toast({
           title: "Response Submitted!",
@@ -432,6 +429,16 @@ export default function MoviePage() {
                  />
                 <Separator className="my-8" />
                 <div className="space-y-8">
+                  {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
+                    <div className="flex items-start gap-4">
+                        <Skeleton className="h-8 w-8 rounded-full" />
+                        <div className="w-full space-y-2">
+                          <Skeleton className="h-4 w-1/4" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-2/3" />
+                        </div>
+                    </div>
+                  )}
                   {reviews.length > 0 ? (
                     reviews.map((review: Review) => (
                       <ReviewCard key={review.id} review={review} onReviewSubmit={handleReviewSubmit} onReviewDelete={handleReviewDelete} />
@@ -442,16 +449,6 @@ export default function MoviePage() {
                             Be the first to share your thoughts!
                         </p>
                      )
-                  )}
-                  {isSubmittingReview && (
-                    <div className="flex items-start gap-4">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <div className="w-full space-y-2">
-                          <Skeleton className="h-4 w-1/4" />
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-2/3" />
-                        </div>
-                    </div>
                   )}
                 </div>
               </section>
@@ -560,6 +557,8 @@ export default function MoviePage() {
     </div>
   );
 }
+
+    
 
     
 
