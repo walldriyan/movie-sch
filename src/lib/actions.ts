@@ -2,7 +2,7 @@
 
 'use server';
 
-import { PrismaClient, Prisma, PostType, Series, Group, Subtitle } from '@prisma/client';
+import { PrismaClient, Prisma, PostType, Series, Group, Subtitle, GroupMember } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -865,7 +865,7 @@ export async function createReview(
   comment: string,
   rating: number,
   parentId?: number
-) {
+): Promise<ReviewWithParent & { user: User, replies: (ReviewWithParent & { user: User })[] }> {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('You must be logged in to post a review.');
@@ -890,7 +890,6 @@ export async function createReview(
       replies: {
         include: {
           user: true,
-          replies: true,
         },
       },
     },
@@ -898,7 +897,7 @@ export async function createReview(
 
   revalidatePath(`/movies/${postId}`);
 
-  return newReview;
+  return newReview as ReviewWithParent & { user: User, replies: (ReviewWithParent & { user: User })[] };
 }
 
 export async function deleteReview(reviewId: number) {
@@ -1103,7 +1102,7 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
 }
 
 // Group Actions
-export async function getGroups(): Promise<Group[]> {
+export async function getGroups() {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
@@ -1133,4 +1132,58 @@ export async function createGroup(name: string, description: string | null): Pro
     });
     revalidatePath('/admin/groups');
     return newGroup;
+}
+
+
+export async function getGroupDetails(groupId: number) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+    return prisma.group.findUnique({
+        where: { id: groupId },
+        include: {
+            members: {
+                include: {
+                    user: true,
+                },
+            },
+        },
+    });
+}
+
+export async function updateGroupMembers(groupId: number, newMemberIds: string[]) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+
+    const existingMembers = await prisma.groupMember.findMany({
+        where: { groupId },
+        select: { userId: true },
+    });
+    const existingMemberIds = existingMembers.map(m => m.userId);
+
+    const membersToAdd = newMemberIds.filter(id => !existingMemberIds.includes(id));
+    const membersToRemove = existingMemberIds.filter(id => !newMemberIds.includes(id));
+
+    await prisma.$transaction([
+        // Remove members
+        prisma.groupMember.deleteMany({
+            where: {
+                groupId,
+                userId: { in: membersToRemove },
+            },
+        }),
+        // Add new members
+        prisma.groupMember.createMany({
+            data: membersToAdd.map(userId => ({
+                groupId,
+                userId,
+                role: 'MEMBER', // Default role
+            })),
+        }),
+    ]);
+    
+    revalidatePath('/admin/groups');
 }
