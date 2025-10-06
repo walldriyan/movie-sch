@@ -163,6 +163,12 @@ export async function getPosts(options: { page?: number; limit?: number, filters
          whereClause.status = {
             in: [MovieStatus.PUBLISHED]
          }
+      } else {
+        // If includePrivate is true, we should not filter by PUBLISHED status,
+        // but by anything that is not PENDING_DELETION
+        whereClause.status = {
+          not: MovieStatus.PENDING_DELETION
+        }
       }
     }
     
@@ -371,6 +377,7 @@ export async function deletePost(id: number) {
       prisma.favoritePost.deleteMany({ where: { postId: id } }),
       prisma.review.deleteMany({ where: { postId: id } }),
       prisma.subtitle.deleteMany({ where: { postId: id } }),
+      prisma.mediaLink.deleteMany({ where: { postId: id } }),
       prisma.post.delete({ where: { id } }),
     ]);
 
@@ -802,7 +809,11 @@ export async function createSeries(title: string): Promise<Series> {
   }
 
   const existingSeries = await prisma.series.findFirst({
-    where: { title },
+    where: { 
+      title: {
+        equals: title,
+      }
+    },
   });
 
   if (existingSeries) {
@@ -879,4 +890,35 @@ export async function getPostsBySeriesId(seriesId: number) {
     ...post,
     genres: post.genres ? post.genres.split(',') : [],
   }));
+}
+
+export async function getSeriesByAuthorId(authorId: string) {
+  const series = await prisma.series.findMany({
+    where: {
+      posts: {
+        some: {
+          authorId: authorId,
+        },
+      },
+    },
+    include: {
+      _count: {
+        select: { posts: true },
+      },
+      posts: {
+        orderBy: {
+          orderInSeries: 'asc'
+        },
+        take: 1,
+        select: {
+          posterUrl: true
+        }
+      }
+    },
+    orderBy: {
+      updatedAt: 'desc',
+    },
+  });
+
+  return series;
 }
