@@ -198,9 +198,8 @@ export default function MoviePage() {
     }
     
     startReviewTransition(async () => {
-      // Optimistically create a review object
       const optimisticReview: Review = {
-        id: Date.now(), // Temporary ID
+        id: Date.now(),
         comment,
         rating: parentId ? 0 : rating,
         createdAt: new Date(),
@@ -214,10 +213,8 @@ export default function MoviePage() {
       
       const originalReviews = reviews;
 
-      // Add to state
       setReviews(prevReviews => {
         if (parentId) {
-          // This is a reply, find the parent and add it
           const addReplyToTree = (nodes: Review[]): Review[] => {
             return nodes.map(node => {
               if (node.id === parentId) {
@@ -231,14 +228,12 @@ export default function MoviePage() {
           };
           return addReplyToTree(prevReviews);
         }
-        // This is a top-level review
         return [optimisticReview, ...prevReviews];
       });
 
       try {
         const newReview = await createReview(postId, comment, rating, parentId);
         
-        // Replace optimistic review with the actual one from the server
         setReviews(prevReviews => {
            const replaceInTree = (nodes: Review[]): Review[] => {
               return nodes.map(node => {
@@ -246,7 +241,6 @@ export default function MoviePage() {
                 if (node.replies && node.replies.length > 0) {
                    const updatedReplies = node.replies.map(reply => {
                      if (reply.id === optimisticReview.id) return newReview;
-                     // This is a bit tricky, if the reply itself has replies, we need to recurse
                      if (reply.replies) {
                        return {...reply, replies: replaceInTree(reply.replies)}
                      }
@@ -271,7 +265,6 @@ export default function MoviePage() {
           title: "Error",
           description: error.message || "Could not submit your review.",
         });
-        // Revert optimistic update
         setReviews(originalReviews);
       }
     });
@@ -280,7 +273,6 @@ export default function MoviePage() {
   const handleReviewDelete = async (reviewId: number) => {
     const originalReviews = [...reviews];
     
-    // Optimistically remove the review
     const removeReviewFromTree = (nodes: Review[], idToRemove: number): Review[] => {
       return nodes.filter(node => node.id !== idToRemove).map(node => {
         if (node.replies && node.replies.length > 0) {
@@ -303,7 +295,6 @@ export default function MoviePage() {
         title: "Error",
         description: error.message || "Failed to delete the review.",
       });
-      // Revert on error
       setReviews(originalReviews);
     }
   };
@@ -394,7 +385,7 @@ export default function MoviePage() {
                         {post.type === 'MOVIE' || post.type === 'TV_SERIES' ? (
                           <>
                             <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
-                            <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N/A'} />
+                            <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N ạ'} />
                             <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
                             <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
                             
@@ -433,6 +424,13 @@ export default function MoviePage() {
                 <h2 className="font-serif text-3xl font-bold mb-6">
                   Responses ({reviews.length})
                 </h2>
+                <ReviewForm 
+                    postId={post.id} 
+                    onSuccess={() => {}}
+                    isSubmitting={isSubmittingReview}
+                    onSubmitReview={handleReviewSubmit}
+                 />
+                <Separator className="my-8" />
                 <div className="space-y-8">
                   {reviews.length > 0 ? (
                     reviews.map((review: Review) => (
@@ -456,13 +454,6 @@ export default function MoviePage() {
                     </div>
                   )}
                 </div>
-                <Separator className="my-8" />
-                <ReviewForm 
-                    postId={post.id} 
-                    onSuccess={() => {}}
-                    isSubmitting={isSubmittingReview}
-                    onSubmitReview={handleReviewSubmit}
-                 />
               </section>
             </TabsContent>
             <TabsContent value="subtitles" className='px-4 md:px-0'>
@@ -569,5 +560,7 @@ export default function MoviePage() {
     </div>
   );
 }
+
+    
 
     
