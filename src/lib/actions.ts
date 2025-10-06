@@ -157,7 +157,8 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     
     // Visibility Logic
     if (user && user.role === ROLES.SUPER_ADMIN) {
-      // Super admin sees everything
+      // Super admin sees everything, but we need to remove the default PUBLISHED status filter
+      whereClause.status = undefined;
     } else if (user) {
       // Logged-in user sees PUBLIC posts and posts for their groups
       const userGroupIds = await prisma.groupMember.findMany({
@@ -1128,7 +1129,7 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
 // Group Actions
 export async function getGroups() {
     const session = await auth();
-    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
         throw new Error('Not authorized');
     }
     return prisma.group.findMany({
