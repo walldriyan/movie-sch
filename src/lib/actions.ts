@@ -802,7 +802,7 @@ export async function createSeries(title: string): Promise<Series> {
   }
 
   const existingSeries = await prisma.series.findFirst({
-    where: { title: { equals: title } },
+    where: { title },
   });
 
   if (existingSeries) {
@@ -850,4 +850,33 @@ export async function createReview(
   revalidatePath(`/movies/${postId}`);
 
   return review;
+}
+
+export async function getSeriesById(id: number): Promise<Series | null> {
+  const series = await prisma.series.findUnique({
+    where: { id },
+  });
+  return series;
+}
+
+export async function getPostsBySeriesId(seriesId: number) {
+  const posts = await prisma.post.findMany({
+    where: {
+      seriesId,
+      status: {
+        not: MovieStatus.PENDING_DELETION
+      }
+    },
+    orderBy: {
+      orderInSeries: 'asc'
+    },
+    include: {
+      author: true
+    }
+  });
+
+  return posts.map((post) => ({
+    ...post,
+    genres: post.genres ? post.genres.split(',') : [],
+  }));
 }

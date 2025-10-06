@@ -155,7 +155,7 @@ export default async function MoviePage({
             <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                  <div className="md:col-span-3">
-                    {post.series && (
+                    {post.seriesId && post.series && (
                       <div className="mb-8 p-4 rounded-lg bg-card/50 border">
                         <h3 className="font-semibold flex items-center gap-2">
                           <List className="h-5 w-5 text-primary" />
