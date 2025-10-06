@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -38,7 +39,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { uploadSubtitle, getUsers } from '@/lib/actions';
-import { SubtitleAccessLevel, User } from '@prisma/client';
+import { SubtitleAccessLevel } from '@/lib/permissions';
+import { User } from '@prisma/client';
 
 const uploadSchema = z.object({
   language: z.string().min(1, 'Language is required.'),

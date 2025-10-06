@@ -1,3 +1,4 @@
+
 export const ROLES = {
   SUPER_ADMIN: 'SUPER_ADMIN',
   USER_ADMIN: 'USER_ADMIN',
@@ -42,3 +43,9 @@ export const MovieStatus = {
   PRIVATE: 'PRIVATE',
   DRAFT: 'DRAFT',
 };
+
+export const SubtitleAccessLevel = {
+  PUBLIC: 'PUBLIC',
+  SUBSCRIBER_ONLY: 'SUBSCRIBER_ONLY',
+  AUTHORIZED_ONLY: 'AUTHORIZED_ONLY',
+} as const;

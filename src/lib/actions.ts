@@ -1,15 +1,16 @@
 
 
+
 'use server';
 
-import { PrismaClient, Prisma, PostType, Series, SubtitleAccessLevel } from '@prisma/client';
+import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import bcrypt from 'bcryptjs';
-import { ROLES, MovieStatus } from './permissions';
+import { ROLES, MovieStatus, SubtitleAccessLevel } from './permissions';
 import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink, stat } from 'fs/promises';
 import { join } from 'path';
@@ -276,7 +277,7 @@ export async function getPost(postId: number) {
   if (!post) return null;
   
   const subtitles = await prisma.subtitle.findMany({
-    where: { postId: postId }
+    where: { postId: postId },
   });
 
   return {
@@ -956,7 +957,7 @@ export async function uploadSubtitle(formData: FormData) {
   const file = formData.get('file') as File;
   const language = formData.get('language') as string;
   const postId = Number(formData.get('postId'));
-  const accessLevel = formData.get('accessLevel') as SubtitleAccessLevel;
+  const accessLevel = formData.get('accessLevel') as keyof typeof SubtitleAccessLevel;
   const authorizedUsers = formData.getAll('authorizedUsers') as string[];
 
   if (!file || !language || !postId || !accessLevel) {
@@ -982,7 +983,7 @@ export async function uploadSubtitle(formData: FormData) {
     post: { connect: { id: postId } },
   };
 
-  if (accessLevel === 'AUTHORIZED_ONLY' && authorizedUsers.length > 0) {
+  if (accessLevel === SubtitleAccessLevel.AUTHORIZED_ONLY && authorizedUsers.length > 0) {
     subtitleData.authorizedUsers = {
       connect: authorizedUsers.map(id => ({ id })),
     };
