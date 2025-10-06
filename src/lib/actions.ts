@@ -2,7 +2,7 @@
 
 'use server';
 
-import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
+import { PrismaClient, Prisma, PostType, Series, Group } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -960,7 +960,7 @@ export async function getPostsBySeriesId(seriesId: number) {
 export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   const where = { authorId: authorId };
   
-  const seriesQuery = {
+  const seriesQuery: Prisma.SeriesFindManyArgs = {
     where,
     include: {
       _count: {
@@ -980,10 +980,11 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
     },
   };
   
-  const series = await prisma.series.findMany({
-    ...seriesQuery,
-    ...(limit && { take: limit }),
-  });
+  if (limit) {
+    seriesQuery.take = limit;
+  }
+  
+  const series = await prisma.series.findMany(seriesQuery);
   
   const totalSeries = await prisma.series.count({ where });
 
@@ -999,7 +1000,7 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   return { series: processedSeries, totalSeries };
 }
 
-export async function uploadSubtitle(formData: FormData) {
+export async function uploadSubtitle(formData: FormData): Promise<Subtitle> {
   const session = await auth();
   const user = session?.user;
   if (!user?.id || !user.name) {
@@ -1090,8 +1091,34 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
   return !!session?.user;
 }
 
+// Group Actions
+export async function getGroups(): Promise<Group[]> {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+    return prisma.group.findMany({
+        include: {
+            _count: {
+                select: { users: true },
+            },
+        },
+        orderBy: { name: 'asc' },
+    });
+}
 
+export async function createGroup(name: string, description: string | null): Promise<Group> {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
 
-
-
-
+    const newGroup = await prisma.group.create({
+        data: {
+            name,
+            description,
+        },
+    });
+    revalidatePath('/admin/groups');
+    return newGroup;
+}
