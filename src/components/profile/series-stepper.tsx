@@ -12,6 +12,9 @@ import { cn } from '@/lib/utils';
 const Step = ({ post, isLast }: { post: Post; isLast: boolean }) => {
   const postImage = post.posterUrl || PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
 
+  // Create a plain text version of the description
+  const plainDescription = post.description?.replace(/<[^>]+>/g, '');
+
   return (
     <li className="relative flex items-start gap-4 pb-8">
       {!isLast && <div className="absolute left-4 top-4 -ml-px mt-0.5 h-full w-0.5 bg-border" />}
@@ -40,8 +43,9 @@ const Step = ({ post, isLast }: { post: Post; isLast: boolean }) => {
             </h4>
             <p
               className="mt-1 text-sm text-muted-foreground line-clamp-2"
-              dangerouslySetInnerHTML={{ __html: post.description }}
-            />
+            >
+              {plainDescription}
+            </p>
           </div>
         </div>
       </div>
