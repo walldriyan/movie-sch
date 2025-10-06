@@ -3,7 +3,7 @@
 'use server';
 
 import { PrismaClient, Prisma, PostType, Series } from '@prisma/client';
-import type { User, Review } from '@prisma/client';
+import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
 import { auth, signIn, signOut } from '@/auth';

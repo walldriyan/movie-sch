@@ -2,7 +2,7 @@
 
 import { notFound } from 'next/navigation';
 import { getPost } from '@/lib/actions';
-import type { Post, Review, Subtitle } from '@/lib/types';
+import type { Post, Review } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -236,7 +236,7 @@ export default async function MoviePage({
                 <div className="space-y-8">
                   {post.reviews.length > 0 ? (
                     post.reviews.map((review: Review) => (
-                      <ReviewCard key={review.id} review={review} />
+                      <ReviewCard key={review.id} review={review} postId={post.id} />
                     ))
                   ) : (
                     <p className="text-muted-foreground">
@@ -245,7 +245,7 @@ export default async function MoviePage({
                   )}
                 </div>
                 <Separator className="my-8" />
-                <ReviewForm />
+                <ReviewForm postId={post.id} />
               </section>
             </TabsContent>
             <TabsContent value="subtitles" className='px-4 md:px-0'>

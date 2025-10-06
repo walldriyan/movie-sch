@@ -7,9 +7,10 @@ export { PostType } from '@prisma/client';
 
 export type User = PrismaUser;
 
-export type Review = PrismaReview & {
+export type Review = Omit<PrismaReview, 'parentId'> & {
   user: User;
   replies?: Review[];
+  parentId?: number | null;
 };
 
 export type Subtitle = PrismaSubtitle;
