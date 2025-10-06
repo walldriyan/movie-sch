@@ -1,75 +1,15 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+datasource db {
+  provider     = "sqlite"
+  url          = "file:./dev.db"
+  relationMode = "prisma"
+}
+
 generator client {
   provider = "prisma-client-js"
 }
-
-datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
-}
-
-model Post {
-  id                   Int              @id @default(autoincrement())
-  title                String
-  description          String
-  posterUrl            String?
-  status               String           @default("DRAFT")
-  authorId             String
-  author               User             @relation("UserPosts", fields: [authorId], references: [id])
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
-  year                 Int?
-  duration             String?
-  genres               String?
-  directors            String?
-  mainCast             String?
-  imdbRating           Float?
-  rottenTomatoesRating Int?
-  googleRating         Int?
-  viewCount            Int              @default(0)
-  reviews              Review[]
-  subtitles            Subtitle[]
-  favoritePosts        FavoritePost[]
-  likedBy              User[]           @relation("LikedBy")
-  dislikedBy           User[]           @relation("DislikedBy")
-  episodes             Episode[]
-  metaData             MetaData[]
-  type                 PostType         @default(MOVIE)
-  seriesId             Int?
-  series               Series?          @relation(fields: [seriesId], references: [id], onDelete: SetNull)
-  orderInSeries        Int?
-  mediaLinks           MediaLink[]
-}
-
-model Episode {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  episodeNumber Int
-  seasonNumber  Int
-  releaseDate DateTime?
-  duration    String?
-  posterUrl   String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  postId      Int
-  post        Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
-model MetaData {
-  id        Int      @id @default(autoincrement())
-  key       String
-  value     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  postId    Int
-  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
 
 model Account {
   id                String  @id @default(cuid())
@@ -98,30 +38,6 @@ model Session {
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id                      String         @id @default(cuid())
-  name                    String?
-  email                   String?        @unique
-  emailVerified           DateTime?
-  image                   String?
-  password                String?
-  accounts                Account[]
-  sessions                Session[]
-  posts                   Post[]         @relation("UserPosts")
-  reviews                 Review[]
-  role                    String         @default("USER")
-  bio                     String?
-  website                 String?
-  twitter                 String?
-  linkedin                String?
-  permissionRequestStatus String?        @default("NONE")
-  permissionRequestMessage String?
-  favoritePosts           FavoritePost[]
-  likedPosts              Post[]         @relation("LikedBy")
-  dislikedPosts           Post[]         @relation("DislikedBy")
-  updatedAt               DateTime       @updatedAt
-}
-
 model VerificationToken {
   identifier String
   token      String   @unique
@@ -130,20 +46,109 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model User {
+  id                       String          @id @default(cuid())
+  name                     String?
+  email                    String?         @unique
+  emailVerified            DateTime?
+  image                    String?
+  password                 String?
+  bio                      String?
+  website                  String?
+  twitter                  String?
+  linkedin                 String?
+  coverImage               String?
+  role                     String          @default("USER")
+  permissionsRequestStatus String?
+  permissionRequestMessage String?
+  createdAt                DateTime        @default(now())
+  updatedAt                DateTime        @updatedAt
+  accounts                 Account[]
+  sessions                 Session[]
+  posts                    Post[]
+  reviews                  Review[]
+  favoritePosts            FavoritePost[]
+  series                   Series[]
+  groups                   Group[]         @relation("UserGroups")
+}
+
+model Post {
+  id                   Int            @id @default(autoincrement())
+  title                String
+  description          String
+  posterUrl            String?
+  year                 Int?
+  duration             String?
+  genres               String?
+  directors            String?
+  mainCast             String?
+  imdbRating           Float?
+  rottenTomatoesRating Int?
+  googleRating         Int?
+  status               String         @default("DRAFT")
+  viewCount            Int            @default(0)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  author               User           @relation(fields: [authorId], references: [id])
+  authorId             String
+  reviews              Review[]
+  subtitles            Subtitle[]
+  favoritePosts        FavoritePost[]
+  mediaLinks           MediaLink[]
+  seriesId             Int?
+  series               Series?        @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  orderInSeries        Int?
+  type                 PostType       @default(MOVIE)
+  groups               Group[]        @relation("PostGroups")
+}
+
+model Episode {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  number      Int
+  seriesId    Int
+  series      Series   @relation(fields: [seriesId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Series {
+  id          Int       @id @default(autoincrement())
+  title       String    @unique
+  description String?
+  posts       Post[]
+  episodes    Episode[]
+  author      User      @relation(fields: [authorId], references: [id])
+  authorId    String
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  groups      Group[]   @relation("SeriesGroups")
+}
+
+model MetaData {
+  id          Int      @id @default(autoincrement())
+  key         String
+  value       String
+  postId      Int
+  post        Post     @relation(fields: [postId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Review {
   id        Int      @id @default(autoincrement())
   rating    Int
   comment   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    String
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId    Int
-
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   parentId  Int?
-  parent    Review?  @relation("Replies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  replies   Review[] @relation("Replies")
+  replies   Review[] @relation("ReviewReplies")
 }
 
 model Subtitle {
@@ -151,9 +156,10 @@ model Subtitle {
   language     String
   url          String
   uploaderName String
-  createdAt    DateTime @default(now())
   post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId       Int
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model FavoritePost {
@@ -167,24 +173,22 @@ model FavoritePost {
   @@unique([userId, postId])
 }
 
-model Series {
-  id          Int      @id @default(autoincrement())
-  title       String   @unique
-  description String?
-  posterUrl   String?
-  posts       Post[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
 model MediaLink {
-  id      Int    @id @default(autoincrement())
-  type    String // e.g., 'trailer', 'image'
-  url     String
-  Post    Post?  @relation(fields: [postId], references: [id], onDelete: Cascade)
-  postId  Int?
+  id     Int    @id @default(autoincrement())
+  type   String // e.g., 'trailer', 'image'
+  url    String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId Int
 }
 
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  users       User[]   @relation("UserGroups")
+  posts       Post[]   @relation("PostGroups")
+  series      Series[] @relation("SeriesGroups")
+}
 
 enum PostType {
   MOVIE
