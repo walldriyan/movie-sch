@@ -186,6 +186,10 @@ export default function MoviePage() {
     fetchData();
   }, [postId]);
   
+  const handleUploadSuccess = (newSubtitle: SubtitleWithPermission) => {
+    setSubtitles(prevSubtitles => [...prevSubtitles, newSubtitle]);
+  };
+
   const handleDeleteClick = (subtitle: Subtitle) => {
     setSubtitleToDelete(subtitle);
     setDialogOpen(true);
@@ -378,7 +382,7 @@ export default function MoviePage() {
                       )}
                     </div>
                     <div className="mt-6 flex">
-                      <UploadSubtitleDialog postId={post.id} />
+                      <UploadSubtitleDialog postId={post.id} onUploadSuccess={handleUploadSuccess} />
                     </div>
                   </div>
                   <div>

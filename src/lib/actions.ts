@@ -1030,13 +1030,13 @@ export async function uploadSubtitle(formData: FormData) {
   const url = `/uploads/subtitles/${filename}`;
 
   // 3. Update the record with the final URL
-  await prisma.subtitle.update({
+  const updatedSubtitle = await prisma.subtitle.update({
     where: { id: subtitleRecord.id },
     data: { url: url },
   });
 
-
   revalidatePath(`/movies/${postId}`);
+  return updatedSubtitle;
 }
 
 export async function deleteSubtitle(subtitleId: number) {
@@ -1081,6 +1081,7 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
   const session = await auth();
   return !!session?.user;
 }
+
 
 
 

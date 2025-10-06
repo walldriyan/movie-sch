@@ -26,22 +26,10 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { uploadSubtitle, getUsers } from '@/lib/actions';
-import { SubtitleAccessLevel } from '@/lib/permissions';
-import { User } from '@prisma/client';
+import { uploadSubtitle } from '@/lib/actions';
+import { Subtitle } from '@prisma/client';
 
 const uploadSchema = z.object({
   language: z.string().min(1, 'Language is required.'),
@@ -52,9 +40,10 @@ type UploadFormValues = z.infer<typeof uploadSchema>;
 
 interface UploadSubtitleDialogProps {
   postId: number;
+  onUploadSuccess: (newSubtitle: Subtitle & { canDownload: boolean }) => void;
 }
 
-export default function UploadSubtitleDialog({ postId }: UploadSubtitleDialogProps) {
+export default function UploadSubtitleDialog({ postId, onUploadSuccess }: UploadSubtitleDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
@@ -86,13 +75,18 @@ export default function UploadSubtitleDialog({ postId }: UploadSubtitleDialogPro
     formData.append('postId', String(postId));
 
     try {
-      await uploadSubtitle(formData);
-      toast({
-        title: 'Upload Successful',
-        description: 'Your subtitle has been uploaded and added to the post.',
-      });
-      setIsOpen(false);
-      form.reset();
+      const newSubtitle = await uploadSubtitle(formData);
+      if (newSubtitle) {
+        onUploadSuccess({ ...newSubtitle, canDownload: true });
+        toast({
+          title: 'Upload Successful',
+          description: 'Your subtitle has been uploaded and added to the post.',
+        });
+        setIsOpen(false);
+        form.reset();
+      } else {
+        throw new Error('Upload did not return the new subtitle.');
+      }
     } catch (error: any) {
       console.error(error);
       toast({
