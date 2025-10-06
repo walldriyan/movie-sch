@@ -18,7 +18,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -44,7 +43,7 @@ import { User } from '@prisma/client';
 
 const uploadSchema = z.object({
   language: z.string().min(1, 'Language is required.'),
-  file: z.instanceof(File).refine(file => file.size > 0, 'A subtitle file is required.'),
+  file: z.instanceof(File).refine(file => file.size > 0, 'A subtitle file is required.').optional(),
   accessLevel: z.nativeEnum(SubtitleAccessLevel),
   authorizedUsers: z.array(z.string()).optional(),
 });
@@ -65,6 +64,7 @@ export default function UploadSubtitleDialog({ postId }: UploadSubtitleDialogPro
     resolver: zodResolver(uploadSchema),
     defaultValues: {
       language: '',
+      file: undefined,
       accessLevel: SubtitleAccessLevel.PUBLIC,
       authorizedUsers: [],
     },
@@ -93,6 +93,17 @@ export default function UploadSubtitleDialog({ postId }: UploadSubtitleDialogPro
 
   const onSubmit = async (data: UploadFormValues) => {
     setIsSubmitting(true);
+    
+    if (!data.file) {
+      toast({
+        variant: 'destructive',
+        title: 'Upload Failed',
+        description: 'Please select a subtitle file to upload.',
+      });
+      setIsSubmitting(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', data.file);
     formData.append('language', data.language);
@@ -155,7 +166,7 @@ export default function UploadSubtitleDialog({ postId }: UploadSubtitleDialogPro
             <FormField
               control={form.control}
               name="file"
-              render={({ field: { onChange, ...fieldProps } }) => (
+              render={({ field: { onChange, value, ...fieldProps } }) => (
                 <FormItem>
                   <FormLabel>Subtitle File</FormLabel>
                   <FormControl>
