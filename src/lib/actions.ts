@@ -890,6 +890,44 @@ export async function createReview(
   return review;
 }
 
+export async function deleteReview(reviewId: number) {
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user) {
+        throw new Error('Not authenticated.');
+    }
+
+    const review = await prisma.review.findUnique({
+        where: { id: reviewId },
+    });
+
+    if (!review) {
+        throw new Error('Review not found.');
+    }
+
+    const canDelete = user.id === review.userId || user.role === ROLES.SUPER_ADMIN;
+
+    if (!canDelete) {
+        throw new Error('You are not authorized to delete this review.');
+    }
+
+    // Recursively delete all replies before deleting the parent review
+    const replies = await prisma.review.findMany({
+        where: { parentId: reviewId }
+    });
+
+    for (const reply of replies) {
+        await deleteReview(reply.id);
+    }
+    
+    await prisma.review.delete({
+        where: { id: reviewId },
+    });
+
+    revalidatePath(`/movies/${review.postId}`);
+}
+
 export async function getSeriesById(id: number): Promise<Series | null> {
   const series = await prisma.series.findUnique({
     where: { id },
@@ -1008,4 +1046,5 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
   const session = await auth();
   return !!session?.user;
 }
+
 

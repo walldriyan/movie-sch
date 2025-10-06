@@ -1,14 +1,19 @@
 
+
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import RatingStars from '@/components/rating-stars';
 import type { Review } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from './ui/button';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Trash2 } from 'lucide-react';
 import ReviewForm from './review-form';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { ROLES } from '@/lib/permissions';
+import { deleteReview } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface ReviewCardProps {
   review: Review;
@@ -17,10 +22,34 @@ interface ReviewCardProps {
 
 export default function ReviewCard({ review, postId }: ReviewCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
+  const [isDeleting, startDeleteTransition] = useTransition();
+  const currentUser = useCurrentUser();
+  const { toast } = useToast();
+  
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-2');
+
+  const canDelete = currentUser && (currentUser.id === review.userId || currentUser.role === ROLES.SUPER_ADMIN);
 
   const handleReplySuccess = () => {
     setShowReplyForm(false);
+  }
+
+  const handleDelete = () => {
+    startDeleteTransition(async () => {
+        try {
+            await deleteReview(review.id);
+            toast({
+                title: "Review Deleted",
+                description: "The review has been successfully removed.",
+            });
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error.message || "Failed to delete the review.",
+            });
+        }
+    });
   }
 
   return (
@@ -37,10 +66,18 @@ export default function ReviewCard({ review, postId }: ReviewCardProps) {
       </div>
       <div className="text-foreground/80 pl-11">
         <p>{review.comment}</p>
-        <Button variant="ghost" size="sm" className="mt-1" onClick={() => setShowReplyForm(!showReplyForm)}>
-            <MessageSquare className="mr-2 h-4 w-4" />
-            Reply
-        </Button>
+        <div className="flex items-center gap-2 mt-1">
+            <Button variant="outline" size="sm" onClick={() => setShowReplyForm(!showReplyForm)}>
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Reply
+            </Button>
+            {canDelete && (
+                 <Button variant="ghost" size="sm" onClick={handleDelete} disabled={isDeleting}>
+                    <Trash2 className="mr-2 h-4 w-4 text-destructive" />
+                    <span className="text-destructive">{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                </Button>
+            )}
+        </div>
         {showReplyForm && (
             <div className="mt-4">
                 <ReviewForm 
