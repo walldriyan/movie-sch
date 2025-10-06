@@ -74,13 +74,16 @@ interface PostFormProps {
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: Series[], onSeriesCreated: (newSeries: Series) => void }) {
   const [open, setOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
-  const handleCreateSeries = (seriesTitle: string) => {
+  const handleCreateSeries = () => {
+    if (!searchQuery) return;
+    
     startTransition(async () => {
       try {
-        const newSeries = await createSeries(seriesTitle);
+        const newSeries = await createSeries(searchQuery);
         toast({ title: "Series created", description: `"${newSeries.title}" has been created.` });
         onSeriesCreated(newSeries);
         field.onChange(newSeries.id);
@@ -114,22 +117,21 @@ function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, se
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput placeholder="Search series or create new..." />
+          <CommandInput 
+            placeholder="Search series or create new..." 
+            value={searchQuery}
+            onValueChange={setSearchQuery}
+          />
           <CommandList>
             <CommandEmpty>
                <Button
-                  onClick={() => {
-                    const input = document.querySelector('[cmdk-input]') as HTMLInputElement;
-                    if (input.value) {
-                       handleCreateSeries(input.value);
-                    }
-                  }}
-                  disabled={isPending}
+                  onClick={handleCreateSeries}
+                  disabled={isPending || !searchQuery}
                   variant="outline"
                   className="w-full"
                 >
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Create a new series
+                  Create "{searchQuery}"
                 </Button>
             </CommandEmpty>
             <CommandGroup>
