@@ -2,19 +2,6 @@
 
 This is a NextJS starter in Firebase Studio.
 
-To get started, take a look at src/app/page.tsx.
-sudo apt-get update
-sudo apt-get install -y openssl libssl-dev
-
-
-npm uninstall prisma @prisma/client
-npm install prisma @prisma/client
-
-npx prisma generate
-npx prisma db push --force-reset
-
-
-npx prisma generate
-npx prisma db push
-
-mee@sch.com
+magen permitin natiwa prisma scema change kranna epa 
+magen permitin natiwa ui ,css layout uis style change kranna epa
+tiyana ui ekata alut feture add kranna one

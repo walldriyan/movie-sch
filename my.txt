@@ -11,6 +11,24 @@ npx prisma db push
 mee@sch.com
 
 
+To get started, take a look at src/app/page.tsx.
+sudo apt-get update
+sudo apt-get install -y openssl libssl-dev
+
+
+npm uninstall prisma @prisma/client
+npm install prisma @prisma/client
+
+npx prisma generate
+npx prisma db push --force-reset
+
+
+npx prisma generate
+npx prisma db push
+
+mee@sch.com
+
+
 
  
   git branch -D v10
@@ -23,3 +41,4 @@ mee@sch.com
    git branch -D v7
    git branch -D v8
    git branch -D v9
+
