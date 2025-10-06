@@ -44,25 +44,24 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-  role          String    @default("USER")
-  permissionsRequestStatus String?
-  permissionRequestMessage String?
-
-  bio           String?
-  website       String?
-  twitter       String?
-  linkedin      String?
-
   accounts      Account[]
   sessions      Session[]
+
+  role                     String  @default("USER")
+  permissionsRequestStatus String?
+  permissionRequestMessage String?
+  bio                      String?
+  website                  String?
+  twitter                  String?
+  linkedin                 String?
+
   posts         Post[]
   reviews       Review[]
   favoritePosts FavoritePost[]
-  likedPosts    Post[]      @relation("UserLikes")
-  dislikedPosts Post[]      @relation("UserDislikes")
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  likedPosts    Post[]         @relation("LikedPosts")
+  dislikedPosts Post[]         @relation("DislikedPosts")
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model VerificationToken {
@@ -92,67 +91,41 @@ model Post {
   imdbRating           Float?
   rottenTomatoesRating Int?
   googleRating         Int?
-  authorId             String
-  author               User           @relation(fields: [authorId], references: [id])
   status               String         @default("DRAFT")
   viewCount            Int            @default(0)
-  createdAt            DateTime       @default(now())
-  updatedAt            DateTime       @updatedAt
-  reviews              Review[]
-  subtitles            Subtitle[]
-  favoritePosts        FavoritePost[]
-  likedBy              User[]         @relation("UserLikes")
-  dislikedBy           User[]         @relation("UserDislikes")
-  mediaLinks           MediaLink[]
   type                 PostType       @default(MOVIE)
-  seriesId             Int?
-  series               Series?        @relation(fields: [seriesId], references: [id])
   orderInSeries        Int?
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  reviews       Review[]
+  subtitles     Subtitle[]
+  favoritePosts FavoritePost[]
+  mediaLinks    MediaLink[]
+
+  likedBy    User[] @relation("LikedPosts")
+  dislikedBy User[] @relation("DislikedPosts")
+
+  series   Series? @relation(fields: [seriesId], references: [id])
+  seriesId Int?
+
+  episodes Episode[]
+  metaData MetaData[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Series {
   id          Int      @id @default(autoincrement())
   title       String   @unique
   description String?
-  authorId    String
+  posterUrl   String?
   posts       Post[]
+  authorId    String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-model Review {
-  id        Int      @id @default(autoincrement())
-  comment   String
-  rating    Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  postId    Int
-  post      Post     @relation(fields: [postId], references: [id])
-  userId    String
-  user      User     @relation(fields: [userId], references: [id])
-  parentId  Int?
-  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  replies   Review[] @relation("ReviewReplies")
-}
-
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  url          String
-  uploaderName String
-  createdAt    DateTime @default(now())
-  postId       Int
-  post         Post     @relation(fields: [postId], references: [id])
-}
-
-model FavoritePost {
-  userId    String
-  postId    Int
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
-
-  @@unique([userId, postId])
 }
 
 model Episode {
@@ -162,7 +135,7 @@ model Episode {
   episodeNumber Int
   seasonNumber  Int
   releaseDate   DateTime?
-  duration      Int?
+  duration      String?
   posterUrl     String?
   postId        Int
   post          Post     @relation(fields: [postId], references: [id])
@@ -170,20 +143,56 @@ model Episode {
   updatedAt     DateTime @updatedAt
 }
 
-model MediaLink {
-  id      Int    @id @default(autoincrement())
-  type    String // e.g., 'trailer', 'image'
-  url     String
-  postId  Int
-  post    Post   @relation(fields: [postId], references: [id])
+model MetaData {
+  id     Int     @id @default(autoincrement())
+  key    String
+  value  String
+  type   String? // e.g., 'rating', 'info', 'link'
+  postId Int
+  post   Post    @relation(fields: [postId], references: [id])
 }
 
-model MetaData {
-  id      Int     @id @default(autoincrement())
-  key     String
-  value   String
-  postId  Int
-  post    Post    @relation(fields: [postId], references: [id])
+model Review {
+  id        Int      @id @default(autoincrement())
+  comment   String
+  rating    Int
+  createdAt DateTime @default(now())
 
-  @@unique([postId, key])
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+
+  user   User @relation(fields: [userId], references: [id])
+  userId String
+
+  parent   Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parentId Int?
+  replies  Review[] @relation("ReviewReplies")
+}
+
+model Subtitle {
+  id           Int    @id @default(autoincrement())
+  language     String
+  url          String
+  uploaderName String
+
+  post   Post @relation(fields: [postId], references: [id])
+  postId Int
+}
+
+model FavoritePost {
+  post      Post     @relation(fields: [postId], references: [id])
+  postId    Int
+  user      User     @relation(fields: [userId], references: [id])
+  userId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId])
+}
+
+model MediaLink {
+  id     Int    @id @default(autoincrement())
+  type   String // 'trailer' or 'image'
+  url    String
+  post   Post   @relation(fields: [postId], references: [id])
+  postId Int
 }
