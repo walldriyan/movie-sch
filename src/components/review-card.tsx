@@ -52,7 +52,7 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
   }
 
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col bg-card/50 border p-4 rounded-xl">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3 mb-2">
             <Avatar className="h-8 w-8">
