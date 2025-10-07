@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock, Trash2, Loader2 } from 'lucide-react';
+import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
 import React, { useState, useTransition, useEffect } from 'react';
 import Image from 'next/image';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -163,6 +163,7 @@ export default function MoviePage() {
   const [subtitleToDelete, setSubtitleToDelete] = useState<Subtitle | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSubmittingReview, startReviewTransition] = useTransition();
+  const [showReviews, setShowReviews] = useState(false);
 
   useEffect(() => {
     if (isNaN(postId)) {
@@ -426,39 +427,50 @@ export default function MoviePage() {
             </TabsContent>
             <TabsContent value="reviews" className='px-4 md:px-0'>
                <section id="reviews" className="my-12">
-                <h2 className="font-serif text-3xl font-bold mb-6">
-                  Responses ({reviews.length})
-                </h2>
-                <ReviewForm 
-                    postId={post.id} 
-                    onSuccess={() => {}}
-                    isSubmitting={isSubmittingReview}
-                    onSubmitReview={handleReviewSubmit}
-                 />
-                <Separator className="my-8" />
-                <div className="space-y-8">
-                  {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
-                    <div className="flex items-start gap-4">
-                        <Skeleton className="h-8 w-8 rounded-full" />
-                        <div className="w-full space-y-2">
-                          <Skeleton className="h-4 w-1/4" />
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-2/3" />
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
+                      <MessageCircle className="w-8 h-8 text-primary" />
+                      Responses ({reviews.length})
+                    </h2>
+                    <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
+                        {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                    </Button>
+                  </div>
+
+                {showReviews && (
+                  <>
+                    <ReviewForm 
+                        postId={post.id} 
+                        onSuccess={() => {}}
+                        isSubmitting={isSubmittingReview}
+                        onSubmitReview={handleReviewSubmit}
+                    />
+                    <Separator className="my-8" />
+                    <div className="space-y-8">
+                      {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
+                        <div className="flex items-start gap-4">
+                            <Skeleton className="h-8 w-8 rounded-full" />
+                            <div className="w-full space-y-2">
+                              <Skeleton className="h-4 w-1/4" />
+                              <Skeleton className="h-4 w-full" />
+                              <Skeleton className="h-4 w-2/3" />
+                            </div>
                         </div>
+                      )}
+                      {reviews.length > 0 ? (
+                        reviews.map((review: Review) => (
+                          <ReviewCard key={review.id} review={review} onReviewSubmit={handleReviewSubmit} onReviewDelete={handleReviewDelete} />
+                        ))
+                      ) : (
+                        !isSubmittingReview && (
+                            <p className="text-muted-foreground">
+                                Be the first to share your thoughts!
+                            </p>
+                        )
+                      )}
                     </div>
-                  )}
-                  {reviews.length > 0 ? (
-                    reviews.map((review: Review) => (
-                      <ReviewCard key={review.id} review={review} onReviewSubmit={handleReviewSubmit} onReviewDelete={handleReviewDelete} />
-                    ))
-                  ) : (
-                     !isSubmittingReview && (
-                        <p className="text-muted-foreground">
-                            Be the first to share your thoughts!
-                        </p>
-                     )
-                  )}
-                </div>
+                  </>
+                )}
               </section>
             </TabsContent>
             <TabsContent value="subtitles" className='px-4 md:px-0'>
@@ -572,4 +584,5 @@ export default function MoviePage() {
     
 
     
+
 
