@@ -158,8 +158,6 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
     }
   };
   
-  const hasSelection = !editor.state.selection.empty;
-
   return (
     <div className="bg-background text-foreground rounded-lg border">
       {/* Toolbar */}
@@ -226,18 +224,19 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
             <div onContextMenu={(e) => {
-                if (!editor.state.selection.empty) {
-                    e.preventDefault();
-                    const trigger = e.currentTarget as HTMLElement;
-                    setTimeout(() => {
-                        const clickEvent = new MouseEvent('click', {
-                            bubbles: true,
-                            cancelable: true,
-                            view: window
-                        });
-                        trigger.dispatchEvent(clickEvent);
-                    }, 0);
+                if (editor.state.selection.empty) {
+                    return;
                 }
+                e.preventDefault();
+                const trigger = e.currentTarget as HTMLElement;
+                setTimeout(() => {
+                    const clickEvent = new MouseEvent('click', {
+                        bubbles: true,
+                        cancelable: true,
+                        view: window
+                    });
+                    trigger.dispatchEvent(clickEvent);
+                }, 0);
             }}>
                 <EditorContent 
                     editor={editor}
