@@ -103,6 +103,11 @@
   .prose p:not(:first-child) {
     margin-top: 1em;
   }
+  
+  .prose p:empty {
+    min-height: 1rem;
+    display: block;
+  }
 }
 
 @layer utilities {
