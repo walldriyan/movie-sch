@@ -86,29 +86,28 @@
     height: 0;
   }
 
-  /* Editor paragraphs */
-  .tiptap p {
-    margin-top: 0;
-    margin-bottom: 0;
-  }
-
-  /* Post display paragraphs */
+  /* Editor එකේ සහ Post display එකේ SAME spacing */
+  .tiptap p,
   .prose p {
-    margin-top: 0;
-    margin-bottom: 0;
+    margin: 0;
+    padding: 0;
+    line-height: 1.6; /* Text lines අතර natural spacing */
   }
 
-  .prose p:not(:first-child) {
-    margin-top: 1em;
-  }
-  
+  /* Empty paragraphs වලට height - Enter press කරද්දී space line එක */
+  .tiptap p:empty,
   .prose p:empty {
-    min-height: 1rem;
-    display: block;
+    min-height: 1.6em; /* Line height එකට match වෙන height */
+  }
+
+  /* Remove extra spacing between paragraphs */
+  .prose p:not(:first-child) {
+    margin-top: 0; /* මේක remove කළා */
   }
 
   .prose img {
     display: inline-block;
+    border-radius: 0.5rem;
   }
 }
 
