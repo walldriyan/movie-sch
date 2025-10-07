@@ -91,10 +91,6 @@
     margin-bottom: 0;
   }
 
-  .prose img {
-    display: inline-block;
-  }
-  
   .prose p {
     margin-top: 0;
     margin-bottom: 0;
@@ -107,6 +103,10 @@
   .prose p:empty {
     min-height: 1rem;
     display: block;
+  }
+
+  .prose img {
+    display: inline-block;
   }
 }
 
