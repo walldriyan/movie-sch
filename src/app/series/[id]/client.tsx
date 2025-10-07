@@ -286,6 +286,8 @@ export default function SeriesPageClient({
                         </div>
                     </section>
                     
+                    <SponsoredAdCard />
+
                     <div className="block md:hidden">
                         <Separator className="my-12" />
                         <aside>
@@ -317,8 +319,6 @@ export default function SeriesPageClient({
                             />
                         </aside>
                     </div>
-
-                    <SponsoredAdCard />
 
                     {currentPost.subtitles && currentPost.subtitles.length > 0 && (
                       <>
