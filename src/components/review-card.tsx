@@ -85,7 +85,7 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
           )}
       </div>
       <div className="text-foreground/80 pl-11">
-        <div className="bg-muted/20 border border-border/20 rounded-2xl p-3 transition-all duration-300 ease-in-out">
+        <div className="w-[78%] bg-muted/20 border border-border/20 rounded-2xl p-3 transition-all duration-300 ease-in-out">
             <p className={cn("transition-all duration-300", isExpanded ? "line-clamp-none" : "line-clamp-2")}>
                 {review.comment}
             </p>
