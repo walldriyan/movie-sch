@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound, useRouter, useSearchParams, usePathname } from 'next/navigation';
@@ -208,40 +209,7 @@ export default function SeriesPageClient({
     <div className="w-full bg-background text-foreground">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            {/* Left Sidebar: Series Tracker */}
-            <aside className="md:col-span-1 md:order-first md:h-screen">
-                <div className="md:sticky md:top-24 overflow-y-auto">
-                    <div className="flex flex-col items-start gap-4 mb-4">
-                      <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-                          <List className="h-6 w-6 text-primary" />
-                          <span>{series.title}</span>
-                      </h1>
-                       {author && (
-                        <div className="flex flex-col items-start gap-3 mt-3 w-full">
-                          <div className='flex items-center gap-2'>
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={author.image || ''} alt={author.name || ''} />
-                              <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium">{author.name}</span>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            Follow
-                          </Button>
-                        </div>
-                      )}
-                    </div>
-                    <SeriesTracker
-                        seriesId={series.id}
-                        posts={postsInSeries}
-                        currentPostId={currentPost.id}
-                    />
-                </div>
-            </aside>
-
-            {/* Right Content: Current Post Details */}
-            <div className="md:col-span-3 order-first">
+            <div className="md:col-span-3">
                 <article>
                     <div className="relative h-[400px] w-full rounded-xl overflow-hidden mb-8">
                         <Button
@@ -318,6 +286,38 @@ export default function SeriesPageClient({
                         </div>
                     </section>
                     
+                    <div className="block md:hidden">
+                        <Separator className="my-12" />
+                        <aside>
+                             <div className="flex flex-col items-start gap-4 mb-4">
+                              <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                                  <List className="h-6 w-6 text-primary" />
+                                  <span>{series.title}</span>
+                              </h1>
+                               {author && (
+                                <div className="flex flex-col items-start gap-3 mt-3 w-full">
+                                  <div className='flex items-center gap-2'>
+                                    <Avatar className="h-6 w-6">
+                                      <AvatarImage src={author.image || ''} alt={author.name || ''} />
+                                      <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="text-sm font-medium">{author.name}</span>
+                                  </div>
+                                  <Button variant="outline" size="sm">
+                                    <UserPlus className="mr-2 h-4 w-4" />
+                                    Follow
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            <SeriesTracker
+                                seriesId={series.id}
+                                posts={postsInSeries}
+                                currentPostId={currentPost.id}
+                            />
+                        </aside>
+                    </div>
+
                     <SponsoredAdCard />
 
                     {currentPost.subtitles && currentPost.subtitles.length > 0 && (
@@ -413,6 +413,36 @@ export default function SeriesPageClient({
 
                 </article>
             </div>
+             <aside className="hidden md:block md:col-span-1 md:h-screen">
+                <div className="md:sticky md:top-24 overflow-y-auto">
+                    <div className="flex flex-col items-start gap-4 mb-4">
+                      <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                          <List className="h-6 w-6 text-primary" />
+                          <span>{series.title}</span>
+                      </h1>
+                       {author && (
+                        <div className="flex flex-col items-start gap-3 mt-3 w-full">
+                          <div className='flex items-center gap-2'>
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={author.image || ''} alt={author.name || ''} />
+                              <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm font-medium">{author.name}</span>
+                          </div>
+                          <Button variant="outline" size="sm">
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            Follow
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                    <SeriesTracker
+                        seriesId={series.id}
+                        posts={postsInSeries}
+                        currentPostId={currentPost.id}
+                    />
+                </div>
+            </aside>
         </div>
       </main>
     </div>
