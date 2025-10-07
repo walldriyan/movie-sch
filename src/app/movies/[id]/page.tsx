@@ -42,6 +42,7 @@ import { ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
+import SponsoredAdCard from '@/components/sponsored-ad-card';
 
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
@@ -374,45 +375,48 @@ export default function MoviePage() {
                  </div>
 
                  <aside className="md:col-span-1">
-                    <Card className="sticky top-24 bg-card/50">
-                       <CardHeader>
-                        <CardTitle>Details</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        {post.type === 'MOVIE' || post.type === 'TV_SERIES' ? (
-                          <>
-                            <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
-                            <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N ạ'} />
-                            <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
-                            <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
-                            
-                            <Separator />
-                            
-                            <h4 className="font-semibold pt-2">Ratings</h4>
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                    <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
-                                    <span className="font-bold">{post.imdbRating?.toFixed(1) || 'N/A'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                    <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                    <span>{post.rottenTomatoesRating || 'N/A'}%</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1h-9.2V16h5.28c-.45 1.6-1.9 2.7-3.73 2.7-2.2 0-4-1.8-4-4s1.8-4 4-4c1.08 0 2.05.4 2.8.9l2.7-2.7C18.6 6.3 16.5 5 14.15 5c-3.96 0-7.15 3.2-7.15 7.15s3.19 7.15 7.15 7.15c3.8 0 6.9-2.9 6.9-6.9 0-.6-.05-1.1-.15-1.6z"></path></svg>
-                                  <span>{post.googleRating || 'N/A'}%</span>
-                                </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                             <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={post.viewCount.toLocaleString()} />
-                             <DetailItem icon={<ThumbsUp className="h-5 w-5" />} label="Likes" value={post.likedBy?.length || 0} />
-                             <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={reviews.length} />
-                          </>
-                        )}
-                      </CardContent>
-                    </Card>
+                    <div className="sticky top-24">
+                      <Card className="bg-card/50">
+                         <CardHeader>
+                          <CardTitle>Details</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                          {post.type === 'MOVIE' || post.type === 'TV_SERIES' ? (
+                            <>
+                              <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
+                              <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N ạ'} />
+                              <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
+                              <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
+                              
+                              <Separator />
+                              
+                              <h4 className="font-semibold pt-2">Ratings</h4>
+                              <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                      <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
+                                      <span className="font-bold">{post.imdbRating?.toFixed(1) || 'N/A'}</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                      <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                      <span>{post.rottenTomatoesRating || 'N/A'}%</span>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <svg className="h-4 w-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M21.35 11.1h-9.2V16h5.28c-.45 1.6-1.9 2.7-3.73 2.7-2.2 0-4-1.8-4-4s1.8-4 4-4c1.08 0 2.05.4 2.8.9l2.7-2.7C18.6 6.3 16.5 5 14.15 5c-3.96 0-7.15 3.2-7.15 7.15s3.19 7.15 7.15 7.15c3.8 0 6.9-2.9 6.9-6.9 0-.6-.05-1.1-.15-1.6z"></path></svg>
+                                    <span>{post.googleRating || 'N/A'}%</span>
+                                  </div>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                               <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={post.viewCount.toLocaleString()} />
+                               <DetailItem icon={<ThumbsUp className="h-5 w-5" />} label="Likes" value={post.likedBy?.length || 0} />
+                               <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={reviews.length} />
+                            </>
+                          )}
+                        </CardContent>
+                      </Card>
+                      <SponsoredAdCard />
+                    </div>
                  </aside>
               </div>
             </TabsContent>
