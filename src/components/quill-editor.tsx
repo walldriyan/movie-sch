@@ -88,6 +88,8 @@ interface QuillEditorProps {
 }
 
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
+  const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
+
   const editor = useEditor({
     extensions: [
       StarterKit,
@@ -126,7 +128,6 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const menuTriggerRef = React.useRef<HTMLButtonElement>(null);
 
 
   if (!editor) {
@@ -159,18 +160,10 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   };
 
   const handleContextMenu = (e: React.MouseEvent) => {
-    if (editor.state.selection.empty) {
-      return;
+    if (!editor.state.selection.empty) {
+      e.preventDefault();
+      setContextMenuOpen(true);
     }
-    e.preventDefault();
-    menuTriggerRef.current?.dispatchEvent(
-      new MouseEvent('contextmenu', {
-        bubbles: true,
-        cancelable: true,
-        clientX: e.clientX,
-        clientY: e.clientY,
-      })
-    );
   };
   
   return (
@@ -236,11 +229,11 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       </div>
 
       {/* Editor */}
-      <DropdownMenu>
+      <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
         <DropdownMenuTrigger asChild>
-           <div onContextMenu={handleContextMenu}>
+            <div onContextMenu={handleContextMenu}>
                 <EditorContent editor={editor} />
-           </div>
+            </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent
           onCloseAutoFocus={(e) => e.preventDefault()}
