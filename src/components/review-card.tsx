@@ -52,7 +52,7 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
   }
 
   return (
-    <div className="flex flex-col bg-card/50 border p-4 rounded-xl">
+    <div className="flex flex-col">
       <div className="flex items-start justify-between">
         <div className="flex items-center space-x-3 mb-2">
             <Avatar className="h-8 w-8">
@@ -85,8 +85,10 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
           )}
       </div>
       <div className="text-foreground/80 pl-11">
-        <p>{review.comment}</p>
-        <div className="flex items-center gap-2 mt-1">
+        <div className="bg-muted/20 border rounded-2xl p-3">
+          <p>{review.comment}</p>
+        </div>
+        <div className="flex items-center gap-2 mt-2">
             <Button variant="outline" size="sm" onClick={() => setShowReplyForm(!showReplyForm)}>
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Reply
