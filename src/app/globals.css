@@ -85,6 +85,11 @@
     height: 0;
   }
 
+  .tiptap p {
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
   
   .prose img {
     border-radius: 0.5rem;

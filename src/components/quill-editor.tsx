@@ -113,7 +113,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm dark:prose-invert max-w-none p-4 min-h-[200px] max-h-[600px] overflow-y-auto focus:outline-none [&_p]:my-2',
+        class: 'tiptap p-4 min-h-[200px] max-h-[600px] overflow-y-auto focus:outline-none',
       },
     },
   });
