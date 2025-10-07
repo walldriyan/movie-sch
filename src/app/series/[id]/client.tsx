@@ -8,7 +8,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock } from 'lucide-react';
+import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState, useMemo, useTransition } from 'react';
 import Loading from './loading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -44,6 +44,7 @@ export default function SeriesPageClient({
 
   const [currentPost, setCurrentPost] = useState(initialPost);
   const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
+  const [showReviews, setShowReviews] = useState(false);
   
   const author = postsInSeries[0]?.author;
 
@@ -361,44 +362,53 @@ export default function SeriesPageClient({
 
 
                     <section id="reviews" className="my-12">
-                      <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
-                        <MessageCircle className="w-8 h-8 text-primary" />
-                        Responses ({reviews.length})
-                      </h2>
-                      <ReviewForm 
-                        postId={currentPost.id} 
-                        isSubmitting={isSubmittingReview}
-                        onSubmitReview={handleReviewSubmit}
-                      />
-                      <Separator className="my-8" />
-                      <div className="space-y-8">
-                        {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
-                          <div className="flex items-start gap-4">
-                              <Skeleton className="h-8 w-8 rounded-full" />
-                              <div className="w-full space-y-2">
-                                <Skeleton className="h-4 w-1/4" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-2/3" />
-                              </div>
-                          </div>
-                        )}
-                        {reviews.length > 0 ? (
-                          reviews.map((review: Review) => (
-                            <ReviewCard 
-                              key={review.id} 
-                              review={review} 
-                              onReviewSubmit={handleReviewSubmit}
-                              onReviewDelete={handleReviewDelete}
-                            />
-                          ))
-                        ) : (
-                          !isSubmittingReview && (
-                            <p className="text-muted-foreground">
-                              Be the first to share your thoughts!
-                            </p>
-                          )
-                        )}
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
+                          <MessageCircle className="w-8 h-8 text-primary" />
+                          Responses ({reviews.length})
+                        </h2>
+                        <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
+                            {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                        </Button>
                       </div>
+                      {showReviews && (
+                        <>
+                          <ReviewForm 
+                            postId={currentPost.id} 
+                            isSubmitting={isSubmittingReview}
+                            onSubmitReview={handleReviewSubmit}
+                          />
+                          <Separator className="my-8" />
+                          <div className="space-y-8">
+                            {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
+                              <div className="flex items-start gap-4">
+                                  <Skeleton className="h-8 w-8 rounded-full" />
+                                  <div className="w-full space-y-2">
+                                    <Skeleton className="h-4 w-1/4" />
+                                    <Skeleton className="h-4 w-full" />
+                                    <Skeleton className="h-4 w-2/3" />
+                                  </div>
+                              </div>
+                            )}
+                            {reviews.length > 0 ? (
+                              reviews.map((review: Review) => (
+                                <ReviewCard 
+                                  key={review.id} 
+                                  review={review} 
+                                  onReviewSubmit={handleReviewSubmit}
+                                  onReviewDelete={handleReviewDelete}
+                                />
+                              ))
+                            ) : (
+                              !isSubmittingReview && (
+                                <p className="text-muted-foreground">
+                                  Be the first to share your thoughts!
+                                </p>
+                              )
+                            )}
+                          </div>
+                        </>
+                      )}
                     </section>
 
                 </article>
