@@ -77,7 +77,14 @@
     -moz-osx-font-smoothing: grayscale;
 
   }
-
+  .tiptap img {
+    @apply rounded-lg; /* ඔබට අවශ්‍ය ප්‍රමාණයට මෙය වෙනස් කරන්න */
+  }
+ /* ===> මෙන්න මේ කේතය මෙතනට එක් කරන්න <=== */
+ .tiptap p {
+  margin: 0;
+  @apply m-0; /* m-0 යනු margin: 0; යන්නයි */
+}
   .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
