@@ -85,8 +85,6 @@ export default function MovieDetailClient({
 
     // Create optimistic state
     let optimisticPost = { ...post };
-    let wasLiked = currentIsLiked;
-    let wasDisliked = currentIsDisliked;
 
     if (likeAction === 'like') {
         // Optimistically update UI
@@ -127,15 +125,28 @@ export default function MovieDetailClient({
       });
       return;
     }
+    
+    const wasFavorited = post.favoritePosts?.some(fav => fav.userId === currentUser.id);
+
+    // Optimistic UI update
+    setPost(prevPost => ({
+      ...prevPost,
+      favoritePosts: wasFavorited
+        ? prevPost.favoritePosts?.filter(fav => fav.userId !== currentUser.id)
+        : [...(prevPost.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
+    }));
+
     startFavoriteTransition(() => {
       toggleFavoritePost(post.id)
         .then(() => {
           toast({
             title: 'Favorites Updated',
-            description: `Post has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`,
+            description: `Post has been ${wasFavorited ? 'removed from' : 'added to'} your favorites.`,
           });
         })
         .catch((err) => {
+          // Revert optimistic update on error
+          setPost(initialPost);
           toast({
             variant: 'destructive',
             title: 'An error occurred',
