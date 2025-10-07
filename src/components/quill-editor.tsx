@@ -10,13 +10,6 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from './ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from '@/components/ui/dropdown-menu';
 import UnderlineExtension from '@tiptap/extension-underline';
 
 
@@ -88,7 +81,7 @@ interface QuillEditorProps {
 }
 
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
-  const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
+  const [contextMenuState, setContextMenuState] = React.useState({ open: false, top: 0, left: 0 });
 
   const editor = useEditor({
     extensions: [
@@ -162,8 +155,18 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const handleContextMenu = (e: React.MouseEvent) => {
     if (!editor.state.selection.empty) {
       e.preventDefault();
-      setContextMenuOpen(true);
+      setContextMenuState({
+        open: true,
+        top: e.clientY,
+        left: e.clientX,
+      });
+    } else {
+      setContextMenuState({ open: false, top: 0, left: 0 });
     }
+  };
+  
+  const closeContextMenu = () => {
+    setContextMenuState({ open: false, top: 0, left: 0 });
   };
   
   return (
@@ -229,35 +232,47 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       </div>
 
       {/* Editor */}
-      <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-        <DropdownMenuTrigger asChild>
-            <div onContextMenu={handleContextMenu}>
-                <EditorContent editor={editor} />
-            </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          onCloseAutoFocus={(e) => e.preventDefault()}
-        >
-          <DropdownMenuItem onSelect={() => editor.chain().focus().toggleBold().run()}>
-            <Bold className="mr-2 h-4 w-4" />
-            <span>Bold</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => editor.chain().focus().toggleItalic().run()}>
-            <Italic className="mr-2 h-4 w-4" />
-            <span>Italic</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => editor.chain().focus().toggleUnderline().run()}>
-            <Underline className="mr-2 h-4 w-4" />
-            <span>Underline</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => editor.chain().focus().unsetAllMarks().run()}>
-            <RemoveFormatting className="mr-2 h-4 w-4" />
-            <span>Clear formatting</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <div onContextMenu={handleContextMenu} onClick={closeContextMenu}>
+        <EditorContent editor={editor} />
+      </div>
 
+      {contextMenuState.open && (
+        <div
+            style={{ top: contextMenuState.top, left: contextMenuState.left }}
+            className="fixed z-50 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md"
+            onContextMenu={(e) => e.preventDefault()} // Prevent nested context menus
+        >
+             <button
+                onClick={() => { editor.chain().focus().toggleBold().run(); closeContextMenu(); }}
+                className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground"
+            >
+                <Bold className="mr-2 h-4 w-4" />
+                <span>Bold</span>
+            </button>
+            <button
+                onClick={() => { editor.chain().focus().toggleItalic().run(); closeContextMenu(); }}
+                className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground"
+            >
+                <Italic className="mr-2 h-4 w-4" />
+                <span>Italic</span>
+            </button>
+             <button
+                onClick={() => { editor.chain().focus().toggleUnderline().run(); closeContextMenu(); }}
+                className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground"
+            >
+                <Underline className="mr-2 h-4 w-4" />
+                <span>Underline</span>
+            </button>
+            <div className="-mx-1 my-1 h-px bg-muted"></div>
+            <button
+                onClick={() => { editor.chain().focus().unsetAllMarks().run(); closeContextMenu(); }}
+                className="relative flex w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-none transition-colors focus:bg-accent focus:text-accent-foreground"
+            >
+                <RemoveFormatting className="mr-2 h-4 w-4" />
+                <span>Clear formatting</span>
+            </button>
+        </div>
+      )}
 
       <input 
         type="file" 
@@ -271,3 +286,5 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
 };
 
 export default QuillEditor;
+
+    
