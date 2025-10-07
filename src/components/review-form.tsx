@@ -76,7 +76,7 @@ export default function ReviewForm({
           <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
       )}
-      <div className="w-full">
+      <div className="w-full rounded-2xl opacity-50">
         { !parentId && <h3 className="text-lg font-semibold mb-4">What are your thoughts?</h3>}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
