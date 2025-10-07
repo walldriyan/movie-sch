@@ -76,8 +76,8 @@
     @apply bg-background text-foreground;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-
   }
+  
   .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
@@ -86,11 +86,13 @@
     height: 0;
   }
 
+  /* Editor paragraphs */
   .tiptap p {
     margin-top: 0;
     margin-bottom: 0;
   }
 
+  /* Post display paragraphs */
   .prose p {
     margin-top: 0;
     margin-bottom: 0;
