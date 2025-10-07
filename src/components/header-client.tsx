@@ -8,6 +8,7 @@ import {
   User,
   Users,
   Bookmark,
+  Bell,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -124,11 +125,17 @@ export default function HeaderClient({
               <span>My Favorites</span>
             </Link>
           </DropdownMenuItem>
+           <DropdownMenuItem asChild>
+            <Link href="/notifications">
+              <Bell className="mr-2 h-4 w-4" />
+              <span>Notifications</span>
+            </Link>
+          </DropdownMenuItem>
           {canManage && (
             <DropdownMenuItem asChild>
               <Link href="/manage">
                 <LayoutGrid className="mr-2 h-4 w-4" />
-                <span>Manage Movies</span>
+                <span>Manage Content</span>
               </Link>
             </DropdownMenuItem>
           )}
@@ -161,6 +168,14 @@ export default function HeaderClient({
         <div className="flex items-center justify-end space-x-2">
           {createButton}
           <HeaderApprovals />
+          {user && (
+            <Button variant="ghost" size="icon" asChild>
+              <Link href="/notifications">
+                <Bell />
+                <span className="sr-only">Notifications</span>
+              </Link>
+            </Button>
+          )}
           {renderUserMenu()}
         </div>
       </div>

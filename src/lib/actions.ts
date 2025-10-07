@@ -1241,3 +1241,39 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
     
     revalidatePath('/admin/groups');
 }
+
+export async function getNotificationsForUser() {
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user) {
+        return [];
+    }
+
+    let whereClause: Prisma.PostWhereInput = {
+        type: 'OTHER',
+        status: 'PUBLISHED'
+    };
+
+    if (user.role !== ROLES.SUPER_ADMIN) {
+        const userGroupIds = await prisma.groupMember.findMany({
+            where: { userId: user.id },
+            select: { groupId: true },
+        }).then(members => members.map(m => m.groupId));
+
+        whereClause.groupId = { in: userGroupIds };
+    }
+
+    const notifications = await prisma.post.findMany({
+        where: whereClause,
+        orderBy: {
+            createdAt: 'desc',
+        },
+        include: {
+            author: true,
+            group: true,
+        },
+    });
+
+    return notifications;
+}

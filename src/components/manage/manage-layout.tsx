@@ -64,7 +64,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                 <SidebarMenuButton asChild isActive className="text-base">
                   <Link href="/manage">
                     <LayoutGrid />
-                    <span>My Movies</span>
+                    <span>My Posts</span>
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
@@ -102,6 +102,14 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                     <span>Favorites</span>
                 </Link>
               </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton asChild className="text-base">
+                    <Link href="/notifications">
+                        <Bell />
+                        <span>My Notifications</span>
+                    </Link>
+                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
               <SidebarMenuButton asChild className="text-base">
