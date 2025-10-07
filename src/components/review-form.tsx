@@ -76,7 +76,7 @@ export default function ReviewForm({
           <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
         </Avatar>
       )}
-      <div className="w-full rounded-2xl opacity-50">
+      <div className="w-full rounded-2xl opacity-80">
         { !parentId && <h3 className="text-lg font-semibold mb-4">What are your thoughts?</h3>}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -107,7 +107,7 @@ export default function ReviewForm({
                   <FormControl>
                     <Textarea
                       placeholder={parentId ? "Write a reply..." : "Tell us what you think about the movie..."}
-                      className="resize-none bg-transparent border-0 border-b rounded-none focus-visible:ring-0 p-0"
+                      className="resize-none bg-transparent border rounded-md focus-visible:ring-0 p-2"
                       {...field}
                     />
                   </FormControl>
@@ -138,5 +138,3 @@ export default function ReviewForm({
     </div>
   );
 }
-
-    
