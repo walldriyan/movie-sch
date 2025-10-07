@@ -88,10 +88,15 @@ interface QuillEditorProps {
 }
 
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
+  const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        // Configurations can be added here if needed in the future
+        paragraph: {
+          HTMLAttributes: {
+            class: 'm-0', // Tailwind margin-0
+          },
+        },
       }),
       UnderlineExtension,
       Image.extend({
@@ -221,48 +226,41 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       </div>
 
       {/* Editor */}
-      <DropdownMenu>
+      <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
         <DropdownMenuTrigger asChild>
-            <div onContextMenu={(e) => {
-                if (editor.state.selection.empty) {
-                    return;
-                }
-                e.preventDefault();
-                const trigger = e.currentTarget as HTMLElement;
-                setTimeout(() => {
-                    const clickEvent = new MouseEvent('click', {
-                        bubbles: true,
-                        cancelable: true,
-                        view: window
-                    });
-                    trigger.dispatchEvent(clickEvent);
-                }, 0);
-            }}>
-                <EditorContent 
-                    editor={editor}
-                />
-            </div>
+          <div
+            onContextMenu={(e) => {
+              if (editor.state.selection.empty) {
+                return;
+              }
+              e.preventDefault();
+              setContextMenuOpen(true);
+            }}
+          >
+            <EditorContent editor={editor} />
+          </div>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-             <DropdownMenuItem onSelect={() => editor.chain().focus().toggleBold().run()}>
-                <Bold className="mr-2 h-4 w-4" />
-                <span>Bold</span>
-            </DropdownMenuItem>
-             <DropdownMenuItem onSelect={() => editor.chain().focus().toggleItalic().run()}>
-                <Italic className="mr-2 h-4 w-4" />
-                <span>Italic</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => editor.chain().focus().toggleUnderline().run()}>
-                <Underline className="mr-2 h-4 w-4" />
-                <span>Underline</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => editor.chain().focus().unsetAllMarks().run()}>
-                <RemoveFormatting className="mr-2 h-4 w-4" />
-                <span>Clear formatting</span>
-            </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => editor.chain().focus().toggleBold().run()}>
+            <Bold className="mr-2 h-4 w-4" />
+            <span>Bold</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => editor.chain().focus().toggleItalic().run()}>
+            <Italic className="mr-2 h-4 w-4" />
+            <span>Italic</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => editor.chain().focus().toggleUnderline().run()}>
+            <Underline className="mr-2 h-4 w-4" />
+            <span>Underline</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => editor.chain().focus().unsetAllMarks().run()}>
+            <RemoveFormatting className="mr-2 h-4 w-4" />
+            <span>Clear formatting</span>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
 
       <input 
         type="file" 
