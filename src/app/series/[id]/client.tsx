@@ -20,6 +20,7 @@ import { toggleLikePost, toggleFavoritePost, createReview, deleteReview } from '
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
+import SponsoredAdCard from '@/components/sponsored-ad-card';
 
 
 export default function SeriesPageClient({
@@ -316,6 +317,8 @@ export default function SeriesPageClient({
                         </div>
                     </section>
                     
+                    <SponsoredAdCard />
+
                     {currentPost.subtitles && currentPost.subtitles.length > 0 && (
                       <>
                         <Separator className="my-12" />

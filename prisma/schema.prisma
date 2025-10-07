@@ -211,6 +211,7 @@ enum PostType {
   MOVIE
   TV_SERIES
   OTHER
+  
 }
 
 enum PostVisibility {
