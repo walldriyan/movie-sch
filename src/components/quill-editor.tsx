@@ -89,6 +89,8 @@ interface QuillEditorProps {
 
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const [contextMenuOpen, setContextMenuOpen] = React.useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = React.useState({ top: 0, left: 0 });
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -133,6 +135,19 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const editorRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (editorRef.current && !editorRef.current.contains(event.target as Node)) {
+        setContextMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   if (!editor) {
     return null;
@@ -161,6 +176,16 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
     if (url) {
       editor.chain().focus().setLink({ href: url }).run();
     }
+  };
+
+  const handleContextMenu = (e: React.MouseEvent) => {
+    if (editor.state.selection.empty) {
+      setContextMenuOpen(false);
+      return;
+    }
+    e.preventDefault();
+    setContextMenuPosition({ top: e.clientY, left: e.clientX });
+    setContextMenuOpen(true);
   };
   
   return (
@@ -226,21 +251,20 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       </div>
 
       {/* Editor */}
+      <div onContextMenu={handleContextMenu} ref={editorRef}>
+          <EditorContent editor={editor} />
+      </div>
+
       <DropdownMenu open={contextMenuOpen} onOpenChange={setContextMenuOpen}>
-        <DropdownMenuTrigger asChild>
-          <div
-            onContextMenu={(e) => {
-              if (editor.state.selection.empty) {
-                return;
-              }
-              e.preventDefault();
-              setContextMenuOpen(true);
-            }}
-          >
-            <EditorContent editor={editor} />
-          </div>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent>
+        <DropdownMenuTrigger />
+        <DropdownMenuContent
+          style={{
+            position: 'fixed',
+            top: contextMenuPosition.top,
+            left: contextMenuPosition.left,
+          }}
+          onCloseAutoFocus={(e) => e.preventDefault()}
+        >
           <DropdownMenuItem onSelect={() => editor.chain().focus().toggleBold().run()}>
             <Bold className="mr-2 h-4 w-4" />
             <span>Bold</span>
