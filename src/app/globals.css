@@ -80,9 +80,9 @@
   .tiptap img {
     @apply rounded-lg; /* ඔබට අවශ්‍ය ප්‍රමාණයට මෙය වෙනස් කරන්න */
   }
- .tiptap p {
-  margin: 0 !important;
-}
+ .tiptap .prose p {
+    margin: 0 !important;
+  }
   .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
