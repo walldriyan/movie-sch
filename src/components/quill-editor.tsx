@@ -5,11 +5,19 @@ import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer, NodeV
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Link from '@tiptap/extension-link';
-import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading, X, Smile, Film, Notebook, ImageUp } from 'lucide-react';
+import { Bold, Italic, List, ListOrdered, Link2, ImageIcon, Strikethrough, Heading, X, Smile, Film, Notebook, ImageUp, Underline, RemoveFormatting } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from './ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import UnderlineExtension from '@tiptap/extension-underline';
 
 
 const ImageComponentWithResize = ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
@@ -85,6 +93,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       StarterKit.configure({
         // Configurations can be added here if needed in the future
       }),
+      UnderlineExtension,
       Image.extend({
         addAttributes() {
           return {
@@ -148,6 +157,8 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       editor.chain().focus().setLink({ href: url }).run();
     }
   };
+  
+  const hasSelection = !editor.state.selection.empty;
 
   return (
     <div className="bg-background text-foreground rounded-lg border">
@@ -212,9 +223,48 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
       </div>
 
       {/* Editor */}
-      <EditorContent 
-        editor={editor}
-      />
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <div onContextMenu={(e) => {
+                if (!editor.state.selection.empty) {
+                    e.preventDefault();
+                    const trigger = e.currentTarget as HTMLElement;
+                    setTimeout(() => {
+                        const clickEvent = new MouseEvent('click', {
+                            bubbles: true,
+                            cancelable: true,
+                            view: window
+                        });
+                        trigger.dispatchEvent(clickEvent);
+                    }, 0);
+                }
+            }}>
+                <EditorContent 
+                    editor={editor}
+                />
+            </div>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+             <DropdownMenuItem onSelect={() => editor.chain().focus().toggleBold().run()}>
+                <Bold className="mr-2 h-4 w-4" />
+                <span>Bold</span>
+            </DropdownMenuItem>
+             <DropdownMenuItem onSelect={() => editor.chain().focus().toggleItalic().run()}>
+                <Italic className="mr-2 h-4 w-4" />
+                <span>Italic</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => editor.chain().focus().toggleUnderline().run()}>
+                <Underline className="mr-2 h-4 w-4" />
+                <span>Underline</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onSelect={() => editor.chain().focus().unsetAllMarks().run()}>
+                <RemoveFormatting className="mr-2 h-4 w-4" />
+                <span>Clear formatting</span>
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <input 
         type="file" 
         ref={fileInputRef}

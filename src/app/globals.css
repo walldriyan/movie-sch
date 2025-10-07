@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -89,6 +90,14 @@
     margin-top: 0;
     margin-bottom: 0;
   }
+
+  .prose img {
+    display: inline-block;
+  }
+  
+  .prose p {
+    margin-bottom: 1em;
+  }
 }
 
 @layer utilities {
@@ -104,9 +113,6 @@
   .mask-gradient {
     mask-image: linear-gradient(to bottom, transparent 20%, rgb(0, 0, 0) 80%);
     -webkit-mask-image: linear-gradient(to bottom, transparent 20%, black 80%);
-  }
-  .prose p {
-    margin-bottom: 1em;
   }
 }
 
