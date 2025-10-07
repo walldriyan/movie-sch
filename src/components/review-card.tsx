@@ -85,21 +85,21 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
           )}
       </div>
       <div className="text-foreground/80 pl-11">
-        <div className="bg-muted/20 border border-border rounded-2xl p-3 transition-all duration-300 ease-in-out">
+        <div className="bg-muted/20 border border-border/20 rounded-2xl p-3 transition-all duration-300 ease-in-out">
             <p className={cn("transition-all duration-300", isExpanded ? "line-clamp-none" : "line-clamp-2")}>
                 {review.comment}
             </p>
             {review.comment.length > 150 && (
                  <button 
                     onClick={() => setIsExpanded(!isExpanded)} 
-                    className="text-primary hover:text-primary/80 text-xs font-semibold focus:outline-none mt-2 rounded-full border border-border/20 px-2 py-0.5"
+                    className="text-primary hover:text-primary/80 text-xs font-semibold focus:outline-none mt-2 rounded-full border border-border/5 px-2 py-0.5"
                 >
                     {isExpanded ? 'See Less' : 'See More'}
                 </button>
             )}
         </div>
-        <div className="flex items-center gap-2 mt-3">
-            <Button variant="outline" size="sm" onClick={() => setShowReplyForm(!showReplyForm)}>
+        <div className="flex items-center gap-2 mt-3 ">
+            <Button className='border border-border/60 ' variant="outline" size="sm" onClick={() => setShowReplyForm(!showReplyForm)}>
                 <MessageSquare className="mr-2 h-4 w-4" />
                 Reply
             </Button>
