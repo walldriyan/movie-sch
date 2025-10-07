@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEditor, EditorContent, NodeViewWrapper, ReactNodeViewRenderer, NodeViewProps } from '@tiptap/react';
@@ -81,7 +82,13 @@ interface QuillEditorProps {
 const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({}),
+      StarterKit.configure({
+        paragraph: {
+          HTMLAttributes: {
+            class: 'm-0', // Tailwind margin-0 to fix spacing issue
+          },
+        },
+      }),
       Image.extend({
         addAttributes() {
           return {

@@ -84,15 +84,8 @@
     pointer-events: none;
     height: 0;
   }
+
   
-  .tiptap {
-    line-height: 1.6;
-  }
-
-  .tiptap .prose p {
-    margin: 0;
-  }
-
   .prose img {
     border-radius: 0.5rem;
   }
