@@ -77,9 +77,6 @@
     -moz-osx-font-smoothing: grayscale;
 
   }
-  .tiptap img {
-    @apply rounded-lg;
-  }
   .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
@@ -92,12 +89,12 @@
     line-height: 1.6;
   }
 
-  .tiptap p {
-    margin-bottom: 1em;
+  .tiptap .prose p {
+    margin: 0;
   }
 
   .prose img {
-    display: inline-block;
+    border-radius: 0.5rem;
   }
 }
 
