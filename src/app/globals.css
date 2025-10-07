@@ -96,7 +96,12 @@
   }
   
   .prose p {
-    margin-bottom: 1em;
+    margin-top: 0;
+    margin-bottom: 0;
+  }
+
+  .prose p:not(:first-child) {
+    margin-top: 1em;
   }
 }
 
