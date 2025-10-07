@@ -462,6 +462,7 @@ export default function MoviePage() {
               </section>
             </TabsContent>
             <TabsContent value="subtitles" className='px-4 md:px-0'>
+              <SponsoredAdCard />
               <section id="subtitles" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">
                   Subtitles
@@ -571,3 +572,4 @@ export default function MoviePage() {
     
 
     
+
