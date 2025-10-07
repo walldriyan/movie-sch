@@ -20,6 +20,7 @@ import {
   Edit,
   Trash2,
   Loader2,
+  Home,
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -203,6 +204,18 @@ export default function MovieDetailClient({
         >
           <ArrowLeft className="h-5 w-5" />
           <span className="sr-only">Back</span>
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          asChild
+          className="absolute top-4 left-16 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
+        >
+          <Link href="/">
+            <Home className="h-5 w-5" />
+            <span className="sr-only">Home</span>
+          </Link>
         </Button>
 
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
