@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -29,6 +30,7 @@ import { ROLES } from '@/lib/permissions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
+import HeaderNotifications from './header-notifications';
 
 export default function HeaderClient({
   session,
@@ -168,14 +170,7 @@ export default function HeaderClient({
         <div className="flex items-center justify-end space-x-2">
           {createButton}
           <HeaderApprovals />
-          {user && (
-            <Button variant="ghost" size="icon" asChild>
-              <Link href="/notifications">
-                <Bell />
-                <span className="sr-only">Notifications</span>
-              </Link>
-            </Button>
-          )}
+          {user && <HeaderNotifications />}
           {renderUserMenu()}
         </div>
       </div>

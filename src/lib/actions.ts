@@ -2,7 +2,7 @@
 
 'use server';
 
-import { PrismaClient, Prisma, PostType, Series, Group, Subtitle, GroupMember } from '@prisma/client';
+import { PrismaClient, Prisma, PostType, Series, Group, Subtitle, GroupMember, Notification, UserNotification } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -1242,38 +1242,104 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
     revalidatePath('/admin/groups');
 }
 
+// NEW NOTIFICATION ACTIONS
+export async function sendNotification({
+  title,
+  message,
+  groupId,
+}: {
+  title: string;
+  message: string;
+  groupId: number;
+}) {
+  const session = await auth();
+  const user = session?.user;
+  if (!user || user.role !== ROLES.SUPER_ADMIN) {
+    throw new Error('Not authorized');
+  }
+
+  const groupMembers = await prisma.groupMember.findMany({
+    where: { groupId },
+    select: { userId: true },
+  });
+
+  if (groupMembers.length === 0) {
+    throw new Error('This group has no members to notify.');
+  }
+
+  const notification = await prisma.notification.create({
+    data: {
+      title,
+      message,
+      authorId: user.id,
+      groupId,
+    },
+  });
+
+  await prisma.userNotification.createMany({
+    data: groupMembers.map(member => ({
+      userId: member.userId,
+      notificationId: notification.id,
+      isRead: false,
+    })),
+  });
+
+  revalidatePath('/notifications');
+  revalidatePath('/admin/notifications');
+}
+
 export async function getNotificationsForUser() {
-    const session = await auth();
-    const user = session?.user;
+  const session = await auth();
+  const user = session?.user;
 
-    if (!user) {
-        return [];
-    }
-
-    let whereClause: Prisma.PostWhereInput = {
-        type: 'OTHER',
-        status: 'PUBLISHED'
-    };
-
-    if (user.role !== ROLES.SUPER_ADMIN) {
-        const userGroupIds = await prisma.groupMember.findMany({
-            where: { userId: user.id },
-            select: { groupId: true },
-        }).then(members => members.map(m => m.groupId));
-
-        whereClause.groupId = { in: userGroupIds };
-    }
-
-    const notifications = await prisma.post.findMany({
-        where: whereClause,
-        orderBy: {
-            createdAt: 'desc',
-        },
+  if (!user) {
+    return [];
+  }
+  
+  const userNotifications = await prisma.userNotification.findMany({
+    where: { userId: user.id },
+    include: {
+      notification: {
         include: {
-            author: true,
-            group: true,
-        },
-    });
+          author: {
+            select: {
+              name: true,
+              image: true,
+            }
+          }
+        }
+      }
+    },
+    orderBy: {
+      notification: {
+        createdAt: 'desc',
+      }
+    }
+  });
 
-    return notifications;
+  return userNotifications;
+}
+
+export async function markNotificationAsRead(userNotificationId: number) {
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user) {
+    throw new Error('Not authenticated');
+  }
+
+  const userNotification = await prisma.userNotification.findUnique({
+    where: { id: userNotificationId },
+  });
+
+  if (userNotification?.userId !== user.id) {
+    throw new Error('Not authorized to mark this notification');
+  }
+
+  await prisma.userNotification.update({
+    where: { id: userNotificationId },
+    data: { isRead: true },
+  });
+
+  revalidatePath('/notifications');
 }

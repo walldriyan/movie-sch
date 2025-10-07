@@ -19,7 +19,6 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -29,15 +28,14 @@ import QuillEditor from '@/components/quill-editor';
 import { Loader2, AlertCircle, Send, Bell } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Group } from '@prisma/client';
-import { getGroups, savePost } from '@/lib/actions';
-import type { PostFormData } from '@/lib/types';
+import { getGroups, sendNotification } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 
 
 const notificationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
-  description: z.string().min(10, 'Description is required'),
+  message: z.string().min(10, 'Message is required'),
   groupId: z.coerce.number({ required_error: 'A group must be selected.' }),
 });
 
@@ -61,7 +59,7 @@ export default function SendNotificationPage() {
     resolver: zodResolver(notificationSchema),
     defaultValues: {
       title: '',
-      description: '',
+      message: '',
     },
   });
 
@@ -70,27 +68,11 @@ export default function SendNotificationPage() {
   const handleSubmit = async (values: NotificationFormValues) => {
     setFormError(null);
     try {
-      const notificationData: PostFormData = {
+      await sendNotification({
         title: values.title,
-        description: values.description,
-        type: 'OTHER', // This identifies it as a notification
-        visibility: 'GROUP_ONLY',
+        message: values.message,
         groupId: values.groupId,
-        // These fields are not relevant for notifications but required by the type
-        posterUrl: null,
-        year: null,
-        duration: null,
-        genres: [],
-        directors: null,
-        mainCast: null,
-        imdbRating: null,
-        rottenTomatoesRating: null,
-        googleRating: null,
-        status: 'PUBLISHED', // Notifications are immediately published
-        viewCount: 0,
-      };
-
-      await savePost(notificationData);
+      });
       
       toast({
         title: 'Notification Sent!',
@@ -114,7 +96,7 @@ export default function SendNotificationPage() {
           <h1 className="text-2xl font-bold">
             Send Group Notification
           </h1>
-          <p className="text-muted-foreground">This message will be posted to the home feed of the selected group members.</p>
+          <p className="text-muted-foreground">This message will be sent directly to the selected group members.</p>
         </div>
       </div>
 
@@ -142,7 +124,7 @@ export default function SendNotificationPage() {
 
               <FormField
                 control={form.control}
-                name="description"
+                name="message"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Message</FormLabel>
