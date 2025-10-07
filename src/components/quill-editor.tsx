@@ -83,11 +83,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        paragraph: {
-          HTMLAttributes: {
-            class: 'm-0', // Tailwind margin-0 to fix spacing issue
-          },
-        },
+        // Configurations can be added here if needed in the future
       }),
       Image.extend({
         addAttributes() {
@@ -117,7 +113,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
     },
     editorProps: {
       attributes: {
-        class: 'prose prose-sm dark:prose-invert max-w-none p-4 min-h-[200px] max-h-[600px] overflow-y-auto focus:outline-none',
+        class: 'prose prose-sm dark:prose-invert max-w-none p-4 min-h-[200px] max-h-[600px] overflow-y-auto focus:outline-none [&_p]:my-2',
       },
     },
   });
