@@ -364,6 +364,10 @@ export default function MoviePage() {
                     <TrailerSection post={post} />
                     
                     <ImageGallerySection post={post} />
+                    
+                    <Separator className="my-12" />
+                    <SponsoredAdCard />
+
 
                     <Separator className="my-12" />
                     <section id="recommendations">
@@ -375,7 +379,7 @@ export default function MoviePage() {
                  </div>
 
                  <aside className="md:col-span-1">
-                    <div className="sticky top-24">
+                    <div className="sticky top-24 space-y-6">
                       <Card className="bg-card/50">
                          <CardHeader>
                           <CardTitle>Details</CardTitle>
