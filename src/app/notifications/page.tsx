@@ -7,15 +7,9 @@ import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, Inbox } from 'lucide-react';
 import ClientRelativeDate from '@/components/client-relative-date';
-import { Badge } from '@/components/ui/badge';
 import type { Post } from '@/lib/types';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Card, CardContent } from '@/components/ui/card';
+import Link from 'next/link';
 
 type GroupedNotifications = {
   [key: string]: Post[];
@@ -57,34 +51,27 @@ export default async function NotificationsPage() {
           {Object.entries(groupedNotifications).map(([groupName, groupNotifications]) => (
             <div key={groupName}>
               <h2 className="font-semibold text-lg text-muted-foreground mb-4">{groupName}</h2>
-              <div className="border-l-2 border-border pl-6 space-y-8">
-                  {groupNotifications.map((notification, index) => (
-                      <div key={notification.id} className="relative">
-                          <div className="absolute -left-[33px] top-1.5 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
-                          
-                          <Accordion type="single" collapsible>
-                              <AccordionItem value={`item-${notification.id}`} className="border-b-0">
-                                  <AccordionTrigger className="flex items-start gap-4 text-left hover:no-underline py-0">
-                                      <Avatar className="mt-1">
-                                          <AvatarImage src={notification.author.image || undefined} />
-                                          <AvatarFallback>{notification.author.name?.charAt(0)}</AvatarFallback>
-                                      </Avatar>
-                                      <div className="flex-grow">
-                                        <p className="font-medium text-base">{notification.title}</p>
-                                        <p className="text-sm text-muted-foreground">
-                                          by {notification.author.name}
-                                        </p>
-                                      </div>
-                                      <ClientRelativeDate date={notification.createdAt} />
-                                  </AccordionTrigger>
-                                  <AccordionContent className="pt-4 ml-16">
-                                      <div className="prose prose-sm prose-invert text-muted-foreground max-w-none p-4 bg-muted/50 rounded-lg"
-                                          dangerouslySetInnerHTML={{ __html: notification.description }}
-                                      />
-                                  </AccordionContent>
-                              </AccordionItem>
-                          </Accordion>
+              <div className="border-l-2 border-border pl-6 space-y-4">
+                  {groupNotifications.map((notification) => (
+                    <Link
+                      key={notification.id}
+                      href={`/movies/${notification.id}`}
+                      className="relative flex items-start gap-4 p-4 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="absolute -left-[33px] top-5 h-4 w-4 rounded-full bg-primary ring-4 ring-background" />
+                      
+                      <Avatar className="mt-1">
+                          <AvatarImage src={notification.author.image || undefined} />
+                          <AvatarFallback>{notification.author.name?.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-grow">
+                        <p className="font-medium text-base">{notification.title}</p>
+                        <p className="text-sm text-muted-foreground">
+                          by {notification.author.name}
+                        </p>
                       </div>
+                      <ClientRelativeDate date={notification.createdAt} />
+                    </Link>
                   ))}
               </div>
             </div>
