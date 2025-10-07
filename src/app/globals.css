@@ -90,6 +90,9 @@
     margin-bottom: 0;
   }
 
+  .prose p {
+    margin-bottom: 1em;
+  }
   
   .prose img {
     border-radius: 0.5rem;
