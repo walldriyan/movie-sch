@@ -36,7 +36,7 @@ import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries, createSeries, getGroups } from '@/lib/actions';
+import { getSeries, createSeries, getGroups } from '@/lib/actions/groupActions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
