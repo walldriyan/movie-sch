@@ -107,6 +107,16 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
 
     const membersToAdd = newMemberIds.filter(id => !existingMemberIds.includes(id));
     const membersToRemove = existingMemberIds.filter(id => !newMemberIds.includes(id));
+    
+    const addOperations = membersToAdd.map(userId => 
+        prisma.groupMember.create({
+            data: {
+                groupId,
+                userId,
+                role: 'MEMBER'
+            }
+        })
+    );
 
     await prisma.$transaction([
         prisma.groupMember.deleteMany({
@@ -115,13 +125,7 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
                 userId: { in: membersToRemove },
             },
         }),
-        prisma.groupMember.createMany({
-            data: membersToAdd.map(userId => ({
-                groupId,
-                userId,
-            })),
-            skipDuplicates: true,
-        }),
+        ...addOperations
     ]);
     
     revalidatePath('/admin/groups');
