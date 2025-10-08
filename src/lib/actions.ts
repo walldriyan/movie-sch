@@ -1258,14 +1258,26 @@ export async function sendNotification({
     throw new Error('Not authorized');
   }
 
-  const notification = await prisma.notification.create({
-    data: {
-      title,
-      message,
-      authorId: user.id,
-      groupId: groupId,
-    },
-  });
+  // Use raw query to create notification
+  const createdDate = new Date().toISOString();
+  const groupIdValue = groupId ? groupId : null;
+
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "Notification" ("title", "message", "authorId", "groupId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?, ?, ?)`,
+    title,
+    message,
+    user.id,
+    groupIdValue,
+    createdDate,
+    createdDate
+  );
+
+  const [notification]: Notification[] = await prisma.$queryRaw`SELECT * FROM "Notification" ORDER BY id DESC LIMIT 1`;
+
+  if (!notification) {
+    throw new Error("Failed to create notification.");
+  }
+
 
   let targetUserIds: string[] = [];
   if (groupId) {
@@ -1282,17 +1294,16 @@ export async function sendNotification({
   }
   
   if (targetUserIds.length === 0) {
-    // No one to notify, maybe return a message
     return;
   }
 
-  await prisma.userNotification.createMany({
-    data: targetUserIds.map(userId => ({
-      userId: userId,
-      notificationId: notification.id,
-      isRead: false,
-    })),
-  });
+  const userNotificationData = targetUserIds.map(userId => 
+    `('${userId}', ${notification.id}, 0, '${createdDate}', '${createdDate}')`
+  ).join(',');
+
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "UserNotification" ("userId", "notificationId", "isRead", "createdAt", "updatedAt") VALUES ${userNotificationData}`
+  );
 
   revalidatePath('/notifications');
   revalidatePath('/admin/notifications');
@@ -1314,7 +1325,8 @@ export async function getNotificationsForUser() {
         n.message,
         n.createdAt,
         u.name as authorName,
-        u.image as authorImage
+        u.image as authorImage,
+        n.id as notificationId
     FROM UserNotification un
     JOIN Notification n ON un.notificationId = n.id
     JOIN User u ON n.authorId = u.id
@@ -1327,6 +1339,7 @@ export async function getNotificationsForUser() {
     id: un.id,
     isRead: un.isRead,
     notification: {
+      id: un.notificationId,
       title: un.title,
       message: un.message,
       createdAt: un.createdAt,
