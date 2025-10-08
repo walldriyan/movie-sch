@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
-import type { Group, User } from '@prisma/client';
+import type { Group, User, GroupMember } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import {
@@ -73,12 +73,13 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createGroup, getGroups, updateGroup, deleteGroup, getGroupDetails, updateGroupMembers } from '@/lib/actions/groupActions';
+import { createGroup, getGroups, updateGroup, deleteGroup, getGroupDetails, updateGroupMembers, respondToGroupRequest } from '@/lib/actions/groupActions';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 
 type GroupWithCount = Group & { _count: { members: number }, pendingMembersCount: number };
-type GroupWithDetails = Group & { members: ({ user: User } & { role: string })[] };
+type DetailedGroupMember = GroupMember & { user: User };
+type GroupWithDetails = Group & { members: DetailedGroupMember[] };
 
 
 interface GroupsClientProps {
@@ -94,11 +95,17 @@ const groupFormSchema = z.object({
 type GroupFormValues = z.infer<typeof groupFormSchema>;
 
 
-const ManageMembersDialog = ({ group, allUsers, onMembersUpdate }: { group: GroupWithDetails, allUsers: User[], onMembersUpdate: () => void }) => {
-    const [open, setOpen] = useState(false);
-    const [selectedUsers, setSelectedUsers] = useState<string[]>(() => group.members.filter(m => m.role === 'MEMBER' || m.role === 'ADMIN').map(m => m.user.id));
+const ManageMembersDialog = ({ group, allUsers, onUpdate, isOpen, onOpenChange }: { group: GroupWithDetails, allUsers: User[], onUpdate: () => void, isOpen: boolean, onOpenChange: (open: boolean) => void }) => {
+    const [selectedUsers, setSelectedUsers] = useState<string[]>(() => group.members.filter(m => m.role === 'MEMBER' || m.role === 'ADMIN').map(m => m.userId));
     const [isSaving, startSaving] = useTransition();
+    const [isResponding, startResponding] = useTransition();
     const { toast } = useToast();
+
+    useEffect(() => {
+        if(isOpen) {
+            setSelectedUsers(group.members.filter(m => m.role === 'MEMBER' || m.role === 'ADMIN').map(m => m.userId));
+        }
+    }, [isOpen, group.members]);
 
     const pendingRequests = group.members.filter(m => m.role === 'PENDING');
     
@@ -107,29 +114,29 @@ const ManageMembersDialog = ({ group, allUsers, onMembersUpdate }: { group: Grou
         try {
           await updateGroupMembers(group.id, selectedUsers);
           toast({ title: "Members Updated" });
-          onMembersUpdate();
-          setOpen(false);
+          onUpdate();
+          onOpenChange(false);
         } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
         }
       });
     }
 
-    const handleRequestResponse = (membershipId: any, approve: boolean) => {
-        // This is a placeholder. A real implementation would call a server action.
-        console.log(`Request ${membershipId} ${approve ? 'approved' : 'declined'}`);
-        toast({ title: `Request ${approve ? 'Approved' : 'Declined'}`});
-        onMembersUpdate();
+    const handleRequestResponse = (membershipId: number, approve: boolean) => {
+        startResponding(async () => {
+            try {
+                await respondToGroupRequest(membershipId, approve);
+                toast({ title: `Request ${approve ? 'Approved' : 'Declined'}`});
+                onUpdate();
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Error', description: error.message });
+            }
+        });
     }
 
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                    <Users className="mr-2 h-4 w-4" /> Manage Members
-                </DropdownMenuItem>
-            </DialogTrigger>
+        <Dialog open={isOpen} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>Manage Members for &quot;{group.name}&quot;</DialogTitle>
@@ -141,11 +148,11 @@ const ManageMembersDialog = ({ group, allUsers, onMembersUpdate }: { group: Grou
                         <ScrollArea className="h-48">
                             <div className="space-y-2 pr-4">
                                 {pendingRequests.length > 0 ? pendingRequests.map(req => (
-                                    <div key={req.user.id} className="flex items-center justify-between text-sm">
+                                    <div key={req.userId} className="flex items-center justify-between text-sm">
                                         <span>{req.user.name}</span>
                                         <div className="flex gap-1">
-                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-green-500" onClick={() => handleRequestResponse((req as any).id, true)}><Check className="h-4 w-4"/></Button>
-                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => handleRequestResponse((req as any).id, false)}><X className="h-4 w-4"/></Button>
+                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-green-500" onClick={() => handleRequestResponse(req.id, true)} disabled={isResponding}><Check className="h-4 w-4"/></Button>
+                                            <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => handleRequestResponse(req.id, false)} disabled={isResponding}><X className="h-4 w-4"/></Button>
                                         </div>
                                     </div>
                                 )) : <p className="text-sm text-muted-foreground">No pending requests.</p>}
@@ -153,9 +160,9 @@ const ManageMembersDialog = ({ group, allUsers, onMembersUpdate }: { group: Grou
                         </ScrollArea>
                     </div>
                      <div>
-                        <h4 className="font-semibold mb-4">Add Members</h4>
+                        <h4 className="font-semibold mb-4">Add/Remove Members</h4>
                         <Command className="rounded-lg border">
-                          <CommandInput placeholder="Search users to add..." />
+                          <CommandInput placeholder="Search users..." />
                           <CommandList>
                             <CommandEmpty>No users found.</CommandEmpty>
                             <CommandGroup>
@@ -172,8 +179,8 @@ const ManageMembersDialog = ({ group, allUsers, onMembersUpdate }: { group: Grou
                                         }
                                     }}
                                 >
-                                    <Check className={!selectedUsers.includes(user.id) ? 'opacity-0' : 'opacity-100'} />
-                                    <span className="ml-2">{user.name}</span>
+                                    <Check className={cn('mr-2 h-4 w-4', selectedUsers.includes(user.id) ? 'opacity-100' : 'opacity-0')} />
+                                    <span>{user.name}</span>
                                 </CommandItem>
                                 ))}
                                </ScrollArea>
@@ -183,9 +190,7 @@ const ManageMembersDialog = ({ group, allUsers, onMembersUpdate }: { group: Grou
                     </div>
                 </div>
                 <DialogFooter>
-                    <DialogClose asChild>
-                        <Button type="button" variant="ghost">Cancel</Button>
-                    </DialogClose>
+                    <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleSave} disabled={isSaving}>
                         {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save Changes
@@ -278,6 +283,8 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [detailedGroup, setDetailedGroup] = useState<GroupWithDetails | null>(null);
+  const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
+
   const { toast } = useToast();
 
   const form = useForm<GroupFormValues>({
@@ -290,6 +297,15 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
     try {
       const groupsFromDb = (await getGroups()) as GroupWithCount[];
       setGroups(groupsFromDb);
+
+      // If a group is currently being viewed in the dialog, refresh its data too
+      if (detailedGroup) {
+         const updatedDetails = (await getGroupDetails(detailedGroup.id)) as GroupWithDetails | null;
+         if (updatedDetails) {
+            setDetailedGroup(updatedDetails);
+         }
+      }
+
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch groups.' });
     } finally {
@@ -328,9 +344,12 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
   }
   
   const openManageMembersDialog = async (group: GroupWithCount) => {
-    const details = await getGroupDetails(group.id);
+    const details = (await getGroupDetails(group.id)) as GroupWithDetails | null;
     if(details) {
-        setDetailedGroup(details as any);
+        setDetailedGroup(details);
+        setManageMembersDialogOpen(true);
+    } else {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not fetch group details.' });
     }
   }
 
@@ -441,8 +460,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                              <DropdownMenuItem asChild><Link href={`/groups/${group.id}`}><View className="mr-2 h-4 w-4" />View Group</Link></DropdownMenuItem>
                              <EditGroupDialog group={group} onGroupUpdate={fetchGroups} />
                             
-                             {detailedGroup && <ManageMembersDialog group={detailedGroup} allUsers={allUsers} onMembersUpdate={fetchGroups} />}
-                             <DropdownMenuItem onClick={() => openManageMembersDialog(group)}>
+                             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); openManageMembersDialog(group); }}>
                                 <Users className="mr-2 h-4 w-4" /> Manage Members
                             </DropdownMenuItem>
 
@@ -476,8 +494,15 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
           </Table>
         </CardContent>
       </Card>
+      {detailedGroup && (
+        <ManageMembersDialog 
+            group={detailedGroup} 
+            allUsers={allUsers} 
+            onUpdate={fetchGroups} 
+            isOpen={manageMembersDialogOpen}
+            onOpenChange={setManageMembersDialogOpen}
+        />
+      )}
     </>
   );
 }
-
-    

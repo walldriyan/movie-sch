@@ -307,6 +307,3 @@ export async function deleteGroup(groupId: number) {
     ]);
     revalidatePath('/admin/groups');
 }
-
-
-    
