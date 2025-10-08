@@ -1250,7 +1250,7 @@ export async function sendNotification({
 }: {
   title: string;
   message: string;
-  groupId: number;
+  groupId?: number;
 }) {
   const session = await auth();
   const user = session?.user;
@@ -1258,27 +1258,37 @@ export async function sendNotification({
     throw new Error('Not authorized');
   }
 
-  const groupMembers = await prisma.groupMember.findMany({
-    where: { groupId },
-    select: { userId: true },
-  });
-
-  if (groupMembers.length === 0) {
-    throw new Error('This group has no members to notify.');
-  }
-
   const notification = await prisma.notification.create({
     data: {
       title,
       message,
       authorId: user.id,
-      groupId,
+      groupId: groupId,
     },
   });
 
+  let targetUserIds: string[] = [];
+  if (groupId) {
+    const groupMembers = await prisma.groupMember.findMany({
+      where: { groupId },
+      select: { userId: true },
+    });
+    targetUserIds = groupMembers.map(member => member.userId);
+  } else {
+     const allUsers = await prisma.user.findMany({
+      select: { id: true },
+    });
+    targetUserIds = allUsers.map(u => u.id);
+  }
+  
+  if (targetUserIds.length === 0) {
+    // No one to notify, maybe return a message
+    return;
+  }
+
   await prisma.userNotification.createMany({
-    data: groupMembers.map(member => ({
-      userId: member.userId,
+    data: targetUserIds.map(userId => ({
+      userId: userId,
       notificationId: notification.id,
       isRead: false,
     })),

@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -36,7 +35,7 @@ import { useRouter } from 'next/navigation';
 const notificationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   message: z.string().min(10, 'Message is required'),
-  groupId: z.coerce.number({ required_error: 'A group must be selected.' }),
+  groupId: z.coerce.number().optional(),
 });
 
 type NotificationFormValues = z.infer<typeof notificationSchema>;
@@ -142,7 +141,7 @@ export default function SendNotificationPage() {
                 name="groupId"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Target Group</FormLabel>
+                    <FormLabel>Target Group (Optional)</FormLabel>
                     <Select onValueChange={field.onChange} defaultValue={String(field.value || '')}>
                       <FormControl>
                         <SelectTrigger>
@@ -150,11 +149,13 @@ export default function SendNotificationPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
+                        <SelectItem value="ALL_USERS">All Users</SelectItem>
                         {groups.length > 0 ? groups.map(group => (
                           <SelectItem key={group.id} value={String(group.id)}>{group.name}</SelectItem>
                         )) : <p className="p-2 text-xs text-muted-foreground">Loading groups...</p>}
                       </SelectContent>
                     </Select>
+                     <FormDescription>If no group is selected, the notification will be sent to all users.</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
