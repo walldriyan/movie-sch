@@ -4,6 +4,7 @@
 import { useState, useTransition } from 'react';
 import type { Group, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 import {
   Card,
   CardContent,
@@ -39,19 +40,15 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check } from 'lucide-react';
+import { PlusCircle, RefreshCw, Users, ShieldQuestion, Loader2, AlertCircle, ChevronsUpDown, Check, View } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createGroup, getGroups, getGroupDetails, updateGroupMembers } from '@/lib/actions/groupActions';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
-import { cn } from '@/lib/utils';
+import { createGroup, getGroups } from '@/lib/actions/groupActions';
 import { Badge } from '../ui/badge';
 
-type GroupWithCount = Group & { _count: { members: number } };
-type GroupWithMembers = Group & { members: { user: User, role: string }[] };
+type GroupWithCount = Group & { _count: { members: number }, pendingMembersCount: number };
 
 interface GroupsClientProps {
   initialGroups: GroupWithCount[];
@@ -64,167 +61,6 @@ const groupFormSchema = z.object({
 });
 
 type GroupFormValues = z.infer<typeof groupFormSchema>;
-
-
-function MultiSelectUsers({
-  allUsers,
-  selectedUsers,
-  onSelectionChange,
-}: {
-  allUsers: User[];
-  selectedUsers: User[];
-  onSelectionChange: (users: User[]) => void;
-}) {
-  const [open, setOpen] = useState(false);
-
-  const handleSelect = (user: User) => {
-    onSelectionChange([...selectedUsers, user]);
-    setOpen(false);
-  };
-  
-  const handleUnselect = (user: User) => {
-    onSelectionChange(selectedUsers.filter((u) => u.id !== user.id));
-  };
-  
-  const unselectedUsers = allUsers.filter(
-    (user) => !selectedUsers.some((selected) => selected.id === user.id)
-  );
-
-  return (
-     <Popover open={open} onOpenChange={setOpen}>
-      <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Members</p>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            className="w-full justify-between h-auto min-h-10"
-          >
-            <div className="flex flex-wrap gap-2">
-              {selectedUsers.length > 0 ? (
-                selectedUsers.map((user) => (
-                  <Badge
-                    key={user.id}
-                    variant="secondary"
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUnselect(user);
-                    }}
-                  >
-                    {user.name}
-                    <span className="ml-1 hover:text-destructive">×</span>
-                  </Badge>
-                ))
-              ) : (
-                <span className="text-muted-foreground">Select users...</span>
-              )}
-            </div>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </PopoverTrigger>
-      </div>
-      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-        <Command>
-          <CommandInput placeholder="Search users..." />
-          <CommandEmpty>No user found.</CommandEmpty>
-          <CommandGroup>
-            <CommandList>
-              {unselectedUsers.map((user) => (
-                <CommandItem
-                  key={user.id}
-                  onSelect={() => handleSelect(user)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedUsers.some((u) => u.id === user.id) ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {user.name} ({user.email})
-                </CommandItem>
-              ))}
-            </CommandList>
-          </CommandGroup>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
-}
-
-
-function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCount; allUsers: User[]; onUpdate: () => void; }) {
-    const [open, setOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-    const { toast } = useToast();
-    
-    const [isFetchingDetails, startFetchingDetails] = useTransition();
-
-    const handleOpenChange = (isOpen: boolean) => {
-        if (isOpen) {
-            startFetchingDetails(async () => {
-                const groupDetails = await getGroupDetails(group.id) as GroupWithMembers | null;
-                if (groupDetails) {
-                    setSelectedUsers(groupDetails.members.map(m => m.user));
-                }
-            });
-        }
-        setOpen(isOpen);
-    };
-    
-    const handleSave = async () => {
-        setIsSubmitting(true);
-        try {
-            await updateGroupMembers(group.id, selectedUsers.map(u => u.id));
-            toast({ title: 'Members updated', description: `Members for "${group.name}" have been saved.` });
-            onUpdate();
-            setOpen(false);
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to update members.' });
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-    return (
-        <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogTrigger asChild>
-                <Button variant="outline" size="sm">Manage</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Manage Members for &quot;{group.name}&quot;</DialogTitle>
-                    <DialogDescription>
-                        Add or remove users from this group.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                    {isFetchingDetails ? (
-                        <div className="space-y-2">
-                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
-                             <p className="text-center text-sm text-muted-foreground">Loading members...</p>
-                        </div>
-                    ) : (
-                        <MultiSelectUsers
-                            allUsers={allUsers}
-                            selectedUsers={selectedUsers}
-                            onSelectionChange={setSelectedUsers}
-                        />
-                    )}
-                </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={isSubmitting || isFetchingDetails}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-}
 
 
 export default function GroupsClient({ initialGroups, allUsers }: GroupsClientProps) {
@@ -367,6 +203,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                 <TableHead>Name</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Members</TableHead>
+                <TableHead>Requests</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -382,14 +219,29 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                         {group._count.members}
                       </div>
                     </TableCell>
+                    <TableCell>
+                        <div className="flex items-center">
+                            <ShieldQuestion className="h-4 w-4 mr-2 text-muted-foreground" />
+                            {group.pendingMembersCount > 0 ? (
+                                <Badge variant="destructive">{group.pendingMembersCount}</Badge>
+                            ) : (
+                                <span>{group.pendingMembersCount}</span>
+                            )}
+                        </div>
+                    </TableCell>
                     <TableCell className="text-right">
-                       <ManageMembersDialog group={group} allUsers={allUsers} onUpdate={fetchGroups} />
+                       <Button asChild variant="outline" size="sm">
+                          <Link href={`/groups/${group.id}`}>
+                            <View className="mr-2 h-4 w-4" />
+                            View
+                          </Link>
+                       </Button>
                     </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No groups found. Create one to get started.
                   </TableCell>
                 </TableRow>
