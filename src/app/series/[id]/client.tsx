@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import { useToast } from '@/hooks/use-toast';
-import { toggleLikePost, toggleFavoritePost, createReview, deleteReview } from '@/lib/actions';
+import { toggleLikePost, toggleFavoritePost, createReview, deleteReview } from '@/lib/actions/postActions';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';

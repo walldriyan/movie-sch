@@ -27,7 +27,8 @@ import QuillEditor from '@/components/quill-editor';
 import { Loader2, AlertCircle, Send, Bell } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Group } from '@prisma/client';
-import { getGroups, sendNotification } from '@/lib/actions';
+import { getGroups } from '@/lib/actions/groupActions';
+import { sendNotification } from '@/lib/actions/notificationActions';
 import { useToast } from '@/hooks/use-toast';
 
 const notificationSchema = z.object({

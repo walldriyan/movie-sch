@@ -7,7 +7,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Film, Star, CalendarDays, Clock, Bookmark } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getFavoritePosts } from '@/lib/actions';
+import { getFavoritePosts } from '@/lib/actions/postActions';
 import type { Post } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { auth } from '@/auth';

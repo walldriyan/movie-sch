@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { getNotificationsForUser, markNotificationAsRead } from '@/lib/actions';
+import { getNotificationsForUser, markNotificationAsRead } from '@/lib/actions/notificationActions';
 import { redirect } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell, Inbox, Loader2 } from 'lucide-react';

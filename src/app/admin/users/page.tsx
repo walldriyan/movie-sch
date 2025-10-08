@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import type { User } from '@prisma/client';
-import { getUsers, updateUserRole } from '@/lib/actions';
+import { getUsers, updateUserRole } from '@/lib/actions/userActions';
 import { Button } from '@/components/ui/button';
 import {
   Card,

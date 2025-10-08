@@ -1,6 +1,7 @@
 
 import { notFound } from 'next/navigation';
-import { getSeriesById, getPostsBySeriesId, getPost } from '@/lib/actions';
+import { getSeriesById, getPostsBySeriesId } from '@/lib/actions/groupActions';
+import { getPost } from '@/lib/actions/postActions';
 import type { Post, Series } from '@/lib/types';
 import SeriesPageClient from './client';
 

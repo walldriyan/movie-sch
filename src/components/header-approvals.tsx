@@ -18,7 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Bell, Film, RefreshCw, Users, Inbox, ExternalLink } from 'lucide-react';
 import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES } from '@/lib/permissions';
-import { getPendingApprovals } from '@/lib/actions';
+import { getPendingApprovals } from '@/lib/actions/userActions';
 import type { Post, User } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';

@@ -1,16 +1,17 @@
 
 'use client';
 
-import { MoreHorizontal, Camera, UserPlus, LogOut } from 'lucide-react';
+import { MoreHorizontal, Camera, UserPlus, LogOut, Loader2, Hourglass } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
-import type { Group, User, GroupMember } from '@prisma/client';
+import type { Group, User, GroupMember, GroupMemberRole } from '@prisma/client';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { updateGroupMembers } from '@/lib/actions';
+import { requestToJoinGroup, leaveGroup } from '@/lib/actions/groupActions';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 
 type GroupWithDetails = Group & {
     author: User;
@@ -22,38 +23,57 @@ type GroupWithDetails = Group & {
 interface GroupHeaderProps {
     group: GroupWithDetails;
     currentUser?: User;
-    isMember: boolean;
-    isOwner: boolean;
 }
 
-export default function GroupHeader({ group, currentUser, isMember, isOwner }: GroupHeaderProps) {
+export default function GroupHeader({ group, currentUser }: GroupHeaderProps) {
     const { toast } = useToast();
     const router = useRouter();
+    const [isPending, startTransition] = useTransition();
 
     const coverImage = `https://picsum.photos/seed/${group.id + 10}/1200/400`;
     const groupAvatar = `https://picsum.photos/seed/${group.id}/400/400`;
     
-    const handleMembership = async () => {
+    const membership = currentUser ? group.members.find(m => m.userId === currentUser.id) : undefined;
+    const membershipStatus: GroupMemberRole | 'NOT_MEMBER' = membership ? membership.role : 'NOT_MEMBER';
+    const isOwner = currentUser ? group.authorId === currentUser.id : false;
+
+    const handleMembershipAction = async () => {
         if (!currentUser) {
             toast({ variant: 'destructive', title: 'You must be logged in.' });
             return;
         }
 
-        const currentMemberIds = group.members.map(m => m.userId);
-        let newMemberIds: string[];
-
-        if (isMember) {
-            newMemberIds = currentMemberIds.filter(id => id !== currentUser.id);
-        } else {
-            newMemberIds = [...currentMemberIds, currentUser.id];
+        startTransition(async () => {
+            try {
+                if (membershipStatus === 'MEMBER' || membershipStatus === 'ADMIN') {
+                    await leaveGroup(group.id);
+                    toast({ title: 'Success', description: `You have left the group.` });
+                } else if (membershipStatus === 'PENDING') {
+                    // In a real app, you might want a "cancel request" action here
+                    toast({ title: 'Request Pending', description: `Your request to join is still pending.` });
+                } else { // NOT_MEMBER
+                    await requestToJoinGroup(group.id);
+                    toast({ title: 'Request Sent', description: `Your request to join "${group.name}" has been sent.` });
+                }
+                router.refresh();
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Error', description: error.message });
+            }
+        });
+    };
+    
+    const getButtonContent = () => {
+        if (isPending) {
+            return <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Processing...</>;
         }
-
-        try {
-            await updateGroupMembers(group.id, newMemberIds);
-            toast({ title: 'Success', description: `You have ${isMember ? 'left' : 'joined'} the group.` });
-            router.refresh();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        switch(membershipStatus) {
+            case 'MEMBER':
+            case 'ADMIN':
+                return <><LogOut className="mr-2 h-4 w-4" /> Leave Group</>;
+            case 'PENDING':
+                return <><Hourglass className="mr-2 h-4 w-4" /> Request Sent</>;
+            default:
+                return <><UserPlus className="mr-2 h-4 w-4" /> Join Group</>;
         }
     };
 
@@ -87,14 +107,13 @@ export default function GroupHeader({ group, currentUser, isMember, isOwner }: G
                         </Avatar>
                         <div className="pb-4">
                         <h2 className="text-2xl font-bold">{group.name}</h2>
-                        <p className="text-sm text-muted-foreground">{group.members.length} Members</p>
+                        <p className="text-sm text-muted-foreground">{group.members.filter(m => m.role !== 'PENDING').length} Members</p>
                         </div>
                     </div>
                     <div className="flex items-center gap-2 pb-4 overflow-hidden ">
-                        {currentUser && (
-                             <Button variant="outline" onClick={handleMembership}>
-                                {isMember ? <LogOut className="mr-2 h-4 w-4" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                                {isMember ? 'Leave Group' : 'Join Group'}
+                        {currentUser && !isOwner && (
+                             <Button variant="outline" onClick={handleMembershipAction} disabled={isPending || membershipStatus === 'PENDING'}>
+                                {getButtonContent()}
                             </Button>
                         )}
                         <Button variant="ghost" size="icon">

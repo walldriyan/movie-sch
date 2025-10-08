@@ -2,7 +2,9 @@
 
 import type { User as PrismaUser } from '@prisma/client';
 import type { Post } from '@/lib/types';
-import { getPosts, getUsers, getFavoritePostsByUserId, getSeriesByAuthorId } from '@/lib/actions';
+import { getPosts, getFavoritePostsByUserId } from '@/lib/actions/postActions';
+import { getSeriesByAuthorId } from '@/lib/actions/groupActions';
+import { getUsers } from '@/lib/actions/userActions';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import ProfileHeader from '@/components/profile/profile-header';

@@ -16,7 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Bell, Film, RefreshCw, Users, Inbox, ExternalLink } from 'lucide-react';
-import { getNotificationsForUser, markNotificationAsRead } from '@/lib/actions';
+import { getNotificationsForUser, markNotificationAsRead } from '@/lib/actions/notificationActions';
 import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';

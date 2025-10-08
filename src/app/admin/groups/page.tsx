@@ -4,7 +4,8 @@
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { ROLES } from '@/lib/permissions';
-import { getGroups, getUsers } from '@/lib/actions';
+import { getGroups } from '@/lib/actions/groupActions';
+import { getUsers } from '@/lib/actions/userActions';
 import GroupsClient from '@/components/admin/groups-client';
 
 export default async function ManageGroupsPage() {

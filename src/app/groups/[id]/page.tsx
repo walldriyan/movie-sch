@@ -1,6 +1,6 @@
 
 import { auth } from '@/auth';
-import { getGroupDetails } from '@/lib/actions';
+import { getGroupDetails } from '@/lib/actions/groupActions';
 import { notFound } from 'next/navigation';
 import GroupPageClient from './client';
 import type { Group, User, GroupMember } from '@prisma/client';

@@ -44,7 +44,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createGroup, getGroups, getGroupDetails, updateGroupMembers } from '@/lib/actions';
+import { createGroup, getGroups, getGroupDetails, updateGroupMembers } from '@/lib/actions/groupActions';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
