@@ -29,8 +29,6 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { Group } from '@prisma/client';
 import { getGroups, sendNotification } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-
 
 const notificationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -44,7 +42,6 @@ export default function SendNotificationPage() {
   const [groups, setGroups] = useState<Group[]>([]);
   const [formError, setFormError] = useState<string | null>(null);
   const { toast } = useToast();
-  const router = useRouter();
   
   useEffect(() => {
     async function fetchGroups() {
@@ -79,7 +76,6 @@ export default function SendNotificationPage() {
       });
       
       form.reset();
-      router.push('/manage'); // Redirect after success
       
     } catch (error: any) {
       console.error('Failed to send notification:', error);
