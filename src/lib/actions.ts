@@ -1308,7 +1308,7 @@ export async function sendNotification({
 }
 
 export async function getNotificationsForUser(
-  { page = 1, limit = 10, isRead }: { page?: number; limit?: number; isRead: boolean }
+  { page = 1, limit = 10, isRead = false } = {}
 ) {
   const session = await auth();
   const user = session?.user;

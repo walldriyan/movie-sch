@@ -32,8 +32,8 @@ export default function HeaderNotifications() {
   const fetchNotifications = () => {
     startTransition(async () => {
       try {
-        const data = await getNotificationsForUser();
-        setNotifications(data);
+        const data = await getNotificationsForUser({ isRead: false });
+        setNotifications(data.notifications);
       } catch (error) {
         console.error("Failed to fetch notifications:", error);
         toast({
