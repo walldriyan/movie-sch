@@ -10,13 +10,26 @@ const prisma = new PrismaClient();
 
 // Group Actions
 export async function getGroups() {
+    const session = await auth();
+    const user = session?.user;
+
+    let where: Prisma.GroupWhereInput = {
+        isPublic: true // By default, only show public/approved groups
+    };
+
+    // Super admins can see all groups, including pending ones
+    if (user && user.role === ROLES.SUPER_ADMIN) {
+        where = {};
+    }
+
     const groups = await prisma.group.findMany({
+        where,
         include: {
             _count: {
                 select: { members: { where: { role: { not: 'PENDING' } } } },
             },
         },
-        orderBy: { name: 'asc' },
+        orderBy: { createdAt: 'desc' },
     });
 
     const groupsWithPendingCount = await Promise.all(groups.map(async (group) => {
@@ -37,15 +50,20 @@ export async function getGroups() {
 
 export async function createGroup(name: string, description: string | null): Promise<Group> {
     const session = await auth();
-    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
-        throw new Error('Not authorized');
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        throw new Error('Not authorized to create groups');
     }
+
+    // Super Admin creates a group that is instantly public/approved.
+    // User Admin creates a group that is not public (pending approval).
+    const isPublic = session.user.role === ROLES.SUPER_ADMIN;
 
     const newGroup = await prisma.group.create({
         data: {
             name,
             description,
-            authorId: session.user.id
+            authorId: session.user.id,
+            isPublic: isPublic,
         },
     });
     revalidatePath('/admin/groups');
@@ -284,11 +302,12 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   return { series: processedSeries, totalSeries };
 }
 
-export async function updateGroup(groupId: number, data: { name: string; description?: string | null }) {
+export async function updateGroup(groupId: number, data: { name: string; description?: string | null; isPublic?: boolean }) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
     }
+    
     await prisma.group.update({
         where: { id: groupId },
         data,

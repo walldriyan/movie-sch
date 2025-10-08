@@ -68,7 +68,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, RefreshCw, Users, ShieldQuestion, Loader2, AlertCircle, MoreHorizontal, Check, X, UserPlus, Trash2, Edit, View } from 'lucide-react';
+import { PlusCircle, RefreshCw, Users, ShieldQuestion, Loader2, AlertCircle, MoreHorizontal, Check, X, UserPlus, Trash2, Edit, View, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -77,6 +77,8 @@ import { createGroup, getGroups, updateGroup, deleteGroup, getGroupDetails, upda
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
 import { cn } from '@/lib/utils';
+import { ROLES } from '@/lib/permissions';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 type GroupWithCount = Group & { _count: { members: number }, pendingMembersCount: number };
 type DetailedGroupMember = GroupMember & { user: User };
@@ -279,13 +281,15 @@ const EditGroupDialog = ({ group, onGroupUpdate }: { group: Group, onGroupUpdate
 
 export default function GroupsClient({ initialGroups, allUsers }: GroupsClientProps) {
   const [groups, setGroups] = useState<GroupWithCount[]>(initialGroups);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isFormSubmitting, setIsFormSubmitting] = useState(false);
+  const [isRefreshing, startRefreshTransition] = useTransition();
+  const [isFormSubmitting, startFormSubmitTransition] = useTransition();
+  const [isActionPending, startActionTransition] = useTransition();
+
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [detailedGroup, setDetailedGroup] = useState<GroupWithDetails | null>(null);
   const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
-
+  const currentUser = useCurrentUser();
   const { toast } = useToast();
 
   const form = useForm<GroupFormValues>({
@@ -294,56 +298,66 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
   });
 
   const fetchGroups = async () => {
-    setIsRefreshing(true);
-    try {
-      const groupsFromDb = (await getGroups()) as GroupWithCount[];
-      setGroups(groupsFromDb);
+    startRefreshTransition(async () => {
+        try {
+          const groupsFromDb = (await getGroups()) as GroupWithCount[];
+          setGroups(groupsFromDb);
 
-      // If a group is currently being viewed in the dialog, refresh its data too
-      if (detailedGroup) {
-         const updatedDetails = (await getGroupDetails(detailedGroup.id)) as GroupWithDetails | null;
-         if (updatedDetails) {
-            setDetailedGroup(updatedDetails);
-         }
-      }
-
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch groups.' });
-    } finally {
-      setIsRefreshing(false);
-    }
+          if (detailedGroup) {
+            const updatedDetails = (await getGroupDetails(detailedGroup.id)) as GroupWithDetails | null;
+            if (updatedDetails) {
+                setDetailedGroup(updatedDetails);
+            }
+          }
+        } catch (error) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Failed to fetch groups.' });
+        }
+    });
   };
   
   useEffect(() => {
-    fetchGroups();
-  }, []);
+    setGroups(initialGroups);
+  }, [initialGroups]);
 
   const handleCreateGroup = async (values: GroupFormValues) => {
-    setIsFormSubmitting(true);
-    setFormError(null);
-    try {
-      await createGroup(values.name, values.description || null);
-      toast({ title: 'Group Created', description: `Group "${values.name}" has been created.` });
-      setCreateDialogOpen(false);
-      form.reset();
-      await fetchGroups();
-    } catch (error: any) {
-      setFormError(error.message || 'An unknown error occurred.');
-    } finally {
-      setIsFormSubmitting(false);
-    }
+    startFormSubmitTransition(async () => {
+        setFormError(null);
+        try {
+          await createGroup(values.name, values.description || null);
+          toast({ title: 'Group Created', description: `Group "${values.name}" has been created.` });
+          setCreateDialogOpen(false);
+          form.reset();
+          await fetchGroups();
+        } catch (error: any) {
+          setFormError(error.message || 'An unknown error occurred.');
+        }
+    });
   };
   
   const handleDeleteGroup = async (groupId: number) => {
-    try {
-        await deleteGroup(groupId);
-        toast({ title: 'Group Deleted' });
-        fetchGroups();
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
-    }
+    startActionTransition(async () => {
+        try {
+            await deleteGroup(groupId);
+            toast({ title: 'Group Deleted' });
+            fetchGroups();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+    });
   }
   
+  const handleApproveGroup = (groupId: number) => {
+    startActionTransition(async () => {
+        try {
+            await updateGroup(groupId, { isPublic: true });
+            toast({ title: 'Group Approved'});
+            fetchGroups();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error approving group', description: error.message });
+        }
+    });
+  };
+
   const openManageMembersDialog = async (group: GroupWithCount) => {
     const details = (await getGroupDetails(group.id)) as GroupWithDetails | null;
     if(details) {
@@ -354,10 +368,14 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
     }
   }
 
+  const canCreateGroup = currentUser && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role);
+
+
   return (
     <>
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Manage Groups</h1>
+        {canCreateGroup && (
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
           <DialogTrigger asChild>
             <Button className="ml-auto" size="sm">
@@ -367,7 +385,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Create New Group</DialogTitle>
-              <DialogDescription>Create a new user group to manage content access.</DialogDescription>
+              <DialogDescription>Create a new user group. As a USER_ADMIN, your group will require approval.</DialogDescription>
             </DialogHeader>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(handleCreateGroup)} className="space-y-4">
@@ -410,6 +428,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
             </Form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
       <Card>
         <CardHeader>
@@ -428,9 +447,9 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
             <TableHeader>
               <TableRow>
                 <TableHead>Name</TableHead>
-                <TableHead>Description</TableHead>
                 <TableHead>Members</TableHead>
                 <TableHead>Requests</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -439,22 +458,26 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                 groups.map((group) => (
                   <TableRow key={group.id}>
                     <TableCell className="font-medium">{group.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{group.description}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-2 text-muted-foreground" /> {group._count.members}
                       </div>
                     </TableCell>
                     <TableCell>
-                      <button onClick={() => openManageMembersDialog(group)} className="flex items-center hover:bg-muted/50 rounded-md -m-2 p-2 transition-colors cursor-pointer">
+                      <button onClick={() => openManageMembersDialog(group)} className="flex items-center hover:bg-muted/50 rounded-md -m-2 p-2 transition-colors cursor-pointer disabled:cursor-not-allowed" disabled={isActionPending}>
                         <ShieldQuestion className="h-4 w-4 mr-2 text-muted-foreground" />
                         {group.pendingMembersCount > 0 ? (<Badge variant="destructive">{group.pendingMembersCount}</Badge>) : (<span>{group.pendingMembersCount}</span>)}
                       </button>
                     </TableCell>
+                    <TableCell>
+                        <Badge variant={group.isPublic ? "default" : "secondary"}>
+                            {group.isPublic ? 'Published' : 'Pending'}
+                        </Badge>
+                    </TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost"><MoreHorizontal className="h-4 w-4" /></Button>
+                            <Button size="icon" variant="ghost" disabled={isActionPending}><MoreHorizontal className="h-4 w-4" /></Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuLabel>Actions</DropdownMenuLabel>
@@ -466,6 +489,11 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
+                             {currentUser?.role === ROLES.SUPER_ADMIN && !group.isPublic && (
+                                <DropdownMenuItem onSelect={() => handleApproveGroup(group.id)}>
+                                    <CheckCircle className="mr-2 h-4 w-4" /> Approve
+                                </DropdownMenuItem>
+                            )}
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <DropdownMenuItem className="text-destructive" onSelect={(e) => e.preventDefault()}>
