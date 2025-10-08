@@ -13,7 +13,7 @@ export async function getGroups() {
     const groups = await prisma.group.findMany({
         include: {
             _count: {
-                select: { members: true },
+                select: { members: { where: { role: { not: 'PENDING' } } } },
             },
         },
         orderBy: { name: 'asc' },
@@ -82,7 +82,7 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
     }
 
     const existingMembers = await prisma.groupMember.findMany({
-        where: { groupId },
+        where: { groupId, role: { in: ['MEMBER', 'ADMIN']} },
         select: { userId: true },
     });
     const existingMemberIds = existingMembers.map(m => m.userId);
@@ -172,6 +172,7 @@ export async function respondToGroupRequest(membershipId: number, approved: bool
     }
     
     revalidatePath(`/groups/${membership.groupId}`);
+    revalidatePath('/admin/groups');
 }
 
 export async function leaveGroup(groupId: number) {
@@ -282,3 +283,30 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
 
   return { series: processedSeries, totalSeries };
 }
+
+export async function updateGroup(groupId: number, data: { name: string; description?: string | null }) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+    await prisma.group.update({
+        where: { id: groupId },
+        data,
+    });
+    revalidatePath('/admin/groups');
+}
+
+export async function deleteGroup(groupId: number) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+    await prisma.$transaction([
+        prisma.groupMember.deleteMany({ where: { groupId } }),
+        prisma.group.delete({ where: { id: groupId } }),
+    ]);
+    revalidatePath('/admin/groups');
+}
+
+
+    
