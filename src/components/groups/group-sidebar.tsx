@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { User, Calendar } from 'lucide-react';
 import type { Group, User as PrismaUser, GroupMember } from '@prisma/client';
-import { format } from 'date-fns';
 
 type GroupWithDetails = Group & {
     author: PrismaUser;
@@ -32,7 +31,7 @@ export default function GroupSidebar({ group }: GroupSidebarProps) {
            <div className='space-y-4'>
                 <div className="flex items-center gap-4 text-muted-foreground">
                     <Calendar className="w-5 h-5" />
-                    <span className="text-sm">Created on {format(new Date(group.createdAt), 'MMMM d, yyyy')}</span>
+                    <span className="text-sm">Created on {new Date(group.createdAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</span>
                 </div>
 
                  <div className="flex items-center gap-4 text-muted-foreground">
