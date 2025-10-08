@@ -1307,13 +1307,18 @@ export async function sendNotification({
   revalidatePath('/admin/notifications');
 }
 
-export async function getNotificationsForUser() {
+export async function getNotificationsForUser(
+  { page = 1, limit = 10, isRead }: { page?: number; limit?: number; isRead: boolean }
+) {
   const session = await auth();
   const user = session?.user;
 
   if (!user) {
-    return [];
+    return { notifications: [], hasMore: false };
   }
+
+  const offset = (page - 1) * limit;
+  const isReadNumber = isRead ? 1 : 0;
   
   const userNotifications: any[] = await prisma.$queryRaw`
     SELECT
@@ -1328,12 +1333,18 @@ export async function getNotificationsForUser() {
     FROM "UserNotification" as un
     JOIN "Notification" as n ON un."notificationId" = n.id
     JOIN "User" as u ON n."authorId" = u.id
-    WHERE un."userId" = ${user.id}
+    WHERE un."userId" = ${user.id} AND un."isRead" = ${isReadNumber}
     ORDER BY n."createdAt" DESC
+    LIMIT ${limit}
+    OFFSET ${offset}
   `;
 
-  // Manually structure the data to match what the component expects
-  return userNotifications.map(un => ({
+  const totalCount: [{ count: BigInt }] = await prisma.$queryRaw`
+    SELECT COUNT(*) FROM "UserNotification" WHERE "userId" = ${user.id} AND "isRead" = ${isReadNumber}
+  `;
+  const total = Number(totalCount[0].count);
+
+  const notifications = userNotifications.map(un => ({
     id: un.id,
     isRead: un.isRead,
     notification: {
@@ -1347,6 +1358,11 @@ export async function getNotificationsForUser() {
       }
     }
   }));
+
+  return {
+    notifications,
+    hasMore: (offset + notifications.length) < total,
+  };
 }
 
 export async function markNotificationAsRead(userNotificationId: number) {
@@ -1364,10 +1380,14 @@ export async function markNotificationAsRead(userNotificationId: number) {
   if (userNotification?.userId !== user.id) {
     throw new Error('Not authorized to mark this notification');
   }
+  
+  if (userNotification.isRead) {
+    return; // Already read
+  }
 
   await prisma.userNotification.update({
     where: { id: userNotificationId },
-    data: { isRead: true },
+    data: { isRead: true, updatedAt: new Date() },
   });
 
   revalidatePath('/notifications');
