@@ -6,7 +6,7 @@ import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { ROLES } from '@/lib/permissions';
 import ManagePostsClient from '@/app/manage/client';
-import { getPostsForAdmin, getPost } from '@/lib/actions';
+import { getPostsForAdmin, getPost } from '@/lib/actions/postActions';
 import type { Post } from '@prisma/client';
 import Loading from './loading';
 
