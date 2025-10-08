@@ -1,9 +1,6 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -13,73 +10,7 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-enum Role {
-  USER
-  USER_ADMIN
-  SUPER_ADMIN
-}
-
-enum PostType {
-  MOVIE
-  TV_SERIES
-  OTHER
-}
-
-enum PostStatus {
-  DRAFT
-  PUBLISHED
-  PENDING_APPROVAL
-  PENDING_DELETION
-  PRIVATE
-}
-
-enum Visibility {
-  PUBLIC
-  GROUP_ONLY
-}
-
-enum PermissionRequestStatus {
-  NONE
-  PENDING
-  APPROVED
-  REJECTED
-}
-
-
-model User {
-  id                      String    @id @default(cuid())
-  name                    String?
-  email                   String?   @unique
-  emailVerified           DateTime?
-  image                   String?
-  password                String?
-  role                    String    @default("USER")
-  permissionRequestStatus String?   @default("NONE")
-  permissionRequestMessage String?
-  bio                     String?
-  website                 String?
-  twitter                 String?
-  linkedin                String?
-  coverImage              String?
-
-  accounts                Account[]
-  sessions                Session[]
-  posts                   Post[]    @relation("PostAuthor")
-  reviews                 Review[]
-  favoritePosts           FavoritePost[]
-  likedPosts              Post[]    @relation("UserLikes")
-  dislikedPosts           Post[]    @relation("UserDislikes")
-  
-  createdGroups           Group[]   @relation("GroupAuthor")
-  groupMemberships        GroupMember[]
-  
-  notificationsSent       Notification[]
-  userNotifications       UserNotification[]
-
-  createdAt               DateTime  @default(now())
-  updatedAt               DateTime  @updatedAt
-}
-
+// Full-stack auth with NextAuth.js
 model Account {
   id                String  @id @default(cuid())
   userId            String
@@ -115,180 +46,193 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
+model User {
+  id                      String    @id @default(cuid())
+  name                    String?
+  email                   String?   @unique
+  emailVerified           DateTime?
+  image                   String?
+  coverImage              String?
+  bio                     String?
+  website                 String?
+  twitter                 String?
+  linkedin                String?
+  password                String?
+  role                    String    @default("USER")
+  permissionRequestStatus String?   @default("NONE")
+  permissionRequestMessage String?
+
+  accounts          Account[]
+  sessions          Session[]
+  posts             Post[]      @relation("PostAuthor")
+  createdGroups     Group[]     @relation("GroupAuthor")
+  groupMemberships  GroupMember[]
+
+  favoritePosts     FavoritePost[]
+  reviews           Review[]
+  likedPosts        Post[] @relation("LikedPosts")
+  dislikedPosts     Post[] @relation("DislikedPosts")
+
+  createdSeries       Series[]
+  
+  notificationsSent       Notification[]
+  userNotifications       UserNotification[]
+}
+
+enum PostType {
+  MOVIE
+  TV_SERIES
+  OTHER
+}
+
 model Post {
-  id                   Int          @id @default(autoincrement())
+  id                   Int      @id @default(autoincrement())
   title                String
   description          String
   posterUrl            String?
-  authorId             String
-  author               User         @relation("PostAuthor", fields: [authorId], references: [id])
-  status               String       @default("DRAFT")
-  viewCount            Int          @default(0)
-  createdAt            DateTime     @default(now())
-  updatedAt            DateTime     @updatedAt
-  
   year                 Int?
   duration             String?
-  genres               String?
+  genres               String? // Comma-separated
   directors            String?
   mainCast             String?
   imdbRating           Float?
   rottenTomatoesRating Int?
   googleRating         Int?
-
-  type                 PostType     @default(MOVIE)
-
+  status               String   @default("DRAFT")
+  viewCount            Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  
+  type                 PostType @default(MOVIE)
+  
   seriesId             Int?
-  series               Series?      @relation(fields: [seriesId], references: [id])
+  series               Series?  @relation(fields: [seriesId], references: [id])
   orderInSeries        Int?
 
-  reviews              Review[]
-  subtitles            Subtitle[]
-  favoritePosts        FavoritePost[]
-  
-  likedBy              User[]       @relation("UserLikes")
-  dislikedBy           User[]       @relation("UserDislikes")
-  
-  mediaLinks           MediaLink[]
-  
-  // Access Control
-  visibility           Visibility   @default(PUBLIC)
+  visibility           String   @default("PUBLIC") // PUBLIC, GROUP_ONLY
   groupId              Int?
-  group                Group?       @relation(fields: [groupId], references: [id])
+  group                Group?   @relation(fields: [groupId], references: [id], onDelete: SetNull)
+
+  authorId    String
+  author      User     @relation("PostAuthor", fields: [authorId], references: [id])
+  
+  mediaLinks    MediaLink[]
+  reviews       Review[]
+  subtitles     Subtitle[]
+  favoritePosts FavoritePost[]
+  
+  likedBy       User[] @relation("LikedPosts")
+  dislikedBy    User[] @relation("DislikedPosts")
 
   @@index([authorId])
   @@index([seriesId])
-  @@index([groupId])
+}
+
+model Series {
+  id          Int      @id @default(autoincrement())
+  title       String
+  description String?
+  posts       Post[]
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id])
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model MediaLink {
   id      Int    @id @default(autoincrement())
+  type    String // 'trailer' or 'image'
+  url     String
   postId  Int
   post    Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
-  type    String // "trailer" or "image"
-  url     String
 }
 
-
-model Series {
-  id          Int      @id @default(autoincrement())
-  title       String   @unique
-  description String?
-  authorId    String
-  posts       Post[]
-  author      User     @relation(fields: [authorId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  @@index([authorId])
+model Subtitle {
+  id            Int      @id @default(autoincrement())
+  language      String
+  url           String
+  uploaderName  String
+  createdAt     DateTime @default(now())
+  postId        Int
+  post          Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
-
 
 model Review {
   id        Int      @id @default(autoincrement())
-  comment   String
   rating    Int
+  comment   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   postId    Int
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  
   parentId  Int?
   parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replies   Review[] @relation("ReviewReplies")
-
-  @@index([userId])
-  @@index([postId])
-}
-
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  url          String
-  uploaderName String
-  postId       Int
-  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  createdAt    DateTime @default(now())
-
-  @@index([postId])
 }
 
 model FavoritePost {
+  id        Int      @id @default(autoincrement())
   userId    String
   postId    Int
+  createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
 
-  @@id([userId, postId])
+  @@unique([userId, postId])
 }
 
-// Models for group-based access control
+// Models for User Groups
 model Group {
   id          Int      @id @default(autoincrement())
   name        String   @unique
   description String?
+  members     GroupMember[]
+  posts       Post[]
   authorId    String
   author      User     @relation("GroupAuthor", fields: [authorId], references: [id])
   createdAt   DateTime @default(now())
-  
-  posts       Post[]
-  members     GroupMember[]
+  updatedAt   DateTime @updatedAt
 }
 
 model GroupMember {
   id        Int      @id @default(autoincrement())
   groupId   Int
   userId    String
-  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  role      String   // e.g., 'ADMIN', 'MEMBER'
-  joinedAt  DateTime @default(now())
+  role      String   @default("MEMBER") // e.g., MEMBER, ADMIN
+  createdAt DateTime @default(now())
+
+  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id])
 
   @@unique([groupId, userId])
 }
 
-// Independent models for direct notifications
+
 model Notification {
-  id          Int      @id @default(autoincrement())
-  title       String
-  message     String
-  createdAt   DateTime @default(now())
-  authorId    String
-  groupId     Int?
+  id        Int      @id @default(autoincrement())
+  title     String
+  message   String
+  createdAt DateTime @default(now())
   
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+  
+  groupId   Int? // Optional: for group-specific notifications
+
   userNotifications UserNotification[]
 }
 
 model UserNotification {
-  id              Int      @id @default(autoincrement())
-  userId          String
-  notificationId  Int
-  isRead          Boolean  @default(false)
+  id             Int      @id @default(autoincrement())
+  isRead         Boolean  @default(false)
   
-  notification    Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  user           User     @relation(fields: [userId], references: [id])
+  
+  notificationId Int
+  notification   Notification @relation(fields: [notificationId], references: [id])
 
   @@unique([userId, notificationId])
-}
-
-// Unused models from original schema
-model Episode {
-  id          Int      @id @default(autoincrement())
-  title       String
-  description String?
-  episodeNumber Int
-  seasonNumber Int
-  releaseDate DateTime?
-  duration    Int?      // in minutes
-  posterUrl   String?
-  seriesId    Int
-}
-
-model MetaData {
-  id        Int      @id @default(autoincrement())
-  key       String
-  value     String
-  postId    Int
 }
