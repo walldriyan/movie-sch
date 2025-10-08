@@ -289,6 +289,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
   const [formError, setFormError] = useState<string | null>(null);
   const [detailedGroup, setDetailedGroup] = useState<GroupWithDetails | null>(null);
   const [manageMembersDialogOpen, setManageMembersDialogOpen] = useState(false);
+  const [debugError, setDebugError] = useState<any>(null);
   const currentUser = useCurrentUser();
   const { toast } = useToast();
 
@@ -322,6 +323,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
   const handleCreateGroup = async (values: GroupFormValues) => {
     startFormSubmitTransition(async () => {
         setFormError(null);
+        setDebugError(null);
         try {
           await createGroup(values.name, values.description || null);
           toast({ title: 'Group Created', description: `Group "${values.name}" has been created.` });
@@ -330,30 +332,35 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
           await fetchGroups();
         } catch (error: any) {
           setFormError(error.message || 'An unknown error occurred.');
+          setDebugError(error);
         }
     });
   };
   
   const handleDeleteGroup = async (groupId: number) => {
     startActionTransition(async () => {
+      setDebugError(null);
         try {
             await deleteGroup(groupId);
             toast({ title: 'Group Deleted' });
             fetchGroups();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
+            setDebugError(error);
         }
     });
   }
   
   const handleApproveGroup = (groupId: number) => {
     startActionTransition(async () => {
+        setDebugError(null);
         try {
             await updateGroup(groupId, { isPublic: true });
             toast({ title: 'Group Approved'});
             fetchGroups();
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error approving group', description: error.message });
+            setDebugError(error);
         }
     });
   };
@@ -531,6 +538,18 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
             isOpen={manageMembersDialogOpen}
             onOpenChange={setManageMembersDialogOpen}
         />
+      )}
+       {debugError && (
+        <div className="mt-8 p-4 border border-dashed rounded-lg text-left bg-card">
+            <h2 className="text-lg font-semibold mb-2 text-destructive">Debug Error Information</h2>
+            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+              {JSON.stringify({
+                  message: debugError.message,
+                  stack: debugError.stack,
+                  ...debugError
+              }, null, 2)}
+            </pre>
+          </div>
       )}
     </>
   );

@@ -126,7 +126,7 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
     ]);
     
     revalidatePath('/admin/groups');
-    revalidatePath(`/groups/${groupId}`);
+revalidatePath(`/groups/${groupId}`);
 }
 
 export async function requestToJoinGroup(groupId: number) {
@@ -303,22 +303,18 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   return { series: processedSeries, totalSeries };
 }
 
-export async function updateGroup(groupId: number, data: { name?: string; description?: string | null; isPublic?: boolean }) {
+export async function updateGroup(groupId: number, data: Prisma.GroupUpdateInput) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
     }
-
-    const updateData: Prisma.GroupUpdateInput = {};
-    if (data.name) updateData.name = data.name;
-    if (data.description !== undefined) updateData.description = data.description;
-    if (data.isPublic !== undefined) updateData.isPublic = data.isPublic;
     
     await prisma.group.update({
         where: { id: groupId },
-        data: updateData,
+        data: data,
     });
     revalidatePath('/admin/groups');
+    revalidatePath(`/groups/${groupId}`);
 }
 
 export async function deleteGroup(groupId: number) {
