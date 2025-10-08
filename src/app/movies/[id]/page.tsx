@@ -3,7 +3,8 @@
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
-import { getPost, canUserDownloadSubtitle, getUsers, deleteSubtitle, createReview, deleteReview } from '@/lib/actions';
+import { getPost, canUserDownloadSubtitle, deleteSubtitle, createReview, deleteReview } from '@/lib/actions/postActions';
+import { getUsers } from '@/lib/actions/userActions';
 import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -586,3 +587,6 @@ export default function MoviePage() {
     
 
 
+
+
+    
