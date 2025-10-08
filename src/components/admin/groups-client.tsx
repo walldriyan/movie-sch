@@ -76,6 +76,7 @@ import { z } from 'zod';
 import { createGroup, getGroups, updateGroup, deleteGroup, getGroupDetails, updateGroupMembers, respondToGroupRequest } from '@/lib/actions/groupActions';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
+import { cn } from '@/lib/utils';
 
 type GroupWithCount = Group & { _count: { members: number }, pendingMembersCount: number };
 type DetailedGroupMember = GroupMember & { user: User };
@@ -506,3 +507,5 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
     </>
   );
 }
+
+    
