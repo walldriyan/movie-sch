@@ -34,7 +34,7 @@ import { useToast } from '@/hooks/use-toast';
 const notificationSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   message: z.string().min(10, 'Message is required'),
-  groupId: z.coerce.number().optional(),
+  groupId: z.union([z.string(), z.coerce.number()]).optional(),
 });
 
 type NotificationFormValues = z.infer<typeof notificationSchema>;
@@ -57,6 +57,7 @@ export default function SendNotificationPage() {
     defaultValues: {
       title: '',
       message: '',
+      groupId: 'ALL_USERS',
     },
   });
 
@@ -65,10 +66,12 @@ export default function SendNotificationPage() {
   const handleSubmit = async (values: NotificationFormValues) => {
     setFormError(null);
     try {
+      const groupIdToSend = values.groupId === 'ALL_USERS' ? undefined : Number(values.groupId);
+
       await sendNotification({
         title: values.title,
         message: values.message,
-        groupId: values.groupId,
+        groupId: groupIdToSend,
       });
       
       toast({
@@ -139,14 +142,14 @@ export default function SendNotificationPage() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Target Group (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={String(field.value || '')}>
+                    <Select onValueChange={field.onChange} defaultValue={String(field.value || 'ALL_USERS')}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Select a group to notify" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">All Users</SelectItem>
+                        <SelectItem value="ALL_USERS">All Users</SelectItem>
                         {groups.length > 0 ? groups.map(group => (
                           <SelectItem key={group.id} value={String(group.id)}>{group.name}</SelectItem>
                         )) : <p className="p-2 text-xs text-muted-foreground">Loading groups...</p>}
