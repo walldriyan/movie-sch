@@ -1,3 +1,5 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 datasource db {
   provider = "sqlite"
@@ -21,26 +23,28 @@ model Post {
   imdbRating            Float?
   rottenTomatoesRating  Int?
   googleRating          Int?
-  status                String           @default("DRAFT")
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
   viewCount             Int              @default(0)
   authorId              String
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+  status                String           @default("DRAFT")
+  favoritePosts         FavoritePost[]
+  reviews               Review[]
+  subtitles             Subtitle[]
+  mediaLinks            MediaLink[]
   seriesId              Int?
+  series                Series?          @relation(fields: [seriesId], references: [id])
   orderInSeries         Int?
   visibility            String           @default("PUBLIC")
   groupId               Int?
-  favoritePosts         FavoritePost[]
-  likedBy               User[]           @relation("PostLikes")
-  dislikedBy            User[]           @relation("PostDislikes")
-  reviews               Review[]
-  author                User             @relation("PostAuthor", fields: [authorId], references: [id])
-  series                Series?          @relation(fields: [seriesId], references: [id])
-  subtitles             Subtitle[]
-  mediaLinks            MediaLink[]
   group                 Group?           @relation(fields: [groupId], references: [id])
+  type                  String           @default("MOVIE")
   episodes              Episode[]
   metaData              MetaData[]
+
+  author     User     @relation("PostAuthor", fields: [authorId], references: [id])
+  likedBy    User[]   @relation("PostLikes")
+  dislikedBy User[]   @relation("PostDislikes")
 
   @@index([authorId])
   @@index([seriesId])
@@ -54,6 +58,7 @@ model User {
   image                   String?
   password                String?
   role                    String                 @default("USER")
+  permissions             String[]
   permissionRequestStatus String?
   permissionRequestMessage String?
   bio                     String?
@@ -61,20 +66,21 @@ model User {
   twitter                 String?
   linkedin                String?
   coverImage              String?
-  createdAt               DateTime               @default(now())
-  updatedAt               DateTime               @updatedAt
   accounts                Account[]
   sessions                Session[]
+  createdAt               DateTime               @default(now())
+  updatedAt               DateTime               @updatedAt
+
   posts                   Post[]                 @relation("PostAuthor")
-  createdSeries           Series[]               @relation("SeriesAuthor")
+  createdSeries           Series[]
   createdGroups           Group[]                @relation("GroupAuthor")
-  groupMemberships        GroupMember[]
-  notificationsSent       Notification[]
+  reviews                 Review[]
+  favoritePosts           FavoritePost[]
+  notificationsSent       Notification[]         @relation("NotificationAuthor")
   userNotifications       UserNotification[]
+
   likedPosts              Post[]                 @relation("PostLikes")
   dislikedPosts           Post[]                 @relation("PostDislikes")
-  favoritePosts           FavoritePost[]
-  reviews                 Review[]
 }
 
 model Account {
@@ -121,39 +127,22 @@ model Review {
   userId    String
   user      User     @relation(fields: [userId], references: [id])
   postId    Int
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   parentId  Int?
-  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id])
+  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   replies   Review[] @relation("ReviewReplies")
 }
 
+
 model FavoritePost {
+  id        Int      @id @default(autoincrement())
   userId    String
   postId    Int
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
 
-  @@id([userId, postId])
-}
-
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  url          String
-  uploaderName String
-  postId       Int
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
-}
-
-model MediaLink {
-  id     Int    @id @default(autoincrement())
-  type   String // 'trailer' or 'image'
-  url    String
-  postId Int
-  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([userId, postId])
 }
 
 model Series {
@@ -162,7 +151,7 @@ model Series {
   description String?
   authorId    String
   posts       Post[]
-  author      User     @relation("SeriesAuthor", fields: [authorId], references: [id])
+  author      User     @relation(fields: [authorId], references: [id])
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -199,6 +188,8 @@ model Episode {
   episodeNumber Int
   seasonNumber  Int
   releaseDate DateTime?
+  duration    String?
+  posterUrl   String?
   postId      Int
   post        Post     @relation(fields: [postId], references: [id])
   createdAt   DateTime @default(now())
@@ -215,25 +206,39 @@ model MetaData {
   updatedAt DateTime @updatedAt
 }
 
+model Subtitle {
+  id            Int      @id @default(autoincrement())
+  language      String
+  url           String
+  uploaderName  String
+  postId        Int
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  post          Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+// Independent Notification Models
 model Notification {
-  id                Int       @id @default(autoincrement())
+  id                Int      @id @default(autoincrement())
   title             String
   message           String
   authorId          String
   groupId           Int?
-  author            User      @relation(fields: [authorId], references: [id])
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  author            User     @relation("NotificationAuthor", fields: [authorId], references: [id])
   userNotifications UserNotification[]
 }
 
 model UserNotification {
-  id             Int          @id @default(autoincrement())
+  id             Int      @id @default(autoincrement())
   userId         String
-  user           User         @relation(fields: [userId], references: [id])
   notificationId Int
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  user           User     @relation(fields: [userId], references: [id])
   notification   Notification @relation(fields: [notificationId], references: [id])
-  isRead         Boolean      @default(false)
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+
+  @@unique([userId, notificationId])
 }
