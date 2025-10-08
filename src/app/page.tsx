@@ -234,7 +234,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                 {groups.map((group) => {
                   const groupImageUrl = `https://picsum.photos/seed/${group.id}/200/200`;
                   return (
-                    <Link href={`#`} key={group.id} className="flex flex-col items-center group">
+                    <Link href={`/groups/${group.id}`} key={group.id} className="flex flex-col items-center group">
                        <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
                          <Image 
                             src={groupImageUrl} 

@@ -1182,7 +1182,7 @@ export async function createGroup(name: string, description: string | null): Pro
 
 export async function getGroupDetails(groupId: number) {
     const session = await auth();
-    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    if (!session?.user) {
         throw new Error('Not authorized');
     }
     return prisma.group.findUnique({
@@ -1193,6 +1193,7 @@ export async function getGroupDetails(groupId: number) {
                     user: true,
                 },
             },
+            author: true
         },
     });
 }
@@ -1231,6 +1232,7 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
     ]);
     
     revalidatePath('/admin/groups');
+    revalidatePath(`/groups/${groupId}`);
 }
 
 // NEW NOTIFICATION ACTIONS
@@ -1249,21 +1251,21 @@ export async function sendNotification({
     throw new Error('Not authorized');
   }
 
-  const createdDate = new Date().toISOString();
+  const createdDate = new Date();
   const groupIdValue = groupId ? groupId : null;
 
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "Notification" ("title", "message", "authorId", "groupId", "createdAt") VALUES (?, ?, ?, ?, ?)`,
-    title,
-    message,
-    user.id,
-    groupIdValue,
-    createdDate
-  );
+  const newNotification = await prisma.notification.create({
+      data: {
+          title,
+          message,
+          authorId: user.id,
+          groupId: groupIdValue,
+          createdAt: createdDate,
+          updatedAt: createdDate,
+      },
+  });
 
-  const [notification]: Notification[] = await prisma.$queryRaw`SELECT * FROM "Notification" ORDER BY id DESC LIMIT 1`;
-
-  if (!notification) {
+  if (!newNotification) {
     throw new Error("Failed to create notification.");
   }
 
@@ -1285,13 +1287,17 @@ export async function sendNotification({
     return;
   }
 
-  const userNotificationData = targetUserIds.map(userId => 
-    `('${userId}', ${notification.id}, 0, '${createdDate}')`
-  ).join(',');
+  const userNotificationData = targetUserIds.map(userId => ({
+    userId,
+    notificationId: newNotification.id,
+    isRead: false,
+    createdAt: createdDate,
+    updatedAt: createdDate
+  }));
 
-  await prisma.$executeRawUnsafe(
-    `INSERT INTO "UserNotification" ("userId", "notificationId", "isRead", "createdAt") VALUES ${userNotificationData}`
-  );
+  await prisma.userNotification.createMany({
+    data: userNotificationData
+  });
 
   revalidatePath('/notifications');
   revalidatePath('/admin/notifications');
@@ -1308,50 +1314,38 @@ export async function getNotificationsForUser(
   }
 
   const offset = (page - 1) * limit;
-  const isReadNumber = isRead ? 1 : 0;
-  
-  const userNotifications: any[] = await prisma.$queryRaw`
-    SELECT
-        un.id as id,
-        un."isRead",
-        n.title,
-        n.message,
-        n."createdAt",
-        u.name as authorName,
-        u.image as authorImage,
-        n.id as notificationId
-    FROM "UserNotification" as un
-    JOIN "Notification" as n ON un."notificationId" = n.id
-    JOIN "User" as u ON n."authorId" = u.id
-    WHERE un."userId" = ${user.id} AND un."isRead" = ${isReadNumber}
-    ORDER BY n."createdAt" DESC
-    LIMIT ${limit}
-    OFFSET ${offset}
-  `;
 
-  const totalCount: [{ count: BigInt }] = await prisma.$queryRaw`
-    SELECT COUNT(*) FROM "UserNotification" WHERE "userId" = ${user.id} AND "isRead" = ${isReadNumber}
-  `;
-  const total = Number(totalCount[0].count);
-
-  const notifications = userNotifications.map(un => ({
-    id: un.id,
-    isRead: un.isRead,
-    notification: {
-      id: un.notificationId,
-      title: un.title,
-      message: un.message,
-      createdAt: un.createdAt,
-      author: {
-        name: un.authorName,
-        image: un.authorImage
+  const userNotifications = await prisma.userNotification.findMany({
+    where: {
+      userId: user.id,
+      isRead: isRead
+    },
+    include: {
+      notification: {
+        include: {
+          author: true
+        }
       }
+    },
+    orderBy: {
+      notification: {
+        createdAt: 'desc'
+      }
+    },
+    take: limit,
+    skip: offset
+  });
+
+  const totalCount = await prisma.userNotification.count({
+    where: {
+      userId: user.id,
+      isRead: isRead
     }
-  }));
+  });
 
   return {
-    notifications,
-    hasMore: (offset + notifications.length) < total,
+    notifications: userNotifications,
+    hasMore: (offset + userNotifications.length) < totalCount,
   };
 }
 
