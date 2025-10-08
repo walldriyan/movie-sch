@@ -1,7 +1,7 @@
 
 'use server';
 
-import { PrismaClient, Group, Series, GroupMemberRole } from '@prisma/client';
+import { PrismaClient, Group, Series, GroupMemberRole, Prisma } from '@prisma/client';
 import { auth } from '@/auth';
 import { revalidatePath } from 'next/cache';
 import { ROLES } from '@/lib/permissions';
@@ -10,7 +10,7 @@ const prisma = new PrismaClient();
 
 // Group Actions
 export async function getGroups() {
-    return prisma.group.findMany({
+    const groups = await prisma.group.findMany({
         include: {
             _count: {
                 select: { members: true },
@@ -18,6 +18,21 @@ export async function getGroups() {
         },
         orderBy: { name: 'asc' },
     });
+
+    const groupsWithPendingCount = await Promise.all(groups.map(async (group) => {
+        const pendingCount = await prisma.groupMember.count({
+            where: {
+                groupId: group.id,
+                role: 'PENDING',
+            },
+        });
+        return {
+            ...group,
+            pendingMembersCount: pendingCount,
+        };
+    }));
+
+    return groupsWithPendingCount;
 }
 
 export async function createGroup(name: string, description: string | null): Promise<Group> {
