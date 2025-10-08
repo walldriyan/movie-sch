@@ -355,7 +355,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
     startActionTransition(async () => {
         setDebugError(null);
         try {
-            await updateGroup(groupId, { isPublic: true });
+            await updateGroup(groupId, { status: 'PUBLISHED' });
             toast({ title: 'Group Approved'});
             fetchGroups();
         } catch (error: any) {
@@ -477,8 +477,8 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                       </button>
                     </TableCell>
                     <TableCell>
-                        <Badge variant={group.isPublic ? "default" : "secondary"}>
-                            {group.isPublic ? 'Published' : 'Pending'}
+                        <Badge variant={group.status === 'PUBLISHED' ? "default" : "secondary"}>
+                            {group.status || 'PENDING'}
                         </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -496,7 +496,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
-                             {currentUser?.role === ROLES.SUPER_ADMIN && !group.isPublic && (
+                             {currentUser?.role === ROLES.SUPER_ADMIN && group.status !== 'PUBLISHED' && (
                                 <DropdownMenuItem onSelect={() => handleApproveGroup(group.id)}>
                                     <CheckCircle className="mr-2 h-4 w-4" /> Approve
                                 </DropdownMenuItem>

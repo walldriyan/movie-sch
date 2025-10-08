@@ -14,12 +14,12 @@ export async function getGroups() {
     const user = session?.user;
 
     let where: Prisma.GroupWhereInput = {
-        // By default, only show public/approved groups for non-admins
+        // By default, only show published groups for non-admins
     };
 
     // Super admins can see all groups, including pending ones
     if (!user || user.role !== ROLES.SUPER_ADMIN) {
-        where.isPublic = true;
+        where.status = 'PUBLISHED';
     }
 
     const groups = await prisma.group.findMany({
@@ -54,16 +54,16 @@ export async function createGroup(name: string, description: string | null): Pro
         throw new Error('Not authorized to create groups');
     }
 
-    // Super Admin creates a group that is instantly public/approved.
-    // User Admin creates a group that is not public (pending approval).
-    const isPublic = session.user.role === ROLES.SUPER_ADMIN;
+    // Super Admin creates a group that is instantly published.
+    // User Admin creates a group that is pending approval.
+    const status = session.user.role === ROLES.SUPER_ADMIN ? 'PUBLISHED' : 'PENDING';
 
     const newGroup = await prisma.group.create({
         data: {
             name,
             description,
             authorId: session.user.id,
-            isPublic: isPublic,
+            status: status,
         },
     });
     revalidatePath('/admin/groups');
@@ -311,7 +311,7 @@ export async function updateGroup(groupId: number, data: Prisma.GroupUpdateInput
     
     await prisma.group.update({
         where: { id: groupId },
-        data: data,
+        data,
     });
     revalidatePath('/admin/groups');
     revalidatePath(`/groups/${groupId}`);
