@@ -14,7 +14,7 @@ import { MovieStatus, ROLES } from '@/lib/permissions';
 import type { Post } from '@/lib/types';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { updatePostStatus } from '@/lib/actions';
+import { updatePostStatus } from '@/lib/actions/postActions';
 
 interface AdminActionsProps {
   post: Post;
