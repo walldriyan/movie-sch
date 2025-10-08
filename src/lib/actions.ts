@@ -1306,28 +1306,36 @@ export async function getNotificationsForUser() {
     return [];
   }
   
-  const userNotifications = await prisma.userNotification.findMany({
-    where: { userId: user.id },
-    include: {
-      notification: {
-        include: {
-          author: {
-            select: {
-              name: true,
-              image: true,
-            }
-          }
-        }
-      }
-    },
-    orderBy: {
-      notification: {
-        createdAt: 'desc',
+  const userNotifications: any[] = await prisma.$queryRaw`
+    SELECT
+        un.id,
+        un.isRead,
+        n.title,
+        n.message,
+        n.createdAt,
+        u.name as authorName,
+        u.image as authorImage
+    FROM UserNotification un
+    JOIN Notification n ON un.notificationId = n.id
+    JOIN User u ON n.authorId = u.id
+    WHERE un.userId = ${user.id}
+    ORDER BY n.createdAt DESC
+  `;
+
+  // Manually structure the data to match what the component expects
+  return userNotifications.map(un => ({
+    id: un.id,
+    isRead: un.isRead,
+    notification: {
+      title: un.title,
+      message: un.message,
+      createdAt: un.createdAt,
+      author: {
+        name: un.authorName,
+        image: un.authorImage
       }
     }
-  });
-
-  return userNotifications;
+  }));
 }
 
 export async function markNotificationAsRead(userNotificationId: number) {
