@@ -137,7 +137,7 @@ const ManageMembersDialog = ({ group, allUsers, onUpdate, isOpen, onOpenChange }
                 await respondToGroupRequest(membershipId, approve);
                 toast({ title: `Request ${approve ? 'Approved' : 'Declined'}`});
                 onUpdate();
-            } catch (error: any) => {
+            } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Error', description: error.message });
             }
         });
@@ -574,3 +574,5 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
     </>
   );
 }
+
+    
