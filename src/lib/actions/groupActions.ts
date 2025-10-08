@@ -119,14 +119,13 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
             data: membersToAdd.map(userId => ({
                 groupId,
                 userId,
-                role: 'MEMBER',
             })),
             skipDuplicates: true,
         }),
     ]);
     
     revalidatePath('/admin/groups');
-revalidatePath(`/groups/${groupId}`);
+    revalidatePath(`/groups/${groupId}`);
 }
 
 export async function requestToJoinGroup(groupId: number) {
