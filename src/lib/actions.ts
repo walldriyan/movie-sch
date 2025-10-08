@@ -1258,7 +1258,6 @@ export async function sendNotification({
     throw new Error('Not authorized');
   }
 
-  // Use raw query to create notification
   const createdDate = new Date().toISOString();
   const groupIdValue = groupId ? groupId : null;
 
@@ -1278,7 +1277,6 @@ export async function sendNotification({
     throw new Error("Failed to create notification.");
   }
 
-
   let targetUserIds: string[] = [];
   if (groupId) {
     const groupMembers = await prisma.groupMember.findMany({
@@ -1287,7 +1285,7 @@ export async function sendNotification({
     });
     targetUserIds = groupMembers.map(member => member.userId);
   } else {
-     const allUsers = await prisma.user.findMany({
+    const allUsers = await prisma.user.findMany({
       select: { id: true },
     });
     targetUserIds = allUsers.map(u => u.id);
@@ -1320,18 +1318,18 @@ export async function getNotificationsForUser() {
   const userNotifications: any[] = await prisma.$queryRaw`
     SELECT
         un.id,
-        un.isRead,
+        un."isRead",
         n.title,
         n.message,
-        n.createdAt,
+        n."createdAt",
         u.name as authorName,
         u.image as authorImage,
         n.id as notificationId
-    FROM UserNotification un
-    JOIN Notification n ON un.notificationId = n.id
-    JOIN User u ON n.authorId = u.id
-    WHERE un.userId = ${user.id}
-    ORDER BY n.createdAt DESC
+    FROM "UserNotification" as un
+    JOIN "Notification" as n ON un."notificationId" = n.id
+    JOIN "User" as u ON n."authorId" = u.id
+    WHERE un."userId" = ${user.id}
+    ORDER BY n."createdAt" DESC
   `;
 
   // Manually structure the data to match what the component expects
