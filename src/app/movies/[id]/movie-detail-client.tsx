@@ -35,7 +35,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Post as PostType, User } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions';
+import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions/postActions';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
 import { Skeleton } from '@/components/ui/skeleton';
