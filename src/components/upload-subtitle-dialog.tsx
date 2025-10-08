@@ -19,7 +19,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -28,7 +27,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Upload, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { uploadSubtitle } from '@/lib/actions';
+import { uploadSubtitle } from '@/lib/actions/postActions';
 import { Subtitle } from '@prisma/client';
 
 const uploadSchema = z.object({
