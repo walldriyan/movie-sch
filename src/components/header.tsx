@@ -1,8 +1,8 @@
 
+'use client';
 
-'use server';
-
-import { auth } from '@/auth';
+import { usePathname } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import HeaderClient from './header-client';
 import { ROLES } from '@/lib/permissions';
 import { Button } from './ui/button';
@@ -10,9 +10,15 @@ import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import React from 'react';
 
-export default async function Header() {
-  const session = await auth();
+export default function Header() {
+  const pathname = usePathname();
+  const { data: session } = useSession();
   const user = session?.user;
+
+  // Don't render the header on login or register pages
+  if (pathname === '/login' || pathname === '/register') {
+    return null;
+  }
 
   const renderCreateButton = () => {
     if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
