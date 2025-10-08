@@ -5,7 +5,7 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { savePost, deletePost, getPostsForAdmin, updatePostStatus } from '@/lib/actions';
+import { savePost, deletePost, getPostsForAdmin, updatePostStatus } from '@/lib/actions/postActions';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
