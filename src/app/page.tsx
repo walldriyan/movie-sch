@@ -3,11 +3,11 @@
 'use server';
 
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Users2 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getPosts, getUsers } from '@/lib/actions';
-import type { User } from '@/lib/types';
+import { getPosts, getUsers, getGroups } from '@/lib/actions';
+import type { User, Group } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -24,7 +24,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import Image from 'next/image';
 
+type GroupWithCount = Group & { _count: { members: number } };
 
 export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string } }) {
   const timeFilter = searchParams?.timeFilter;
@@ -35,6 +37,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   const { posts: fetchedPosts, totalPages } = await getPosts({ page: currentPage, limit: 10, filters: { timeFilter, sortBy, type: typeFilter } });
   const posts = fetchedPosts as any[];
   const users = (await getUsers()) as User[];
+  const groups = (await getGroups()) as GroupWithCount[];
   
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
@@ -216,6 +219,34 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
                       <div className='text-center mt-2'>
                         <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
                         <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
+                      </div>
+                    </Link>
+                  )
+                })}
+              </div>
+            </section>
+            
+            <Separator className="my-12 bg-gray-800" />
+
+            <section>
+              <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users2 /> Popular Groups</h2>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                {groups.map((group, index) => {
+                  const groupImageUrl = `https://picsum.photos/seed/${group.id}/400/400`;
+                  return (
+                    <Link href={`#`} key={group.id} className="flex flex-col items-center group text-center">
+                       <div className="relative w-32 h-32">
+                         <Image 
+                            src={groupImageUrl} 
+                            alt={group.name} 
+                            width={128}
+                            height={128}
+                            className="w-full h-full object-cover rounded-3xl border-4 border-transparent group-hover:border-primary transition-colors"
+                          />
+                       </div>
+                      <div className='mt-3'>
+                        <h3 className="font-semibold group-hover:text-primary">{group.name}</h3>
+                        <p className="text-sm text-muted-foreground">{group._count.members} Members</p>
                       </div>
                     </Link>
                   )

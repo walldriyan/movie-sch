@@ -145,7 +145,7 @@ export default function SendNotificationPage() {
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="ALL_USERS">All Users</SelectItem>
+                        <SelectItem value="">All Users</SelectItem>
                         {groups.length > 0 ? groups.map(group => (
                           <SelectItem key={group.id} value={String(group.id)}>{group.name}</SelectItem>
                         )) : <p className="p-2 text-xs text-muted-foreground">Loading groups...</p>}

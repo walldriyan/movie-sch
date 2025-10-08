@@ -712,22 +712,17 @@ export async function toggleFavoritePost(postId: number) {
   }
   const userId = session.user.id;
 
-  const existingFavorite = await prisma.favoritePost.findUnique({
+  const existingFavorite = await prisma.favoritePost.findFirst({
     where: {
-      userId_postId: {
-        userId,
-        postId,
-      },
+      userId,
+      postId,
     },
   });
 
   if (existingFavorite) {
     await prisma.favoritePost.delete({
       where: {
-        userId_postId: {
-          userId,
-          postId,
-        },
+        id: existingFavorite.id,
       },
     });
   } else {
@@ -811,7 +806,7 @@ export async function getPostsByUserId(userId: string, includePrivate: boolean =
   
   return userPosts.map(post => ({
     ...post,
-    genres: post.genres ? post.genres.split(',') : [],
+    genres: p.genres ? p.genres.split(',') : [],
   }));
 }
 
@@ -1157,10 +1152,6 @@ export async function canUserDownloadSubtitle(subtitleId: number): Promise<boole
 
 // Group Actions
 export async function getGroups() {
-    const session = await auth();
-    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
-        throw new Error('Not authorized');
-    }
     return prisma.group.findMany({
         include: {
             _count: {
@@ -1262,12 +1253,11 @@ export async function sendNotification({
   const groupIdValue = groupId ? groupId : null;
 
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "Notification" ("title", "message", "authorId", "groupId", "createdAt", "updatedAt") VALUES (?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO "Notification" ("title", "message", "authorId", "groupId", "createdAt") VALUES (?, ?, ?, ?, ?)`,
     title,
     message,
     user.id,
     groupIdValue,
-    createdDate,
     createdDate
   );
 
@@ -1296,11 +1286,11 @@ export async function sendNotification({
   }
 
   const userNotificationData = targetUserIds.map(userId => 
-    `('${userId}', ${notification.id}, 0, '${createdDate}', '${createdDate}')`
+    `('${userId}', ${notification.id}, 0, '${createdDate}')`
   ).join(',');
 
   await prisma.$executeRawUnsafe(
-    `INSERT INTO "UserNotification" ("userId", "notificationId", "isRead", "createdAt", "updatedAt") VALUES ${userNotificationData}`
+    `INSERT INTO "UserNotification" ("userId", "notificationId", "isRead", "createdAt") VALUES ${userNotificationData}`
   );
 
   revalidatePath('/notifications');
@@ -1322,7 +1312,7 @@ export async function getNotificationsForUser(
   
   const userNotifications: any[] = await prisma.$queryRaw`
     SELECT
-        un.id,
+        un.id as id,
         un."isRead",
         n.title,
         n.message,
