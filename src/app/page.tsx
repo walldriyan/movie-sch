@@ -230,21 +230,21 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
             <section>
               <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users2 /> Popular Groups</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {groups.map((group, index) => {
-                  const groupImageUrl = `https://picsum.photos/seed/${group.id}/400/400`;
+              <div className="flex flex-wrap items-start justify-center gap-x-8 gap-y-4">
+                {groups.map((group) => {
+                  const groupImageUrl = `https://picsum.photos/seed/${group.id}/200/200`;
                   return (
-                    <Link href={`#`} key={group.id} className="flex flex-col items-center group text-center">
-                       <div className="relative w-32 h-32">
+                    <Link href={`#`} key={group.id} className="flex flex-col items-center group">
+                       <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
                          <Image 
                             src={groupImageUrl} 
                             alt={group.name} 
-                            width={128}
-                            height={128}
-                            className="w-full h-full object-cover rounded-3xl border-4 border-transparent group-hover:border-primary transition-colors"
+                            width={96}
+                            height={96}
+                            className="w-full h-full object-cover"
                           />
-                       </div>
-                      <div className='mt-3'>
+                       </Avatar>
+                      <div className='text-center mt-2'>
                         <h3 className="font-semibold group-hover:text-primary">{group.name}</h3>
                         <p className="text-sm text-muted-foreground">{group._count.members} Members</p>
                       </div>
