@@ -14,12 +14,12 @@ export async function getGroups() {
     const user = session?.user;
 
     let where: Prisma.GroupWhereInput = {
-        isPublic: true // By default, only show public/approved groups
+        // By default, only show public/approved groups for non-admins
     };
 
     // Super admins can see all groups, including pending ones
-    if (user && user.role === ROLES.SUPER_ADMIN) {
-        where = {};
+    if (!user || user.role !== ROLES.SUPER_ADMIN) {
+        where.isPublic = true;
     }
 
     const groups = await prisma.group.findMany({
@@ -121,6 +121,7 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
                 userId,
                 role: 'MEMBER',
             })),
+            skipDuplicates: true,
         }),
     ]);
     
@@ -302,15 +303,20 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   return { series: processedSeries, totalSeries };
 }
 
-export async function updateGroup(groupId: number, data: { name: string; description?: string | null; isPublic?: boolean }) {
+export async function updateGroup(groupId: number, data: { name?: string; description?: string | null; isPublic?: boolean }) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
     }
+
+    const updateData: Prisma.GroupUpdateInput = {};
+    if (data.name) updateData.name = data.name;
+    if (data.description !== undefined) updateData.description = data.description;
+    if (data.isPublic !== undefined) updateData.isPublic = data.isPublic;
     
     await prisma.group.update({
         where: { id: groupId },
-        data,
+        data: updateData,
     });
     revalidatePath('/admin/groups');
 }
