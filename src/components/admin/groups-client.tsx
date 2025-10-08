@@ -446,10 +446,10 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center">
+                      <button onClick={() => openManageMembersDialog(group)} className="flex items-center hover:bg-muted/50 rounded-md -m-2 p-2 transition-colors cursor-pointer">
                         <ShieldQuestion className="h-4 w-4 mr-2 text-muted-foreground" />
                         {group.pendingMembersCount > 0 ? (<Badge variant="destructive">{group.pendingMembersCount}</Badge>) : (<span>{group.pendingMembersCount}</span>)}
-                      </div>
+                      </button>
                     </TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
@@ -507,5 +507,3 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
     </>
   );
 }
-
-    
