@@ -48,6 +48,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
 } from '@/components/ui/dropdown-menu';
 import {
   Command,
@@ -131,7 +137,7 @@ const ManageMembersDialog = ({ group, allUsers, onUpdate, isOpen, onOpenChange }
                 await respondToGroupRequest(membershipId, approve);
                 toast({ title: `Request ${approve ? 'Approved' : 'Declined'}`});
                 onUpdate();
-            } catch (error: any) {
+            } catch (error: any) => {
                 toast({ variant: 'destructive', title: 'Error', description: error.message });
             }
         });
@@ -351,15 +357,15 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
     });
   }
   
-  const handleApproveGroup = (groupId: number) => {
+  const handleStatusChange = (groupId: number, newStatus: string) => {
     startActionTransition(async () => {
         setDebugError(null);
         try {
-            await updateGroup(groupId, { status: 'PUBLISHED' });
-            toast({ title: 'Group Approved'});
+            await updateGroup(groupId, { status: newStatus });
+            toast({ title: 'Group Status Updated'});
             fetchGroups();
         } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error approving group', description: error.message });
+            toast({ variant: 'destructive', title: 'Error updating status', description: error.message });
             setDebugError(error);
         }
     });
@@ -496,10 +502,24 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                             </DropdownMenuItem>
 
                             <DropdownMenuSeparator />
-                             {currentUser?.role === ROLES.SUPER_ADMIN && group.status !== 'PUBLISHED' && (
-                                <DropdownMenuItem onSelect={() => handleApproveGroup(group.id)}>
-                                    <CheckCircle className="mr-2 h-4 w-4" /> Approve
-                                </DropdownMenuItem>
+                             {currentUser?.role === ROLES.SUPER_ADMIN && (
+                                <DropdownMenuSub>
+                                  <DropdownMenuSubTrigger>
+                                    <CheckCircle className="mr-2 h-4 w-4" />
+                                    Change Status
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuPortal>
+                                    <DropdownMenuSubContent>
+                                      <DropdownMenuRadioGroup
+                                        value={group.status || 'PENDING'}
+                                        onValueChange={(newStatus) => handleStatusChange(group.id, newStatus)}
+                                      >
+                                        <DropdownMenuRadioItem value="PUBLISHED">Published</DropdownMenuRadioItem>
+                                        <DropdownMenuRadioItem value="PENDING">Pending</DropdownMenuRadioItem>
+                                      </DropdownMenuRadioGroup>
+                                    </DropdownMenuSubContent>
+                                  </DropdownMenuPortal>
+                                </DropdownMenuSub>
                             )}
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
