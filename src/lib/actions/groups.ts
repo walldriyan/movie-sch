@@ -264,8 +264,7 @@ export async function requestToJoinGroup(groupId: string) {
     const canJoinDirectly = 
         user.role === ROLES.SUPER_ADMIN ||
         user.role === ROLES.USER_ADMIN ||
-        group.createdById === user.id ||
-        group.visibility === 'PUBLIC';
+        group.createdById === user.id;
 
     const status = canJoinDirectly ? 'ACTIVE' : 'PENDING';
 
