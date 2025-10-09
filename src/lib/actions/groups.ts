@@ -261,7 +261,13 @@ export async function requestToJoinGroup(groupId: string) {
         throw new Error("You are already a member or your request is pending.");
     }
 
-    const status = group.visibility === 'PUBLIC' ? 'ACTIVE' : 'PENDING';
+    const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
+    const isGroupCreator = group.createdById === user.id;
+
+    // Super Admins and the group creator can join directly without approval
+    const status = isSuperAdmin || isGroupCreator || group.visibility === 'PUBLIC' 
+        ? 'ACTIVE' 
+        : 'PENDING';
 
     await prisma.groupMember.create({
         data: {
