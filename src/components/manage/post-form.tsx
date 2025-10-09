@@ -60,7 +60,7 @@ const postSchema = z.object({
   seriesId: z.number().optional().nullable(),
   orderInSeries: z.coerce.number().optional(),
   visibility: z.enum(['PUBLIC', 'GROUP_ONLY']).default('PUBLIC'),
-  groupId: z.number().optional().nullable(),
+  groupId: z.number().nullable().optional(),
 }).superRefine((data, ctx) => {
   if (data.visibility === 'GROUP_ONLY' && !data.groupId) {
     ctx.addIssue({
@@ -79,6 +79,7 @@ interface PostFormProps {
   editingPost: PostWithLinks | null;
   onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
+  debugError?: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -177,11 +178,11 @@ export default function PostForm({
   editingPost,
   onFormSubmit,
   onBack,
+  debugError,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroupForDebug, setSelectedGroupForDebug] = useState<Group | null>(null);
 
 
   useEffect(() => {
@@ -245,6 +246,7 @@ export default function PostForm({
   const posterUrlValue = watch('posterUrl');
   const postType = watch('type');
   const visibility = watch('visibility');
+  const groupIdValue = watch('groupId');
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -664,12 +666,9 @@ export default function PostForm({
                           <FormLabel>Group</FormLabel>
                           <Select 
                               onValueChange={(value) => {
-                                  const selectedId = value ? Number(value) : null;
-                                  field.onChange(selectedId);
-                                  const groupDetails = groups.find(g => g.id === selectedId) || null;
-                                  setSelectedGroupForDebug(groupDetails);
+                                  field.onChange(value ? Number(value) : null);
                               }}
-                              defaultValue={field.value ? String(field.value) : undefined}
+                              defaultValue={field.value ? String(field.value) : ""}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -682,23 +681,17 @@ export default function PostForm({
                               )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
                             </SelectContent>
                           </Select>
-                           <FormDescription>
-                             This post will only be visible to members of this group.
-                           </FormDescription>
+                          {groupIdValue && (
+                            <FormDescription>
+                              Selected Group ID: <span className="font-mono text-primary">{groupIdValue}</span>
+                            </FormDescription>
+                          )}
                           <FormMessage />
                         </FormItem>
                       )}
                     />
                   )}
               </div>
-              {visibility === 'GROUP_ONLY' && selectedGroupForDebug && (
-                 <div className="p-4 border border-dashed rounded-lg text-left mt-4">
-                    <h2 className="text-lg font-semibold mb-2 text-primary">Debug: Selected Group Info</h2>
-                    <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-                      {JSON.stringify(selectedGroupForDebug, null, 2)}
-                    </pre>
-                  </div>
-              )}
            </div>
 
           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
@@ -762,6 +755,15 @@ export default function PostForm({
             </Button>
           </div>
           
+           {debugError && (
+            <div className="mt-8 p-4 border border-dashed rounded-lg text-left border-destructive">
+                <h2 className="text-lg font-semibold mb-2 text-destructive">Submission Error Details</h2>
+                <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto text-destructive">
+                {JSON.stringify(debugError, null, 2)}
+                </pre>
+            </div>
+          )}
+
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" disabled={formState.isSubmitting}>
               {formState.isSubmitting ? (
