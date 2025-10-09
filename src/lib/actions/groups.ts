@@ -13,17 +13,34 @@ export async function getGroups() {
     if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
         throw new Error('Not authorized');
     }
-    return prisma.group.findMany({
+    const groups = await prisma.group.findMany({
         include: {
             _count: {
                 select: { 
-                    members: { where: { status: 'ACTIVE' } },
-                    pendingRequests: { where: { status: 'PENDING' } },
+                    members: true
                 },
             },
         },
         orderBy: { name: 'asc' },
     });
+
+    const groupsWithPendingCounts = await Promise.all(groups.map(async (group) => {
+        const pendingRequestsCount = await prisma.groupMember.count({
+            where: {
+                groupId: group.id,
+                status: 'PENDING',
+            },
+        });
+        return {
+            ...group,
+            _count: {
+                members: group._count.members,
+                pendingRequests: pendingRequestsCount,
+            }
+        }
+    }));
+    
+    return groupsWithPendingCounts;
 }
 
 export async function createGroup(name: string, description: string | null): Promise<Group> {
@@ -274,8 +291,13 @@ export async function requestToJoinGroup(groupId: string) {
 
     const status = canJoinDirectly ? 'ACTIVE' : 'PENDING';
 
-    await prisma.groupMember.create({
-        data: {
+    await prisma.groupMember.upsert({
+        where: { userId_groupId: { userId: user.id, groupId: groupId } },
+        update: {
+            status: status,
+            role: 'MEMBER'
+        },
+        create: {
             groupId: groupId,
             userId: user.id,
             status: status,
