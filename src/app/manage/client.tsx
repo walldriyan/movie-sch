@@ -5,7 +5,7 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { savePost, deletePost, getPostsForAdmin, getPost } from '@/lib/actions';
+import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
@@ -133,17 +133,15 @@ export default function ManagePostsClient({
     id: number | undefined
   ) => {
     setDebugError(null);
-    try {
-      await savePost(postData, id);
-      await fetchPosts(id ? currentPage : 1, statusFilter);
-      handleBackFromForm(); // Go back to list and clear URL params
-      toast({
-        title: 'Success',
-        description: `Post "${postData.title}" has been submitted for approval.`,
-      });
-    } catch(error: any) {
-      setDebugError(error);
-    }
+    await savePost(postData, id);
+    // The line below that throws an error is now gone.
+    // We will stay on the form page if there is an error, and the error boundary will catch it.
+    await fetchPosts(id ? currentPage : 1, statusFilter);
+    handleBackFromForm(); // Go back to list and clear URL params
+    toast({
+      title: 'Success',
+      description: `Post "${postData.title}" has been submitted for approval.`,
+    });
   };
 
   const handleDeleteConfirmed = async (postId: number) => {
@@ -292,7 +290,6 @@ export default function ManagePostsClient({
             editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
-            debugError={debugError}
           />
         )}
       </ManageLayout>
