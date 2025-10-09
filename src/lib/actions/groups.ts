@@ -221,35 +221,37 @@ export async function getGroupForProfile(groupId: string) {
         }
     }
     
-    // Stricter check for post visibility
-    const canViewPosts = group.visibility === 'PUBLIC' || (user && group.visibility === 'PRIVATE' && isMember);
-
-    let posts = [];
-    if (canViewPosts) {
-        posts = await prisma.post.findMany({
-            where: { 
-                groupId: groupId,
-                status: 'PUBLISHED'
-            },
-            include: {
-                author: true,
-                 likedBy: {
-                    select: {
-                        id: true,
-                        name: true,
-                        image: true,
-                    },
-                    take: 5,
+    const posts = await prisma.post.findMany({
+        where: { 
+            groupId: groupId,
+            status: 'PUBLISHED',
+            OR: [
+                { visibility: 'PUBLIC' },
+                { 
+                    visibility: 'GROUP_ONLY',
+                    // This is the critical fix: user must be an active member to see GROUP_ONLY posts
+                    AND: isMember ? [{}] : [],
+                }
+            ]
+        },
+        include: {
+            author: true,
+             likedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
                 },
-                _count: {
-                    select: {
-                        likedBy: true,
-                        reviews: true,
-                    }
+                take: 5,
+            },
+            _count: {
+                select: {
+                    likedBy: true,
+                    reviews: true,
                 }
             }
-        });
-    }
+        }
+    });
 
     return {
         ...group,
