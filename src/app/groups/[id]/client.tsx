@@ -93,7 +93,7 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
                         <p className="text-sm text-muted-foreground">{group.description}</p>
                     </div>
                      <div>
-                        <h3 className="text-lg font-semibold mb-4">Members</h3>
+                        <h3 className="text-lg font-semibold mb-4">Members ({group.members.length})</h3>
                         <div className="flex flex-wrap gap-2">
                             {group.members.map(member => (
                                 <Link href={`/profile/${member.user.id}`} key={member.userId}>

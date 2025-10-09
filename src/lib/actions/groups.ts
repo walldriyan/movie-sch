@@ -186,7 +186,10 @@ export async function getGroupForProfile(groupId: string) {
     let posts = [];
     if (canViewPosts) {
         posts = await prisma.post.findMany({
-            where: { groupId: groupId },
+            where: { 
+                groupId: groupId,
+                status: 'PUBLISHED'
+            },
             include: {
                 author: true,
             }
@@ -201,7 +204,7 @@ export async function getGroupForProfile(groupId: string) {
 }
 
 
-export async function getPublicGroups(limit = 5) {
+export async function getPublicGroups(limit = 10) {
   const groups = await prisma.group.findMany({
     where: {
       visibility: 'PUBLIC',

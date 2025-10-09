@@ -1,3 +1,4 @@
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -57,11 +58,10 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       status: MovieStatus.PUBLISHED,
     };
     
-    if (user && user.role === ROLES.SUPER_ADMIN) {
-      whereClause.status = undefined;
-    } else if (user) {
+    if (user) {
+      // Logged-in users can see public posts and posts from groups they are in.
       const userGroupIds = await prisma.groupMember.findMany({
-        where: { userId: user.id },
+        where: { userId: user.id, status: 'ACTIVE' },
         select: { groupId: true },
       }).then(members => members.map(m => m.groupId));
 
@@ -72,7 +72,13 @@ export async function getPosts(options: { page?: number; limit?: number, filters
           groupId: { in: userGroupIds }
         }
       ];
+      // Super admins can see posts with any status except PENDING_DELETION
+      if (user.role === ROLES.SUPER_ADMIN) {
+        whereClause.status = { not: 'PENDING_DELETION' };
+      }
+
     } else {
+      // Guests can only see public posts.
       whereClause.visibility = 'PUBLIC';
     }
     

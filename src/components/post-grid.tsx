@@ -73,13 +73,13 @@ function PostCard({ post, index }: { post: Post; index: number }) {
       )}
     >
         <div className="mb-2 flex items-center space-x-2 text-xs">
-             <Link href={`/profile/${post.author.id}`} className="flex items-center gap-2 group/author">
+             <Link href={`/profile/${post.author?.id}`} className="flex items-center gap-2 group/author">
                 <Avatar className="h-5 w-5">
-                    {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author.name || 'Author'} />}
-                    <AvatarFallback>{post.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                    {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author?.name || 'Author'} />}
+                    <AvatarFallback>{post.author?.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
                 </Avatar>
                 <span className="font-medium text-foreground/80 group-hover/author:text-primary truncate">
-                    {post.author.name}
+                    {post.author?.name}
                 </span>
             </Link>
              <span className='text-muted-foreground'>&middot;</span>
@@ -135,8 +135,8 @@ function PostCard({ post, index }: { post: Post; index: number }) {
                 )}
               </div>
                 <Avatar className="h-10 w-10 border-2 border-background flex-shrink-0">
-                    {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author.name || 'Author'} />}
-                    <AvatarFallback>{post.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                    {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author?.name || 'Author'} />}
+                    <AvatarFallback>{post.author?.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
                 </Avatar>
             </div>
           </div>
@@ -147,16 +147,18 @@ function PostCard({ post, index }: { post: Post; index: number }) {
 
 export default function PostGrid({ posts }: PostGridProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 md:auto-rows-min gap-x-4 gap-y-8">
-      {posts.map((post, index) => {
-        return (
-          <PostCard
-            key={post.id}
-            post={post as Post}
-            index={index}
-          />
-        );
-      })}
-    </div>
+    <TooltipProvider>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 md:auto-rows-min gap-x-4 gap-y-8">
+        {posts.map((post, index) => {
+          return (
+            <PostCard
+              key={post.id}
+              post={post as Post}
+              index={index}
+            />
+          );
+        })}
+      </div>
+    </TooltipProvider>
   );
 }

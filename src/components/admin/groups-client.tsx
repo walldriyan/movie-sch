@@ -229,7 +229,7 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
                 </DialogHeader>
                 <div className="py-4 max-h-[60vh] overflow-y-auto pr-2">
                     {isFetchingDetails ? (
-                        <div className="space-y-2 flex flex-col items-center justify-center h-48">
+                        <div className="space-y-4 flex flex-col items-center justify-center h-48">
                              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                              <p className="text-center text-sm text-muted-foreground">Loading members...</p>
                         </div>
