@@ -93,6 +93,8 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
       </Button>
   }
 
+  const showPrivateMessage = group.visibility === 'PRIVATE' && !group.isMember;
+
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -141,7 +143,7 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
                 <div className="md:col-span-3">
-                    {group.visibility === 'PRIVATE' && !group.isMember ? (
+                    {showPrivateMessage ? (
                         <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg">
                             <Lock className="h-16 w-16 text-muted-foreground mb-4" />
                             <h3 className="text-lg font-semibold">This is a private group</h3>
