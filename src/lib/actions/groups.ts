@@ -237,6 +237,20 @@ export async function getGroupForProfile(groupId: string) {
             },
             include: {
                 author: true,
+                 likedBy: {
+                    select: {
+                        id: true,
+                        name: true,
+                        image: true,
+                    },
+                    take: 5,
+                },
+                _count: {
+                    select: {
+                        likedBy: true,
+                        reviews: true,
+                    }
+                }
             }
         });
     }

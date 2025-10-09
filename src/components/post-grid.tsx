@@ -6,9 +6,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, MessageCircle, MoreHorizontal, ThumbsUp } from 'lucide-react';
+import { Star, MessageCircle, MoreHorizontal, ThumbsUp, Heart } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
-import type { Post, PostType as PostTypeEnum } from '@/lib/types';
+import type { Post } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import ClientRelativeDate from './client-relative-date';
 import {
@@ -34,37 +34,44 @@ function PostCard({ post }: { post: Post }) {
   const authorAvatarUrl = post.author?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
   const plainDescription = post.description.replace(/<[^>]+>/g, '');
+  
+  const likers = post.likedBy || [];
+  const totalLikes = post._count?.likedBy || 0;
+  const displayLikers = likers.slice(0, 5);
+  const remainingLikes = totalLikes - displayLikers.length;
 
   return (
-    <li className="relative flex gap-4 pb-8">
+    <li className="relative flex flex-col gap-4 pb-8">
         <div className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-border" />
-        <div className="relative flex-shrink-0">
-            <Avatar>
-                {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author?.name || 'Author'} />}
-                <AvatarFallback>{post.author?.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
-            </Avatar>
-        </div>
-        <div className="flex-grow space-y-3">
-            <div className="flex items-center gap-2 text-sm">
+        <div className="relative flex-shrink-0 flex items-center gap-3">
+             <Link href={`/profile/${post.author?.id}`}>
+                <Avatar>
+                    {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author?.name || 'Author'} />}
+                    <AvatarFallback>{post.author?.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+                </Avatar>
+            </Link>
+             <div className="flex items-center gap-2 text-sm">
                 <Link href={`/profile/${post.author?.id}`} className="font-semibold text-foreground hover:text-primary">
                     {post.author?.name}
                 </Link>
                 <span className="text-muted-foreground">posted an update</span>
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <div className="text-xs text-muted-foreground ml-auto">
-                            <ClientRelativeDate date={new Date(post.updatedAt)} />
-                        </div>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>{new Date(post.updatedAt).toLocaleString()}</p>
-                    </TooltipContent>
-                </Tooltip>
             </div>
-            
-            <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="text-xs text-muted-foreground ml-auto">
+                        <ClientRelativeDate date={new Date(post.updatedAt)} />
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{new Date(post.updatedAt).toLocaleString()}</p>
+                </TooltipContent>
+            </Tooltip>
+        </div>
+        
+        <div className="pl-12 flex-grow space-y-3">
+             <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
                 {postImageUrl && (
-                  <div className="aspect-video relative overflow-hidden rounded-t-lg">
+                  <div className="aspect-[16/10] relative overflow-hidden rounded-t-lg max-h-[500px]">
                       <Image
                           src={postImageUrl}
                           alt={post.title}
@@ -105,6 +112,26 @@ function PostCard({ post }: { post: Post }) {
                             </div>
                         </div>
                     </div>
+                     {totalLikes > 0 && (
+                        <div className="mt-4 flex items-center gap-3 border-t pt-3">
+                           <div className="flex items-center -space-x-2">
+                                <div className="w-7 h-7 rounded-full bg-red-500/10 border-2 border-red-500 flex items-center justify-center">
+                                    <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
+                                </div>
+                                {displayLikers.map(liker => (
+                                    <Avatar key={liker.id} className="h-7 w-7 border-2 border-background">
+                                        <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
+                                        <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
+                                    </Avatar>
+                                ))}
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {displayLikers[0]?.name}
+                                {remainingLikes > 0 && ` and ${remainingLikes} others liked this.`}
+                                {remainingLikes === 0 && ' liked this.'}
+                            </p>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
