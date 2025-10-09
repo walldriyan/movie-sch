@@ -260,12 +260,16 @@ export async function requestToJoinGroup(groupId: string) {
     });
 
     if (existingMembership) {
-        throw new Error("You are already a member or your request is pending.");
+        if (existingMembership.status === 'ACTIVE') {
+            throw new Error("You are already a member of this group.");
+        } else if (existingMembership.status === 'PENDING') {
+            throw new Error("Your request to join this group is already pending.");
+        }
     }
 
     const canJoinDirectly = 
         user.role === ROLES.SUPER_ADMIN ||
-        user.role === ROLES.USER_ADMIN;
+        group.createdById === user.id;
 
     const status = canJoinDirectly ? 'ACTIVE' : 'PENDING';
 
