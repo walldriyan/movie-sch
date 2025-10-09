@@ -222,7 +222,7 @@ export async function getGroupForProfile(groupId: string) {
     }
     
     // Stricter check for post visibility
-    const canViewPosts = group.visibility === 'PUBLIC' || (group.visibility === 'PRIVATE' && user && isMember);
+    const canViewPosts = group.visibility === 'PUBLIC' || (user && group.visibility === 'PRIVATE' && isMember);
 
     let posts = [];
     if (canViewPosts) {
