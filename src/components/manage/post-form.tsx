@@ -36,7 +36,7 @@ import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries, createSeries, getGroups } from '@/lib/actions';
+import { getSeries, createSeries, getGroupsForForm } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,7 +44,7 @@ const postSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   posterUrl: z.string().optional(),
   description: z.string().min(10, 'Description is required'),
-  year: z.coerce.number().min(1800, 'Invalid year').optional(),
+  year: z.coerce.number().optional(),
   duration: z.string().optional(),
   genres: z.array(z.string()).optional(),
   directors: z.string().optional(),
@@ -189,7 +189,7 @@ export default function PostForm({
     async function fetchData() {
       const seriesData = await getSeries();
       setSeriesList(seriesData);
-      const groupData = await getGroups();
+      const groupData = await getGroupsForForm();
       setGroups(groupData as any);
     }
     fetchData();
@@ -296,6 +296,10 @@ export default function PostForm({
     };
     reader.readAsDataURL(file);
   };
+
+  const selectedGroupForDebug = React.useMemo(() => {
+    return groups.find(g => g.id === groupIdValue);
+  }, [groupIdValue, groups]);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -681,9 +685,9 @@ export default function PostForm({
                               )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
                             </SelectContent>
                           </Select>
-                          {groupIdValue && (
+                          {selectedGroupForDebug && (
                             <FormDescription>
-                              Selected Group ID: <span className="font-mono text-primary">{groupIdValue}</span>
+                              Selected Group: <span className="font-mono text-primary">{selectedGroupForDebug.name} (ID: {selectedGroupForDebug.id})</span>
                             </FormDescription>
                           )}
                           <FormMessage />

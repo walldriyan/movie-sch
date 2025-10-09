@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -41,6 +42,21 @@ export async function getGroups() {
     }));
     
     return groupsWithPendingCounts;
+}
+
+export async function getGroupsForForm(): Promise<Pick<Group, 'id' | 'name'>[]> {
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('Not authorized');
+    }
+    const groups = await prisma.group.findMany({
+        select: {
+            id: true,
+            name: true,
+        },
+        orderBy: { name: 'asc' },
+    });
+    return groups;
 }
 
 export async function createGroup(name: string, description: string | null): Promise<Group> {
