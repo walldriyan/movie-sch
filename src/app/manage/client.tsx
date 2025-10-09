@@ -42,7 +42,7 @@ export default function ManagePostsClient({
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [debugError, setDebugError] = useState<any | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -110,7 +110,7 @@ export default function ManagePostsClient({
 
   const handleAddNewPost = () => {
     setEditingPost(null);
-    setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('create', 'true');
     url.searchParams.delete('edit');
@@ -120,7 +120,7 @@ export default function ManagePostsClient({
 
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
-    setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('edit', String(post.id));
     url.searchParams.delete('create');
@@ -132,29 +132,33 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
-    // By not using try-catch, any error thrown by savePost will
-    // be caught by Next.js's error boundary, showing the overlay.
-    await savePost(postData, id);
-    
-    // This code runs only on success
-    await fetchPosts(id ? currentPage : 1, statusFilter);
-    handleBackFromForm(); // Go back to list and clear URL params
-    toast({
-      title: 'Success',
-      description: `Post "${postData.title}" has been submitted for approval.`,
-    });
+    setDebugError(null);
+    try {
+      await savePost(postData, id);
+      await fetchPosts(id ? currentPage : 1, statusFilter);
+      handleBackFromForm(); // Go back to list and clear URL params
+      toast({
+        title: 'Success',
+        description: `Post "${postData.title}" has been submitted for approval.`,
+      });
+    } catch(error: any) {
+      setDebugError(error);
+    }
   };
 
   const handleDeleteConfirmed = async (postId: number) => {
     const postToDelete = posts.find(m => m.id === postId);
-    if (postToDelete) {
-      // Not using try-catch to let the error boundary show the error
-      await deletePost(postId);
-      await fetchPosts(currentPage, statusFilter);
-      toast({
-        title: 'Success',
-        description: `Post "${postToDelete.title}" action has been processed.`,
-      });
+    try {
+      if (postToDelete) {
+        await deletePost(postId);
+        await fetchPosts(currentPage, statusFilter);
+        toast({
+          title: 'Success',
+          description: `Post "${postToDelete.title}" action has been processed.`,
+        });
+      }
+    } catch(error: any) {
+      setDebugError(error);
     }
   };
 
@@ -162,7 +166,6 @@ export default function ManagePostsClient({
   const handleStatusChange = async (postId: number, newStatus: string) => {
     setStatusChangingPostId(postId);
     try {
-      // This is a UI state change, less critical to show full error overlay
       await updatePostStatus(postId, newStatus);
       await fetchPosts(currentPage, statusFilter);
       toast({
@@ -187,7 +190,7 @@ export default function ManagePostsClient({
   };
 
   const handleBackFromForm = () => {
-    setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
@@ -271,12 +274,25 @@ export default function ManagePostsClient({
                   </PaginationContent>
                 </Pagination>
             )}
+             {debugError && (
+                <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
+                    <h3 className="font-semibold text-destructive mb-2">Deletion/Refresh Error Details</h3>
+                    <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
+                    {JSON.stringify({
+                        message: debugError.message,
+                        stack: debugError.stack,
+                        ...debugError,
+                    }, null, 2)}
+                    </pre>
+                </div>
+              )}
           </>
         ) : (
           <PostForm
             editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
+            debugError={debugError}
           />
         )}
       </ManageLayout>

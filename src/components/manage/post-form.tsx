@@ -76,8 +76,9 @@ type PostFormValues = z.infer<typeof postSchema>;
 type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface PostFormProps {
   editingPost: PostWithLinks | null;
-  onFormSubmit: (postData: PostFormData, id?: number) => void;
+  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
+  debugError: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -176,6 +177,7 @@ export default function PostForm({
   editingPost,
   onFormSubmit,
   onBack,
+  debugError,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
@@ -244,13 +246,14 @@ export default function PostForm({
   const posterUrlValue = watch('posterUrl');
   const postType = watch('type');
   const visibility = watch('visibility');
+  const groupIdValue = watch('groupId');
 
   const { fields, append, remove } = useFieldArray({
     control,
     name: 'mediaLinks',
   });
 
-  const handleSubmit = async (values: PostFormValues) => {
+  const handleSubmit = (values: PostFormValues) => {
     const postData: PostFormData = {
       title: values.title,
       description: values.description,
@@ -757,6 +760,19 @@ export default function PostForm({
               <Plus className="mr-2 h-4 w-4" /> Add Link
             </Button>
           </div>
+          
+          {debugError && (
+            <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
+                <h3 className="font-semibold text-destructive mb-2">Submission Error Details</h3>
+                <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
+                {JSON.stringify({
+                    message: debugError.message,
+                    stack: debugError.stack,
+                    ...debugError,
+                }, null, 2)}
+                </pre>
+            </div>
+          )}
           
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" disabled={formState.isSubmitting}>
