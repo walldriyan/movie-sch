@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useActionState, useEffect, useState } from 'react';
@@ -82,7 +83,8 @@ export default function RegisterPage() {
                     required 
                 />
               </div>
-               {state?.message && state.message !== 'Success' && (
+               {/* This UI error display is removed as requested, errors will now be handled by the error boundary */}
+               {state?.message && state.message.includes('required field is missing') && (
                   <div className="flex items-center space-x-2 text-destructive text-sm mt-2">
                     <AlertCircle className="h-4 w-4" />
                     <p>{state.message}</p>
