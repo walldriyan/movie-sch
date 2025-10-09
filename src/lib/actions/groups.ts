@@ -16,7 +16,10 @@ export async function getGroups() {
     return prisma.group.findMany({
         include: {
             _count: {
-                select: { members: true },
+                select: { 
+                    members: { where: { status: 'ACTIVE' } },
+                    pendingRequests: { where: { status: 'PENDING' } },
+                },
             },
         },
         orderBy: { name: 'asc' },
@@ -267,9 +270,7 @@ export async function requestToJoinGroup(groupId: string) {
         }
     }
 
-    const canJoinDirectly = 
-        user.role === ROLES.SUPER_ADMIN ||
-        group.createdById === user.id;
+    const canJoinDirectly = user.role === ROLES.SUPER_ADMIN || group.createdById === user.id;
 
     const status = canJoinDirectly ? 'ACTIVE' : 'PENDING';
 

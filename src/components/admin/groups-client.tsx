@@ -241,12 +241,12 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="relative">
-                    Manage
-                    {pendingRequests.length > 0 && (
-                        <Badge variant="destructive" className="absolute -top-1 -right-2 h-4 w-4 justify-center p-0 text-xs">{pendingRequests.length}</Badge>
+                <div className="relative">
+                    <Button variant="outline" size="sm">Manage</Button>
+                    {group._count.pendingRequests > 0 && (
+                        <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{group._count.pendingRequests}</Badge>
                     )}
-                </Button>
+                </div>
             </DialogTrigger>
             <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
