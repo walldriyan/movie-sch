@@ -57,10 +57,10 @@ const postSchema = z.object({
     url: z.string().url('Please enter a valid URL.').min(1, 'URL is required.'),
   })).optional(),
   type: z.enum(['MOVIE', 'TV_SERIES', 'OTHER']),
-  seriesId: z.coerce.number().optional(),
+  seriesId: z.number().optional().nullable(),
   orderInSeries: z.coerce.number().optional(),
   visibility: z.enum(['PUBLIC', 'GROUP_ONLY']).default('PUBLIC'),
-  groupId: z.coerce.number().optional(),
+  groupId: z.number().optional().nullable(),
 }).superRefine((data, ctx) => {
   if (data.visibility === 'GROUP_ONLY' && !data.groupId) {
     ctx.addIssue({
@@ -70,6 +70,7 @@ const postSchema = z.object({
     });
   }
 });
+
 
 type PostFormValues = z.infer<typeof postSchema>;
 
