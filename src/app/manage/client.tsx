@@ -5,7 +5,7 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { savePost, deletePost, getPostsForAdmin, updatePostStatus } from '@/lib/actions';
+import { savePost, deletePost, getPostsForAdmin, getPost } from '@/lib/actions';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
@@ -23,26 +23,23 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
+import { useSearchParams } from 'next/navigation';
 
 
 interface ManagePostsClientProps {
   initialPosts: Post[];
   initialTotalPages: number;
   user: Session['user'];
-  initialEditingPost?: Post | null;
-  startInCreateMode?: boolean;
 }
 
 export default function ManagePostsClient({ 
   initialPosts, 
   initialTotalPages, 
   user, 
-  initialEditingPost, 
-  startInCreateMode = false 
 }: ManagePostsClientProps) {
   const [posts, setPosts] = useState<Post[]>(initialPosts);
-  const [view, setView] = useState<'list' | 'form'>(initialEditingPost || startInCreateMode ? 'form' : 'list');
-  const [editingPost, setEditingPost] = useState<Post | null>(initialEditingPost || null);
+  const [view, setView] = useState<'list' | 'form'>('list');
+  const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
   const [formError, setFormError] = useState<string | null>(null);
@@ -52,8 +49,33 @@ export default function ManagePostsClient({
   const [isPending, startTransition] = useTransition();
   const [debugError, setDebugError] = useState<any>(null);
 
-
+  const searchParams = useSearchParams();
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const editId = searchParams.get('edit');
+    const create = searchParams.get('create');
+
+    if (editId) {
+      const fetchPostToEdit = async () => {
+        const postToEdit = await getPost(Number(editId));
+        if (postToEdit && (postToEdit.authorId === user.id || user.role === ROLES.SUPER_ADMIN)) {
+          setEditingPost(postToEdit as any);
+          setView('form');
+        } else {
+          console.warn(`User ${user.id} tried to edit post ${editId} without permission.`);
+          setView('list');
+        }
+      };
+      fetchPostToEdit();
+    } else if (create === 'true') {
+      setEditingPost(null);
+      setView('form');
+    } else {
+      setView('list');
+    }
+  }, [searchParams, user.id, user.role]);
+
 
   const fetchPosts = async (page: number, status: string | null) => {
     setIsRefreshing(true);
@@ -90,12 +112,20 @@ export default function ManagePostsClient({
   const handleAddNewPost = () => {
     setEditingPost(null);
     setFormError(null);
+    const url = new URL(window.location.href);
+    url.searchParams.set('create', 'true');
+    url.searchParams.delete('edit');
+    window.history.pushState({}, '', url.toString());
     setView('form');
   };
 
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
     setFormError(null);
+    const url = new URL(window.location.href);
+    url.searchParams.set('edit', String(post.id));
+    url.searchParams.delete('create');
+    window.history.pushState({}, '', url.toString());
     setView('form');
   };
 
@@ -107,7 +137,7 @@ export default function ManagePostsClient({
       setFormError(null);
       await savePost(postData, id);
       await fetchPosts(id ? currentPage : 1, statusFilter);
-      setView('list');
+      handleBackFromForm(); // Go back to list and clear URL params
       toast({
         title: 'Success',
         description: `Post "${postData.title}" has been submitted for approval.`,
@@ -169,13 +199,12 @@ export default function ManagePostsClient({
   };
 
   const handleBackFromForm = () => {
-    setView('list');
     setFormError(null);
-    // Clear edit and create params from URL
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
     window.history.pushState({}, '', url.toString());
+    setView('list');
   };
   
   const handleRefresh = () => {
