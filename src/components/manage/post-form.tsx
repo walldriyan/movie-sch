@@ -79,6 +79,7 @@ interface PostFormProps {
   onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
   error?: string | null;
+  debugError?: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -178,6 +179,7 @@ export default function PostForm({
   onFormSubmit,
   onBack,
   error,
+  debugError,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
@@ -665,7 +667,7 @@ export default function PostForm({
                           <FormLabel>Group</FormLabel>
                           <Select 
                               onValueChange={(value) => {
-                                  const selectedId = Number(value);
+                                  const selectedId = value ? Number(value) : null;
                                   field.onChange(selectedId);
                                   const groupDetails = groups.find(g => g.id === selectedId) || null;
                                   setSelectedGroupForDebug(groupDetails);
@@ -766,11 +768,24 @@ export default function PostForm({
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Submission Error</AlertTitle>
+              <AlertTitle>Form Submission Error</AlertTitle>
               <AlertDescription>
                 {error}
               </AlertDescription>
             </Alert>
+          )}
+
+          {debugError && (
+            <div className="mt-8 p-4 border border-dashed rounded-lg text-left bg-card">
+              <h2 className="text-lg font-semibold mb-2 text-destructive">Submission Error Details</h2>
+              <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+                {JSON.stringify({
+                    message: debugError.message,
+                    stack: debugError.stack,
+                    ...debugError
+                }, null, 2)}
+              </pre>
+            </div>
           )}
           
           <div className="flex justify-end pt-4">

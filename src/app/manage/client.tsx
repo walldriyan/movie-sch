@@ -290,26 +290,13 @@ export default function ManagePostsClient({
             )}
           </>
         ) : (
-          <>
-            <PostForm
-              editingPost={editingPost}
-              onFormSubmit={handleFormSubmit}
-              onBack={handleBackFromForm}
-              error={formError}
-            />
-            {debugError && (
-              <div className="mt-8 p-4 border border-dashed rounded-lg text-left bg-card">
-                  <h2 className="text-lg font-semibold mb-2 text-destructive">Debug Error Information</h2>
-                  <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-                    {JSON.stringify({
-                        message: debugError.message,
-                        stack: debugError.stack,
-                        ...debugError
-                    }, null, 2)}
-                  </pre>
-                </div>
-            )}
-          </>
+          <PostForm
+            editingPost={editingPost}
+            onFormSubmit={handleFormSubmit}
+            onBack={handleBackFromForm}
+            error={formError}
+            debugError={debugError}
+          />
         )}
       </ManageLayout>
     </>
