@@ -263,7 +263,7 @@ export default function PostForm({
       seriesId: values.seriesId,
       orderInSeries: values.orderInSeries,
       visibility: values.visibility,
-      groupId: values.groupId,
+      groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
     };
     await onFormSubmit(postData, editingPost?.id);
   };
