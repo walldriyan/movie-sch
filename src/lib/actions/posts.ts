@@ -250,7 +250,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     orderInSeries: postData.orderInSeries,
     updatedAt: new Date(),
     visibility: postData.visibility,
-    groupId: postData.visibility === 'GROUP_ONLY' ? postData.groupId : null,
+    groupId: !postData.groupId || isNaN(postData.groupId) ? null : postData.groupId,
   };
 
   const status = MovieStatus.PENDING_APPROVAL;

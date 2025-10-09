@@ -112,6 +112,7 @@ export default function ManagePostsClient({
   const handleAddNewPost = () => {
     setEditingPost(null);
     setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('create', 'true');
     url.searchParams.delete('edit');
@@ -122,6 +123,7 @@ export default function ManagePostsClient({
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
     setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('edit', String(post.id));
     url.searchParams.delete('create');
@@ -135,6 +137,7 @@ export default function ManagePostsClient({
   ) => {
     try {
       setFormError(null);
+      setDebugError(null);
       await savePost(postData, id);
       await fetchPosts(id ? currentPage : 1, statusFilter);
       handleBackFromForm(); // Go back to list and clear URL params
@@ -145,6 +148,7 @@ export default function ManagePostsClient({
     } catch (error: any) {
       console.error('Failed to save post:', error);
       setFormError(error.message || 'An unknown error occurred while saving the post.');
+      setDebugError(error);
     }
   };
 
@@ -200,6 +204,7 @@ export default function ManagePostsClient({
 
   const handleBackFromForm = () => {
     setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
