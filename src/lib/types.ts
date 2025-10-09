@@ -1,4 +1,5 @@
 
+
 import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember } from "@prisma/client";
 
 export type User = PrismaUser;
@@ -63,6 +64,7 @@ export type GroupWithCount = PrismaGroup & {
 export type GroupForProfile = PrismaGroup & {
     posts: Post[];
     isMember: boolean;
+    membershipStatus: 'ACTIVE' | 'PENDING' | null;
     _count: {
         members: number;
     };

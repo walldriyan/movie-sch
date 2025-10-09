@@ -6,11 +6,26 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { GroupForProfile, Post } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
-import { Users, Rss, Lock } from 'lucide-react';
+import { Users, Rss, Lock, UserPlus, LogOut, Loader2 } from 'lucide-react';
 import PostGrid from '@/components/post-grid';
 import Link from 'next/link';
+import { useState, useTransition } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { requestToJoinGroup, leaveGroup } from '@/lib/actions';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
 
 export default function GroupProfileClient({ group }: { group: GroupForProfile }) {
+  const { toast } = useToast();
+  const currentUser = useCurrentUser();
+  const [isPending, startTransition] = useTransition();
+
+  // Optimistic state
+  const [optimisticState, setOptimisticState] = useState({
+      isMember: group.isMember,
+      membershipStatus: group.membershipStatus,
+      memberCount: group._count.members,
+  });
+
   const coverImage = group.coverPhoto || PlaceHolderImages.find(
     (img) => img.id === 'movie-poster-placeholder'
   )?.imageUrl;
@@ -20,6 +35,63 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
   )?.imageUrl;
   
   const posts = group.posts as any[];
+
+  const handleJoin = () => {
+      if (!currentUser) {
+          toast({ variant: 'destructive', title: 'Please log in to join.'});
+          return;
+      }
+      startTransition(async () => {
+          setOptimisticState(prev => ({...prev, membershipStatus: 'PENDING'}));
+          try {
+              const result = await requestToJoinGroup(group.id);
+              if (result.status === 'ACTIVE') {
+                setOptimisticState({ isMember: true, membershipStatus: 'ACTIVE', memberCount: optimisticState.memberCount + 1});
+                toast({ title: "Welcome!", description: `You've joined the group "${group.name}".`});
+              } else {
+                 toast({ title: "Request Sent", description: `Your request to join "${group.name}" is pending approval.`});
+              }
+          } catch (error: any) {
+              setOptimisticState({ isMember: group.isMember, membershipStatus: group.membershipStatus, memberCount: group._count.members }); // revert
+              toast({ variant: 'destructive', title: 'Error', description: error.message });
+          }
+      });
+  };
+
+  const handleLeave = () => {
+      if (!currentUser) return;
+      startTransition(async () => {
+          const wasMember = optimisticState.isMember;
+          setOptimisticState({ isMember: false, membershipStatus: null, memberCount: optimisticState.memberCount - (wasMember ? 1 : 0) });
+          try {
+              await leaveGroup(group.id);
+              toast({ title: "You've left the group.", description: `You are no longer a member of "${group.name}".`});
+          } catch (error: any) {
+              setOptimisticState({ isMember: group.isMember, membershipStatus: group.membershipStatus, memberCount: group._count.members }); // revert
+              toast({ variant: 'destructive', title: 'Error', description: error.message });
+          }
+      });
+  };
+
+  const renderJoinButton = () => {
+      if (!currentUser) {
+          return <Button onClick={handleJoin}> <UserPlus className="mr-2 h-4 w-4" /> Join Group</Button>
+      }
+      if (optimisticState.isMember) {
+           return <Button variant="outline" onClick={handleLeave} disabled={isPending}>
+             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <LogOut className="mr-2 h-4 w-4" />}
+             Leave Group
+           </Button>
+      }
+      if (optimisticState.membershipStatus === 'PENDING') {
+          return <Button variant="secondary" disabled>Request Pending</Button>
+      }
+      return <Button onClick={handleJoin} disabled={isPending}>
+        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+        Join Group
+      </Button>
+  }
+
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -50,7 +122,7 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
                             <h1 className="text-3xl font-bold">{group.name}</h1>
                             <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                                 <span className="flex items-center gap-1.5">
-                                    <Users className="w-4 h-4"/> {group._count.members} members
+                                    <Users className="w-4 h-4"/> {optimisticState.memberCount} members
                                 </span>
                                  <span className="flex items-center gap-1.5">
                                     <Rss className="w-4 h-4"/> {group.posts.length} posts
@@ -59,11 +131,7 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
                         </div>
                     </div>
                     <div className="flex items-center gap-2 pb-4 mt-4 md:mt-0">
-                        {group.isMember ? (
-                            <Button variant="outline">Leave Group</Button>
-                        ) : (
-                            <Button>Join Group</Button>
-                        )}
+                       {renderJoinButton()}
                     </div>
                 </div>
             </div>

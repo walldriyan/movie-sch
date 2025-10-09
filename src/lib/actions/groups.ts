@@ -167,6 +167,8 @@ export async function getGroupForProfile(groupId: string) {
     
     let canViewPosts = group.visibility === 'PUBLIC';
     let isMember = false;
+    let membershipStatus: 'ACTIVE' | 'PENDING' | null = null;
+
 
     if (user) {
         const membership = await prisma.groupMember.findUnique({
@@ -177,9 +179,14 @@ export async function getGroupForProfile(groupId: string) {
                 },
             },
         });
-        if (membership && membership.status === 'ACTIVE') {
-            canViewPosts = true;
-            isMember = true;
+        if (membership) {
+            if (membership.status === 'ACTIVE') {
+                 canViewPosts = true;
+                 isMember = true;
+                 membershipStatus = 'ACTIVE';
+            } else if (membership.status === 'PENDING') {
+                membershipStatus = 'PENDING';
+            }
         }
     }
     
@@ -200,6 +207,7 @@ export async function getGroupForProfile(groupId: string) {
         ...group,
         posts,
         isMember,
+        membershipStatus,
     };
 }
 
@@ -231,4 +239,61 @@ export async function getPublicGroups(limit = 10) {
     take: limit,
   });
   return groups;
+}
+
+export async function requestToJoinGroup(groupId: string) {
+    const session = await auth();
+    const user = session?.user;
+    if (!user) {
+        throw new Error("You must be logged in to join a group.");
+    }
+
+    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    if (!group) {
+        throw new Error("Group not found.");
+    }
+    
+    const existingMembership = await prisma.groupMember.findUnique({
+        where: { userId_groupId: { userId: user.id, groupId: groupId } }
+    });
+
+    if (existingMembership) {
+        throw new Error("You are already a member or your request is pending.");
+    }
+
+    const status = group.visibility === 'PUBLIC' ? 'ACTIVE' : 'PENDING';
+
+    await prisma.groupMember.create({
+        data: {
+            groupId: groupId,
+            userId: user.id,
+            status: status,
+            role: 'MEMBER'
+        }
+    });
+
+    revalidatePath(`/groups/${groupId}`);
+    return { status };
+}
+
+export async function leaveGroup(groupId: string) {
+    const session = await auth();
+    const user = session?.user;
+    if (!user) {
+        throw new Error("You must be logged in to leave a group.");
+    }
+
+    const membership = await prisma.groupMember.findUnique({
+        where: { userId_groupId: { userId: user.id, groupId: groupId } }
+    });
+
+    if (!membership) {
+        throw new Error("You are not a member of this group.");
+    }
+
+    await prisma.groupMember.delete({
+        where: { userId_groupId: { userId: user.id, groupId: groupId } }
+    });
+
+    revalidatePath(`/groups/${groupId}`);
 }
