@@ -271,7 +271,7 @@ export default function PostForm({
       seriesId: values.seriesId,
       orderInSeries: values.orderInSeries,
       visibility: values.visibility,
-      groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
+      groupId: values.visibility === 'GROUP_ONLY' ? (values.groupId || null) : null,
     };
     await onFormSubmit(postData, editingPost?.id);
   };
@@ -662,7 +662,7 @@ export default function PostForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Group</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value || '')}>
+                          <Select onValueChange={(value) => field.onChange(value ? Number(value) : null)} defaultValue={String(field.value || '')}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a group" />

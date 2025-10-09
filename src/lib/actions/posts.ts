@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -250,7 +251,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     orderInSeries: postData.orderInSeries,
     updatedAt: new Date(),
     visibility: postData.visibility,
-    groupId: !postData.groupId || isNaN(postData.groupId) ? null : postData.groupId,
+    groupId: (postData.groupId === null || isNaN(postData.groupId)) ? null : postData.groupId,
   };
 
   const status = MovieStatus.PENDING_APPROVAL;
