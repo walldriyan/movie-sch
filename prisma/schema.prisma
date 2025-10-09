@@ -1,14 +1,53 @@
 // This is your Prisma schema file,
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-datasource db {
-  provider     = "sqlite"
-  url          = env("DATABASE_URL")
-  relationMode = "prisma"
-}
-
 generator client {
   provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id                       String    @id @default(cuid())
+  name                     String
+  username                 String?   @unique
+  email                    String    @unique
+  emailVerified            DateTime?
+  password                 String
+  image                    String?
+  bio                      String?
+  coverImage               String?
+  website                  String?
+  twitter                  String?
+  linkedin                 String?
+  role                     Role      @default(USER)
+  status                   UserStatus @default(PENDING)
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+  permissionRequestStatus  String?
+  permissionRequestMessage String?
+
+  accounts          Account[]
+  sessions          Session[]
+  posts             Post[]
+  reviews           Review[]
+  favoritePosts     FavoritePost[]
+  likedPosts        Post[]            @relation("UserLikes")
+  dislikedPosts     Post[]            @relation("UserDislikes")
+  createdSeries     Series[]
+  createdGroups     Group[]           @relation("CreatedBy")
+  groups            GroupMember[]
+  sentInvites       GroupInvite[]     @relation("SentInvites")
+  receivedInvites   GroupInvite[]     @relation("ReceivedInvites")
+  sentSuggestions   GroupSuggestion[] @relation("SentSuggestions")
+  receivedSuggestions GroupSuggestion[] @relation("ReceivedSuggestions")
+  notifications     UserNotification[]
+  createdNotifications Notification[]
+  blockedBy         UserBlock[]       @relation("BlockedUsers")
+  blocking          UserBlock[]       @relation("BlockingUsers")
 }
 
 model Account {
@@ -46,89 +85,23 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-enum Role {
-  USER
-  ADMIN
-  SUPER_ADMIN
-}
+model UserBlock {
+  id          String   @id @default(cuid())
+  blockerId   String
+  blockedId   String
+  createdAt   DateTime @default(now())
 
-enum UserStatus {
-  ACTIVE
-  DISABLED
-  PENDING
-  DELETED
-}
+  blocker     User     @relation("BlockingUsers", fields: [blockerId], references: [id], onDelete: Cascade)
+  blocked     User     @relation("BlockedUsers", fields: [blockedId], references: [id], onDelete: Cascade)
 
-model User {
-  id                String    @id @default(cuid())
-  name              String
-  username          String?   @unique
-  email             String?   @unique
-  emailVerified     DateTime?
-  image             String?
-  bio               String?
-  coverImage        String?
-  website           String?
-  twitter           String?
-  linkedin          String?
-  password          String
-  role              Role      @default(USER)
-  status            UserStatus @default(ACTIVE)
-
-  createdAt               DateTime                @default(now())
-  updatedAt               DateTime                @updatedAt
-
-  accounts                Account[]
-  sessions                Session[]
-  posts                   Post[]
-  reviews                 Review[]
-  favoritePosts           FavoritePost[]
-  likedPosts              Post[]                  @relation("LikedPosts")
-  dislikedPosts           Post[]                  @relation("DislikedPosts")
-  createdSeries           Series[]
-  groups                  GroupMember[]
-  sentInvites             GroupInvite[]           @relation("SentInvites")
-  receivedInvites         GroupInvite[]           @relation("ReceivedInvites")
-  sentSuggestions         GroupSuggestion[]       @relation("SentSuggestions")
-  receivedSuggestions     GroupSuggestion[]       @relation("ReceivedSuggestions")
-  sentNotifications       Notification[]          @relation("SentNotifications")
-  receivedNotifications   UserNotification[]
-  blockedBy               UserBlock[]             @relation("Blocking")
-  blocking                UserBlock[]             @relation("Blocked")
-  createdGroups           Group[]
-}
-
-enum PostType {
-  MOVIE
-  TV_SERIES
-  OTHER
-}
-
-enum PostStatus {
-  PUBLISHED
-  DRAFT
-  PENDING_APPROVAL
-  PRIVATE
-  PENDING_DELETION
-}
-
-enum PostVisibility {
-  PUBLIC
-  PRIVATE
-  GROUP_ONLY
+  @@unique([blockerId, blockedId])
 }
 
 model Post {
-  id                   Int               @id @default(autoincrement())
+  id                   Int          @id @default(autoincrement())
   title                String
   description          String
   posterUrl            String?
-  viewCount            Int               @default(0)
-  status               String            @default("DRAFT")
-  type                 PostType          @default(MOVIE)
-  createdAt            DateTime          @default(now())
-  updatedAt            DateTime          @updatedAt
-  authorId             String
   year                 Int?
   duration             String?
   genres               String?
@@ -137,22 +110,48 @@ model Post {
   imdbRating           Float?
   rottenTomatoesRating Int?
   googleRating         Int?
+  status               String       @default("DRAFT")
+  viewCount            Int          @default(0)
+  createdAt            DateTime     @default(now())
+  updatedAt            DateTime     @updatedAt
+  type                 PostType     @default(MOVIE)
   seriesId             Int?
   orderInSeries        Int?
-  visibility           PostVisibility    @default(PUBLIC)
+  visibility           Visibility   @default(PUBLIC)
   groupId              Int?
 
-  author        User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  authorId      String
+  author        User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  series        Series?      @relation(fields: [seriesId], references: [id], onDelete: SetNull)
+  group         Group?       @relation(fields: [groupId], references: [id], onDelete: SetNull)
   reviews       Review[]
-  favoritePosts FavoritePost[]
-  likedBy       User[]           @relation("LikedPosts")
-  dislikedBy    User[]           @relation("DislikedPosts")
   subtitles     Subtitle[]
+  favoritePosts FavoritePost[]
   mediaLinks    MediaLink[]
-  episodes      Episode[]
-  metaData      MetaData[]
-  series        Series?          @relation(fields: [seriesId], references: [id])
-  group         Group?           @relation(fields: [groupId], references: [id])
+  likedBy       User[]       @relation("UserLikes")
+  dislikedBy    User[]       @relation("UserDislikes")
+}
+
+model Series {
+  id        Int      @id @default(autoincrement())
+  title     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  authorId  String
+  
+  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  posts  Post[]
+}
+
+model Subtitle {
+  id           Int      @id @default(autoincrement())
+  language     String
+  url          String
+  uploaderName String
+  createdAt    DateTime @default(now())
+  postId       Int
+
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model Review {
@@ -161,55 +160,26 @@ model Review {
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  userId    String
   postId    Int
+  userId    String
   parentId  Int?
 
   post   Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  parent Review?  @relation("ReviewReplies", fields: [parentId], references: [id])
   replies Review[] @relation("ReviewReplies")
 }
 
 model FavoritePost {
   id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
   userId    String
   postId    Int
+  createdAt DateTime @default(now())
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
-}
-
-model Series {
-  id        Int      @id @default(autoincrement())
-  title     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  authorId  String
-
-  posts  Post[]
-  author User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
-}
-
-enum SubtitleAccessLevel {
-  PUBLIC
-  SUBSCRIBER_ONLY
-  AUTHORIZED_ONLY
-}
-
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  url          String
-  uploaderName String
-  accessLevel  SubtitleAccessLevel @default(PUBLIC)
-  createdAt    DateTime @default(now())
-  postId       Int
-
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
 model MediaLink {
@@ -221,26 +191,134 @@ model MediaLink {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
 
-model Episode {
-  id          Int     @id @default(autoincrement())
-  title       String
-  episodeNumber Int
-  seasonNumber Int
-  releaseDate DateTime?
-  description String?
-  posterUrl   String?
-  postId      Int
+model Group {
+  id           Int       @id @default(autoincrement())
+  name         String
+  description  String?
+  profilePhoto String?
+  coverPhoto   String?
+  status       GroupStatus @default(ACTIVE)
+  visibility   GroupVisibility @default(PUBLIC)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  createdById  String
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdBy   User              @relation("CreatedBy", fields: [createdById], references: [id])
+  posts       Post[]
+  members     GroupMember[]
+  invites     GroupInvite[]
+  suggestions GroupSuggestion[]
+  permissions GroupPermission[]
 }
 
-model MetaData {
-  id     Int    @id @default(autoincrement())
-  key    String
-  value  String
-  postId Int
+model GroupMember {
+  id        Int      @id @default(autoincrement())
+  role      GroupRole @default(MEMBER)
+  status    MemberStatus @default(ACTIVE)
+  joinedAt  DateTime @default(now())
+  
+  userId    String
+  groupId   Int
+  
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  group     Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
 
-  post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@unique([userId, groupId])
+}
+
+model GroupInvite {
+  id          String   @id @default(cuid())
+  status      InviteStatus @default(PENDING)
+  createdAt   DateTime @default(now())
+  
+  groupId     Int
+  senderId    String
+  receiverId  String
+  
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  sender      User     @relation("SentInvites", fields: [senderId], references: [id], onDelete: Cascade)
+  receiver    User     @relation("ReceivedInvites", fields: [receiverId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, senderId, receiverId])
+}
+
+model GroupSuggestion {
+  id              String   @id @default(cuid())
+  status          SuggestionStatus @default(PENDING)
+  createdAt       DateTime @default(now())
+
+  groupId         Int
+  suggestedById   String
+  suggestedUserId String
+  
+  group           Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  suggestedBy     User     @relation("SentSuggestions", fields: [suggestedById], references: [id], onDelete: Cascade)
+  suggestedUser   User     @relation("ReceivedSuggestions", fields: [suggestedUserId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id           String   @id @default(cuid())
+  title        String
+  message      String
+  type         NotificationType @default(SYSTEM)
+  receiverType ReceiverType
+  receiverId   String?  // Can be userId or groupId
+  isRead       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  senderId     String?
+
+  sender           User?    @relation(fields: [senderId], references: [id], onDelete: SetNull)
+  userNotifications UserNotification[]
+}
+
+model UserNotification {
+  id              String    @id @default(cuid())
+  userId          String
+  notificationId  String
+  isRead          Boolean   @default(false)
+  
+  user            User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notification    Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, notificationId])
+}
+
+
+model GroupPermission {
+  id          Int      @id @default(autoincrement())
+  role        GroupRole
+  permissions Json
+  
+  groupId     Int
+  group       Group    @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, role])
+}
+
+
+enum Role {
+  USER
+  USER_ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+  PENDING
+  DELETED
+}
+
+enum PostType {
+  MOVIE
+  TV_SERIES
+  OTHER
+}
+
+enum Visibility {
+  PUBLIC
+  GROUP_ONLY
 }
 
 enum GroupStatus {
@@ -255,92 +333,30 @@ enum GroupVisibility {
   PRIVATE
 }
 
-model Group {
-  id           Int             @id @default(autoincrement())
-  name         String
-  description  String?
-  profilePhoto String?
-  coverPhoto   String?
-  status       GroupStatus     @default(ACTIVE)
-  visibility   GroupVisibility @default(PUBLIC)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  createdById  String
-
-  createdBy   User              @relation(fields: [createdById], references: [id])
-  members     GroupMember[]
-  invites     GroupInvite[]
-  suggestions GroupSuggestion[]
-  permissions GroupPermission[]
-  posts       Post[]
-}
-
-enum GroupMemberRole {
+enum GroupRole {
   ADMIN
   MODERATOR
   MEMBER
 }
 
-enum GroupMemberStatus {
+enum MemberStatus {
   ACTIVE
   DISABLED
   PENDING
   LEFT
 }
 
-model GroupMember {
-  id        Int               @id @default(autoincrement())
-  role      GroupMemberRole   @default(MEMBER)
-  status    GroupMemberStatus @default(ACTIVE)
-  joinedAt  DateTime          @default(now())
-  userId    String
-  groupId   Int
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, groupId])
-}
-
-enum GroupInviteStatus {
+enum InviteStatus {
   PENDING
   ACCEPTED
   REJECTED
   EXPIRED
 }
 
-model GroupInvite {
-  id         String            @id @default(cuid())
-  status     GroupInviteStatus @default(PENDING)
-  createdAt  DateTime          @default(now())
-  groupId    Int
-  senderId   String
-  receiverId String
-
-  group    Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  sender   User  @relation("SentInvites", fields: [senderId], references: [id], onDelete: Cascade)
-  receiver User  @relation("ReceivedInvites", fields: [receiverId], references: [id], onDelete: Cascade)
-
-  @@unique([groupId, senderId, receiverId])
-}
-
-enum GroupSuggestionStatus {
+enum SuggestionStatus {
   PENDING
   ACCEPTED
   REJECTED
-}
-
-model GroupSuggestion {
-  id              String                @id @default(cuid())
-  status          GroupSuggestionStatus @default(PENDING)
-  createdAt       DateTime              @default(now())
-  groupId         Int
-  suggestedById   String
-  suggestedUserId String
-
-  group         Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-  suggestedBy   User  @relation("SentSuggestions", fields: [suggestedById], references: [id], onDelete: Cascade)
-  suggestedUser User  @relation("ReceivedSuggestions", fields: [suggestedUserId], references: [id], onDelete: Cascade)
 }
 
 enum NotificationType {
@@ -349,55 +365,10 @@ enum NotificationType {
   INVITE
   SUGGESTION
   CUSTOM
-  VIEW
-  REACTION
-  COMMENT
 }
 
-model Notification {
-  id           String           @id @default(cuid())
-  title        String
-  message      String
-  type         NotificationType @default(CUSTOM)
-  createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  senderId     String?
-
-  sender User?             @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
-  users  UserNotification[]
-}
-
-model UserNotification {
-  id             String   @id @default(cuid())
-  isRead         Boolean  @default(false)
-  isHidden       Boolean  @default(false)
-  isArchived     Boolean  @default(false)
-  userId         String
-  notificationId String
-
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, notificationId])
-}
-
-model UserBlock {
-  blockerId String
-  blockedId String
-
-  blocker User @relation("Blocking", fields: [blockerId], references: [id], onDelete: Cascade)
-  blocked User @relation("Blocked", fields: [blockedId], references: [id], onDelete: Cascade)
-
-  @@id([blockerId, blockedId])
-}
-
-model GroupPermission {
-  id          Int             @id @default(autoincrement())
-  permissions Json
-  groupId     Int
-  role        GroupMemberRole
-
-  group Group @relation(fields: [groupId], references: [id], onDelete: Cascade)
-
-  @@unique([groupId, role])
+enum ReceiverType {
+  USER
+  GROUP
+  ALL
 }
