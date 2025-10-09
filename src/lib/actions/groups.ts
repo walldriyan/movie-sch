@@ -203,10 +203,8 @@ export async function getGroupForProfile(groupId: string) {
         return null;
     }
     
-    let canViewPosts = group.visibility === 'PUBLIC';
     let isMember = false;
     let membershipStatus: 'ACTIVE' | 'PENDING' | null = null;
-
 
     if (user) {
         const membership = await prisma.groupMember.findUnique({
@@ -218,16 +216,14 @@ export async function getGroupForProfile(groupId: string) {
             },
         });
         if (membership) {
-            if (membership.status === 'ACTIVE') {
-                 canViewPosts = true;
-                 isMember = true;
-                 membershipStatus = 'ACTIVE';
-            } else if (membership.status === 'PENDING') {
-                membershipStatus = 'PENDING';
-            }
+            isMember = membership.status === 'ACTIVE';
+            membershipStatus = membership.status;
         }
     }
     
+    // Stricter check for post visibility
+    const canViewPosts = group.visibility === 'PUBLIC' || (group.visibility === 'PRIVATE' && user && isMember);
+
     let posts = [];
     if (canViewPosts) {
         posts = await prisma.post.findMany({
