@@ -93,7 +93,7 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
       </Button>
   }
 
-  const showPrivateMessage = group.visibility === 'PRIVATE' && !group.isMember;
+  const showPrivateMessage = group.visibility === 'PRIVATE' && (!currentUser || !group.isMember);
 
 
   return (

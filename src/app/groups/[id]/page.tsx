@@ -11,9 +11,6 @@ export default async function GroupProfilePage({ params }: { params: { id: strin
   
   const groupData = await getGroupForProfile(params.id);
 
-  // For debugging purposes, log the data on the server
-  console.log("Group Data for Debugging (Server):", JSON.stringify(groupData, null, 2));
-
   if (!groupData) {
     notFound();
   }
