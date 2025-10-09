@@ -17,7 +17,7 @@ export default async function ManageGroupsPage() {
     notFound();
   }
 
-  const initialGroups = (await getGroups()) as GroupWithCount[];
+  const initialGroups = await getGroups();
   const allUsers = (await getUsers()) as User[];
 
   return (

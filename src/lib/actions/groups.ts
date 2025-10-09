@@ -125,3 +125,77 @@ export async function updateGroupMembers(groupId: string, newMemberIds: string[]
     revalidatePath('/admin/groups');
     revalidatePath(`/groups/${groupId}`);
 }
+
+export async function getGroupForProfile(groupId: string) {
+    const session = await auth();
+    const user = session?.user;
+
+    const group = await prisma.group.findUnique({
+        where: { id: groupId },
+        include: {
+            _count: {
+                select: { members: true },
+            },
+            members: {
+                include: {
+                    user: {
+                        select: {
+                            id: true,
+                            name: true,
+                            image: true,
+                        },
+                    },
+                },
+                take: 10, // Limit initial members shown
+                orderBy: {
+                    joinedAt: 'asc',
+                }
+            },
+            createdBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                },
+            },
+        },
+    });
+
+    if (!group) {
+        return null;
+    }
+    
+    let canViewPosts = group.visibility === 'PUBLIC';
+    let isMember = false;
+
+    if (user) {
+        const membership = await prisma.groupMember.findUnique({
+            where: {
+                userId_groupId: {
+                    userId: user.id,
+                    groupId: groupId,
+                },
+            },
+        });
+        if (membership && membership.status === 'ACTIVE') {
+            canViewPosts = true;
+            isMember = true;
+        }
+    }
+    
+    let posts = [];
+    if (canViewPosts) {
+        posts = await prisma.post.findMany({
+            where: { groupId: groupId },
+            include: {
+                author: true,
+            }
+        });
+    }
+
+    return {
+        ...group,
+        posts,
+        isMember,
+    };
+}
