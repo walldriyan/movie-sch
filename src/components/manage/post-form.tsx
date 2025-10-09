@@ -76,7 +76,7 @@ type PostFormValues = z.infer<typeof postSchema>;
 type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface PostFormProps {
   editingPost: PostWithLinks | null;
-  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
+  onFormSubmit: (postData: PostFormData, id?: number) => void;
   onBack: () => void;
   debugError: any;
 }
@@ -182,7 +182,6 @@ export default function PostForm({
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [selectedGroupForDebug, setSelectedGroupForDebug] = useState<Group | null>(null);
 
 
   useEffect(() => {
@@ -246,7 +245,6 @@ export default function PostForm({
   const posterUrlValue = watch('posterUrl');
   const postType = watch('type');
   const visibility = watch('visibility');
-  const groupIdValue = watch('groupId');
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -667,9 +665,11 @@ export default function PostForm({
                           <Select 
                               onValueChange={(value) => {
                                 const numValue = value ? Number(value) : null;
+                                const selectedGroup = groups.find(g => g.id === numValue);
+                                console.log('Raw value from Select:', value);
+                                console.log('Converted numeric value:', numValue);
+                                console.log('Selected Group Object:', selectedGroup);
                                 field.onChange(numValue);
-                                const selected = groups.find(g => g.id === numValue);
-                                setSelectedGroupForDebug(selected || null);
                               }}
                               defaultValue={field.value ? String(field.value) : ""}
                           >
@@ -684,14 +684,6 @@ export default function PostForm({
                               )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
                             </SelectContent>
                           </Select>
-                           {selectedGroupForDebug && (
-                            <FormDescription>
-                                <div className="mt-2 text-xs text-muted-foreground p-2 border border-dashed rounded-md bg-muted/50">
-                                    <p className="font-bold">Debug Info: Selected Group</p>
-                                    <pre className="text-xs">{JSON.stringify(selectedGroupForDebug, null, 2)}</pre>
-                                </div>
-                            </FormDescription>
-                           )}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -793,3 +785,5 @@ export default function PostForm({
     </div>
   );
 }
+
+    
