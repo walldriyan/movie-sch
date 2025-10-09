@@ -59,7 +59,7 @@ const postSchema = z.object({
   seriesId: z.number().optional().nullable(),
   orderInSeries: z.coerce.number().optional(),
   visibility: z.enum(['PUBLIC', 'GROUP_ONLY']).default('PUBLIC'),
-  groupId: z.number().nullable().optional(),
+  groupId: z.string().nullable().optional(),
 }).superRefine((data, ctx) => {
   if (data.visibility === 'GROUP_ONLY' && !data.groupId) {
     ctx.addIssue({
@@ -271,7 +271,7 @@ export default function PostForm({
       seriesId: values.seriesId,
       orderInSeries: values.orderInSeries,
       visibility: values.visibility,
-      groupId: values.visibility === 'GROUP_ONLY' ? (values.groupId ? Number(values.groupId) : null) : null,
+      groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
     };
     onFormSubmit(postData, editingPost?.id);
   };
@@ -664,14 +664,12 @@ export default function PostForm({
                           <FormLabel>Group</FormLabel>
                           <Select 
                               onValueChange={(value) => {
-                                const numValue = value ? Number(value) : null;
-                                const selectedGroup = groups.find(g => g.id === numValue);
                                 console.log('Raw value from Select:', value);
-                                console.log('Converted numeric value:', numValue);
+                                const selectedGroup = groups.find(g => g.id === value);
                                 console.log('Selected Group Object:', selectedGroup);
-                                field.onChange(numValue);
+                                field.onChange(value || null);
                               }}
-                              defaultValue={field.value ? String(field.value) : ""}
+                              defaultValue={field.value || ""}
                           >
                             <FormControl>
                               <SelectTrigger>
@@ -680,7 +678,7 @@ export default function PostForm({
                             </FormControl>
                             <SelectContent>
                               {groups.length > 0 ? groups.map(group => (
-                                <SelectItem key={group.id} value={String(group.id)}>{group.name}</SelectItem>
+                                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                               )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
                             </SelectContent>
                           </Select>
@@ -785,5 +783,3 @@ export default function PostForm({
     </div>
   );
 }
-
-    

@@ -45,6 +45,7 @@ export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'review
   mediaLinks?: Omit<MediaLink, 'id'>[];
   genres?: string[];
   seriesId?: number | null;
+  groupId?: string | null;
 };
 
 
