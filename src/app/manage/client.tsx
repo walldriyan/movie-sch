@@ -47,7 +47,6 @@ export default function ManagePostsClient({
   const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [debugError, setDebugError] = useState<any>(null);
 
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -112,7 +111,6 @@ export default function ManagePostsClient({
   const handleAddNewPost = () => {
     setEditingPost(null);
     setFormError(null);
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('create', 'true');
     url.searchParams.delete('edit');
@@ -123,7 +121,6 @@ export default function ManagePostsClient({
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
     setFormError(null);
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('edit', String(post.id));
     url.searchParams.delete('create');
@@ -135,42 +132,28 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
-    try {
-      setFormError(null);
-      setDebugError(null);
-      await savePost(postData, id);
-      await fetchPosts(id ? currentPage : 1, statusFilter);
-      handleBackFromForm(); // Go back to list and clear URL params
-      toast({
-        title: 'Success',
-        description: `Post "${postData.title}" has been submitted for approval.`,
-      });
-    } catch (error: any) {
-      console.error('Failed to save post:', error);
-      setFormError(error.message || 'An unknown error occurred while saving the post.');
-      setDebugError(error);
-    }
+    // By not using try-catch, any error thrown by savePost will
+    // be caught by Next.js's error boundary, showing the overlay.
+    await savePost(postData, id);
+    
+    // This code runs only on success
+    await fetchPosts(id ? currentPage : 1, statusFilter);
+    handleBackFromForm(); // Go back to list and clear URL params
+    toast({
+      title: 'Success',
+      description: `Post "${postData.title}" has been submitted for approval.`,
+    });
   };
 
   const handleDeleteConfirmed = async (postId: number) => {
-    setDebugError(null);
-    try {
-      const postToDelete = posts.find(m => m.id === postId);
-      if (postToDelete) {
-        await deletePost(postId);
-        await fetchPosts(currentPage, statusFilter);
-        toast({
-          title: 'Success',
-          description: `Post "${postToDelete.title}" action has been processed.`,
-        });
-      }
-    } catch (error: any) {
-      console.error("Delete error caught in client:", error);
-      setDebugError(error);
+    const postToDelete = posts.find(m => m.id === postId);
+    if (postToDelete) {
+      // Not using try-catch to let the error boundary show the error
+      await deletePost(postId);
+      await fetchPosts(currentPage, statusFilter);
       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to delete post.',
+        title: 'Success',
+        description: `Post "${postToDelete.title}" action has been processed.`,
       });
     }
   };
@@ -179,6 +162,7 @@ export default function ManagePostsClient({
   const handleStatusChange = async (postId: number, newStatus: string) => {
     setStatusChangingPostId(postId);
     try {
+      // This is a UI state change, less critical to show full error overlay
       await updatePostStatus(postId, newStatus);
       await fetchPosts(currentPage, statusFilter);
       toast({
@@ -204,7 +188,6 @@ export default function ManagePostsClient({
 
   const handleBackFromForm = () => {
     setFormError(null);
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
@@ -294,8 +277,6 @@ export default function ManagePostsClient({
             editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
-            error={formError}
-            debugError={debugError}
           />
         )}
       </ManageLayout>

@@ -79,8 +79,6 @@ interface PostFormProps {
   editingPost: PostWithLinks | null;
   onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
-  error?: string | null;
-  debugError?: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -179,8 +177,6 @@ export default function PostForm({
   editingPost,
   onFormSubmit,
   onBack,
-  error,
-  debugError,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
@@ -275,7 +271,7 @@ export default function PostForm({
       seriesId: values.seriesId,
       orderInSeries: values.orderInSeries,
       visibility: values.visibility,
-      groupId: values.visibility === 'GROUP_ONLY' ? (values.groupId || null) : null,
+      groupId: values.visibility === 'GROUP_ONLY' ? (values.groupId ? Number(values.groupId) : null) : null,
     };
     await onFormSubmit(postData, editingPost?.id);
   };
@@ -697,7 +693,7 @@ export default function PostForm({
               </div>
               {visibility === 'GROUP_ONLY' && selectedGroupForDebug && (
                  <div className="p-4 border border-dashed rounded-lg text-left mt-4">
-                    <h2 className="text-lg font-semibold mb-2 text-primary">Debug Group Info</h2>
+                    <h2 className="text-lg font-semibold mb-2 text-primary">Debug: Selected Group Info</h2>
                     <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
                       {JSON.stringify(selectedGroupForDebug, null, 2)}
                     </pre>
@@ -765,29 +761,6 @@ export default function PostForm({
               <Plus className="mr-2 h-4 w-4" /> Add Link
             </Button>
           </div>
-          
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Form Submission Error</AlertTitle>
-              <AlertDescription>
-                {error}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {debugError && (
-            <div className="mt-8 p-4 border border-dashed rounded-lg text-left bg-card">
-              <h2 className="text-lg font-semibold mb-2 text-destructive">Submission Error Details</h2>
-              <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-                {JSON.stringify({
-                    message: debugError.message,
-                    stack: debugError.stack,
-                    ...debugError
-                }, null, 2)}
-              </pre>
-            </div>
-          )}
           
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" disabled={formState.isSubmitting}>
