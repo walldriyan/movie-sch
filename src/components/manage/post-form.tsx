@@ -182,6 +182,7 @@ export default function PostForm({
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupForDebug, setSelectedGroupForDebug] = useState<Group | null>(null);
 
 
   useEffect(() => {
@@ -662,7 +663,15 @@ export default function PostForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Group</FormLabel>
-                          <Select onValueChange={(value) => field.onChange(value ? Number(value) : null)} defaultValue={String(field.value || '')}>
+                          <Select 
+                              onValueChange={(value) => {
+                                  const selectedId = Number(value);
+                                  field.onChange(selectedId);
+                                  const groupDetails = groups.find(g => g.id === selectedId) || null;
+                                  setSelectedGroupForDebug(groupDetails);
+                              }}
+                              defaultValue={field.value ? String(field.value) : undefined}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a group" />
@@ -683,6 +692,14 @@ export default function PostForm({
                     />
                   )}
               </div>
+              {visibility === 'GROUP_ONLY' && selectedGroupForDebug && (
+                 <div className="p-4 border border-dashed rounded-lg text-left mt-4">
+                    <h2 className="text-lg font-semibold mb-2 text-primary">Debug Group Info</h2>
+                    <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
+                      {JSON.stringify(selectedGroupForDebug, null, 2)}
+                    </pre>
+                  </div>
+              )}
            </div>
 
           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
