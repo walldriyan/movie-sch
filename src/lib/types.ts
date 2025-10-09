@@ -2,6 +2,12 @@
 
 import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember } from "@prisma/client";
 
+export enum PostType {
+  MOVIE = 'MOVIE',
+  TV_SERIES = 'TV_SERIES',
+  OTHER = 'OTHER',
+}
+
 export type User = PrismaUser;
 
 export type Review = Omit<PrismaReview, 'parentId'> & {
