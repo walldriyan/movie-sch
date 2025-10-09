@@ -193,5 +193,3 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
     </div>
   );
 }
-
-    
