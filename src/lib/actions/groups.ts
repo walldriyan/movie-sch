@@ -199,3 +199,33 @@ export async function getGroupForProfile(groupId: string) {
         isMember,
     };
 }
+
+
+export async function getPublicGroups(limit = 5) {
+  const groups = await prisma.group.findMany({
+    where: {
+      visibility: 'PUBLIC',
+    },
+    include: {
+      _count: {
+        select: { members: true },
+      },
+      posts: {
+        take: 1,
+        select: {
+          posterUrl: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      },
+    },
+    orderBy: {
+      members: {
+        _count: 'desc',
+      },
+    },
+    take: limit,
+  });
+  return groups;
+}

@@ -1,8 +1,7 @@
 
-
 'use server';
 
-import { getPosts, getUsers } from '@/lib/actions';
+import { getPosts, getUsers, getPublicGroups } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 
 export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string } }) {
@@ -13,11 +12,13 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
 
   const { posts, totalPages } = await getPosts({ page: currentPage, limit: 10, filters: { timeFilter, sortBy, type: typeFilter } });
   const users = await getUsers();
+  const groups = await getPublicGroups(5);
   
   return (
     <HomePageClient
       initialPosts={posts}
       initialUsers={users}
+      initialGroups={groups as any}
       totalPages={totalPages}
       currentPage={currentPage}
       searchParams={searchParams}

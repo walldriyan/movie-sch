@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { User, Post } from '@/lib/types';
+import type { User, Post, GroupWithCount } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -22,18 +22,21 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import GroupCard from './group-card';
 
 interface HomePageClientProps {
     initialPosts: any[];
     initialUsers: User[];
+    initialGroups: (GroupWithCount & { posts: { posterUrl: string | null }[] })[];
     totalPages: number;
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string };
 }
 
-export default function HomePageClient({ initialPosts, initialUsers, totalPages, currentPage, searchParams }: HomePageClientProps) {
+export default function HomePageClient({ initialPosts, initialUsers, initialGroups, totalPages, currentPage, searchParams }: HomePageClientProps) {
   const posts = initialPosts;
   const users = initialUsers;
+  const groups = initialGroups;
   const timeFilter = searchParams?.timeFilter;
   const sortBy = searchParams?.sortBy;
   const typeFilter = searchParams?.type;
@@ -219,7 +222,17 @@ export default function HomePageClient({ initialPosts, initialUsers, totalPages,
                     })}
                     </div>
                 </section>
+                
+                <Separator className="my-12 bg-gray-800" />
 
+                <section>
+                    <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Globe /> Popular Groups</h2>
+                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                        {groups.map((group) => (
+                           <GroupCard key={group.id} group={group} />
+                        ))}
+                    </div>
+                </section>
             </main>
             )}
         </div>
