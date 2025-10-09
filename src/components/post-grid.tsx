@@ -42,7 +42,10 @@ function PostCard({ post }: { post: Post }) {
 
   return (
     <li className="relative flex flex-col gap-4 pb-8">
+        {/* Timeline line */}
         <div className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-border" />
+        
+        {/* Activity Header */}
         <div className="relative flex-shrink-0 flex items-center gap-3">
              <Link href={`/profile/${post.author?.id}`}>
                 <Avatar>
@@ -68,10 +71,11 @@ function PostCard({ post }: { post: Post }) {
             </Tooltip>
         </div>
         
+        {/* Content Card */}
         <div className="pl-12 flex-grow space-y-3">
              <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
                 {postImageUrl && (
-                  <div className="aspect-[16/10] relative overflow-hidden rounded-t-lg max-h-[500px]">
+                  <div className="aspect-[16/9] relative overflow-hidden rounded-t-lg max-h-[310px] ">
                       <Image
                           src={postImageUrl}
                           alt={post.title}
@@ -112,28 +116,28 @@ function PostCard({ post }: { post: Post }) {
                             </div>
                         </div>
                     </div>
-                     {totalLikes > 0 && (
-                        <div className="mt-4 flex items-center gap-3 border-t pt-3">
-                           <div className="flex items-center -space-x-2">
-                                <div className="w-7 h-7 rounded-full bg-red-500/10 border-2 border-red-500 flex items-center justify-center">
-                                    <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
-                                </div>
-                                {displayLikers.map(liker => (
-                                    <Avatar key={liker.id} className="h-7 w-7 border-2 border-background">
-                                        <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
-                                        <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
-                                    </Avatar>
-                                ))}
-                            </div>
-                            <p className="text-xs text-muted-foreground">
-                                {displayLikers[0]?.name}
-                                {remainingLikes > 0 && ` and ${remainingLikes} others liked this.`}
-                                {remainingLikes === 0 && ' liked this.'}
-                            </p>
-                        </div>
-                    )}
                 </div>
             </div>
+             {totalLikes > 0 && (
+                <div className="mt-4 flex items-center gap-3 border-t pt-3">
+                   <div className="flex items-center -space-x-2">
+                        <div className="w-7 h-7 rounded-full bg-red-500/10 border-2 border-red-500 flex items-center justify-center">
+                            <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
+                        </div>
+                        {displayLikers.map(liker => (
+                            <Avatar key={liker.id} className="h-7 w-7 border-2 border-background">
+                                <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
+                                <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
+                            </Avatar>
+                        ))}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                        {displayLikers[0]?.name}
+                        {remainingLikes > 0 && ` and ${remainingLikes} others liked this.`}
+                        {remainingLikes === 0 && ' liked this.'}
+                    </p>
+                </div>
+            )}
         </div>
     </li>
   );
