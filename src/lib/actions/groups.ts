@@ -51,6 +51,7 @@ export async function getGroupDetails(groupId: string) {
         where: { id: groupId },
         include: {
             members: {
+                where: { status: 'ACTIVE' },
                 include: {
                     user: true,
                 },
@@ -69,7 +70,7 @@ export async function updateGroupMembers(groupId: string, newMemberIds: string[]
     }
 
     const existingMembers = await prisma.groupMember.findMany({
-        where: { groupId },
+        where: { groupId, status: 'ACTIVE' },
     });
     const existingMemberIds = existingMembers.map(m => m.userId);
 
@@ -96,7 +97,7 @@ export async function updateGroupMembers(groupId: string, newMemberIds: string[]
             data: membersToAdd.map(userId => ({
                 groupId,
                 userId,
-                role: memberRoles[userId] || 'MEMBER', // Default to MEMBER if not specified
+                role: memberRoles[userId] || 'MEMBER',
                 status: 'ACTIVE',
             })),
         }));
@@ -134,9 +135,10 @@ export async function getGroupForProfile(groupId: string) {
         where: { id: groupId },
         include: {
             _count: {
-                select: { members: true },
+                select: { members: { where: { status: 'ACTIVE' }} },
             },
             members: {
+                where: { status: 'ACTIVE' },
                 include: {
                     user: {
                         select: {
@@ -146,7 +148,7 @@ export async function getGroupForProfile(groupId: string) {
                         },
                     },
                 },
-                take: 10, // Limit initial members shown
+                take: 10,
                 orderBy: {
                     joinedAt: 'asc',
                 }
@@ -219,7 +221,7 @@ export async function getPublicGroups(limit = 10) {
     },
     include: {
       _count: {
-        select: { members: true },
+        select: { members: { where: { status: 'ACTIVE' } } },
       },
       posts: {
         take: 1,
@@ -263,8 +265,7 @@ export async function requestToJoinGroup(groupId: string) {
 
     const canJoinDirectly = 
         user.role === ROLES.SUPER_ADMIN ||
-        user.role === ROLES.USER_ADMIN ||
-        group.createdById === user.id;
+        user.role === ROLES.USER_ADMIN;
 
     const status = canJoinDirectly ? 'ACTIVE' : 'PENDING';
 
@@ -278,6 +279,7 @@ export async function requestToJoinGroup(groupId: string) {
     });
 
     revalidatePath(`/groups/${groupId}`);
+    revalidatePath('/admin/groups');
     return { status };
 }
 
@@ -300,5 +302,65 @@ export async function leaveGroup(groupId: string) {
         where: { userId_groupId: { userId: user.id, groupId: groupId } }
     });
 
+    revalidatePath(`/groups/${groupId}`);
+    revalidatePath('/admin/groups');
+}
+
+export async function getPendingGroupRequests(groupId: string) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error("Not authorized");
+    }
+    return prisma.groupMember.findMany({
+        where: {
+            groupId,
+            status: 'PENDING',
+        },
+        include: {
+            user: true,
+        },
+        orderBy: {
+            joinedAt: 'asc'
+        }
+    });
+}
+
+export async function manageGroupJoinRequest(groupId: string, userId: string, action: 'APPROVE' | 'REJECT') {
+    const session = await auth();
+    const actor = session?.user;
+
+    const group = await prisma.group.findUnique({ where: { id: groupId }, include: { members: { where: { role: 'ADMIN' }}}});
+    if (!group) {
+        throw new Error("Group not found");
+    }
+    
+    const canManage = actor?.role === ROLES.SUPER_ADMIN || group.createdById === actor?.id || group.members.some(m => m.userId === actor?.id);
+    if (!canManage) {
+        throw new Error("Not authorized to manage requests for this group.");
+    }
+
+    const request = await prisma.groupMember.findUnique({
+        where: {
+            userId_groupId: { userId, groupId },
+            status: 'PENDING',
+        }
+    });
+
+    if (!request) {
+        throw new Error("No pending request found for this user.");
+    }
+
+    if (action === 'APPROVE') {
+        await prisma.groupMember.update({
+            where: { userId_groupId: { userId, groupId } },
+            data: { status: 'ACTIVE' },
+        });
+    } else { // REJECT
+        await prisma.groupMember.delete({
+             where: { userId_groupId: { userId, groupId } },
+        });
+    }
+
+    revalidatePath('/admin/groups');
     revalidatePath(`/groups/${groupId}`);
 }

@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useTransition, useMemo } from 'react';
-import type { Group, User, Role as MemberRole } from '@prisma/client';
+import { useState, useTransition, useMemo, useEffect } from 'react';
+import type { Group, User, Role as MemberRole, GroupMember } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -39,12 +39,12 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check, Trash2 } from 'lucide-react';
+import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check, Trash2, Mail, CheckCircle2, XCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createGroup, getGroups, getGroupDetails, updateGroupMembers } from '@/lib/actions';
+import { createGroup, getGroups, getGroupDetails, updateGroupMembers, getPendingGroupRequests, manageGroupJoinRequest } from '@/lib/actions';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
@@ -52,6 +52,8 @@ import { Badge } from '../ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import type { GroupWithCount, GroupWithMembers, MemberWithUser } from '@/lib/types';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import Link from 'next/link';
 
 
 const groupFormSchema = z.object({
@@ -94,8 +96,6 @@ function MultiSelectUsers({
   return (
      <Popover open={open} onOpenChange={setOpen}>
       <div className="space-y-2">
-        <p className="text-sm font-medium text-muted-foreground">Members</p>
-        
         <div className="space-y-2">
             {selectedMembers.map((member) => (
                 <div key={member.user.id} className="flex items-center justify-between p-2 border rounded-lg">
@@ -172,26 +172,36 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
     const [open, setOpen] = useState(false);
     const [isSubmitting, startSubmitting] = useTransition();
     const [isFetchingDetails, startFetchingDetails] = useTransition();
+    const [isManagingRequest, startManagingRequest] = useTransition();
     
     const [selectedMembers, setSelectedMembers] = useState<MemberWithUser[]>([]);
+    const [pendingRequests, setPendingRequests] = useState<(GroupMember & { user: User })[]>([]);
     const [memberRoles, setMemberRoles] = useState<Record<string, MemberRole>>({});
-
     const { toast } = useToast();
+
+    const fetchDetails = async () => {
+        startFetchingDetails(async () => {
+            const [groupDetails, pendingData] = await Promise.all([
+                getGroupDetails(group.id) as Promise<GroupWithMembers | null>,
+                getPendingGroupRequests(group.id)
+            ]);
+
+            if (groupDetails) {
+                const initialMembers = groupDetails.members.map(m => ({ ...m, user: m.user! }));
+                setSelectedMembers(initialMembers);
+                const initialRoles: Record<string, MemberRole> = {};
+                initialMembers.forEach(m => {
+                    initialRoles[m.user.id] = m.role as MemberRole;
+                });
+                setMemberRoles(initialRoles);
+            }
+            setPendingRequests(pendingData as any);
+        });
+    }
 
     const handleOpenChange = (isOpen: boolean) => {
         if (isOpen) {
-            startFetchingDetails(async () => {
-                const groupDetails = await getGroupDetails(group.id) as GroupWithMembers | null;
-                if (groupDetails) {
-                    const initialMembers = groupDetails.members.map(m => ({ ...m, user: m.user! }));
-                    setSelectedMembers(initialMembers);
-                    const initialRoles: Record<string, MemberRole> = {};
-                    initialMembers.forEach(m => {
-                        initialRoles[m.user.id] = m.role as MemberRole;
-                    });
-                    setMemberRoles(initialRoles);
-                }
-            });
+            fetchDetails();
         }
         setOpen(isOpen);
     };
@@ -208,9 +218,22 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
                 await updateGroupMembers(group.id, memberIds, memberRoles);
                 toast({ title: 'Members updated', description: `Members for "${group.name}" have been saved.` });
                 onUpdate();
-                setOpen(false);
+                await fetchDetails(); // refetch to be safe
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to update members.' });
+            }
+        });
+    };
+    
+    const handleRequestAction = (userId: string, action: 'APPROVE' | 'REJECT') => {
+        startManagingRequest(async () => {
+            try {
+                await manageGroupJoinRequest(group.id, userId, action);
+                toast({ title: `Request ${action.toLowerCase()}ed`, description: `The join request has been ${action.toLowerCase()}ed.` });
+                await fetchDetails(); // Refresh list
+                onUpdate();
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to process request.' });
             }
         });
     };
@@ -218,37 +241,90 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-                <Button variant="outline" size="sm">Manage</Button>
+                <Button variant="outline" size="sm" className="relative">
+                    Manage
+                    {pendingRequests.length > 0 && (
+                        <Badge variant="destructive" className="absolute -top-1 -right-2 h-4 w-4 justify-center p-0 text-xs">{pendingRequests.length}</Badge>
+                    )}
+                </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>Manage Members for &quot;{group.name}&quot;</DialogTitle>
                     <DialogDescription>
                         Add, remove, or change roles for users in this group.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4 max-h-[60vh] overflow-y-auto pr-2">
+                
+                 <Tabs defaultValue="members" className="w-full">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="members">Members ({selectedMembers.length})</TabsTrigger>
+                    <TabsTrigger value="requests" className="relative">
+                        Requests
+                        {pendingRequests.length > 0 && !isFetchingDetails && (
+                            <Badge variant="destructive" className="absolute top-0 -right-1 h-5 w-5 justify-center p-0">{pendingRequests.length}</Badge>
+                        )}
+                    </TabsTrigger>
+                  </TabsList>
+                  <div className="py-4 max-h-[60vh] overflow-y-auto pr-2">
                     {isFetchingDetails ? (
-                        <div className="space-y-4 flex flex-col items-center justify-center h-48">
-                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-                             <p className="text-center text-sm text-muted-foreground">Loading members...</p>
-                        </div>
-                    ) : (
-                        <MultiSelectUsers
-                            allUsers={allUsers}
-                            selectedMembers={selectedMembers}
-                            onSelectionChange={setSelectedMembers}
-                            onRoleChange={handleRoleChange}
-                        />
+                            <div className="space-y-4 flex flex-col items-center justify-center h-48">
+                                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+                                <p className="text-center text-sm text-muted-foreground">Loading details...</p>
+                            </div>
+                        ) : (
+                        <>
+                            <TabsContent value="members" className="mt-0">
+                                <MultiSelectUsers
+                                    allUsers={allUsers}
+                                    selectedMembers={selectedMembers}
+                                    onSelectionChange={setSelectedMembers}
+                                    onRoleChange={handleRoleChange}
+                                />
+                                <DialogFooter className="mt-6">
+                                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
+                                    <Button onClick={handleSave} disabled={isSubmitting}>
+                                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        Save Changes
+                                    </Button>
+                                </DialogFooter>
+                            </TabsContent>
+                            <TabsContent value="requests" className="mt-0">
+                                <div className="space-y-2">
+                                    {pendingRequests.length > 0 ? pendingRequests.map(req => (
+                                        <div key={req.userId} className="flex items-center justify-between p-2 border rounded-lg">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-8 w-8">
+                                                    <AvatarImage src={req.user.image || ''} />
+                                                    <AvatarFallback>{req.user.name?.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium text-sm">{req.user.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{req.user.email}</p>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => handleRequestAction(req.userId, 'REJECT')} disabled={isManagingRequest}>
+                                                    <XCircle className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                                 <Button size="icon" variant="outline" className="h-8 w-8" onClick={() => handleRequestAction(req.userId, 'APPROVE')} disabled={isManagingRequest}>
+                                                    <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )) : (
+                                        <div className="flex flex-col items-center justify-center text-center p-8 border-2 border-dashed rounded-lg">
+                                            <Mail className="h-12 w-12 text-muted-foreground mb-4" />
+                                            <h3 className="text-lg font-semibold">No Pending Requests</h3>
+                                            <p className="text-muted-foreground mt-2 text-sm">There are no pending join requests for this group.</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </TabsContent>
+                        </>
                     )}
-                </div>
-                <DialogFooter>
-                    <Button variant="ghost" onClick={() => setOpen(false)}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={isSubmitting || isFetchingDetails}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
-                </DialogFooter>
+                  </div>
+                </Tabs>
             </DialogContent>
         </Dialog>
     );
@@ -402,7 +478,11 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
               {groups.length > 0 ? (
                 groups.map((group) => (
                   <TableRow key={group.id}>
-                    <TableCell className="font-medium">{group.name}</TableCell>
+                    <TableCell className="font-medium">
+                        <Link href={`/groups/${group.id}`} className="hover:underline text-primary">
+                            {group.name}
+                        </Link>
+                    </TableCell>
                     <TableCell className="text-muted-foreground max-w-xs truncate">{group.description}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
