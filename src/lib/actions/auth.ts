@@ -1,3 +1,4 @@
+
 'use server';
 
 import { signIn, signOut } from '@/auth';
@@ -5,7 +6,9 @@ import { AuthError } from 'next-auth';
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
-import { Role } from '@prisma/client';
+import { Role, UserStatus, GroupMemberRole, GroupMemberStatus, GroupVisibility, GroupInviteStatus, GroupSuggestionStatus, NotificationType, NotificationReceiverType, NotificationStatus } from '@prisma/client';
+import { Prisma } from '@prisma/client';
+
 
 export async function authenticate(
   prevState: string | undefined,
@@ -45,17 +48,6 @@ export async function registerUser(
   }
 
   try {
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return {
-        message: 'User with this email already exists',
-        input: formInput,
-      };
-    }
-
     const hashedPassword = await bcrypt.hash(password, 12);
 
     let userRole: Role = Role.USER;
@@ -75,13 +67,16 @@ export async function registerUser(
       },
     });
   } catch (error: any) {
-    console.error("Registration Error:", error);
-    if (error.code === 'P2011') {
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      // The .code property can be accessed in a type-safe manner
+      if (error.code === 'P2002') {
         return {
-          message: 'Could not create user: A required field is missing.',
-          input: formInput,
+            message: 'User with this email already exists.',
+            input: formInput,
         };
+      }
     }
+    // Fallback for other errors
     return {
       message: 'An unexpected error occurred during registration.',
       input: formInput,
