@@ -2,7 +2,7 @@
 
 'use server';
 
-import { Prisma, PostType, Series, Group, Subtitle, GroupMember } from '@prisma/client';
+import { Prisma, PostType, Series, Group, Subtitle, GroupMember, Role } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -112,12 +112,12 @@ export async function registerUser(
 
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    let userRole = ROLES.USER;
+    let userRole: Role = Role.USER;
     if (
       process.env.SUPER_ADMIN_EMAIL &&
       email === process.env.SUPER_ADMIN_EMAIL
     ) {
-      userRole = ROLES.SUPER_ADMIN;
+      userRole = Role.SUPER_ADMIN;
     }
 
     await prisma.user.create({
@@ -129,6 +129,7 @@ export async function registerUser(
       },
     });
   } catch (error: any) {
+    console.error("Registration Error:", error);
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
       if (error.code === 'P2011') {
         return {
@@ -874,7 +875,7 @@ export async function getPendingApprovals() {
     pendingUsers = await prisma.user.findMany({
       where: { permissionRequestStatus: 'PENDING' },
       select: { id: true, name: true, email: true },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -1186,7 +1187,7 @@ export async function createGroup(name: string, description: string | null): Pro
         data: {
             name,
             description,
-            authorId: session.user.id
+            createdBy: { connect: { id: session.user.id } }
         },
     });
     revalidatePath('/admin/groups');
