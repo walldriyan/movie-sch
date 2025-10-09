@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Star, MessageCircle, MoreHorizontal, ThumbsUp } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
-import type { Post } from '@/lib/types';
+import type { Post, PostType as PostTypeEnum } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import ClientRelativeDate from './client-relative-date';
 import {
@@ -73,16 +73,16 @@ function PostCard({ post }: { post: Post }) {
                       />
                   </div>
                 )}
-                 <div className="p-4">
+                 <div className="p-3">
                     <Link href={`/movies/${post.id}`} className="group block">
-                        <h2 className="font-serif text-xl font-bold leading-snug group-hover:text-primary transition-colors">
+                        <h2 className="font-serif text-lg font-bold leading-snug group-hover:text-primary transition-colors">
                             {post.title}
                         </h2>
                     </Link>
-                    <p className="mt-2 text-sm text-muted-foreground line-clamp-3">
+                    <p className="mt-1 text-sm text-muted-foreground line-clamp-3">
                       {plainDescription}
                     </p>
-                    <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+                    <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
                         <div className="flex items-center space-x-4">
                             {post.imdbRating && (
                                  <div className="flex items-center gap-1">
