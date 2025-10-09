@@ -61,6 +61,14 @@ const postSchema = z.object({
   orderInSeries: z.coerce.number().optional(),
   visibility: z.enum(['PUBLIC', 'GROUP_ONLY']).default('PUBLIC'),
   groupId: z.coerce.number().optional(),
+}).superRefine((data, ctx) => {
+  if (data.visibility === 'GROUP_ONLY' && !data.groupId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please select a group.',
+      path: ['groupId'],
+    });
+  }
 });
 
 type PostFormValues = z.infer<typeof postSchema>;
@@ -654,7 +662,7 @@ export default function PostForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Group</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={String(field.value || '')}>
+                          <Select onValueChange={(value) => field.onChange(Number(value))} defaultValue={String(field.value || '')}>
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a group" />
