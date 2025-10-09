@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation';
 import { ROLES } from '@/lib/permissions';
 import { getGroups, getUsers } from '@/lib/actions';
 import GroupsClient from '@/components/admin/groups-client';
+import type { GroupWithCount } from '@/lib/types';
+import type { User } from '@prisma/client';
 
 export default async function ManageGroupsPage() {
   const session = await auth();
@@ -15,8 +17,8 @@ export default async function ManageGroupsPage() {
     notFound();
   }
 
-  const initialGroups = await getGroups();
-  const allUsers = await getUsers();
+  const initialGroups = (await getGroups()) as GroupWithCount[];
+  const allUsers = (await getUsers()) as User[];
 
   return (
     <div className="space-y-4">

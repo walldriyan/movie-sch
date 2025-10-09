@@ -2,7 +2,7 @@
 
 'use client';
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember } from "@prisma/client";
 import { SubtitleAccessLevel } from './permissions';
 
 export type User = PrismaUser;
@@ -48,7 +48,21 @@ export type Series = Omit<PrismaSeries, 'posts'> & {
 export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series' | 'visibility' | 'groupId'> & {
   mediaLinks?: Omit<MediaLink, 'id'>[];
   genres?: string[];
-  seriesId?: number | null | undefined;
-  visibility: 'PUBLIC' | 'GROUP_ONLY';
-  groupId?: number | null | undefined;
+  seriesId?: string | null | undefined;
+  visibility: 'PUBLIC' | 'PRIVATE' | 'GROUP_ONLY';
+  groupId?: string | null | undefined;
+};
+
+
+// Group Management Types
+export type MemberWithUser = PrismaGroupMember & { user: User };
+
+export type GroupWithMembers = PrismaGroup & {
+  members: MemberWithUser[];
+};
+
+export type GroupWithCount = PrismaGroup & {
+  _count: {
+    members: number;
+  };
 };

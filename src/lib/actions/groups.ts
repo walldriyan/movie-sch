@@ -1,10 +1,11 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
-import type { Group } from '@prisma/client';
+import type { Group, GroupMember, User, Role as MemberRole } from '@prisma/client';
 
 
 export async function getGroups() {
@@ -32,7 +33,8 @@ export async function createGroup(name: string, description: string | null): Pro
         data: {
             name,
             description,
-            createdById: session.user.id,
+            createdBy: { connect: { id: session.user.id } },
+            visibility: 'PUBLIC', // Default visibility
         },
     });
     revalidatePath('/admin/groups');
@@ -40,7 +42,7 @@ export async function createGroup(name: string, description: string | null): Pro
 }
 
 
-export async function getGroupDetails(groupId: number) {
+export async function getGroupDetails(groupId: string) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
@@ -52,12 +54,15 @@ export async function getGroupDetails(groupId: number) {
                 include: {
                     user: true,
                 },
+                 orderBy: {
+                    joinedAt: 'asc'
+                }
             },
         },
     });
 }
 
-export async function updateGroupMembers(groupId: number, newMemberIds: string[]) {
+export async function updateGroupMembers(groupId: string, newMemberIds: string[], memberRoles: Record<string, MemberRole>) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
@@ -65,30 +70,58 @@ export async function updateGroupMembers(groupId: number, newMemberIds: string[]
 
     const existingMembers = await prisma.groupMember.findMany({
         where: { groupId },
-        select: { userId: true },
     });
     const existingMemberIds = existingMembers.map(m => m.userId);
 
     const membersToAdd = newMemberIds.filter(id => !existingMemberIds.includes(id));
     const membersToRemove = existingMemberIds.filter(id => !newMemberIds.includes(id));
+    const membersToUpdate = existingMembers.filter(m => newMemberIds.includes(m.userId) && memberRoles[m.userId] && memberRoles[m.userId] !== m.role);
 
-    await prisma.$transaction([
-        // Remove members
-        prisma.groupMember.deleteMany({
+
+    const transactions = [];
+
+    // Remove members
+    if (membersToRemove.length > 0) {
+        transactions.push(prisma.groupMember.deleteMany({
             where: {
                 groupId,
                 userId: { in: membersToRemove },
             },
-        }),
-        // Add new members
-        prisma.groupMember.createMany({
+        }));
+    }
+
+    // Add new members
+    if (membersToAdd.length > 0) {
+        transactions.push(prisma.groupMember.createMany({
             data: membersToAdd.map(userId => ({
                 groupId,
                 userId,
-                role: 'MEMBER', // Default role
+                role: memberRoles[userId] || 'MEMBER', // Default to MEMBER if not specified
+                status: 'ACTIVE',
             })),
-        }),
-    ]);
+        }));
+    }
+    
+    // Update existing member roles
+    for (const member of membersToUpdate) {
+        transactions.push(prisma.groupMember.update({
+            where: {
+                userId_groupId: {
+                    userId: member.userId,
+                    groupId: groupId,
+                },
+            },
+            data: {
+                role: memberRoles[member.userId],
+            },
+        }));
+    }
+
+
+    if (transactions.length > 0) {
+      await prisma.$transaction(transactions);
+    }
     
     revalidatePath('/admin/groups');
+    revalidatePath(`/groups/${groupId}`);
 }

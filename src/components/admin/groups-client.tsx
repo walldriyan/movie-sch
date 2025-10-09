@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useState, useTransition } from 'react';
-import type { Group, User } from '@prisma/client';
+import { useState, useTransition, useMemo } from 'react';
+import type { Group, User, Role as MemberRole } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -39,7 +39,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check } from 'lucide-react';
+import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -49,14 +49,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { Badge } from '../ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import type { GroupWithCount, GroupWithMembers, MemberWithUser } from '@/lib/types';
 
-type GroupWithCount = Group & { _count: { members: number } };
-type GroupWithMembers = Group & { members: { user: User, role: string }[] };
-
-interface GroupsClientProps {
-  initialGroups: GroupWithCount[];
-  allUsers: User[];
-}
 
 const groupFormSchema = z.object({
   name: z.string().min(2, 'Group name must be at least 2 characters.'),
@@ -68,85 +64,103 @@ type GroupFormValues = z.infer<typeof groupFormSchema>;
 
 function MultiSelectUsers({
   allUsers,
-  selectedUsers,
+  selectedMembers,
   onSelectionChange,
+  onRoleChange,
 }: {
   allUsers: User[];
-  selectedUsers: User[];
-  onSelectionChange: (users: User[]) => void;
+  selectedMembers: MemberWithUser[];
+  onSelectionChange: (users: MemberWithUser[]) => void;
+  onRoleChange: (userId: string, role: MemberRole) => void;
 }) {
   const [open, setOpen] = useState(false);
+  
+  const selectedUserIds = useMemo(() => selectedMembers.map(m => m.user.id), [selectedMembers]);
+  
+  const unselectedUsers = allUsers.filter(
+    (user) => !selectedUserIds.includes(user.id)
+  );
 
   const handleSelect = (user: User) => {
-    onSelectionChange([...selectedUsers, user]);
+    onSelectionChange([...selectedMembers, { user, role: 'MEMBER', userId: user.id, groupId: '', status: 'ACTIVE', joinedAt: new Date() }]);
     setOpen(false);
   };
   
-  const handleUnselect = (user: User) => {
-    onSelectionChange(selectedUsers.filter((u) => u.id !== user.id));
+  const handleUnselect = (userId: string) => {
+    onSelectionChange(selectedMembers.filter((m) => m.user.id !== userId));
   };
   
-  const unselectedUsers = allUsers.filter(
-    (user) => !selectedUsers.some((selected) => selected.id === user.id)
-  );
 
   return (
      <Popover open={open} onOpenChange={setOpen}>
       <div className="space-y-2">
         <p className="text-sm font-medium text-muted-foreground">Members</p>
+        
+        <div className="space-y-2">
+            {selectedMembers.map((member) => (
+                <div key={member.user.id} className="flex items-center justify-between p-2 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-8 w-8">
+                            <AvatarImage src={member.user.image || ''} />
+                            <AvatarFallback>{member.user.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-medium text-sm">{member.user.name}</p>
+                            <p className="text-xs text-muted-foreground">{member.user.email}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Select value={member.role} onValueChange={(value) => onRoleChange(member.user.id, value as MemberRole)}>
+                            <SelectTrigger className="w-[120px] h-8 text-xs">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="MEMBER">Member</SelectItem>
+                                <SelectItem value="MODERATOR">Moderator</SelectItem>
+                                <SelectItem value="ADMIN">Admin</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleUnselect(member.user.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                </div>
+            ))}
+        </div>
+
         <PopoverTrigger asChild>
           <Button
             variant="outline"
             role="combobox"
             aria-expanded={open}
-            className="w-full justify-between h-auto min-h-10"
+            className="w-full justify-start mt-2"
           >
-            <div className="flex flex-wrap gap-2">
-              {selectedUsers.length > 0 ? (
-                selectedUsers.map((user) => (
-                  <Badge
-                    key={user.id}
-                    variant="secondary"
-                    className="cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleUnselect(user);
-                    }}
-                  >
-                    {user.name}
-                    <span className="ml-1 hover:text-destructive">×</span>
-                  </Badge>
-                ))
-              ) : (
-                <span className="text-muted-foreground">Select users...</span>
-              )}
-            </div>
-            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+             <PlusCircle className="mr-2 h-4 w-4" /> Add members...
           </Button>
         </PopoverTrigger>
       </div>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
           <CommandInput placeholder="Search users..." />
-          <CommandEmpty>No user found.</CommandEmpty>
-          <CommandGroup>
-            <CommandList>
-              {unselectedUsers.map((user) => (
-                <CommandItem
-                  key={user.id}
-                  onSelect={() => handleSelect(user)}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      selectedUsers.some((u) => u.id === user.id) ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {user.name} ({user.email})
-                </CommandItem>
-              ))}
-            </CommandList>
-          </CommandGroup>
+          <CommandList>
+            <CommandEmpty>No user found.</CommandEmpty>
+            <CommandGroup>
+                {unselectedUsers.map((user) => (
+                    <CommandItem
+                    key={user.id}
+                    onSelect={() => handleSelect(user)}
+                    >
+                    <Check
+                        className={cn(
+                        "mr-2 h-4 w-4",
+                        selectedUserIds.includes(user.id) ? "opacity-100" : "opacity-0"
+                        )}
+                    />
+                    {user.name} ({user.email})
+                    </CommandItem>
+                ))}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
@@ -156,36 +170,49 @@ function MultiSelectUsers({
 
 function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCount; allUsers: User[]; onUpdate: () => void; }) {
     const [open, setOpen] = useState(false);
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
-    const { toast } = useToast();
-    
+    const [isSubmitting, startSubmitting] = useTransition();
     const [isFetchingDetails, startFetchingDetails] = useTransition();
+    
+    const [selectedMembers, setSelectedMembers] = useState<MemberWithUser[]>([]);
+    const [memberRoles, setMemberRoles] = useState<Record<string, MemberRole>>({});
+
+    const { toast } = useToast();
 
     const handleOpenChange = (isOpen: boolean) => {
         if (isOpen) {
             startFetchingDetails(async () => {
                 const groupDetails = await getGroupDetails(group.id) as GroupWithMembers | null;
                 if (groupDetails) {
-                    setSelectedUsers(groupDetails.members.map(m => m.user));
+                    const initialMembers = groupDetails.members.map(m => ({ ...m, user: m.user! }));
+                    setSelectedMembers(initialMembers);
+                    const initialRoles: Record<string, MemberRole> = {};
+                    initialMembers.forEach(m => {
+                        initialRoles[m.user.id] = m.role as MemberRole;
+                    });
+                    setMemberRoles(initialRoles);
                 }
             });
         }
         setOpen(isOpen);
     };
     
+    const handleRoleChange = (userId: string, role: MemberRole) => {
+        setMemberRoles(prev => ({ ...prev, [userId]: role }));
+        setSelectedMembers(prev => prev.map(m => m.user.id === userId ? { ...m, role } : m));
+    };
+    
     const handleSave = async () => {
-        setIsSubmitting(true);
-        try {
-            await updateGroupMembers(group.id, selectedUsers.map(u => u.id));
-            toast({ title: 'Members updated', description: `Members for "${group.name}" have been saved.` });
-            onUpdate();
-            setOpen(false);
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to update members.' });
-        } finally {
-            setIsSubmitting(false);
-        }
+        startSubmitting(async () => {
+            try {
+                const memberIds = selectedMembers.map(m => m.user.id);
+                await updateGroupMembers(group.id, memberIds, memberRoles);
+                toast({ title: 'Members updated', description: `Members for "${group.name}" have been saved.` });
+                onUpdate();
+                setOpen(false);
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to update members.' });
+            }
+        });
     };
 
     return (
@@ -193,24 +220,25 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
             <DialogTrigger asChild>
                 <Button variant="outline" size="sm">Manage</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
+            <DialogContent className="sm:max-w-lg">
                 <DialogHeader>
                     <DialogTitle>Manage Members for &quot;{group.name}&quot;</DialogTitle>
                     <DialogDescription>
-                        Add or remove users from this group.
+                        Add, remove, or change roles for users in this group.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="py-4">
+                <div className="py-4 max-h-[60vh] overflow-y-auto pr-2">
                     {isFetchingDetails ? (
-                        <div className="space-y-2">
-                             <Loader2 className="h-6 w-6 animate-spin text-muted-foreground mx-auto" />
+                        <div className="space-y-2 flex flex-col items-center justify-center h-48">
+                             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
                              <p className="text-center text-sm text-muted-foreground">Loading members...</p>
                         </div>
                     ) : (
                         <MultiSelectUsers
                             allUsers={allUsers}
-                            selectedUsers={selectedUsers}
-                            onSelectionChange={setSelectedUsers}
+                            selectedMembers={selectedMembers}
+                            onSelectionChange={setSelectedMembers}
+                            onRoleChange={handleRoleChange}
                         />
                     )}
                 </div>
@@ -227,7 +255,7 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
 }
 
 
-export default function GroupsClient({ initialGroups, allUsers }: GroupsClientProps) {
+export default function GroupsClient({ initialGroups, allUsers }: { initialGroups: GroupWithCount[], allUsers: User[]}) {
   const [groups, setGroups] = useState<GroupWithCount[]>(initialGroups);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isFormSubmitting, setIsFormSubmitting] = useState(false);
@@ -375,7 +403,7 @@ export default function GroupsClient({ initialGroups, allUsers }: GroupsClientPr
                 groups.map((group) => (
                   <TableRow key={group.id}>
                     <TableCell className="font-medium">{group.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{group.description}</TableCell>
+                    <TableCell className="text-muted-foreground max-w-xs truncate">{group.description}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-2 text-muted-foreground" />
