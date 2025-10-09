@@ -77,7 +77,7 @@ type PostFormValues = z.infer<typeof postSchema>;
 type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface PostFormProps {
   editingPost: PostWithLinks | null;
-  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
+  onFormSubmit: (postData: PostFormData, id?: number) => void;
   onBack: () => void;
   debugError?: any;
 }
@@ -183,6 +183,7 @@ export default function PostForm({
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupForDebug, setSelectedGroupForDebug] = useState<Group | null>(null);
 
 
   useEffect(() => {
@@ -247,6 +248,15 @@ export default function PostForm({
   const postType = watch('type');
   const visibility = watch('visibility');
   const groupIdValue = watch('groupId');
+  
+  useEffect(() => {
+    if (groupIdValue) {
+      const selected = groups.find(g => g.id === groupIdValue);
+      setSelectedGroupForDebug(selected || null);
+    } else {
+      setSelectedGroupForDebug(null);
+    }
+  }, [groupIdValue, groups]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -296,10 +306,6 @@ export default function PostForm({
     };
     reader.readAsDataURL(file);
   };
-
-  const selectedGroupForDebug = React.useMemo(() => {
-    return groups.find(g => g.id === groupIdValue);
-  }, [groupIdValue, groups]);
 
   return (
     <div className="max-w-3xl mx-auto">
@@ -669,9 +675,7 @@ export default function PostForm({
                         <FormItem>
                           <FormLabel>Group</FormLabel>
                           <Select 
-                              onValueChange={(value) => {
-                                  field.onChange(value ? Number(value) : null);
-                              }}
+                              onValueChange={(value) => field.onChange(value ? Number(value) : null)}
                               defaultValue={field.value ? String(field.value) : ""}
                           >
                             <FormControl>
@@ -686,9 +690,10 @@ export default function PostForm({
                             </SelectContent>
                           </Select>
                           {selectedGroupForDebug && (
-                            <FormDescription>
-                              Selected Group: <span className="font-mono text-primary">{selectedGroupForDebug.name} (ID: {selectedGroupForDebug.id})</span>
-                            </FormDescription>
+                            <div className="mt-2 text-xs text-muted-foreground p-2 border border-dashed rounded-md bg-muted/50">
+                                <p className="font-bold">Debug Info:</p>
+                                <pre className="text-xs">{JSON.stringify(selectedGroupForDebug, null, 2)}</pre>
+                            </div>
                           )}
                           <FormMessage />
                         </FormItem>
@@ -787,3 +792,4 @@ export default function PostForm({
     </div>
   );
 }
+
