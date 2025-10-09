@@ -2,7 +2,7 @@
 
 'use server';
 
-import { PrismaClient, Prisma, PostType, Series, Group, Subtitle, GroupMember } from '@prisma/client';
+import { Prisma, PostType, Series, Group, Subtitle, GroupMember } from '@prisma/client';
 import type { User, Review as ReviewWithParent } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { PostFormData } from './types';
@@ -14,8 +14,7 @@ import { redirect } from 'next/navigation';
 import { writeFile, mkdir, unlink, stat } from 'fs/promises';
 import { join, extname } from 'path';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
-
-const prisma = new PrismaClient();
+import prisma from './prisma';
 
 async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
   if (!dataUrl.startsWith('data:image')) {
@@ -131,6 +130,12 @@ export async function registerUser(
     });
   } catch (error: any) {
     if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2011') {
+        return {
+          message: 'Could not create user: A required field is missing.',
+          input: formInput,
+        };
+      }
       return {
         message: `Could not create user: ${error.code}`,
         input: formInput,

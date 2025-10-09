@@ -10,112 +10,36 @@ datasource db {
   url      = "file:./dev.db"
 }
 
-model Post {
-  id                    Int              @id @default(autoincrement())
-  title                 String
-  description           String
-  posterUrl             String?
-  year                  Int?
-  duration              String?
-  genres                String?
-  directors             String?
-  mainCast              String?
-  imdbRating            Float?
-  rottenTomatoesRating  Int?
-  googleRating          Int?
-  viewCount             Int              @default(0)
-  status                String           @default("DRAFT")
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
-  type                  PostType         @default(MOVIE)
-  author                User             @relation(fields: [authorId], references: [id])
-  authorId              String
-  reviews               Review[]
-  subtitles             Subtitle[]
-  favoritePosts         FavoritePost[]
-  likedBy               User[]           @relation("PostLikes")
-  dislikedBy            User[]           @relation("PostDislikes")
-  mediaLinks            MediaLink[]
-  seriesId              Int?
-  series                Series?          @relation(fields: [seriesId], references: [id])
-  orderInSeries         Int?
-  visibility            PostVisibility   @default(PUBLIC)
-  groupId               Int?
-  group                 Group?           @relation(fields: [groupId], references: [id], onDelete: SetNull)
-
-  @@index([seriesId])
-}
-
-model Review {
-  id        Int      @id @default(autoincrement())
-  comment   String
-  rating    Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  post      Post     @relation(fields: [postId], references: [id])
-  postId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  userId    String
-  parentId  Int?
-  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
-  replies   Review[] @relation("ReviewReplies")
-
-  @@index([postId])
-  @@index([userId])
-}
-
-model Subtitle {
-  id           Int      @id @default(autoincrement())
-  language     String
-  url          String
-  uploaderName String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  postId       Int
-  post         Post     @relation(fields: [postId], references: [id])
-
-  @@index([postId])
-}
-
-model FavoritePost {
-  id        Int      @id @default(autoincrement())
-  userId    String
-  postId    Int
-  user      User     @relation(fields: [userId], references: [id])
-  post      Post     @relation(fields: [postId], references: [id])
-  createdAt DateTime @default(now())
-
-  @@unique([userId, postId])
-}
-
 model User {
-  id                      String         @id @default(cuid())
+  id                      String    @id @default(cuid())
   name                    String?
-  email                   String?        @unique
+  email                   String?   @unique
   emailVerified           DateTime?
   image                   String?
-  password                String?
   bio                     String?
+  coverImage              String?
   website                 String?
   twitter                 String?
   linkedin                String?
-  coverImage              String?
-  role                    String         @default("USER")
-  permissionRequestStatus String?        @default("NONE")
+  password                String?
+  role                    String    @default("USER")
+  permissionRequestStatus String?
   permissionRequestMessage String?
-  createdAt               DateTime       @default(now())
-  updatedAt               DateTime       @updatedAt
-  accounts                Account[]
-  sessions                Session[]
-  posts                   Post[]
-  reviews                 Review[]
-  favoritePosts           FavoritePost[]
-  likedPosts              Post[]         @relation("PostLikes")
-  dislikedPosts           Post[]         @relation("PostDislikes")
-  createdSeries           Series[]
-  createdGroups           Group[]
-  groupMemberships        GroupMember[]
-  sentGroupMessages       GroupMessage[]
+  createdAt               DateTime  @default(now())
+  updatedAt               DateTime  @updatedAt
+
+  accounts          Account[]
+  sessions          Session[]
+  posts             Post[]
+  reviews           Review[]
+  favoritePosts     FavoritePost[]
+  likedPosts        Post[]           @relation("UserLikes")
+  dislikedPosts     Post[]           @relation("UserDislikes")
+  createdSeries     Series[]
+  groups            GroupMember[]
+  userNotifications UserNotification[]
+  createdNotifications Notification[]
+  createdGroups     Group[]
 }
 
 model Account {
@@ -131,7 +55,8 @@ model Account {
   scope             String?
   id_token          String?
   session_state     String?
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
@@ -152,79 +77,170 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model MediaLink {
-  id     Int    @id @default(autoincrement())
-  type   String // "trailer" or "image"
-  url    String
-  Post   Post?  @relation(fields: [postId], references: [id])
-  postId Int?
-}
+model Post {
+  id                   Int      @id @default(autoincrement())
+  title                String
+  description          String
+  posterUrl            String?
+  year                 Int?
+  duration             String?
+  genres               String?
+  directors            String?
+  mainCast             String?
+  imdbRating           Float?
+  rottenTomatoesRating Int?
+  googleRating         Int?
+  status               String   @default("DRAFT")
+  viewCount            Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  type                 PostType @default(MOVIE)
+  visibility           String   @default("PUBLIC")
+  orderInSeries        Int?
 
-model Series {
-  id            Int      @id @default(autoincrement())
-  title         String   @unique
-  description   String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  posts         Post[]
-  authorId      String
-  author        User     @relation(fields: [authorId], references: [id])
-}
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
 
-model Group {
-  id          Int            @id @default(autoincrement())
-  name        String         @unique
-  description String?
-  status      GroupStatus    @default(ACTIVE)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  authorId    String
-  author      User           @relation(fields: [authorId], references: [id])
-  members     GroupMember[]
-  posts       Post[]
-  messages    GroupMessage[]
-}
+  seriesId Int?
+  series   Series? @relation(fields: [seriesId], references: [id])
 
-model GroupMember {
-  id        Int       @id @default(autoincrement())
-  userId    String
-  groupId   Int
-  role      GroupRole @default(MEMBER)
-  joinedAt  DateTime  @default(now())
-  user      User      @relation(fields: [userId], references: [id])
-  group     Group     @relation(fields: [groupId], references: [id])
-
-  @@unique([userId, groupId])
-}
-
-model GroupMessage {
-  id        Int      @id @default(autoincrement())
-  content   String
-  createdAt DateTime @default(now())
-  authorId  String
-  groupId   Int
-  author    User     @relation(fields: [authorId], references: [id])
-  group     Group    @relation(fields: [groupId], references: [id])
+  reviews       Review[]
+  subtitles     Subtitle[]
+  likedBy       User[]         @relation("UserLikes")
+  dislikedBy    User[]         @relation("UserDislikes")
+  favoritePosts FavoritePost[]
+  mediaLinks    MediaLink[]
+  metaData      MetaData[]
+  
+  groupId Int?
+  group   Group? @relation(fields: [groupId], references: [id])
 }
 
 enum PostType {
   MOVIE
   TV_SERIES
   OTHER
-  
 }
 
-enum PostVisibility {
-  PUBLIC
-  GROUP_ONLY
+model Series {
+  id          Int      @id @default(autoincrement())
+  title       String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+  authorId    String
+  author      User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  episodes    Episode[]
 }
 
-enum GroupStatus {
-  ACTIVE
-  INACTIVE
+model Episode {
+  id          Int     @id @default(autoincrement())
+  title       String
+  description String?
+  episodeNumber Int
+  seasonNumber  Int
+  releaseDate DateTime?
+  seriesId    Int
+  series      Series  @relation(fields: [seriesId], references: [id])
 }
 
-enum GroupRole {
-  ADMIN
-  MEMBER
+model Review {
+  id        Int      @id @default(autoincrement())
+  comment   String
+  rating    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  postId    Int
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  // Self-relation for replies
+  parentId  Int?
+  parent    Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies   Review[] @relation("ReviewReplies")
+}
+
+model Subtitle {
+  id           Int      @id @default(autoincrement())
+  language     String
+  url          String
+  uploaderName String
+  createdAt    DateTime @default(now())
+  postId       Int
+  post         Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model FavoritePost {
+  id        Int      @id @default(autoincrement())
+  userId    String
+  postId    Int
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, postId])
+}
+
+model MetaData {
+  id     Int    @id @default(autoincrement())
+  key    String
+  value  String
+  postId Int
+  post   Post   @relation(fields: [postId], references: [id])
+}
+
+model Notification {
+  id               Int                @id @default(autoincrement())
+  type             String
+  message          String
+  isRead           Boolean            @default(false)
+  createdAt        DateTime           @default(now())
+  authorId         String
+  author           User               @relation("createdNotifications", fields: [authorId], references: [id])
+  users            UserNotification[]
+}
+
+model UserNotification {
+  id             Int          @id @default(autoincrement())
+  userId         String
+  notificationId Int
+  isRead         Boolean      @default(false)
+  user           User         @relation(fields: [userId], references: [id])
+  notification   Notification @relation(fields: [notificationId], references: [id])
+
+  @@unique([userId, notificationId])
+}
+
+model Group {
+  id          Int      @id @default(autoincrement())
+  name        String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  authorId    String
+  author      User     @relation("createdGroups", fields: [authorId], references: [id])
+  members     GroupMember[]
+  posts       Post[]
+}
+
+model GroupMember {
+  id        Int      @id @default(autoincrement())
+  role      String   @default("MEMBER") // e.g., "ADMIN", "MEMBER"
+  createdAt DateTime @default(now())
+  groupId   Int
+  userId    String
+  group     Group    @relation(fields: [groupId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([groupId, userId])
+}
+
+model MediaLink {
+  id     Int    @id @default(autoincrement())
+  type   String // "trailer" or "image"
+  url    String
+  postId Int
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
 }
