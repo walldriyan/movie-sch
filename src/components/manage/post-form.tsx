@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
@@ -79,7 +78,6 @@ interface PostFormProps {
   editingPost: PostWithLinks | null;
   onFormSubmit: (postData: PostFormData, id?: number) => void;
   onBack: () => void;
-  debugError?: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -178,7 +176,6 @@ export default function PostForm({
   editingPost,
   onFormSubmit,
   onBack,
-  debugError,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
@@ -247,16 +244,6 @@ export default function PostForm({
   const posterUrlValue = watch('posterUrl');
   const postType = watch('type');
   const visibility = watch('visibility');
-  const groupIdValue = watch('groupId');
-  
-  useEffect(() => {
-    if (groupIdValue) {
-      const selected = groups.find(g => g.id === groupIdValue);
-      setSelectedGroupForDebug(selected || null);
-    } else {
-      setSelectedGroupForDebug(null);
-    }
-  }, [groupIdValue, groups]);
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -285,7 +272,7 @@ export default function PostForm({
       visibility: values.visibility,
       groupId: values.visibility === 'GROUP_ONLY' ? (values.groupId ? Number(values.groupId) : null) : null,
     };
-    await onFormSubmit(postData, editingPost?.id);
+    onFormSubmit(postData, editingPost?.id);
   };
 
   const handleFileChange = (
@@ -675,7 +662,12 @@ export default function PostForm({
                         <FormItem>
                           <FormLabel>Group</FormLabel>
                           <Select 
-                              onValueChange={(value) => field.onChange(value ? Number(value) : null)}
+                              onValueChange={(value) => {
+                                const numValue = value ? Number(value) : null;
+                                field.onChange(numValue);
+                                const selected = groups.find(g => g.id === numValue);
+                                setSelectedGroupForDebug(selected || null);
+                              }}
                               defaultValue={field.value ? String(field.value) : ""}
                           >
                             <FormControl>
@@ -689,12 +681,14 @@ export default function PostForm({
                               )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
                             </SelectContent>
                           </Select>
-                          {selectedGroupForDebug && (
-                            <div className="mt-2 text-xs text-muted-foreground p-2 border border-dashed rounded-md bg-muted/50">
-                                <p className="font-bold">Debug Info:</p>
-                                <pre className="text-xs">{JSON.stringify(selectedGroupForDebug, null, 2)}</pre>
-                            </div>
-                          )}
+                           {selectedGroupForDebug && (
+                            <FormDescription>
+                                <div className="mt-2 text-xs text-muted-foreground p-2 border border-dashed rounded-md bg-muted/50">
+                                    <p className="font-bold">Debug Info: Selected Group</p>
+                                    <pre className="text-xs">{JSON.stringify(selectedGroupForDebug, null, 2)}</pre>
+                                </div>
+                            </FormDescription>
+                           )}
                           <FormMessage />
                         </FormItem>
                       )}
@@ -764,15 +758,6 @@ export default function PostForm({
             </Button>
           </div>
           
-           {debugError && (
-            <div className="mt-8 p-4 border border-dashed rounded-lg text-left border-destructive">
-                <h2 className="text-lg font-semibold mb-2 text-destructive">Submission Error Details</h2>
-                <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto text-destructive">
-                {JSON.stringify(debugError, null, 2)}
-                </pre>
-            </div>
-          )}
-
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" disabled={formState.isSubmitting}>
               {formState.isSubmitting ? (
@@ -792,4 +777,3 @@ export default function PostForm({
     </div>
   );
 }
-
