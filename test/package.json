@@ -1,0 +1,9 @@
+{
+  "name": "reusable-button-example",
+  "version": "1.0.0",
+  "description": "Dependencies needed for a reusable component with CVA.",
+  "dependencies": {
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0"
+  }
+}

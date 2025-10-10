@@ -1,0 +1,45 @@
+/* 
+   ================================================================
+   පියවර 1: වර්ණ සහ අනෙකුත් Design Tokens නිර්වචනය කිරීම
+   ================================================================
+   මෙමගින්, --primary, --destructive වැනි නම් භාවිතා කර, 
+   අපගේ ව්‍යාපෘතියේ ඕනෑම තැනක එකම වර්ණ පාවිච්චි කිරීමට හැකියාව ලැබේ.
+   වර්ණයක් වෙනස් කිරීමට අවශ්‍ය නම්, වෙනස් කළ යුත්තේ මෙම ස්ථානය පමණි.
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 142 76% 40%;
+    --primary-foreground: 0 0% 98%;
+
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 0 0% 63.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 142 76% 45%;
+
+    --radius: 1rem;
+  }
+}
