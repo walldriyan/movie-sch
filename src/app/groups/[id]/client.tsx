@@ -153,8 +153,8 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
                         <PostGrid posts={posts} />
                     ) : (
                          <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg">
-                            <h3 className="text-lg font-semibold">No Posts Yet</h3>
-                            <p className="text-muted-foreground mt-2">There is no content in this group yet. Be the first to share something!</p>
+                            <h3 className="text-lg font-semibold">This is a private group</h3>
+                            <p className="text-muted-foreground mt-2">Join the group to see the posts shared here.</p>
                         </div>
                     )}
                 </div>
