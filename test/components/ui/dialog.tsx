@@ -7,6 +7,7 @@
     කොටස් වලට වෙන් කර, කැමති ලෙස customize කිරීමට ඉඩ සලසයි.
   - Accessibility (keyboard navigation, focus management) Radix මගින් 
     ස්වයංක්‍රීයවම හැසිරවේ.
+  - Animation සඳහා data-state attributes භාවිතා කර ඇත.
 */
 "use client"
 
@@ -15,13 +16,14 @@ import * as DialogPrimitive from "@radix-ui/react-dialog"
 import { X } from "lucide-react"
 
 import { cn } from "@/test/lib/utils"
-import { Button } from "./button"
 
 const Dialog = DialogPrimitive.Root
 
 const DialogTrigger = DialogPrimitive.Trigger
 
 const DialogPortal = DialogPrimitive.Portal
+
+const DialogClose = DialogPrimitive.Close
 
 const DialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
@@ -122,4 +124,7 @@ export {
   DialogFooter,
   DialogTitle,
   DialogDescription,
+  DialogClose,
+  DialogPortal,
+  DialogOverlay
 }
