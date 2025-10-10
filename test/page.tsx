@@ -4,6 +4,7 @@
   ================================================================
   අප විසින් 'test/components/ui' folder එක තුල නිර්මාණය කරන ලද 
   Button, Card, Input, Label, සහ Dialog යන සියලුම reusable components,
+  සහ ShadCN CLI මගින් එකතු කරන ලද Accordion component එක
   මෙම පිටුවට import කර, ඒවායේ ක්‍රියාකාරීත්වය පෙන්වන UI එකක්
   මෙහි නිර්මාණය කර ඇත.
 */
@@ -21,6 +22,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "./components/ui/dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion"
 
 
 export default function TestPage() {
@@ -30,13 +37,13 @@ export default function TestPage() {
       <Card className="w-full max-w-2xl">
         <CardHeader>
           <CardTitle className="font-serif text-3xl">Reusable Component Showcase</CardTitle>
-          <CardDescription>Radix UI සහ Tailwind CSS වලින් මුල සිට නිර්මාණය කරන ලදී.</CardDescription>
+          <CardDescription>Radix UI, Tailwind CSS, සහ ShadCN CLI වලින් නිර්මාණය කරන ලදී.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
 
           {/* 1. Button Components */}
           <div>
-            <Label className="text-lg font-semibold">Buttons</Label>
+            <Label className="text-lg font-semibold">Manually Created Button</Label>
             <div className="mt-2 flex flex-wrap items-center justify-start gap-4 rounded-lg border p-4">
               <Button variant="default" size="default">
                 <Mail className="mr-2 h-4 w-4" /> Default
@@ -55,7 +62,7 @@ export default function TestPage() {
           
           {/* 2. Input & Label Components */}
           <div>
-            <Label className="text-lg font-semibold">Input & Label</Label>
+            <Label className="text-lg font-semibold">Manually Created Input & Label</Label>
             <div className="mt-2 grid w-full max-w-sm items-center gap-2.5 rounded-lg border p-4">
                 <Label htmlFor="email">Email</Label>
                 <Input type="email" id="email" placeholder="Email" />
@@ -65,7 +72,7 @@ export default function TestPage() {
 
           {/* 3. Dialog (Modal) Component */}
           <div>
-            <Label className="text-lg font-semibold">Dialog (Modal)</Label>
+            <Label className="text-lg font-semibold">Manually Created Dialog (Modal)</Label>
             <div className="mt-2 rounded-lg border p-4">
               <Dialog>
                 <DialogTrigger asChild>
@@ -93,6 +100,29 @@ export default function TestPage() {
               </Dialog>
             </div>
           </div>
+          
+          {/* 4. ShadCN CLI Accordion Component */}
+          <div>
+            <Label className="text-lg font-semibold">Accordion (from ShadCN CLI)</Label>
+            <div className="mt-2 rounded-lg border p-4">
+               <Accordion type="single" collapsible className="w-full">
+                <AccordionItem value="item-1">
+                  <AccordionTrigger>Is it accessible?</AccordionTrigger>
+                  <AccordionContent>
+                    Yes. It adheres to the WAI-ARIA design pattern.
+                  </AccordionContent>
+                </AccordionItem>
+                <AccordionItem value="item-2">
+                  <AccordionTrigger>Is it styled?</AccordionTrigger>
+                  <AccordionContent>
+                    Yes. It comes with default styles that matches the other
+                    components' aesthetic.
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          </div>
+
 
         </CardContent>
       </Card>
