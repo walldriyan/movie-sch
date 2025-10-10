@@ -83,7 +83,7 @@ export default function TestPage() {
                       <Label htmlFor="name" className="text-right">
                         Name
                       </Label>
-                      <Input id="name" value="John Doe" className="col-span-3" />
+                      <Input id="name" defaultValue="John Doe" className="col-span-3" />
                     </div>
                   </div>
                   <DialogFooter>
