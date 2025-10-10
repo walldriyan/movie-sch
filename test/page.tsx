@@ -46,7 +46,7 @@ export default function TestPage() {
             <Label className="text-lg font-semibold">Manually Created Button</Label>
             <div className="mt-2 flex flex-wrap items-center justify-start gap-4 rounded-lg border p-4">
               <Button variant="default" size="default">
-                <Mail className="mr-2 h-4 w-4" /> Default
+                <Mail className="mr-2 h-4 w-4" /> Green Primary Button
               </Button>
               <Button variant="destructive" size="lg">
                 Destructive
