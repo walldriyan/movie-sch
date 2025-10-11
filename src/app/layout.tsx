@@ -6,6 +6,11 @@ import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import SessionProvider from '@/components/auth/session-provider';
 import Header from '@/components/header';
+import { useSession } from 'next-auth/react';
+
+
+
+
 
 export const metadata: Metadata = {
   title: 'CineVerse Captions',
@@ -52,7 +57,7 @@ export default function RootLayout({
         <SessionProvider>
           {/* <div className='pt-16 bg-red-950/70 filter blur-3xl '></div> */}
           <div className="  pt-16 bg-gradient-to-t from-red-950/5 to-purple-800/2 backdrop-blur-md"></div>
-
+          
           <Header />
           {children}
           <Toaster />

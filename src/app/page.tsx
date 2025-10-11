@@ -27,24 +27,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
         currentPage={currentPage}
         searchParams={searchParams}
       />
-      {/* 
-        මෙන්න, අප, විසින්, නිර්මාණය, කළ, reusable, button, එක, භාවිතා, කරන, ආකාරය.
-        ShadCN, component, එකක්, භාවිතා, කරනවා, වගේමයි.
-      */}
-      <div className="p-8 flex justify-center items-center gap-4">
-        <MyReusableButton variant="default" size="lg">
-          <Mail className="mr-2 h-5 w-5" />
-          Reusable Default
-        </MyReusableButton>
-        <MyReusableButton variant="outline" size="lg">
-          <Mail className="mr-2 h-5 w-5" />
-          Reusable Outline
-        </MyReusableButton>
-         <MyReusableButton variant="destructive" size="lg">
-          <Mail className="mr-2 h-5 w-5" />
-          Reusable Destructive
-        </MyReusableButton>
-      </div>
+     
     </>
   );
 }
