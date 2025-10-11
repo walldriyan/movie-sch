@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -27,12 +28,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { updateGroup, uploadGroupProfileImage, uploadGroupCoverImage } from '@/lib/actions';
+import { updateGroup } from '@/lib/actions';
 import type { GroupForEditing } from '@/lib/types';
 import { Edit, Upload, Camera, Loader2 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import Image from 'next/image';
 import { ScrollArea } from '../ui/scroll-area';
+import { useRouter } from 'next/navigation';
 
 const MAX_FILE_SIZE = 4194304; // 4 MB
 
@@ -47,18 +49,16 @@ type GroupFormValues = z.infer<typeof groupFormSchema>;
 
 interface EditGroupDialogProps {
   group: GroupForEditing;
-  onUpdate: () => void;
+  triggerButton?: React.ReactNode;
 }
 
-export default function EditGroupDialog({ group, onUpdate }: EditGroupDialogProps) {
+export default function EditGroupDialog({ group, triggerButton }: EditGroupDialogProps) {
   const { toast } = useToast();
+  const router = useRouter();
   const [isOpen, setIsOpen] = React.useState(false);
   
   const [previewAvatar, setPreviewAvatar] = React.useState<string | null>(group.profilePhoto);
-  const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
-
   const [previewCover, setPreviewCover] = React.useState<string | null>(group.coverPhoto);
-  const [coverFile, setCoverFile] = React.useState<File | null>(null);
 
   const form = useForm<GroupFormValues>({
     resolver: zodResolver(groupFormSchema),
@@ -73,31 +73,11 @@ export default function EditGroupDialog({ group, onUpdate }: EditGroupDialogProp
 
   const onSubmit = async (data: GroupFormValues) => {
     try {
-      let profilePhotoUrl = group.profilePhoto;
-      if (avatarFile) {
-        const formData = new FormData();
-        formData.append('image', avatarFile);
-        const newUrl = await uploadGroupProfileImage(formData);
-        if (newUrl) profilePhotoUrl = newUrl;
-      } else if (data.profilePhoto !== group.profilePhoto) {
-        profilePhotoUrl = data.profilePhoto;
-      }
-      
-      let coverPhotoUrl = group.coverPhoto;
-      if (coverFile) {
-        const formData = new FormData();
-        formData.append('image', coverFile);
-        const newUrl = await uploadGroupCoverImage(formData);
-        if (newUrl) coverPhotoUrl = newUrl;
-      } else if (data.coverPhoto !== group.coverPhoto) {
-        coverPhotoUrl = data.coverPhoto;
-      }
-
       const updateData = {
         name: data.name,
         description: data.description,
-        profilePhoto: profilePhotoUrl,
-        coverPhoto: coverPhotoUrl,
+        profilePhoto: previewAvatar,
+        coverPhoto: previewCover,
       };
 
       await updateGroup(group.id, updateData);
@@ -106,8 +86,8 @@ export default function EditGroupDialog({ group, onUpdate }: EditGroupDialogProp
         title: 'Group updated',
         description: 'Your changes have been saved successfully.',
       });
-      onUpdate();
       setIsOpen(false);
+      router.refresh();
 
     } catch (error) {
       console.error(error);
@@ -123,31 +103,47 @@ export default function EditGroupDialog({ group, onUpdate }: EditGroupDialogProp
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
-        form.setError(type === 'avatar' ? 'profilePhoto' : 'coverPhoto', { message: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB.` });
+        toast({ variant: 'destructive', title: 'File too large', description: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB.` });
         return;
       }
-      form.clearErrors(type === 'avatar' ? 'profilePhoto' : 'coverPhoto');
-
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         if (type === 'avatar') {
-          setAvatarFile(file);
           setPreviewAvatar(reader.result as string);
+          form.setValue('profilePhoto', reader.result as string);
         } else {
-          setCoverFile(file);
           setPreviewCover(reader.result as string);
+          form.setValue('coverPhoto', reader.result as string);
         }
       };
       reader.readAsDataURL(file);
     }
   };
+  
+  // When dialog opens, reset the previews to the initial group data
+  React.useEffect(() => {
+    if (isOpen) {
+      setPreviewAvatar(group.profilePhoto);
+      setPreviewCover(group.coverPhoto);
+      form.reset({
+        name: group.name || '',
+        description: group.description || '',
+        profilePhoto: group.profilePhoto || '',
+        coverPhoto: group.coverPhoto || '',
+      });
+    }
+  }, [isOpen, group, form]);
+
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="icon">
-          <Edit className="h-4 w-4" />
-        </Button>
+        {triggerButton || (
+          <Button variant="ghost" size="icon">
+            <Edit className="h-4 w-4" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-2xl h-[90svh] flex flex-col">
         <DialogHeader>
@@ -194,9 +190,8 @@ export default function EditGroupDialog({ group, onUpdate }: EditGroupDialogProp
                         className="mt-2"
                         defaultValue={group.coverPhoto || ''}
                         onChange={(e) => {
-                            form.setValue('coverPhoto', e.target.value);
                             setPreviewCover(e.target.value);
-                            setCoverFile(null);
+                            form.setValue('coverPhoto', e.target.value);
                         }}
                       />
                   </FormControl>
@@ -223,9 +218,8 @@ export default function EditGroupDialog({ group, onUpdate }: EditGroupDialogProp
                             placeholder='Paste image URL'
                             defaultValue={group.profilePhoto || ''}
                             onChange={(e) => {
-                                form.setValue('profilePhoto', e.target.value);
                                 setPreviewAvatar(e.target.value);
-                                setAvatarFile(null);
+                                form.setValue('profilePhoto', e.target.value);
                             }}
                           />
                         </FormControl>

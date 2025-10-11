@@ -7,13 +7,15 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { GroupForProfile, Post } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
-import { Users, Rss, Lock, UserPlus, LogOut, Loader2 } from 'lucide-react';
+import { Users, Rss, Lock, UserPlus, LogOut, Loader2, Edit } from 'lucide-react';
 import PostGrid from '@/components/post-grid';
 import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { requestToJoinGroup, leaveGroup } from '@/lib/actions';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { ROLES } from '@/lib/permissions';
+import EditGroupDialog from '@/components/admin/edit-group-dialog';
 
 export default function GroupProfileClient({ group }: { group: GroupForProfile }) {
   const { toast } = useToast();
@@ -36,6 +38,8 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
   )?.imageUrl;
   
   const posts = group.posts as any[];
+  
+  const canEdit = currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.id === group.createdById;
 
   const handleJoin = () => {
       if (!currentUser) {
@@ -109,6 +113,20 @@ export default function GroupProfileClient({ group }: { group: GroupForProfile }
                     />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+
+                {canEdit && (
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <EditGroupDialog
+                          group={group}
+                          triggerButton={
+                            <Button variant="outline" className="bg-background/80">
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit Group
+                            </Button>
+                          }
+                      />
+                  </div>
+                )}
             </div>
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="relative -mt-16 sm:-mt-20 flex flex-col md:flex-row items-center md:items-end md:justify-between">

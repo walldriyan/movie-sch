@@ -170,8 +170,18 @@ export async function updateGroup(
   }
 ) {
   const session = await auth();
-  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
-    throw new Error('Not authorized');
+  if (!session?.user) {
+      throw new Error('Not authenticated');
+  }
+
+  const group = await prisma.group.findUnique({ where: { id: groupId }});
+  if (!group) {
+      throw new Error('Group not found');
+  }
+  
+  const canUpdate = session.user.role === ROLES.SUPER_ADMIN || session.user.id === group.createdById;
+  if (!canUpdate) {
+      throw new Error('Not authorized');
   }
   
   const currentGroup = await prisma.group.findUnique({
