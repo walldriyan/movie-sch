@@ -92,7 +92,7 @@ export default function HomePageClient({ initialPosts, initialUsers, initialGrou
             <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
                 {notifications.length > 0 && (
                   <div className="mb-8 space-y-4">
-                    {notifications.map((notification) => (
+                    {notifications.slice().reverse().map((notification) => (
                       <Alert key={notification.id}>
                         <Terminal className="h-4 w-4" />
                         <AlertTitle>{notification.title}</AlertTitle>
