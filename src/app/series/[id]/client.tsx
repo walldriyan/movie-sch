@@ -11,7 +11,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState, useMemo, useTransition } from 'react';
-import Loading from './loading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
@@ -448,3 +447,5 @@ export default function SeriesPageClient({
     </div>
   );
 }
+
+    
