@@ -38,7 +38,8 @@ export async function sendNotification(
     return notification;
 
   } catch (error) {
-    console.error('Error creating notification:', error);
-    throw new Error('Failed to create notification in the database.');
+    // Re-throw a more informative error for the error boundary to catch and display
+    const errorMessage = `Failed to create notification. Data received: ${JSON.stringify(values, null, 2)}. Original Prisma Error: ${error instanceof Error ? error.message : String(error)}`;
+    throw new Error(errorMessage);
   }
 }
