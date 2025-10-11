@@ -164,7 +164,7 @@ export default function EditGroupDialog({ group, onUpdate }: EditGroupDialogProp
                 {/* Cover Photo */}
                 <FormItem>
                   <FormLabel>Cover Photo</FormLabel>
-                   <div className="relative aspect-[3/1] w-full bg-muted rounded-md overflow-hidden group">
+                   <div className="relative group aspect-[3/1] w-full bg-muted rounded-md overflow-hidden">
                       {previewCover ? (
                           <Image src={previewCover} alt="Cover preview" fill className="object-cover" />
                       ) : (
