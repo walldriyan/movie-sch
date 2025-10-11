@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount } from '@/lib/types';
@@ -24,7 +24,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import GroupCard from './group-card';
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 
 interface HomePageClientProps {
     initialPosts: any[];
@@ -39,13 +41,26 @@ interface Notification {
   id: string;
   title: string;
   description: string;
+  read: boolean;
+  type: 'info' | 'feature';
+  icon: React.ReactNode;
 }
 
 export default function HomePageClient({ initialPosts, initialUsers, initialGroups, totalPages, currentPage, searchParams }: HomePageClientProps) {
   const [notifications, setNotifications] = useState<Notification[]>([
-    { id: '1', title: "Welcome to CineVerse!", description: "Explore and enjoy the world of movies." },
-    { id: '2', title: "New Feature", description: "You can now request subtitles using our new AI tool." }
+    { id: '1', title: "Welcome to CineVerse!", description: "Explore and enjoy the world of movies.", read: false, type: 'info', icon: <Bell className="h-4 w-4" /> },
+    { id: '2', title: "New Feature", description: "You can now request subtitles using our new AI tool.", read: true, type: 'feature', icon: <Terminal className="h-4 w-4" /> },
+    { id: '3', title: "Community Guidelines", description: "Please be respectful to all members.", read: false, type: 'info', icon: <Users className="h-4 w-4" /> },
   ]);
+
+  const handleMarkAsRead = (id: string) => {
+    setNotifications(currentNotifications => 
+      currentNotifications.map(n => n.id === id ? { ...n, read: true } : n)
+    );
+  };
+  
+  const unreadCount = notifications.filter(n => !n.read).length;
+  
   const posts = initialPosts;
   const users = initialUsers;
   const groups = initialGroups;
@@ -74,6 +89,32 @@ export default function HomePageClient({ initialPosts, initialUsers, initialGrou
     { label: 'Other', value: 'OTHER', icon: <Folder /> },
   ]
 
+  const renderNotifications = (items: Notification[]) => {
+    if (items.length === 0) {
+      return <p className="text-muted-foreground text-sm text-center p-4">No notifications here.</p>
+    }
+    return (
+      <div className="space-y-3">
+        {items.map(notification => (
+          <div key={notification.id} className="flex items-center gap-4">
+             <div className={cn("text-primary", notification.read && "text-muted-foreground")}>
+                {notification.icon}
+             </div>
+            <div className="flex-grow">
+              <p className={cn("font-semibold text-sm", notification.read && "text-muted-foreground")}>{notification.title}</p>
+              <p className="text-xs text-muted-foreground">{notification.description}</p>
+            </div>
+            {!notification.read && (
+              <Button variant="outline" size="sm" onClick={() => handleMarkAsRead(notification.id)}>
+                <Check className="h-4 w-4 mr-2" /> Mark as read
+              </Button>
+            )}
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <TooltipProvider>
         <div className="w-full bg-background text-foreground">
@@ -94,17 +135,24 @@ export default function HomePageClient({ initialPosts, initialUsers, initialGrou
             ) : (
             <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
                 {notifications.length > 0 && (
-                  <div className="mb-8 space-y-4">
-                    {notifications.slice().reverse().map((notification) => (
-                      <Alert key={notification.id}>
-                        <Terminal className="h-4 w-4" />
-                        <AlertTitle>{notification.title}</AlertTitle>
-                        <AlertDescription>
-                          {notification.description}
-                        </AlertDescription>
-                      </Alert>
-                    ))}
-                  </div>
+                  <Card className="mb-8">
+                    <CardContent className="p-4">
+                       <Tabs defaultValue="unread">
+                          <TabsList className="grid w-full grid-cols-2">
+                              <TabsTrigger value="unread">
+                                Unread {unreadCount > 0 && <span className="ml-2 inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary text-primary-foreground text-xs">{unreadCount}</span>}
+                              </TabsTrigger>
+                              <TabsTrigger value="all">All</TabsTrigger>
+                          </TabsList>
+                          <TabsContent value="unread" className="mt-4">
+                              {renderNotifications(notifications.filter(n => !n.read))}
+                          </TabsContent>
+                          <TabsContent value="all" className="mt-4">
+                              {renderNotifications(notifications)}
+                          </TabsContent>
+                        </Tabs>
+                    </CardContent>
+                  </Card>
                 )}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
