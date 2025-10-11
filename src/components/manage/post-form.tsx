@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useTransition } from 'react';
+import React, { useState, useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -26,11 +26,10 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-  CommandSeparator,
 } from "@/components/ui/command";
 
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users, CheckCircle } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
@@ -85,7 +84,7 @@ interface PostFormProps {
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isPending, startTransition] = React.useTransition();
   const { toast } = useToast();
 
   const handleCreateSeries = () => {
@@ -183,6 +182,8 @@ export default function PostForm({
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
 
 
   useEffect(() => {
@@ -252,7 +253,9 @@ export default function PostForm({
     name: 'mediaLinks',
   });
 
-  const handleSubmit = (values: PostFormValues) => {
+  const handleSubmit = async (values: PostFormValues) => {
+    setIsSaving(true);
+    setIsSuccess(false);
     const postData: PostFormData = {
       title: values.title,
       description: values.description,
@@ -274,7 +277,19 @@ export default function PostForm({
       visibility: values.visibility,
       groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
     };
-    onFormSubmit(postData, editingPost?.id);
+    
+    try {
+        await onFormSubmit(postData, editingPost?.id);
+        setIsSuccess(true);
+        setTimeout(() => {
+            onBack();
+        }, 1500); // Navigate back after 1.5 seconds
+    } catch (error) {
+        // Error will be caught by the parent boundary
+        console.error(error);
+    } finally {
+        setIsSaving(false);
+    }
   };
 
   const handleFileChange = (
@@ -766,11 +781,21 @@ export default function PostForm({
           )}
           
           <div className="flex justify-end pt-4">
-            <Button type="submit" size="lg" disabled={formState.isSubmitting}>
-              {formState.isSubmitting ? (
+            <Button 
+                type="submit" 
+                size="lg" 
+                disabled={isSaving || isSuccess}
+                className={cn(isSuccess && "bg-green-600 hover:bg-green-700")}
+            >
+              {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   <span>{editingPost ? 'Saving...' : 'Publishing...'}</span>
+                </>
+              ) : isSuccess ? (
+                <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    <span>Saved</span>
                 </>
               ) : editingPost ? (
                 'Save Changes'
@@ -784,5 +809,3 @@ export default function PostForm({
     </div>
   );
 }
-
-    
