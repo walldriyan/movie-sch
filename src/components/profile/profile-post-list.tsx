@@ -24,7 +24,7 @@ interface ProfilePostListProps {
   profileUser: User;
 }
 
-function PostCard({ post, isOwnProfile, currentFilter }: { post: Post, isOwnProfile: boolean, currentFilter: string }) {
+function PostCard({ post, isOwnProfile, currentFilter, profileUser }: { post: Post, isOwnProfile: boolean, currentFilter: string, profileUser: User }) {
     const postImageUrl =
     post.posterUrl ||
     PlaceHolderImages.find(
@@ -185,6 +185,7 @@ export default function ProfilePostList({ posts, isOwnProfile, currentFilter, pr
                 post={post}
                 isOwnProfile={isOwnProfile}
                 currentFilter={currentFilter}
+                profileUser={profileUser}
             />
         ))}
       </ul>
