@@ -1,9 +1,9 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useTransition } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount } from '@/lib/types';
@@ -26,7 +26,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import GroupCard from './group-card';
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
+import type { Notification as NotificationType } from '@prisma/client';
+import { updateNotificationStatus } from '@/lib/actions';
+import { useToast } from '@/hooks/use-toast';
 
 interface HomePageClientProps {
     initialPosts: any[];
@@ -35,31 +37,51 @@ interface HomePageClientProps {
     totalPages: number;
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string };
+    initialNotifications: NotificationType[];
 }
 
-interface Notification {
-  id: string;
-  title: string;
-  description: string;
-  read: boolean;
-  type: 'info' | 'feature';
-  icon: React.ReactNode;
+const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
+    switch (type) {
+        case 'FEATURE':
+            return <Terminal className="h-4 w-4" />;
+        case 'INFO':
+            return <Info className="h-4 w-4" />;
+        default:
+            return <Bell className="h-4 w-4" />;
+    }
 }
 
-export default function HomePageClient({ initialPosts, initialUsers, initialGroups, totalPages, currentPage, searchParams }: HomePageClientProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { id: '1', title: "Welcome to CineVerse!", description: "Explore and enjoy the world of movies.", read: false, type: 'info', icon: <Bell className="h-4 w-4" /> },
-    { id: '2', title: "New Feature", description: "You can now request subtitles using our new AI tool.", read: true, type: 'feature', icon: <Terminal className="h-4 w-4" /> },
-    { id: '3', title: "Community Guidelines", description: "Please be respectful to all members.", read: false, type: 'info', icon: <Users className="h-4 w-4" /> },
-  ]);
+export default function HomePageClient({ 
+    initialPosts, 
+    initialUsers, 
+    initialGroups, 
+    totalPages, 
+    currentPage, 
+    searchParams,
+    initialNotifications
+}: HomePageClientProps) {
+  const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
 
   const handleMarkAsRead = (id: string) => {
-    setNotifications(currentNotifications => 
-      currentNotifications.map(n => n.id === id ? { ...n, read: true } : n)
-    );
+    startTransition(async () => {
+        try {
+            await updateNotificationStatus(id, 'READ');
+            setNotifications(currentNotifications => 
+                currentNotifications.map(n => n.id === id ? { ...n, status: 'READ' } : n)
+            );
+        } catch (error) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Failed to mark notification as read.'
+            })
+        }
+    });
   };
   
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter(n => n.status !== 'READ').length;
   
   const posts = initialPosts;
   const users = initialUsers;
@@ -89,7 +111,7 @@ export default function HomePageClient({ initialPosts, initialUsers, initialGrou
     { label: 'Other', value: 'OTHER', icon: <Folder /> },
   ]
 
-  const renderNotifications = (items: Notification[]) => {
+  const renderNotifications = (items: NotificationType[]) => {
     if (items.length === 0) {
       return <p className="text-muted-foreground text-sm text-center p-4">No notifications here.</p>
     }
@@ -97,15 +119,15 @@ export default function HomePageClient({ initialPosts, initialUsers, initialGrou
       <div className="space-y-3">
         {items.map(notification => (
           <div key={notification.id} className="flex items-center gap-4">
-             <div className={cn("text-primary", notification.read && "text-muted-foreground")}>
-                {notification.icon}
+             <div className={cn("text-primary", notification.status === 'READ' && "text-muted-foreground")}>
+                <NotificationIcon type={notification.type} />
              </div>
             <div className="flex-grow">
-              <p className={cn("font-semibold text-sm", notification.read && "text-muted-foreground")}>{notification.title}</p>
-              <p className="text-xs text-muted-foreground">{notification.description}</p>
+              <p className={cn("font-semibold text-sm", notification.status === 'READ' && "text-muted-foreground")}>{notification.title}</p>
+              <p className="text-xs text-muted-foreground">{notification.message}</p>
             </div>
-            {!notification.read && (
-              <Button variant="outline" size="sm" onClick={() => handleMarkAsRead(notification.id)}>
+            {notification.status !== 'READ' && (
+              <Button variant="outline" size="sm" onClick={() => handleMarkAsRead(notification.id)} disabled={isPending}>
                 <Check className="h-4 w-4 mr-2" /> Mark as read
               </Button>
             )}
@@ -145,7 +167,7 @@ export default function HomePageClient({ initialPosts, initialUsers, initialGrou
                               <TabsTrigger value="all">All</TabsTrigger>
                           </TabsList>
                           <TabsContent value="unread" className="mt-4">
-                              {renderNotifications(notifications.filter(n => !n.read))}
+                              {renderNotifications(notifications.filter(n => n.status !== 'READ'))}
                           </TabsContent>
                           <TabsContent value="all" className="mt-4">
                               {renderNotifications(notifications)}
