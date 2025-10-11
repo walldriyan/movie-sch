@@ -23,12 +23,18 @@ export async function sendNotification(
   }
 
   try {
+    // Combine message and targetId to avoid schema change
+    const messageWithTarget = values.targetId 
+      ? `${values.message} (Target ID: ${values.targetId})`
+      : values.message;
+
     const notification = await prisma.notification.create({
       data: {
         title: values.title,
-        message: values.message,
-        targetType: values.targetType,
-        targetId: values.targetId,
+        message: messageWithTarget,
+        // The problematic 'targetType' field is removed from the create call
+        // targetType: values.targetType, 
+        // targetId is also not a valid field on its own
       },
     });
     
