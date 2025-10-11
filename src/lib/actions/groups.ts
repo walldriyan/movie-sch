@@ -251,6 +251,9 @@ export async function getGroupForProfile(groupId: string) {
                     reviews: true,
                 }
             }
+        },
+        orderBy: {
+            createdAt: 'desc',
         }
     }) : [];
 
