@@ -65,16 +65,25 @@ export async function registerUser(
     userRole = Role.SUPER_ADMIN;
   }
 
-  // Any error from this `create` call, like a unique constraint violation (P2002),
-  // will now be thrown and caught by the nearest `error.js` boundary.
-  await prisma.user.create({
-    data: {
-      name,
-      email,
-      password: hashedPassword,
-      role: userRole,
-    },
-  });
+  try {
+    await prisma.user.create({
+      data: {
+        name,
+        email,
+        password: hashedPassword,
+        role: userRole,
+      },
+    });
+  } catch (error: any) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError) {
+          if (error.code === 'P2002') {
+              return { message: 'An account with this email already exists.', input: formInput };
+          }
+      }
+      // For other errors, we can return a generic message or re-throw
+      return { message: 'An unexpected error occurred during registration.', input: formInput };
+  }
+
 
   redirect('/login');
 }

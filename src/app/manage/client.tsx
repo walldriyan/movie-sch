@@ -5,7 +5,7 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { savePost, deletePost, getPostsForAdmin, getPost } from '@/lib/actions';
+import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
@@ -42,12 +42,11 @@ export default function ManagePostsClient({
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
-  const [formError, setFormError] = useState<string | null>(null);
+  const [debugError, setDebugError] = useState<any | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
-  const [debugError, setDebugError] = useState<any>(null);
 
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -111,7 +110,7 @@ export default function ManagePostsClient({
 
   const handleAddNewPost = () => {
     setEditingPost(null);
-    setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('create', 'true');
     url.searchParams.delete('edit');
@@ -121,7 +120,7 @@ export default function ManagePostsClient({
 
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
-    setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('edit', String(post.id));
     url.searchParams.delete('create');
@@ -133,25 +132,21 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
-    try {
-      setFormError(null);
-      await savePost(postData, id);
-      await fetchPosts(id ? currentPage : 1, statusFilter);
-      handleBackFromForm(); // Go back to list and clear URL params
-      toast({
-        title: 'Success',
-        description: `Post "${postData.title}" has been submitted for approval.`,
-      });
-    } catch (error: any) {
-      console.error('Failed to save post:', error);
-      setFormError(error.message || 'An unknown error occurred while saving the post.');
-    }
+    setDebugError(null);
+    await savePost(postData, id);
+    // The line below that throws an error is now gone.
+    // We will stay on the form page if there is an error, and the error boundary will catch it.
+    await fetchPosts(id ? currentPage : 1, statusFilter);
+    handleBackFromForm(); // Go back to list and clear URL params
+    toast({
+      title: 'Success',
+      description: `Post "${postData.title}" has been submitted for approval.`,
+    });
   };
 
   const handleDeleteConfirmed = async (postId: number) => {
-    setDebugError(null);
+    const postToDelete = posts.find(m => m.id === postId);
     try {
-      const postToDelete = posts.find(m => m.id === postId);
       if (postToDelete) {
         await deletePost(postId);
         await fetchPosts(currentPage, statusFilter);
@@ -160,14 +155,8 @@ export default function ManagePostsClient({
           description: `Post "${postToDelete.title}" action has been processed.`,
         });
       }
-    } catch (error: any) {
-      console.error("Delete error caught in client:", error);
+    } catch(error: any) {
       setDebugError(error);
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to delete post.',
-      });
     }
   };
 
@@ -199,7 +188,7 @@ export default function ManagePostsClient({
   };
 
   const handleBackFromForm = () => {
-    setFormError(null);
+    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
@@ -283,28 +272,27 @@ export default function ManagePostsClient({
                   </PaginationContent>
                 </Pagination>
             )}
+             {debugError && (
+                <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
+                    <h3 className="font-semibold text-destructive mb-2">Deletion/Refresh Error Details</h3>
+                    <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
+                    {JSON.stringify({
+                        message: debugError.message,
+                        stack: debugError.stack,
+                        ...debugError,
+                    }, null, 2)}
+                    </pre>
+                </div>
+              )}
           </>
         ) : (
           <PostForm
             editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
-            error={formError}
           />
         )}
       </ManageLayout>
-      {debugError && (
-        <div className="mt-8 p-4 border border-dashed rounded-lg text-left bg-card">
-            <h2 className="text-lg font-semibold mb-2 text-destructive">Debug Error Information</h2>
-            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-              {JSON.stringify({
-                  message: debugError.message,
-                  stack: debugError.stack,
-                  ...debugError
-              }, null, 2)}
-            </pre>
-          </div>
-      )}
     </>
   );
 }

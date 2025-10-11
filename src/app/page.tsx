@@ -1,8 +1,11 @@
 
+
 'use server';
 
 import { getPosts, getUsers, getPublicGroups } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
+import { MyReusableButton } from '@/components/my-reusable-button'; // Import a custom button
+import { Mail } from 'lucide-react';
 
 export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string } }) {
   const timeFilter = searchParams?.timeFilter;
@@ -15,13 +18,16 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   const groups = await getPublicGroups(5);
   
   return (
-    <HomePageClient
-      initialPosts={posts}
-      initialUsers={users}
-      initialGroups={groups as any}
-      totalPages={totalPages}
-      currentPage={currentPage}
-      searchParams={searchParams}
-    />
+    <>
+      <HomePageClient
+        initialPosts={posts}
+        initialUsers={users}
+        initialGroups={groups as any}
+        totalPages={totalPages}
+        currentPage={currentPage}
+        searchParams={searchParams}
+      />
+     
+    </>
   );
 }

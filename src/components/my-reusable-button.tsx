@@ -1,20 +1,23 @@
-
 /*
   ================================================================
-  ShadCN Button Component
+  පියවර 3: Reusable Button Component එක නිර්මාණය කිරීම
   ================================================================
-  - `cva` (class-variance-authority): විවිධ පෙනුම් (`variant`) 
+  මෙය අපගේ ප්‍රධාන component එකයි.
+  - `cva` (class-variance-authority): මගින් button එකේ විවිධ පෙනුම් (`variant`) 
     සහ ප්‍රමාණ (`size`) වලට අදාළ Tailwind class නම් නිර්වචනය කරයි.
-  - `React.forwardRef`: මෙම component එකට `ref` එකක් pass කිරීමට ඉඩ ලබා දේ.
-  - `ButtonProps` interface: component එකට ලබාදිය හැකි `props` නිර්වචනය කරයි.
-  - `@radix-ui/react-slot`: `asChild` prop එකට සහය දක්වයි.
+  - `React.forwardRef`: මගින් මෙම component එකට `ref` එකක් pass කිරීමට ඉඩ ලබා දේ.
+  - `MyButtonProps` interface: එක මගින් component එකට ලබාදිය හැකි `props` 
+    (variant, size, className, ආදිය) නිර්වචනය කරයි.
+  - `asChild` prop: එක මගින්, මෙම button එක <Link> tag එකක් වැනි වෙනත් 
+    element එකක් ලෙස හැසිරවීමට ඉඩ ලබා දේ.
 */
 import * as React from "react"
 import { Slot } from "@radix-ui/react-slot"
 import { cva, type VariantProps } from "class-variance-authority"
 
-import { cn } from "@/lib/utils" 
+import { cn } from "@/lib/utils"
 
+// Button එකේ විවිධ පෙනුම් සහ ප්‍රමාණ සඳහා class නම් නිර්වචනය කිරීම
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
@@ -44,13 +47,15 @@ const buttonVariants = cva(
   }
 )
 
-export interface ButtonProps
+// Button component එකේ props සඳහා TypeScript interface එක
+export interface MyButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
   asChild?: boolean
 }
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+// Reusable Button Component එක
+const MyReusableButton = React.forwardRef<HTMLButtonElement, MyButtonProps>(
   ({ className, variant, size, asChild = false, ...props }, ref) => {
     const Comp = asChild ? Slot : "button"
     return (
@@ -62,6 +67,6 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     )
   }
 )
-Button.displayName = "Button"
+MyReusableButton.displayName = "MyReusableButton"
 
-export { Button, buttonVariants }
+export { MyReusableButton, buttonVariants }

@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -41,6 +42,21 @@ export async function getGroups() {
     }));
     
     return groupsWithPendingCounts;
+}
+
+export async function getGroupsForForm(): Promise<Pick<Group, 'id' | 'name'>[]> {
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('Not authorized');
+    }
+    const groups = await prisma.group.findMany({
+        select: {
+            id: true,
+            name: true,
+        },
+        orderBy: { name: 'asc' },
+    });
+    return groups;
 }
 
 export async function createGroup(name: string, description: string | null): Promise<Group> {
@@ -187,10 +203,8 @@ export async function getGroupForProfile(groupId: string) {
         return null;
     }
     
-    let canViewPosts = group.visibility === 'PUBLIC';
     let isMember = false;
     let membershipStatus: 'ACTIVE' | 'PENDING' | null = null;
-
 
     if (user) {
         const membership = await prisma.groupMember.findUnique({
@@ -202,28 +216,46 @@ export async function getGroupForProfile(groupId: string) {
             },
         });
         if (membership) {
-            if (membership.status === 'ACTIVE') {
-                 canViewPosts = true;
-                 isMember = true;
-                 membershipStatus = 'ACTIVE';
-            } else if (membership.status === 'PENDING') {
-                membershipStatus = 'PENDING';
-            }
+            isMember = membership.status === 'ACTIVE';
+            membershipStatus = membership.status;
         }
     }
     
-    let posts = [];
-    if (canViewPosts) {
-        posts = await prisma.post.findMany({
-            where: { 
-                groupId: groupId,
-                status: 'PUBLISHED'
+    const canViewPosts = group.visibility === 'PUBLIC' || isMember;
+
+    const posts = canViewPosts ? await prisma.post.findMany({
+        where: { 
+            groupId: groupId,
+            status: 'PUBLISHED',
+            OR: [
+                { visibility: 'PUBLIC' },
+                { 
+                    visibility: 'GROUP_ONLY',
+                    AND: isMember ? [{}] : [{ id: { equals: -1 } }], // Block if not a member
+                }
+            ]
+        },
+        include: {
+            author: true,
+             likedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                },
+                take: 5,
             },
-            include: {
-                author: true,
+            _count: {
+                select: {
+                    likedBy: true,
+                    reviews: true,
+                }
             }
-        });
-    }
+        },
+        orderBy: {
+            createdAt: 'desc',
+        }
+    }) : [];
 
     return {
         ...group,

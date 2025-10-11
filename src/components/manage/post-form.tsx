@@ -36,7 +36,7 @@ import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries, createSeries, getGroups } from '@/lib/actions';
+import { getSeries, createSeries, getGroupsForForm } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,7 +44,7 @@ const postSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   posterUrl: z.string().optional(),
   description: z.string().min(10, 'Description is required'),
-  year: z.coerce.number().min(1800, 'Invalid year').optional(),
+  year: z.coerce.number().optional(),
   duration: z.string().optional(),
   genres: z.array(z.string()).optional(),
   directors: z.string().optional(),
@@ -57,20 +57,29 @@ const postSchema = z.object({
     url: z.string().url('Please enter a valid URL.').min(1, 'URL is required.'),
   })).optional(),
   type: z.enum(['MOVIE', 'TV_SERIES', 'OTHER']),
-  seriesId: z.coerce.number().optional(),
+  seriesId: z.number().optional().nullable(),
   orderInSeries: z.coerce.number().optional(),
   visibility: z.enum(['PUBLIC', 'GROUP_ONLY']).default('PUBLIC'),
-  groupId: z.coerce.number().optional(),
+  groupId: z.string().nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (data.visibility === 'GROUP_ONLY' && !data.groupId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Please select a group.',
+      path: ['groupId'],
+    });
+  }
 });
+
 
 type PostFormValues = z.infer<typeof postSchema>;
 
 type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface PostFormProps {
   editingPost: PostWithLinks | null;
-  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
+  onFormSubmit: (postData: PostFormData, id?: number) => void;
   onBack: () => void;
-  error?: string | null;
+  debugError: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -169,7 +178,7 @@ export default function PostForm({
   editingPost,
   onFormSubmit,
   onBack,
-  error,
+  debugError,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
@@ -180,7 +189,7 @@ export default function PostForm({
     async function fetchData() {
       const seriesData = await getSeries();
       setSeriesList(seriesData);
-      const groupData = await getGroups();
+      const groupData = await getGroupsForForm();
       setGroups(groupData as any);
     }
     fetchData();
@@ -243,7 +252,7 @@ export default function PostForm({
     name: 'mediaLinks',
   });
 
-  const handleSubmit = async (values: PostFormValues) => {
+  const handleSubmit = (values: PostFormValues) => {
     const postData: PostFormData = {
       title: values.title,
       description: values.description,
@@ -263,9 +272,9 @@ export default function PostForm({
       seriesId: values.seriesId,
       orderInSeries: values.orderInSeries,
       visibility: values.visibility,
-      groupId: values.groupId,
+      groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
     };
-    await onFormSubmit(postData, editingPost?.id);
+    onFormSubmit(postData, editingPost?.id);
   };
 
   const handleFileChange = (
@@ -654,7 +663,15 @@ export default function PostForm({
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel>Group</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={String(field.value || '')}>
+                          <Select 
+                              onValueChange={(value) => {
+                                console.log('Raw value from Select:', value);
+                                const selectedGroup = groups.find(g => g.id === value);
+                                console.log('Selected Group Object:', selectedGroup);
+                                field.onChange(value || null);
+                              }}
+                              defaultValue={field.value || ""}
+                          >
                             <FormControl>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select a group" />
@@ -662,13 +679,10 @@ export default function PostForm({
                             </FormControl>
                             <SelectContent>
                               {groups.length > 0 ? groups.map(group => (
-                                <SelectItem key={group.id} value={String(group.id)}>{group.name}</SelectItem>
+                                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
                               )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
                             </SelectContent>
                           </Select>
-                           <FormDescription>
-                             This post will only be visible to members of this group.
-                           </FormDescription>
                           <FormMessage />
                         </FormItem>
                       )}
@@ -738,14 +752,17 @@ export default function PostForm({
             </Button>
           </div>
           
-          {error && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Submission Error</AlertTitle>
-              <AlertDescription>
-                {error}
-              </AlertDescription>
-            </Alert>
+          {debugError && (
+            <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
+                <h3 className="font-semibold text-destructive mb-2">Submission Error Details</h3>
+                <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
+                {JSON.stringify({
+                    message: debugError.message,
+                    stack: debugError.stack,
+                    ...debugError,
+                }, null, 2)}
+                </pre>
+            </div>
           )}
           
           <div className="flex justify-end pt-4">
@@ -753,7 +770,7 @@ export default function PostForm({
               {formState.isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {editingPost ? 'Saving...' : 'Publishing...'}
+                  <span>{editingPost ? 'Saving...' : 'Publishing...'}</span>
                 </>
               ) : editingPost ? (
                 'Save Changes'
@@ -767,3 +784,5 @@ export default function PostForm({
     </div>
   );
 }
+
+    
