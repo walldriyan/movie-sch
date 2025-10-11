@@ -88,10 +88,9 @@ function PostCard({ post, isOwnProfile, currentFilter, profileUser }: { post: Po
                           className="object-cover"
                       />
                        {isOwnProfile && currentFilter === 'posts' && (
-                        <Button asChild size="sm" className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button asChild size="icon" variant="ghost" className="absolute top-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70">
                             <Link href={`/manage?edit=${post.id}`}>
-                            <Pencil className="mr-2 h-4 w-4" />
-                            Edit
+                            <Pencil className="h-4 w-4" />
                             </Link>
                         </Button>
                         )}
