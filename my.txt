@@ -47,7 +47,18 @@ mee@sch.com
       awashayanam change kranna magen ahala inna
       sinhalen respond kranna 
 
+
+
+git fetch --prune
+
+git branch -a
+
  
+git branch -D 18Group
+git branch -D v19improve
+git branch -D v23noti
+
+
   git branch -D v10
    git branch -D v11
    git branch -D v112

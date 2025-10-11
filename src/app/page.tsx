@@ -2,10 +2,11 @@
 
 'use server';
 
-import { getPosts, getUsers, getPublicGroups } from '@/lib/actions';
+import { getPosts, getUsers, getPublicGroups, getNotifications } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button'; // Import a custom button
 import { Mail } from 'lucide-react';
+import type { Notification } from '@prisma/client';
 
 export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string } }) {
   const timeFilter = searchParams?.timeFilter;
@@ -16,6 +17,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
   const { posts, totalPages } = await getPosts({ page: currentPage, limit: 10, filters: { timeFilter, sortBy, type: typeFilter } });
   const users = await getUsers();
   const groups = await getPublicGroups(5);
+  const notifications = (await getNotifications()) as Notification[];
   
   return (
     <>
@@ -26,6 +28,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
         totalPages={totalPages}
         currentPage={currentPage}
         searchParams={searchParams}
+        initialNotifications={notifications}
       />
      
     </>
