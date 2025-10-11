@@ -1,8 +1,9 @@
 
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount } from '@/lib/types';
@@ -23,6 +24,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import GroupCard from './group-card';
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface HomePageClientProps {
     initialPosts: any[];
@@ -33,7 +35,14 @@ interface HomePageClientProps {
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string };
 }
 
+interface Notification {
+  id: string;
+  title: string;
+  description: string;
+}
+
 export default function HomePageClient({ initialPosts, initialUsers, initialGroups, totalPages, currentPage, searchParams }: HomePageClientProps) {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
   const posts = initialPosts;
   const users = initialUsers;
   const groups = initialGroups;
@@ -81,6 +90,19 @@ export default function HomePageClient({ initialPosts, initialUsers, initialGrou
             </main>
             ) : (
             <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+                {notifications.length > 0 && (
+                  <div className="mb-8 space-y-4">
+                    {notifications.map((notification) => (
+                      <Alert key={notification.id}>
+                        <Terminal className="h-4 w-4" />
+                        <AlertTitle>{notification.title}</AlertTitle>
+                        <AlertDescription>
+                          {notification.description}
+                        </AlertDescription>
+                      </Alert>
+                    ))}
+                  </div>
+                )}
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                         <Button asChild variant={'outline'} className={cn(
