@@ -8,7 +8,6 @@ import { ROLES, MovieStatus } from '@/lib/permissions';
 import ManagePostsClient from '@/app/manage/client';
 import { getPostsForAdmin, getPost } from '@/lib/actions';
 import type { Post } from '@prisma/client';
-import Loading from './loading';
 
 export default async function ManagePostsPage() {
   const session = await auth();
