@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useTransition, useMemo, useEffect } from 'react';
@@ -39,7 +40,7 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check, Trash2, Mail, CheckCircle2, XCircle } from 'lucide-react';
+import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check, Trash2, Mail, CheckCircle2, XCircle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -54,6 +55,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import type { GroupWithCount, GroupWithMembers, MemberWithUser } from '@/lib/types';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import Link from 'next/link';
+import EditGroupDialog from './edit-group-dialog';
 
 
 const groupFormSchema = z.object({
@@ -490,7 +492,8 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
                         {group._count.members}
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2">
+                       <EditGroupDialog group={group} onUpdate={fetchGroups} />
                        <ManageMembersDialog group={group} allUsers={allUsers} onUpdate={fetchGroups} />
                     </TableCell>
                   </TableRow>

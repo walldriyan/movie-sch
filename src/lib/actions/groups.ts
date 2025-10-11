@@ -7,6 +7,67 @@ import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import type { Group, GroupMember, User, Role as MemberRole } from '@prisma/client';
+import { writeFile, mkdir, unlink } from 'fs/promises';
+import { join } from 'path';
+
+
+async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
+  if (!dataUrl.startsWith('data:image')) {
+    return dataUrl; 
+  }
+
+  try {
+    const fileType = dataUrl.substring(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
+    const base64Data = dataUrl.substring(dataUrl.indexOf(',') + 1);
+    const buffer = Buffer.from(base64Data, 'base64');
+    
+    const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${fileType}`;
+    const directory = join(process.cwd(), `public/uploads/${subfolder}`);
+    const path = join(directory, filename);
+
+    await mkdir(directory, { recursive: true });
+    await writeFile(path, buffer);
+
+    return `/uploads/${subfolder}/${filename}`;
+  } catch (error) {
+    console.error("Error saving image from data URL:", error);
+    return null;
+  }
+}
+
+async function deleteUploadedFile(filePath: string | null | undefined) {
+    if (!filePath || !filePath.startsWith('/uploads/')) {
+        return; 
+    }
+    try {
+        const fullPath = join(process.cwd(), 'public', filePath);
+        await unlink(fullPath);
+    } catch (error) {
+        console.error(`Failed to delete file: ${filePath}`, error);
+    }
+}
+
+export async function uploadGroupProfileImage(formData: FormData): Promise<string | null> {
+    const file = formData.get('image') as File;
+    if (!file || file.size === 0) {
+      return null;
+    }
+    const dataUrl = await file.arrayBuffer().then(buffer => 
+        `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
+    );
+    return saveImageFromDataUrl(dataUrl, 'groups/avatars');
+}
+
+export async function uploadGroupCoverImage(formData: FormData): Promise<string | null> {
+    const file = formData.get('image') as File;
+    if (!file || file.size === 0) {
+      return null;
+    }
+    const dataUrl = await file.arrayBuffer().then(buffer => 
+        `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
+    );
+    return saveImageFromDataUrl(dataUrl, 'groups/covers');
+}
 
 
 export async function getGroups() {
@@ -97,6 +158,61 @@ export async function getGroupDetails(groupId: string) {
             },
         },
     });
+}
+
+export async function updateGroup(
+  groupId: string,
+  data: {
+    name?: string;
+    description?: string | null;
+    profilePhoto?: string | null;
+    coverPhoto?: string | null;
+  }
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    throw new Error('Not authorized');
+  }
+  
+  const currentGroup = await prisma.group.findUnique({
+    where: { id: groupId },
+    select: { profilePhoto: true, coverPhoto: true },
+  });
+
+  if (!currentGroup) {
+      throw new Error('Group not found');
+  }
+
+  let finalProfilePhoto = data.profilePhoto;
+  if (data.profilePhoto && data.profilePhoto.startsWith('data:image')) {
+      finalProfilePhoto = await saveImageFromDataUrl(data.profilePhoto, 'groups/avatars');
+      if (currentGroup.profilePhoto && currentGroup.profilePhoto.startsWith('/uploads/')) {
+        await deleteUploadedFile(currentGroup.profilePhoto);
+      }
+  }
+
+  let finalCoverPhoto = data.coverPhoto;
+  if (data.coverPhoto && data.coverPhoto.startsWith('data:image')) {
+      finalCoverPhoto = await saveImageFromDataUrl(data.coverPhoto, 'groups/covers');
+      if (currentGroup.coverPhoto && currentGroup.coverPhoto.startsWith('/uploads/')) {
+        await deleteUploadedFile(currentGroup.coverPhoto);
+      }
+  }
+
+  const updateData = {
+    name: data.name,
+    description: data.description,
+    profilePhoto: finalProfilePhoto,
+    coverPhoto: finalCoverPhoto,
+  };
+
+  await prisma.group.update({
+    where: { id: groupId },
+    data: updateData,
+  });
+
+  revalidatePath(`/admin/groups`);
+  revalidatePath(`/groups/${groupId}`);
 }
 
 export async function updateGroupMembers(groupId: string, newMemberIds: string[], memberRoles: Record<string, MemberRole>) {

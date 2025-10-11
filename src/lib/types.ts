@@ -83,3 +83,5 @@ export type GroupForProfile = PrismaGroup & {
     members: { user: Pick<User, 'id' | 'name' | 'image'> }[];
     createdBy: Pick<User, 'id' | 'name' | 'image'> | null;
 };
+
+export type GroupForEditing = Pick<PrismaGroup, 'id' | 'name' | 'description' | 'profilePhoto' | 'coverPhoto'>;
