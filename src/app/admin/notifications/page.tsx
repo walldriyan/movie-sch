@@ -32,7 +32,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { getGroupsForForm, getUsers } from '@/lib/actions';
+import { getGroupsForForm, getUsers, sendNotification } from '@/lib/actions';
 import type { User, Group } from '@prisma/client';
 import { Loader2, Send, Users, User as UserIcon, Globe, Check, ChevronsUpDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -158,15 +158,25 @@ export default function NotificationsPage() {
   }, [targetType, form]);
 
   const onSubmit = (values: NotificationFormValues) => {
-    startSubmitting(() => {
-        console.log(values);
-        // Here you would typically call a server action to send the notification
-        toast({
-            title: "Notification Sent (Simulated)",
-            description: `Title: ${values.title}`,
-        });
-        form.reset();
-    })
+    startSubmitting(async () => {
+        try {
+            await sendNotification({
+                ...values,
+                targetId: values.targetId || null,
+            });
+            toast({
+                title: "Notification Sent",
+                description: "Your notification has been successfully sent and saved.",
+            });
+            form.reset();
+        } catch (error: any) {
+            toast({
+                variant: "destructive",
+                title: "Error Sending Notification",
+                description: error.message || "An unexpected error occurred.",
+            });
+        }
+    });
   };
 
   return (
