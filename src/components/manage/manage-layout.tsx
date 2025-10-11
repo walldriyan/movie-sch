@@ -48,70 +48,78 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
               </span>
             </Link>
           </div>
-          <SidebarMenu className="p-4 gap-1.5 ">
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="text-base">
-                <Link href="/">
-                  <Home />
-                  <span>Home</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            {canManage && (
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive className="text-base">
-                  <Link href="/manage">
-                    <LayoutGrid />
-                    <span>My Movies</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            )}
-            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="text-base">
-                  <Link href="/admin/users">
-                    <Users />
-                    <span>Users</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                <SidebarMenuButton asChild className="text-base">
-                  <Link href="/admin/groups">
-                    <Users2 />
-                    <span>Groups</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </AuthGuard>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="text-base">
-                <Link href="/favorites">
-                    <Bookmark />
-                    <span>Favorites</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild className="text-base">
-                <Link href={user ? `/profile/${user.id}` : '#'}>
-                  <User />
-                  <span>Profile</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-             <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="text-base">
-                  <Link href="/admin/settings">
-                    <Settings />
-                    <span>Settings</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </AuthGuard>
-          </SidebarMenu>
+          <div className="p-4 flex flex-col gap-4">
+             {/* Main Navigation Group */}
+            <div className="bg-muted/60 p-2 rounded-lg">
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                    <SidebarMenuButton asChild className="text-base">
+                        <Link href="/">
+                        <Home />
+                        <span>Home</span>
+                        </Link>
+                    </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    {canManage && (
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive className="text-base">
+                        <Link href="/manage">
+                            <LayoutGrid />
+                            <span>My Movies</span>
+                        </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    )}
+                    <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild className="text-base">
+                        <Link href="/admin/users">
+                            <Users />
+                            <span>Users</span>
+                        </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild className="text-base">
+                        <Link href="/admin/groups">
+                            <Users2 />
+                            <span>Groups</span>
+                        </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton asChild className="text-base">
+                        <Link href="/admin/settings">
+                            <Settings />
+                            <span>Settings</span>
+                        </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    </AuthGuard>
+                </SidebarMenu>
+            </div>
+            {/* Personal Group */}
+            <div className="bg-muted/60 p-2 rounded-lg">
+                 <SidebarMenu>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild className="text-base">
+                            <Link href="/favorites">
+                                <Bookmark />
+                                <span>Favorites</span>
+                            </Link>
+                        </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                        <SidebarMenuButton asChild className="text-base">
+                            <Link href={user ? `/profile/${user.id}` : '#'}>
+                            <User />
+                            <span>Profile</span>
+                            </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                 </SidebarMenu>
+            </div>
+          </div>
           <div className="flex-grow" />
         </SidebarContent>
         <SidebarFooter>
