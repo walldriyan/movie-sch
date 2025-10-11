@@ -7,7 +7,7 @@ import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions';
 import type { PostFormData } from '@/lib/types';
-import { PERMISSIONS, ROLES } from '@/lib/permissions';
+import { PERMISSIONS, ROLES, MovieStatus } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
 import PostList from '@/components/manage/post-list';
 import PostForm from '@/components/manage/post-form';
@@ -45,7 +45,7 @@ export default function ManagePostsClient({
   const [debugError, setDebugError] = useState<any | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(MovieStatus.PENDING_APPROVAL);
   const [isPending, startTransition] = useTransition();
 
   const searchParams = useSearchParams();
