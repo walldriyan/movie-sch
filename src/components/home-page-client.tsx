@@ -42,7 +42,10 @@ interface Notification {
 }
 
 export default function HomePageClient({ initialPosts, initialUsers, initialGroups, totalPages, currentPage, searchParams }: HomePageClientProps) {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<Notification[]>([
+    { id: '1', title: "Welcome to CineVerse!", description: "Explore and enjoy the world of movies." },
+    { id: '2', title: "New Feature", description: "You can now request subtitles using our new AI tool." }
+  ]);
   const posts = initialPosts;
   const users = initialUsers;
   const groups = initialGroups;
