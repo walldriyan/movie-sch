@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import Link from 'next/link';
 import {
@@ -20,7 +21,8 @@ import {
   User,
   Settings,
   Users,
-  Users2
+  Users2,
+  Bell
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import AuthGuard from '@/components/auth/auth-guard';
@@ -84,6 +86,14 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                         <Link href="/admin/groups">
                             <Users2 />
                             <span>Groups</span>
+                        </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <SidebarMenuButton asChild className="text-base">
+                        <Link href="/admin/notifications">
+                            <Bell />
+                            <span>Notifications</span>
                         </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
