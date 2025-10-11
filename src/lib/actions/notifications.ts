@@ -29,7 +29,6 @@ export async function sendNotification(
         message: values.message,
         targetType: values.targetType,
         targetId: values.targetId,
-        authorId: user.id,
       },
     });
     
