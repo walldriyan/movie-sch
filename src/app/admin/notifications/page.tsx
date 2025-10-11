@@ -159,23 +159,16 @@ export default function NotificationsPage() {
 
   const onSubmit = (values: NotificationFormValues) => {
     startSubmitting(async () => {
-        try {
-            await sendNotification({
-                ...values,
-                targetId: values.targetId || null,
-            });
-            toast({
-                title: "Notification Sent",
-                description: "Your notification has been successfully sent and saved.",
-            });
-            form.reset();
-        } catch (error: any) {
-            toast({
-                variant: "destructive",
-                title: "Error Sending Notification",
-                description: error.message || "An unexpected error occurred.",
-            });
-        }
+      // The try-catch block is removed to allow the error boundary to catch errors.
+      await sendNotification({
+          ...values,
+          targetId: values.targetId || null,
+      });
+      toast({
+          title: "Notification Sent",
+          description: "Your notification has been successfully sent and saved.",
+      });
+      form.reset();
     });
   };
 
