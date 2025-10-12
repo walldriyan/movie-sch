@@ -11,9 +11,7 @@ import type { Notification } from '@prisma/client';
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: {
-    [key: string]: string | string[] | undefined;
-  };
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
   const timeFilter = (searchParams?.timeFilter as string) || 'all';
   const sortBy = (searchParams?.sortBy as string) || 'updatedAt-desc';

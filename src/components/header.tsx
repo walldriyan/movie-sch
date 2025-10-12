@@ -9,12 +9,10 @@ import { Button } from './ui/button';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import React from 'react';
-import { useSession } from 'next-auth/react';
 
 export default async function Header() {
   const session = await auth();
   const user = session?.user;
-
 
   const renderCreateButton = () => {
     if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
@@ -32,9 +30,6 @@ export default async function Header() {
   };
 
   return (
-
     <HeaderClient session={session} createButton={renderCreateButton()} />
-    
-
   );
 }

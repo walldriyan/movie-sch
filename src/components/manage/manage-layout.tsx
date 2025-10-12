@@ -1,5 +1,7 @@
 
 
+'use client';
+
 import React from 'react';
 import Link from 'next/link';
 import {
@@ -28,6 +30,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES, PERMISSIONS } from '@/lib/permissions';
 import { Session } from 'next-auth';
+import { usePathname } from 'next/navigation';
 
 interface ManageLayoutProps {
   user: Session['user'] | undefined;
@@ -35,12 +38,13 @@ interface ManageLayoutProps {
 }
 
 export default function ManageLayout({ user, children }: ManageLayoutProps) {
+  const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
   return (
-    <SidebarProvider className="bg-transperent "  >
-      <Sidebar className="bg-transperent " variant="inset" collapsible="icon">
+    <SidebarProvider className="bg-transperent">
+      <Sidebar className="bg-transperent" variant="inset" collapsible="icon">
         <SidebarContent className="p-0 flex flex-col bg-transperent">
           <div className="p-4">
             <Link href="/" className="flex items-center space-x-2">
@@ -55,7 +59,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
             <div className="bg-muted/60 p-2 rounded-lg">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                    <SidebarMenuButton asChild className="text-base">
+                    <SidebarMenuButton asChild className="text-base" isActive={pathname === '/'}>
                         <Link href="/">
                         <Home />
                         <span>Home</span>
@@ -64,7 +68,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                     </SidebarMenuItem>
                     {canManage && (
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild isActive className="text-base">
+                        <SidebarMenuButton asChild isActive={pathname === '/manage'} className="text-base">
                         <Link href="/manage">
                             <LayoutGrid />
                             <span>My Movies</span>
@@ -74,7 +78,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                     )}
                     <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="text-base">
+                        <SidebarMenuButton asChild isActive={pathname === '/admin/users'} className="text-base">
                         <Link href="/admin/users">
                             <Users />
                             <span>Users</span>
@@ -82,7 +86,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="text-base">
+                        <SidebarMenuButton asChild isActive={pathname === '/admin/groups'} className="text-base">
                         <Link href="/admin/groups">
                             <Users2 />
                             <span>Groups</span>
@@ -90,7 +94,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="text-base">
+                        <SidebarMenuButton asChild isActive={pathname === '/admin/notifications'} className="text-base">
                         <Link href="/admin/notifications">
                             <Bell />
                             <span>Notifications</span>
@@ -98,7 +102,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="text-base">
+                        <SidebarMenuButton asChild isActive={pathname === '/admin/settings'} className="text-base">
                         <Link href="/admin/settings">
                             <Settings />
                             <span>Settings</span>
@@ -112,7 +116,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
             <div className="bg-muted/60 p-2 rounded-lg">
                  <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="text-base">
+                        <SidebarMenuButton asChild isActive={pathname === '/favorites'} className="text-base">
                             <Link href="/favorites">
                                 <Bookmark />
                                 <span>Favorites</span>
@@ -120,7 +124,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                         </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                        <SidebarMenuButton asChild className="text-base">
+                        <SidebarMenuButton asChild isActive={user ? pathname === `/profile/${user.id}` : false} className="text-base">
                             <Link href={user ? `/profile/${user.id}` : '#'}>
                             <User />
                             <span>Profile</span>
@@ -135,7 +139,7 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
         <SidebarFooter>
           {user && (
             <SidebarMenuButton asChild>
-              <Link href="#">
+              <Link href={`/profile/${user.id}`}>
                 <Avatar className="h-8 w-8">
                   <AvatarImage
                     src={user.image || userAvatar?.imageUrl}

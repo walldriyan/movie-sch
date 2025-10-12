@@ -1,4 +1,5 @@
 
+
 import { notFound } from 'next/navigation';
 import { getSeriesById, getPostsBySeriesId, getPost } from '@/lib/actions';
 import type { Post, Series } from '@/lib/types';
@@ -30,6 +31,11 @@ export default async function SeriesPage({
   const currentPostIdFromSearch = searchParams?.post
     ? Number(searchParams.post)
     : undefined;
+    
+  if (currentPostIdFromSearch && isNaN(currentPostIdFromSearch)) {
+      notFound();
+  }
+    
   const currentPostId = currentPostIdFromSearch ?? postsData[0]?.id;
 
   if (!currentPostId) {
