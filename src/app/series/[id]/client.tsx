@@ -2,7 +2,7 @@
 
 'use client';
 
-import { notFound, useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { notFound, useRouter, useSearchParams, usePathname, useParams } from 'next/navigation';
 import type { Post, Review, Series, User } from '@/lib/types';
 import SeriesTracker from '@/components/series-tracker';
 import Image from 'next/image';
@@ -35,6 +35,7 @@ export default function SeriesPageClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const params = useParams();
   const { toast } = useToast();
   const currentUser = useCurrentUser();
   
@@ -45,6 +46,12 @@ export default function SeriesPageClient({
   const [currentPost, setCurrentPost] = useState(initialPost);
   const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
   const [showReviews, setShowReviews] = useState(false);
+
+  // Validate the series ID from the URL
+  const seriesIdFromParams = Number(params.id);
+  if (isNaN(seriesIdFromParams)) {
+    notFound();
+  }
   
   const author = postsInSeries[0]?.author;
 
