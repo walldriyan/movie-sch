@@ -67,6 +67,9 @@ export default function HeaderClient({
       );
     }
 
+ 
+  
+
     const canManage = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(
       user.role
     );
@@ -104,7 +107,7 @@ export default function HeaderClient({
             </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-56 p-2">
           <DropdownMenuLabel>
             <p>My Account</p>
             <p className="text-xs text-muted-foreground font-normal truncate">
@@ -154,13 +157,14 @@ export default function HeaderClient({
             <Link href="/" className="flex items-center space-x-2">
               <Film className="h-7 w-7 text-primary" />
               <span className="inline-block font-bold font-serif text-2xl">
-                CineVerse
+                WALL
               </span>
             </Link>
           </div>
         <div className="flex items-center justify-end space-x-2">
           {createButton}
-          <HeaderApprovals />
+          {user &&  <HeaderApprovals />  }
+         
           {renderUserMenu()}
         </div>
       </div>
