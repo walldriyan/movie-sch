@@ -1,4 +1,5 @@
 
+
 import { notFound } from 'next/navigation';
 import { getSeriesById, getPostsBySeriesId, getPost } from '@/lib/actions';
 import type { Post, Series } from '@/lib/types';
@@ -16,7 +17,7 @@ export default async function SeriesPage({
     notFound();
   }
 
-  const seriesData = await getSeriesById(seriesId) as Series | null;
+  const seriesData = (await getSeriesById(seriesId)) as Series | null;
   if (!seriesData) {
     notFound();
   }
@@ -26,24 +27,31 @@ export default async function SeriesPage({
     // Or maybe show a page saying this series has no posts yet
     notFound();
   }
-  
-  const currentPostIdFromSearch = searchParams?.post ? Number(searchParams.post) : undefined;
+
+  const currentPostIdFromSearch = searchParams?.post
+    ? Number(searchParams.post)
+    : undefined;
+    
+  if (currentPostIdFromSearch && isNaN(currentPostIdFromSearch)) {
+      notFound();
+  }
+    
   const currentPostId = currentPostIdFromSearch ?? postsData[0]?.id;
 
   if (!currentPostId) {
     notFound();
   }
-  
+
   const currentPostData = (await getPost(currentPostId)) as Post | null;
   if (!currentPostData) {
     notFound();
   }
 
   return (
-    <SeriesPageClient 
-        series={seriesData}
-        postsInSeries={postsData}
-        initialPost={currentPostData}
+    <SeriesPageClient
+      series={seriesData}
+      postsInSeries={postsData}
+      initialPost={currentPostData}
     />
   );
 }

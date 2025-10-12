@@ -75,7 +75,7 @@ function PostCard({ post }: { post: Post }) {
         <div className="pl-12 flex-grow space-y-3">
              <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
                 {postImageUrl && (
-                  <div className="aspect-[16/9] relative overflow-hidden rounded-lg shadow-md max-h-[310px] ">
+                  <div className="aspect-[16/9] relative overflow-hidden rounded-t-lg shadow-md max-h-[310px] ">
                       <Image
                           src={postImageUrl}
                           alt={post.title}
@@ -84,7 +84,7 @@ function PostCard({ post }: { post: Post }) {
                       />
                   </div>
                 )}
-                 <div className="p-3">
+                 <div className="p-2">
                     <Link href={`/movies/${post.id}`} className="group block">
                         <h2 className="font-serif text-lg font-bold leading-snug group-hover:text-primary transition-colors">
                             {post.title}

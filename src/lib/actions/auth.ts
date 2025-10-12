@@ -42,30 +42,26 @@ export async function registerUser(
   const formInput = { name, email };
 
   if (!name || !email || !password) {
-    // This basic validation can remain
     return { message: 'A required field is missing.', input: formInput };
   }
   
-  // The try-catch block is removed to let Next.js Error Boundary handle it.
-  const hashedPassword = await bcrypt.hash(password, 12);
-
   let userRole: Role = Role.USER;
-  if (
-    process.env.SUPER_ADMIN_EMAIL &&
-    email === process.env.SUPER_ADMIN_EMAIL
-  ) {
-    // Check if a SUPER_ADMIN already exists
-    const existingSuperAdmin = await prisma.user.findFirst({
-        where: { role: Role.SUPER_ADMIN }
-    });
-    if (existingSuperAdmin) {
-        // This will be caught by the error boundary
-        throw new Error('A SUPER_ADMIN account already exists. Cannot create another.');
-    }
-    userRole = Role.SUPER_ADMIN;
-  }
-
   try {
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    if (
+      process.env.SUPER_ADMIN_EMAIL &&
+      email === process.env.SUPER_ADMIN_EMAIL
+    ) {
+      const existingSuperAdmin = await prisma.user.findFirst({
+          where: { role: Role.SUPER_ADMIN }
+      });
+      if (existingSuperAdmin) {
+          throw new Error('A SUPER_ADMIN account already exists. Cannot create another.');
+      }
+      userRole = Role.SUPER_ADMIN;
+    }
+
     await prisma.user.create({
       data: {
         name,
@@ -74,16 +70,15 @@ export async function registerUser(
         role: userRole,
       },
     });
+
   } catch (error: any) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
           if (error.code === 'P2002') {
               return { message: 'An account with this email already exists.', input: formInput };
           }
       }
-      // For other errors, we can return a generic message or re-throw
-      return { message: 'An unexpected error occurred during registration.', input: formInput };
+      return { message: error.message || 'An unexpected error occurred during registration.', input: formInput };
   }
-
 
   redirect('/login');
 }

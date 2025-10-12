@@ -7,7 +7,7 @@ import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions';
 import type { PostFormData } from '@/lib/types';
-import { PERMISSIONS, ROLES } from '@/lib/permissions';
+import { PERMISSIONS, ROLES, MovieStatus } from '@/lib/permissions';
 import ManageLayout from '@/components/manage/manage-layout';
 import PostList from '@/components/manage/post-list';
 import PostForm from '@/components/manage/post-form';
@@ -23,7 +23,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 
 interface ManagePostsClientProps {
@@ -45,13 +45,19 @@ export default function ManagePostsClient({
   const [debugError, setDebugError] = useState<any | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [statusFilter, setStatusFilter] = useState<string | null>(MovieStatus.PENDING_APPROVAL);
   const [isPending, startTransition] = useTransition();
 
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
   useEffect(() => {
+    // Only run this effect if we are on the manage page
+    if (pathname !== '/manage') {
+      return;
+    }
+
     const editId = searchParams.get('edit');
     const create = searchParams.get('create');
 
@@ -73,7 +79,7 @@ export default function ManagePostsClient({
     } else {
       setView('list');
     }
-  }, [searchParams, user.id, user.role]);
+  }, [searchParams, user.id, user.role, pathname]);
 
 
   const fetchPosts = async (page: number, status: string | null) => {
@@ -290,6 +296,7 @@ export default function ManagePostsClient({
             editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
+            debugError={undefined}
           />
         )}
       </ManageLayout>

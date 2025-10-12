@@ -2,7 +2,7 @@
 
 'use client';
 
-import { notFound, useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname, useParams, redirect } from 'next/navigation';
 import type { Post, Review, Series, User } from '@/lib/types';
 import SeriesTracker from '@/components/series-tracker';
 import Image from 'next/image';
@@ -11,7 +11,6 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEffect, useState, useMemo, useTransition } from 'react';
-import Loading from './loading';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
@@ -36,6 +35,7 @@ export default function SeriesPageClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const params = useParams();
   const { toast } = useToast();
   const currentUser = useCurrentUser();
   
@@ -46,7 +46,7 @@ export default function SeriesPageClient({
   const [currentPost, setCurrentPost] = useState(initialPost);
   const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
   const [showReviews, setShowReviews] = useState(false);
-  
+
   const author = postsInSeries[0]?.author;
 
   useEffect(() => {
@@ -281,7 +281,7 @@ export default function SeriesPageClient({
                            <Separator orientation="vertical" className="h-6 mx-2" />
 
                            <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
-                                <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
+                               <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
                            </Button>
                         </div>
                     </section>

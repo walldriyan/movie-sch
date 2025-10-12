@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { notFound, useParams } from 'next/navigation';
@@ -40,7 +38,6 @@ import { PostType } from '@prisma/client';
 import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
-import Loading from './loading';
 import { Skeleton } from '@/components/ui/skeleton';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
 
@@ -331,10 +328,8 @@ export default function MoviePage() {
     });
   };
 
-  if (isLoading || !post) {
-    return (
-      <Loading />
-    )
+  if (!post) {
+    return null;
   }
 
   return (
@@ -584,5 +579,3 @@ export default function MoviePage() {
     
 
     
-
-

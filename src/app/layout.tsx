@@ -6,11 +6,7 @@ import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import SessionProvider from '@/components/auth/session-provider';
 import Header from '@/components/header';
-import { useSession } from 'next-auth/react';
-
-
-
-
+import { auth } from '@/auth';
 
 export const metadata: Metadata = {
   title: 'CineVerse Captions',
@@ -32,12 +28,13 @@ const fontSinhala = Noto_Sans_Sinhala({
   variable: '--font-sinhala',
 });
 
-
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
   return (
     <html lang="en" className="dark overflow-x-hidden">
       <body
@@ -54,8 +51,7 @@ export default function RootLayout({
           <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
         </div>
 
-        <SessionProvider>
-          {/* <div className='pt-16 bg-red-950/70 filter blur-3xl '></div> */}
+        <SessionProvider session={session}>
           <div className="  pt-16 bg-gradient-to-t from-red-950/5 to-purple-800/2 backdrop-blur-md"></div>
           
           <Header />
