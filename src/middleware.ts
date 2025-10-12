@@ -2,9 +2,16 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { auth } from '@/auth';
 
+// By annotating the request object with the NextAuthRequest type,
+// we can get type safety for the `auth` property.
+// However, since we are not modifying the auth setup, we can't import NextAuthRequest.
+// We'll proceed by using request.auth and letting TypeScript infer its type.
+
 export async function middleware(request: NextRequest) {
   const { nextUrl } = request;
-  const session = await auth();
+  
+  // Use `request.auth` to get the session in middleware
+  const session = (request as any).auth;
   const isLoggedIn = !!session?.user;
 
   const isAuthPage = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
