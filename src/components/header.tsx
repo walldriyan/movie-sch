@@ -36,15 +36,15 @@ export default async function Header() {
   };
 
   return (
-    <div className="flex flex-col gap-4 border-b border-gray-200 bg-white">
+    <div className="flex flex-col gap-4   ">
       {/* Header client part */}
       <HeaderClient session={session} createButton={renderCreateButton()} />
 
       {/* --- 👇 User Info List එක --- */}
       {user ? (
-        <div className="mt-4 p-3 rounded-xl bg-gray-50 border">
-          <h2 className="font-semibold text-lg mb-2">User Information</h2>
-          <ul className="space-y-1 text-sm text-gray-700">
+        <div className="bg-gray-800 rounded-xl p-2 bg-gray-50 border">
+          <h2 className="font-semibold text-lg ">User Information</h2>
+          <ul className="text-sm text-gray-600">
             <li><strong>Name:</strong> {user.name}</li>
             <li><strong>Email:</strong> {user.email}</li>
             <li><strong>Role:</strong> {user.role}</li>
@@ -61,7 +61,7 @@ export default async function Header() {
           </ul>
         </div>
       ) : (
-        <p className="text-gray-500 italic">No user logged in</p>
+        <p className="bg-gray-600 text-gray-500 italic">No user logged in</p>
       )}
     </div>
   );
