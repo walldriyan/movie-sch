@@ -47,14 +47,6 @@ export default function SeriesPageClient({
   const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
   const [showReviews, setShowReviews] = useState(false);
 
-  useEffect(() => {
-    // Validate the series ID from the URL on the client side
-    const seriesIdFromParams = Number(params.id);
-    if (isNaN(seriesIdFromParams)) {
-      redirect('/');
-    }
-  }, [params.id, router]);
-
   const author = postsInSeries[0]?.author;
 
   useEffect(() => {
