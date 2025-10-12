@@ -2,7 +2,7 @@
 
 'use client';
 
-import { notFound, useRouter, useSearchParams, usePathname, useParams } from 'next/navigation';
+import { notFound, useRouter, useSearchParams, usePathname, useParams, redirect } from 'next/navigation';
 import type { Post, Review, Series, User } from '@/lib/types';
 import SeriesTracker from '@/components/series-tracker';
 import Image from 'next/image';
@@ -50,7 +50,7 @@ export default function SeriesPageClient({
   // Validate the series ID from the URL
   const seriesIdFromParams = Number(params.id);
   if (isNaN(seriesIdFromParams)) {
-    notFound();
+    redirect('/');
   }
   
   const author = postsInSeries[0]?.author;
@@ -454,5 +454,3 @@ export default function SeriesPageClient({
     </div>
   );
 }
-
-    
