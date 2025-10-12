@@ -307,19 +307,19 @@ export default function MovieDetailClient({
             </div>
             <div className="flex items-center gap-2 pl-4 flex-shrink-0">
                <Button variant="ghost" size="sm" onClick={() => handleLike('like')} disabled={isLikeTransitioning} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
-                <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
+                <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-primary fill-primary" : "text-muted-foreground")} />
                 {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>}
               </Button>
               
               <Button variant="ghost" size="sm" onClick={() => handleLike('dislike')} disabled={isLikeTransitioning} className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
-                <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
+                <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-destructive fill-destructive" : "text-muted-foreground")} />
                 {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>}
               </Button>
 
               <Separator orientation="vertical" className="h-6 mx-2" />
 
               <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={isFavoritePending}>
-                 {isFavoritePending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />}
+                 {isFavoritePending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Bookmark className={cn("w-5 h-5", isFavorited ? "text-primary fill-primary" : "text-muted-foreground")} />}
               </Button>
               <Button variant="ghost" size="icon">
                 <Share2 className="w-5 h-5" />
