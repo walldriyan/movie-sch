@@ -36,7 +36,7 @@ export default async function Header() {
   };
 
   return (
-    <div className="flex flex-col gap-4   ">
+    <div className="flex flex-col gap-4 absalute top-5  ">
       {/* Header client part */}
       <HeaderClient session={session} createButton={renderCreateButton()} />
 
