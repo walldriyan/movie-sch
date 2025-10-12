@@ -322,13 +322,13 @@ export default function MovieDetailClient({
                  {isFavoritePending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Bookmark className={cn("w-5 h-5", isFavorited ? "text-primary fill-primary" : "text-muted-foreground")} />}
               </Button>
               <Button variant="ghost" size="icon">
-                <Share2 className="w-5 h-5" />
+                <Share2 className="w-5 h-5 text-muted-foreground" />
               </Button>
               {canManage && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="w-5 h-5" />
+                      <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent>
