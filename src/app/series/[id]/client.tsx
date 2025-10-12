@@ -2,7 +2,7 @@
 
 'use client';
 
-import { notFound, useRouter, useSearchParams, usePathname, useParams, redirect } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname, useParams, redirect } from 'next/navigation';
 import type { Post, Review, Series, User } from '@/lib/types';
 import SeriesTracker from '@/components/series-tracker';
 import Image from 'next/image';
@@ -47,12 +47,14 @@ export default function SeriesPageClient({
   const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
   const [showReviews, setShowReviews] = useState(false);
 
-  // Validate the series ID from the URL
-  const seriesIdFromParams = Number(params.id);
-  if (isNaN(seriesIdFromParams)) {
-    redirect('/');
-  }
-  
+  useEffect(() => {
+    // Validate the series ID from the URL on the client side
+    const seriesIdFromParams = Number(params.id);
+    if (isNaN(seriesIdFromParams)) {
+      redirect('/');
+    }
+  }, [params.id, router]);
+
   const author = postsInSeries[0]?.author;
 
   useEffect(() => {
@@ -287,7 +289,7 @@ export default function SeriesPageClient({
                            <Separator orientation="vertical" className="h-6 mx-2" />
 
                            <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
-                                <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
+                               <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
                            </Button>
                         </div>
                     </section>
