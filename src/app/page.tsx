@@ -1,7 +1,5 @@
 
 
-'use server';
-
 import { getPosts, getUsers, getPublicGroups, getNotifications } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button'; // Import a custom button

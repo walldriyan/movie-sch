@@ -9,10 +9,14 @@ import { Button } from './ui/button';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import React from 'react';
+import { headers } from 'next/headers';
 
 export default async function Header() {
   const session = await auth();
   const user = session?.user;
+
+  // Reading headers to ensure this component is treated as a dynamic server component
+  const headersList = headers();
 
   const renderCreateButton = () => {
     if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {

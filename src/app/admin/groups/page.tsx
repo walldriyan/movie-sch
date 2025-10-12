@@ -1,5 +1,4 @@
 
-'use server';
 
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';

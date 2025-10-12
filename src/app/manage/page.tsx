@@ -1,7 +1,5 @@
 
 
-'use server';
-
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { ROLES, MovieStatus } from '@/lib/permissions';
@@ -9,7 +7,11 @@ import ManagePostsClient from '@/app/manage/client';
 import { getPostsForAdmin, getPost } from '@/lib/actions';
 import type { Post } from '@prisma/client';
 
-export default async function ManagePostsPage() {
+export default async function ManagePostsPage({
+  searchParams
+}: {
+  searchParams: { [key: string]: string | string[] | undefined };
+}) {
   const session = await auth();
   const user = session?.user;
 
@@ -17,13 +19,16 @@ export default async function ManagePostsPage() {
     notFound();
   }
 
+  const page = Number(searchParams?.page) || 1;
+  const status = (searchParams?.status as string) || MovieStatus.PENDING_APPROVAL;
+
   // Fetch initial data on the server with the default filter.
   const { posts, totalPages } = await getPostsForAdmin({ 
-    page: 1, 
+    page: page, 
     limit: 10, 
     userId: user.id, 
     userRole: user.role,
-    status: MovieStatus.PENDING_APPROVAL,
+    status: status,
   });
   
   // Pass the server-fetched data as initial props to the client component.
