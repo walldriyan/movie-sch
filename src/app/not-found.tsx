@@ -12,7 +12,7 @@ export default function NotFound() {
                     Sorry, we couldn’t find the page you’re looking for.
                 </p>
                 <Button asChild className="mt-8" size="lg">
-                    <Link href="/?timeFilter=all&sortBy=updatedAt-desc">Go back home</Link>
+                    <Link href="/">Go back home</Link>
                 </Button>
             </div>
         </main>

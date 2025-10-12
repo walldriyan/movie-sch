@@ -27,7 +27,7 @@ export default async function HomePage({ searchParams }: { searchParams?: { time
         initialGroups={groups as any}
         totalPages={totalPages}
         currentPage={currentPage}
-        searchParams={searchParams}
+        searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter }}
         initialNotifications={notifications}
       />
      
