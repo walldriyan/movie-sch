@@ -8,21 +8,14 @@ export async function middleware(request: NextRequest) {
   const isLoggedIn = !!session?.user;
 
   const isAuthPage = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
-  const isHomePage = nextUrl.pathname === '/';
 
   // If logged in and trying to access login/register, redirect to home
   if (isLoggedIn && isAuthPage) {
     return NextResponse.redirect(new URL('/', nextUrl));
   }
 
-  // If on the home page without filters, rewrite to the URL with default filters.
-  // Using rewrite() keeps the URL clean ('/') in the user's address bar.
-  if (isHomePage && (!nextUrl.searchParams.has('timeFilter') || !nextUrl.searchParams.has('sortBy'))) {
-     const url = nextUrl.clone();
-     url.searchParams.set('timeFilter', 'all');
-     url.searchParams.set('sortBy', 'updatedAt-desc');
-     return NextResponse.rewrite(url);
-  }
+  // The problematic redirection logic for the home page has been removed.
+  // Default search params are now handled directly in the `src/app/page.tsx` component.
 
   return NextResponse.next();
 }

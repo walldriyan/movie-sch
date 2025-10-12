@@ -9,8 +9,8 @@ import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
 
 export default async function HomePage({ searchParams }: { searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string } }) {
-  const timeFilter = searchParams?.timeFilter;
-  const sortBy = searchParams?.sortBy;
+  const timeFilter = searchParams?.timeFilter || 'all';
+  const sortBy = searchParams?.sortBy || 'updatedAt-desc';
   const typeFilter = searchParams?.type;
   const currentPage = Number(searchParams?.page) || 1;
 
