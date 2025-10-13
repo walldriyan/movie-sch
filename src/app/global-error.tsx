@@ -6,17 +6,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Terminal, AlertTriangle, RefreshCw } from 'lucide-react';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useSession } from 'next-auth/react';
 import { ROLES } from '@/lib/permissions';
+import SessionProvider from '@/components/auth/session-provider';
 
-export default function GlobalError({
-  error,
-  reset,
-}: {
-  error: Error & { digest?: string };
-  reset: () => void;
-}) {
-  const currentUser = useCurrentUser();
+
+function GlobalErrorContent({ error, reset }: { error: Error & { digest?: string }; reset: () => void; }) {
+  const { data: session } = useSession();
+  const currentUser = session?.user;
   const isAdmin = currentUser?.role === ROLES.SUPER_ADMIN;
 
   useEffect(() => {
@@ -93,4 +90,23 @@ export default function GlobalError({
       </div>
     </div>
   );
+}
+
+
+export default function GlobalError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <html>
+      <body>
+        <SessionProvider>
+          <GlobalErrorContent error={error} reset={reset} />
+        </SessionProvider>
+      </body>
+    </html>
+  )
 }
