@@ -306,15 +306,19 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-               <Button variant="ghost" size="sm" onClick={() => handleLike('like')} disabled={isLikeTransitioning} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
-                <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>}
-              </Button>
-              
-              <Button variant="ghost" size="sm" onClick={() => handleLike('dislike')} disabled={isLikeTransitioning} className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
-                <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>}
-              </Button>
+               {currentUser && (
+                <>
+                  <Button variant="ghost" size="sm" onClick={() => handleLike('like')} disabled={isLikeTransitioning} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
+                    <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
+                    {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>}
+                  </Button>
+                  
+                  <Button variant="ghost" size="sm" onClick={() => handleLike('dislike')} disabled={isLikeTransitioning} className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
+                    <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
+                    {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>}
+                  </Button>
+                </>
+               )}
 
               <Separator orientation="vertical" className="h-6 mx-2" />
 
