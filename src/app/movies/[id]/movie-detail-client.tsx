@@ -6,6 +6,7 @@ import React, { useTransition, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import {
   Star,
   MessageCircle,
@@ -42,14 +43,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MovieDetailClient({
   post: initialPost,
-  currentUser,
   children,
 }: {
   post: PostType;
-  currentUser?: User;
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const { data: session, status: sessionStatus } = useSession();
+  const currentUser = session?.user;
+
   const [isLikeTransitioning, startLikeTransition] = useTransition();
   const [isFavoritePending, startFavoriteTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -306,7 +308,12 @@ export default function MovieDetailClient({
               </button>
             </div>
             <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-               {currentUser && (
+               {sessionStatus === 'loading' ? (
+                 <>
+                    <Skeleton className="h-9 w-12" />
+                    <Skeleton className="h-9 w-12" />
+                 </>
+               ) : currentUser && (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => handleLike('like')} disabled={isLikeTransitioning} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                     <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />

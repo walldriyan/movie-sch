@@ -328,7 +328,7 @@ export default function MoviePage() {
     });
   };
 
-  if (!post) {
+  if (isLoading || !post) {
     return null;
   }
 
@@ -336,7 +336,7 @@ export default function MoviePage() {
     <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
-          <MovieDetailClient post={post} currentUser={currentUser}>
+          <MovieDetailClient post={post}>
             <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                  <div className="md:col-span-3">
