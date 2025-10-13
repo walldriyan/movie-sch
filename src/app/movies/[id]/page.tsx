@@ -1,7 +1,8 @@
 
+'use client';
 
-import { notFound } from 'next/navigation';
-import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
+import { notFound, useParams } from 'next/navigation';
+import { getPost, canUserDownloadSubtitle, createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
 import type { Post, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -36,6 +37,7 @@ import AdminActions from '@/components/admin-actions';
 import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
+import { useSession } from 'next-auth/react';
 
 
 export const dynamic = 'force-dynamic';
@@ -184,7 +186,8 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
     const [isDeleting, startDeleteTransition] = React.useTransition();
     const [isSubmittingReview, startReviewTransition] = React.useTransition();
     const [showReviews, setShowReviews] = React.useState(false);
-    const currentUser = useCurrentUser();
+    const { data: session } = useSession();
+    const currentUser = session?.user;
 
     const handleReviewSubmit = async (comment: string, rating: number, parentId?: number) => {
         if (!currentUser) {
@@ -202,7 +205,7 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
                 userId: currentUser.id,
                 postId: post.id,
                 parentId: parentId || null,
-                user: currentUser,
+                user: currentUser as any,
                 replies: [],
             };
             
@@ -477,9 +480,4 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
           </main>
         </div>
     )
-}
-
-function useCurrentUser() {
-  const { data: session } = React.useContext(require('next-auth/react').SessionContext);
-  return session?.user;
 }
