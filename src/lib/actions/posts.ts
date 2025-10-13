@@ -412,6 +412,8 @@ export async function updatePostStatus(postId: number, status: string) {
 
 export async function toggleLikePost(postId: number, like: boolean) {
   const session = await auth();
+console.log(session);
+
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
   }

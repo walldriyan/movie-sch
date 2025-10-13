@@ -109,12 +109,12 @@ export default function MovieDetailClient({
       likedBy: optimisticPost.likedBy?.length || 0,
     };
 
-    setPost(optimisticPost);
+    setPost(optimisticPost as PostType | null);
 
     startLikeTransition(() => {
       toggleLikePost(post.id, likeAction === 'like')
         .catch((err) => {
-          setPost(originalPost);
+          setPost(optimisticPost as PostType | null);
           toast({
             variant: 'destructive',
             title: 'An error occurred',
@@ -144,7 +144,7 @@ export default function MovieDetailClient({
         : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
     };
     
-    setPost(optimisticPost);
+    setPost(optimisticPost as PostType | null);
 
     startFavoriteTransition(() => {
       toggleFavoritePost(post.id)
@@ -155,7 +155,7 @@ export default function MovieDetailClient({
           });
         })
         .catch((err) => {
-          setPost(originalPost);
+          setPost(originalPost as PostType | null);
           toast({
             variant: 'destructive',
             title: 'An error occurred',
