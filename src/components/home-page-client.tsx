@@ -106,9 +106,9 @@ export default function HomePageClient({
   }
 
   const typeFilters = [
-    { label: 'Movies', value: 'MOVIE', icon: <Clapperboard /> },
-    { label: 'TV Series', value: 'TV_SERIES', icon: <Tv /> },
-    { label: 'Other', value: 'OTHER', icon: <Folder /> },
+    { label: 'Movies', value: 'MOVIE', icon: <Clapperboard className="w-4 h-4" /> },
+    { label: 'TV Series', value: 'TV_SERIES', icon: <Tv className="w-4 h-4" /> },
+    { label: 'Other', value: 'OTHER', icon: <Folder className="w-4 h-4" /> },
   ]
 
   const renderNotifications = (items: NotificationType[]) => {
@@ -179,20 +179,20 @@ export default function HomePageClient({
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                         <Button asChild variant={'outline'} className={cn(
-                        "rounded-full hover:bg-gray-800",
+                        "rounded-full hover:bg-gray-800 flex-shrink-0",
                         !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                         )}>
-                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })}>
-                            <Film />
+                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })} className="flex items-center gap-2">
+                            <Film className="w-4 h-4" />
                             <span>All</span>
                         </Link>
                         </Button>
                         {typeFilters.map(filter => (
                             <Button key={filter.value} asChild variant={'outline'} className={cn(
-                            "rounded-full hover:bg-gray-800",
+                            "rounded-full hover:bg-gray-800 flex-shrink-0",
                             typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                             )}>
-                            <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })}>
+                            <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })} className="flex items-center gap-2">
                                 {filter.icon}
                                 <span>{filter.label}</span>
                             </Link>
@@ -202,7 +202,7 @@ export default function HomePageClient({
                     
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                        <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800 ml-2 flex-shrink-0">
                         <ListFilter className="mr-2 h-4 w-4" />
                         Filter
                         </Button>
@@ -334,3 +334,5 @@ export default function HomePageClient({
     </TooltipProvider>
   );
 }
+
+    
