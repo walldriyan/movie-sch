@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { Prisma, Role } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
 
 export async function authenticate(
   prevState: string | undefined,
@@ -14,6 +15,7 @@ export async function authenticate(
 ) {
   try {
     await signIn('credentials', { ...Object.fromEntries(formData), redirectTo: '/' });
+    revalidatePath('/'); // revalidate session cache
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
@@ -29,6 +31,7 @@ export async function authenticate(
 
 export async function doSignOut() {
   await signOut({redirect: false});
+  revalidatePath('/'); // revalidate session cache
   redirect('/');
 }
 
@@ -80,6 +83,7 @@ export async function registerUser(
       return { message: error.message || 'An unexpected error occurred during registration.', input: formInput };
   }
 
+  revalidatePath('/'); // revalidate session cache
   redirect('/login');
 }
 
