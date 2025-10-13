@@ -41,22 +41,16 @@ import { ROLES } from '@/lib/permissions';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MovieDetailClient({
-  post: initialPost,
+  post,
+  setPost,
   children,
 }: {
   post: PostType;
+  setPost: React.Dispatch<React.SetStateAction<PostType>>;
   children: React.ReactNode;
 }) {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
-  
-  const [post, setPost] = useState(initialPost);
-  
-  // When the initialPost from props changes (e.g., on navigation), update the state
-  useEffect(() => {
-    setPost(initialPost);
-  }, [initialPost]);
-
   const currentUser = session?.user;
 
   const [isLikeTransitioning, startLikeTransition] = useTransition();
@@ -93,7 +87,7 @@ export default function MovieDetailClient({
     const currentIsDisliked = post.dislikedBy?.some(user => user.id === currentUser.id);
 
     // Create optimistic state
-    let optimisticPost = { ...post };
+    let optimisticPost: PostType = { ...post };
 
     if (likeAction === 'like') {
         optimisticPost = {
@@ -143,12 +137,14 @@ export default function MovieDetailClient({
     const originalPost = post;
 
     // Optimistic UI update
-    setPost(prevPost => ({
-      ...prevPost,
+    const optimisticPost = {
+      ...post,
       favoritePosts: wasFavorited
-        ? prevPost.favoritePosts?.filter(fav => fav.userId !== currentUser.id)
-        : [...(prevPost.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
-    }));
+        ? post.favoritePosts?.filter(fav => fav.userId !== currentUser.id)
+        : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
+    };
+    
+    setPost(optimisticPost);
 
     startFavoriteTransition(() => {
       toggleFavoritePost(post.id)
