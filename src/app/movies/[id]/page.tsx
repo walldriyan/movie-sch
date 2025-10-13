@@ -573,9 +573,3 @@ export default function MoviePage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
