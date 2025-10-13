@@ -3,7 +3,7 @@
 
 import { notFound, useParams } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle, createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
-import type { Post, Review, Subtitle } from '@/lib/types';
+import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -31,18 +31,14 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
 import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import AdminActions from '@/components/admin-actions';
 import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
 import { useSession } from 'next-auth/react';
-
-
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
-
+import { Skeleton } from '@/components/ui/skeleton';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -147,38 +143,78 @@ const ImageGallerySection = ({ post }: { post: Post }) => {
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
-export default async function MoviePage({ params }: { params: { id: string } }) {
+export default function MoviePage() {
+  const params = useParams();
   const postId = Number(params.id);
-  
-  if (isNaN(postId)) {
-    notFound();
-  }
-  
-  const postData = (await getPost(postId)) as Post | null;
-  
-  if (!postData) {
-    notFound();
-  }
 
-  const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
-    (postData.subtitles || []).map(async (subtitle: any) => ({
-      ...subtitle,
-      canDownload: await canUserDownloadSubtitle(subtitle.id),
-    }))
-  );
+  const [post, setPost] = useState<Post | null>(null);
+  const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (isNaN(postId)) {
+      notFound();
+      return;
+    }
+
+    async function fetchPostData() {
+      setIsLoading(true);
+      const postData = (await getPost(postId)) as Post | null;
+      
+      if (!postData) {
+        notFound();
+        return;
+      }
+      
+      const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
+        (postData.subtitles || []).map(async (subtitle: any) => ({
+          ...subtitle,
+          canDownload: await canUserDownloadSubtitle(subtitle.id),
+        }))
+      );
+      
+      setPost(postData);
+      setSubtitles(subtitlesWithPermissions);
+      setIsLoading(false);
+    }
+
+    fetchPostData();
+  }, [postId]);
+
+  if (isLoading || !post) {
+     return (
+       <div className="min-h-screen w-full bg-transparent">
+         <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end">
+            <Skeleton className="absolute inset-0" />
+         </header>
+          <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8 mt-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+              <div className="md:col-span-3 space-y-4">
+                  <Skeleton className="h-8 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+              </div>
+              <aside className="md:col-span-1">
+                  <Skeleton className="h-64 w-full" />
+              </aside>
+            </div>
+          </main>
+       </div>
+     )
+  }
   
   return (
     <MoviePageContent 
-        post={postData}
-        subtitles={subtitlesWithPermissions}
+        post={post}
+        setPost={setPost}
+        subtitles={subtitles}
+        setSubtitles={setSubtitles}
     />
   );
 }
 
-
-// New client component to handle client-side state
-function MoviePageContent({ post, subtitles }: { post: Post, subtitles: SubtitleWithPermission[] }) {
-    const [currentSubtitles, setCurrentSubtitles] = React.useState(subtitles);
+function MoviePageContent({ post, setPost, subtitles, setSubtitles }: { post: Post, setPost: React.Dispatch<React.SetStateAction<Post | null>>, subtitles: SubtitleWithPermission[], setSubtitles: React.Dispatch<React.SetStateAction<SubtitleWithPermission[]>> }) {
     const [currentReviews, setCurrentReviews] = React.useState<Review[]>(post.reviews || []);
     const { toast } = useToast();
     const [dialogOpen, setDialogOpen] = React.useState(false);
@@ -188,6 +224,12 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
     const [showReviews, setShowReviews] = React.useState(false);
     const { data: session } = useSession();
     const currentUser = session?.user;
+
+    useEffect(() => {
+      if(post) {
+        setCurrentReviews(post.reviews || []);
+      }
+    }, [post])
 
     const handleReviewSubmit = async (comment: string, rating: number, parentId?: number) => {
         if (!currentUser) {
@@ -255,7 +297,7 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
     };
     
     const handleUploadSuccess = (newSubtitle: SubtitleWithPermission) => {
-        setCurrentSubtitles(prev => [...prev, newSubtitle]);
+        setSubtitles(prev => [...prev, newSubtitle]);
     };
 
     const handleDeleteClick = (subtitle: Subtitle) => {
@@ -269,7 +311,7 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
             try {
                 await deleteSubtitle(subtitleToDelete.id);
                 toast({ title: "Subtitle Deleted", description: "The subtitle has been removed." });
-                setCurrentSubtitles(subs => subs.filter(s => s.id !== subtitleToDelete.id));
+                setSubtitles(subs => subs.filter(s => s.id !== subtitleToDelete.id));
             } catch (error: any) {
                 toast({ variant: "destructive", title: "Error Deleting Subtitle", description: error.message });
             } finally {
@@ -283,7 +325,7 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
         <div className="min-h-screen w-full bg-transparent">
           <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
             <article>
-              <MovieDetailClient post={post}>
+              <MovieDetailClient post={post} setPost={setPost}>
                 <TabsContent value="about" className='px-4 md:px-0'>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                      <div className="md:col-span-3">
@@ -401,8 +443,8 @@ function MoviePageContent({ post, subtitles }: { post: Post, subtitles: Subtitle
                     <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
                       <div className="lg:col-span-2">
                         <div className="space-y-4">
-                          {currentSubtitles.length > 0 ? (
-                            currentSubtitles.map((subtitle) => {
+                          {subtitles.length > 0 ? (
+                            subtitles.map((subtitle) => {
                               const canDelete = currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.name === subtitle.uploaderName;
                               const isCurrentlyDeleting = isDeleting && subtitleToDelete?.id === subtitle.id;
                               return (
