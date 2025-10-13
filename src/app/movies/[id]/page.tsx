@@ -39,6 +39,7 @@ import { ROLES } from '@/lib/permissions';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
 import { useSession } from 'next-auth/react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/use-toast';
 
 const TagsSection = ({ genres }: { genres: string[] }) => (
   <div className="flex flex-wrap gap-2">
@@ -523,3 +524,5 @@ function MoviePageContent({ post, setPost, subtitles, setSubtitles }: { post: Po
         </div>
     )
 }
+
+    
