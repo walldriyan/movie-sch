@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import React, { useTransition, useState } from 'react';
+import React, { useTransition, useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -34,7 +33,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import type { Post as PostType, User } from '@/lib/types';
+import type { Post as PostType } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -50,6 +49,14 @@ export default function MovieDetailClient({
 }) {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
+  
+  const [post, setPost] = useState(initialPost);
+  
+  // When the initialPost from props changes (e.g., on navigation), update the state
+  useEffect(() => {
+    setPost(initialPost);
+  }, [initialPost]);
+
   const currentUser = session?.user;
 
   const [isLikeTransitioning, startLikeTransition] = useTransition();
@@ -58,8 +65,6 @@ export default function MovieDetailClient({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('about');
   
-  const [post, setPost] = useState(initialPost);
-
   const heroImage =
     post.posterUrl
       ? post.posterUrl
@@ -83,6 +88,7 @@ export default function MovieDetailClient({
       return;
     }
 
+    const originalPost = post;
     const currentIsLiked = post.likedBy?.some(user => user.id === currentUser.id);
     const currentIsDisliked = post.dislikedBy?.some(user => user.id === currentUser.id);
 
@@ -90,26 +96,30 @@ export default function MovieDetailClient({
     let optimisticPost = { ...post };
 
     if (likeAction === 'like') {
-        // Optimistically update UI
         optimisticPost = {
             ...optimisticPost,
-            likedBy: currentIsLiked ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) : [...(optimisticPost.likedBy || []), currentUser],
+            likedBy: currentIsLiked ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) : [...(optimisticPost.likedBy || []), currentUser as any],
             dislikedBy: currentIsDisliked ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) : optimisticPost.dislikedBy,
         };
     } else { // dislike action
         optimisticPost = {
             ...optimisticPost,
-            dislikedBy: currentIsDisliked ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) : [...(optimisticPost.dislikedBy || []), currentUser],
+            dislikedBy: currentIsDisliked ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) : [...(optimisticPost.dislikedBy || []), currentUser as any],
             likedBy: currentIsLiked ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) : optimisticPost.likedBy,
         };
     }
+     // Update counts for optimistic UI
+    optimisticPost._count = {
+        ...optimisticPost._count,
+        likedBy: optimisticPost.likedBy?.length || 0,
+    };
+
     setPost(optimisticPost);
 
     startLikeTransition(() => {
       toggleLikePost(post.id, likeAction === 'like')
         .catch((err) => {
-          // Revert optimistic update on error
-          setPost(initialPost);
+          setPost(originalPost);
           toast({
             variant: 'destructive',
             title: 'An error occurred',
@@ -130,6 +140,7 @@ export default function MovieDetailClient({
     }
     
     const wasFavorited = post.favoritePosts?.some(fav => fav.userId === currentUser.id);
+    const originalPost = post;
 
     // Optimistic UI update
     setPost(prevPost => ({
@@ -148,8 +159,7 @@ export default function MovieDetailClient({
           });
         })
         .catch((err) => {
-          // Revert optimistic update on error
-          setPost(initialPost);
+          setPost(originalPost);
           toast({
             variant: 'destructive',
             title: 'An error occurred',
@@ -292,7 +302,7 @@ export default function MovieDetailClient({
                 )}
               >
                 <MessageCircle className="w-5 h-5" />
-                <span className="text-foreground">{post.reviews.length}</span>
+                <span className="text-foreground">{post._count?.reviews ?? post.reviews.length}</span>
               </button>
               <button
                 onClick={() => setActiveTab('subtitles')}
@@ -313,19 +323,19 @@ export default function MovieDetailClient({
                     <Skeleton className="h-9 w-12" />
                     <Skeleton className="h-9 w-12" />
                  </>
-               ) : currentUser && (
+               ) : sessionStatus === 'authenticated' && currentUser ? (
                 <>
                   <Button variant="ghost" size="sm" onClick={() => handleLike('like')} disabled={isLikeTransitioning} className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                     <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.likedBy?.length || 0}</span>}
+                     <span className="text-sm w-4 text-left ml-2">{post._count?.likedBy || 0}</span>
                   </Button>
                   
                   <Button variant="ghost" size="sm" onClick={() => handleLike('dislike')} disabled={isLikeTransitioning} className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}>
                     <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    {isLikeTransitioning ? <Skeleton className="h-4 w-4 ml-2" /> : <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>}
+                     <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length || 0}</span>
                   </Button>
                 </>
-               )}
+               ) : null}
 
               <Separator orientation="vertical" className="h-6 mx-2" />
 
