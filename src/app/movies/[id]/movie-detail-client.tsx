@@ -46,7 +46,7 @@ export default function MovieDetailClient({
   children,
 }: {
   post: PostType;
-  setPost: React.Dispatch<React.SetStateAction<PostType>>;
+  setPost: React.Dispatch<React.SetStateAction<PostType | null>>;
   children: React.ReactNode;
 }) {
   const router = useRouter();

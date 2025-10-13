@@ -318,7 +318,7 @@ function MoviePageContent({
     <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
-          <MovieDetailClient post={post} setPost={setPost as React.Dispatch<React.SetStateAction<Post>>}>
+          <MovieDetailClient post={post} setPost={setPost}>
             <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div className="md:col-span-3">
