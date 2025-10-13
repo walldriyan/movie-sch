@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useTransition, useState } from 'react';
@@ -377,3 +378,5 @@ export default function MovieDetailClient({
     </>
   );
 }
+
+    
