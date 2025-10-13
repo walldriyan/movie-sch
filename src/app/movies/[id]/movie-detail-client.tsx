@@ -118,7 +118,7 @@ export default function MovieDetailClient({
           toast({
             variant: 'destructive',
             title: 'An error occurred',
-            description: err.message || "Could not update your preference.",
+            description: err.message || "Could not update your preference. The database may be in read-only mode.",
           });
         });
     });
@@ -159,7 +159,7 @@ export default function MovieDetailClient({
           toast({
             variant: 'destructive',
             title: 'An error occurred',
-            description: err.message,
+            description: err.message || "Could not update favorites. The database may be in read-only mode.",
           });
         });
     });
@@ -189,7 +189,6 @@ export default function MovieDetailClient({
   const isDisliked = currentUser && post.dislikedBy?.some(user => user.id === currentUser.id);
   const canManage = currentUser && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role);
 
-  // Show loading state OR authenticated buttons OR nothing
   const showInteractiveButtons = sessionStatus === 'authenticated' && currentUser;
   const showLoadingState = sessionStatus === 'loading';
 
@@ -378,5 +377,3 @@ export default function MovieDetailClient({
     </>
   );
 }
-
-    
