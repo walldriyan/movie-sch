@@ -1,4 +1,5 @@
 
+
 import { notFound } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
 import type { Post, Subtitle, User } from '@/lib/types';
@@ -6,7 +7,7 @@ import MoviePageContent from './movie-page-content';
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
-// Helper function to serialize dates
+// Helper function to serialize dates safely
 function serializeDate(date: Date | string | null | undefined): string | null {
   if (!date) return null;
   if (typeof date === 'string') return date;
