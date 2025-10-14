@@ -37,11 +37,6 @@ export default function HeaderClient({
   const { data: session, status } = useSession();
   const user = session?.user;
 
-  console.log('--- [HeaderClient] ---');
-  console.log('Session Status:', status);
-  console.log('Session Data:', session);
-
-
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
   );

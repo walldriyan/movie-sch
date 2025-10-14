@@ -64,21 +64,12 @@ export default function HomePageClient({
 }: HomePageClientProps) {
 
   const { data: session, status } = useSession();
-  console.log('--- [HomePageClient] ---');
-  console.log('Session Status:', status);
-  console.log('Session Data:', session);
-  console.log('Initial Posts:', initialPosts);
-  console.log('Initial Users:', initialUsers);
-  console.log('Initial Groups:', initialGroups);
-  console.log('Initial Notifications:', initialNotifications);
-
 
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
   const handleMarkAsRead = (id: string) => {
-    console.log(`--- [HomePageClient] handleMarkAsRead: Marking notification ${id} as read ---`);
     startTransition(async () => {
         try {
             await updateNotificationStatus(id, 'READ');
