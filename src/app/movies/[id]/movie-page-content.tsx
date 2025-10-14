@@ -147,9 +147,6 @@ export default function MoviePageContent({
   initialPost: any;
   initialSubtitles: SubtitleWithPermission[];
 }) {
-  console.log("--- [MoviePageContent] Received initialPost from Server ---");
-  console.log(initialPost);
-  
   const [post, setPost] = useState<any>(initialPost);
   const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>(initialSubtitles);
   const [currentReviews, setCurrentReviews] = useState<any[]>(initialPost.reviews || []);

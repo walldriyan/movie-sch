@@ -99,7 +99,6 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session, s
                 await toggleLikePost(post.id, likeAction === 'like');
             } catch (err) {
                 onPostUpdate(originalPost as PostType);
-                // Let the error boundary catch and display the error
                 throw err;
             }
         });
@@ -136,7 +135,6 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session, s
                 });
             } catch (err) {
                 onPostUpdate(originalPost as PostType);
-                // Let the error boundary catch and display the error
                 throw err;
             }
         });
