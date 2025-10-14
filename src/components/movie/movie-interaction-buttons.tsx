@@ -48,7 +48,13 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
     const [isDeleting, startDeleteTransition] = useTransition();
     const { toast } = useToast();
 
+    console.log('--- [MovieInteractionButtons] Props Received ---');
+    console.log('Post:', post);
+    console.log('Session:', session);
+    console.log('Session Status:', sessionStatus);
+
     const handleLike = (likeAction: 'like' | 'dislike') => {
+        console.log(`--- [handleLike] Action: ${likeAction} ---`);
         if (!currentUser) {
         toast({
             variant: 'destructive',
@@ -91,6 +97,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
         likedBy: optimisticPost.likedBy?.length || 0,
         };
 
+        console.log('--- [handleLike] Optimistic Post State ---', optimisticPost);
         setPost(optimisticPost as PostType | null);
 
         startLikeTransition(() => {
@@ -126,6 +133,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
             : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
         };
         
+        console.log('--- [handleFavorite] Optimistic Post State ---', optimisticPost);
         setPost(optimisticPost as PostType | null);
 
         startFavoriteTransition(() => {
@@ -173,6 +181,8 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
     
     const showInteractiveButtons = sessionStatus === 'authenticated' && currentUser;
     const showLoadingState = sessionStatus === 'loading';
+
+    console.log('--- [MovieInteractionButtons] Calculated State ---', { isFavorited, isLiked, isDisliked, canManage, showInteractiveButtons, showLoadingState });
 
     return (
         <div className="flex items-center gap-2 pl-4 flex-shrink-0">
@@ -247,4 +257,3 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
         </div>
     );
 }
-
