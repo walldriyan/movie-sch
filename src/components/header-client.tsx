@@ -8,6 +8,7 @@ import {
   User,
   Users,
   Bookmark,
+  PlusCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -29,12 +30,11 @@ import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
 import { useSession } from 'next-auth/react';
 
-export default function HeaderClient({
-  createButton,
-}: {
-  createButton?: ReactNode;
-}) {
+export default function HeaderClient() {
   const { data: session, status } = useSession();
+  console.log('[HeaderClient] Session Status:', status);
+  console.log('[HeaderClient] Session Data from useSession():', JSON.stringify(session, null, 2));
+  
   const user = session?.user;
 
   const userAvatarPlaceholder = PlaceHolderImages.find(
@@ -52,6 +52,21 @@ export default function HeaderClient({
       default:
         return 'outline';
     }
+  };
+
+  const renderCreateButton = () => {
+    if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
+      return null;
+    }
+
+    return (
+      <Button asChild variant="outline">
+        <Link href="/manage?create=true">
+          <PlusCircle className="mr-2 h-5 w-5" />
+          <span>Create</span>
+        </Link>
+      </Button>
+    );
   };
 
   const renderUserMenu = () => {
@@ -162,7 +177,7 @@ export default function HeaderClient({
             </Link>
           </div>
         <div className="flex items-center justify-end space-x-2">
-          {createButton}
+          {renderCreateButton()}
           {user &&  <HeaderApprovals />  }
          
           {renderUserMenu()}
