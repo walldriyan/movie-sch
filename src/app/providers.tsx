@@ -7,14 +7,11 @@ import React from 'react';
 
 export default function Providers({ 
   children,
-  session
 }: { 
   children: React.ReactNode,
-  session: Session | null
 }) {
-  console.log('[Providers.tsx] Received session prop on client:', JSON.stringify(session, null, 2));
   return (
-    <SessionProvider session={session}>
+    <SessionProvider>
       {children}
     </SessionProvider>
   );
