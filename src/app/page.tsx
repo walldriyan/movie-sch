@@ -5,6 +5,7 @@ import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button'; // Import a custom button
 import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
+import { auth } from '@/auth';
 
 export default async function HomePage({
   searchParams,
@@ -15,6 +16,9 @@ export default async function HomePage({
   const sortBy = (searchParams?.sortBy as string) || 'updatedAt-desc';
   const typeFilter = searchParams?.type as string | undefined;
   const currentPage = Number(searchParams?.page) || 1;
+
+  const session = await auth();
+  console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
 
   const { posts, totalPages } = await getPosts({
     page: currentPage,
@@ -35,6 +39,7 @@ export default async function HomePage({
         currentPage={currentPage}
         searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter }}
         initialNotifications={notifications}
+        session={session}
       />
     </>
   );

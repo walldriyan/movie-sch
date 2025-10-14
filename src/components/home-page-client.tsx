@@ -29,7 +29,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Notification as NotificationType } from '@prisma/client';
 import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
-import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
 
 
 interface HomePageClientProps {
@@ -40,6 +40,7 @@ interface HomePageClientProps {
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string };
     initialNotifications: NotificationType[];
+    session: Session | null;
 }
 
 const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
@@ -60,11 +61,12 @@ export default function HomePageClient({
     totalPages, 
     currentPage, 
     searchParams,
-    initialNotifications
+    initialNotifications,
+    session
 }: HomePageClientProps) {
 
-  const { data: session, status } = useSession();
-
+  console.log("Client [/components/home-page-client.tsx] Received session prop:", JSON.stringify(session, null, 2));
+  
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
