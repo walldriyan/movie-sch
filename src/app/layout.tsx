@@ -5,8 +5,9 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Header from '@/components/header';
-import { auth } from '@/auth'; // Import auth
 import React from 'react';
+import Providers from './providers'; // Import the new Providers component
+import { auth } from '@/auth';
 
 export const metadata: Metadata = {
   title: 'CineVerse Captions',
@@ -46,18 +47,19 @@ export default async function RootLayout({
           fontSinhala.variable
         )}
       >
-        <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
-          <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
-          <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
-          <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
-        </div>
-        
-        {/* Pass session to header */}
-        <Header session={session} />
-        <main className="pt-16">
-          {children}
-        </main>
-        <Toaster />
+        <Providers>
+          <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
+            <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
+            <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
+            <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
+          </div>
+          
+          <Header session={session} />
+          <main className="pt-16">
+            {children}
+          </main>
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );
