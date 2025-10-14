@@ -1,6 +1,7 @@
+
 import { notFound } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
-import type { Post, Subtitle } from '@/lib/types';
+import type { Post, Subtitle, User } from '@/lib/types';
 import MoviePageContent from './movie-page-content';
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
@@ -22,7 +23,11 @@ function serializeUser(user: any): any {
     email: user.email,
     image: user.image,
     role: user.role,
-    bio: user.bio,
+    bio: user.bio || null,
+    coverImage: user.coverImage || null,
+    website: user.website || null,
+    twitter: user.twitter || null,
+    linkedin: user.linkedin || null,
     emailVerified: serializeDate(user.emailVerified),
     createdAt: serializeDate(user.createdAt),
     updatedAt: serializeDate(user.updatedAt),
@@ -90,6 +95,7 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
     googleRating: postData.googleRating,
     viewCount: postData.viewCount || 0,
     status: postData.status,
+    visibility: postData.visibility,
     seriesId: postData.seriesId,
     orderInSeries: postData.orderInSeries,
     authorId: postData.authorId,
@@ -121,15 +127,15 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
       postId: link.postId,
       createdAt: serializeDate(link.createdAt),
     })),
-    
-    // _count object (for UI display)
-    _count: {
-      reviews: postData._count?.reviews || postData.reviews?.length || 0,
-      likedBy: postData._count?.likedBy || 0,
-      dislikedBy: postData._count?.dislikedBy || 0,
-      subtitles: postData._count?.subtitles || 0,
-      favoritePosts: postData._count?.favoritePosts || 0,
-    },
+
+    // Add required _count, likedBy, dislikedBy, favoritePosts
+    _count: postData._count,
+    likedBy: (postData.likedBy || []).map(serializeUser),
+    dislikedBy: (postData.dislikedBy || []).map(serializeUser),
+    favoritePosts: (postData.favoritePosts || []).map((fp:any) => ({
+        ...fp,
+        createdAt: serializeDate(fp.createdAt),
+    })),
   };
 
   return (

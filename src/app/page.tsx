@@ -23,7 +23,7 @@ export default async function HomePage({
   });
   const users = await getUsers();
   const groups = await getPublicGroups(5);
-  const notifications = (await getNotifications()) as Notification[];
+  const notifications = await getNotifications();
   
   return (
     <>

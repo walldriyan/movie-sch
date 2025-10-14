@@ -167,6 +167,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
             ...post,
             createdAt: post.createdAt.toISOString(),
             updatedAt: post.updatedAt.toISOString(),
+            publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
             author: {
                 ...post.author,
                 createdAt: post.author.createdAt.toISOString(),
@@ -218,6 +219,7 @@ export async function getPost(postId: number) {
       dislikedBy: true,
       mediaLinks: true,
       series: true,
+      _count: true,
     },
   });
   
@@ -387,6 +389,7 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
             ...post,
             createdAt: post.createdAt.toISOString(),
             updatedAt: post.updatedAt.toISOString(),
+            publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
             author: {
                 ...post.author,
                 createdAt: post.author.createdAt.toISOString(),
