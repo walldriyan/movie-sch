@@ -34,12 +34,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 interface MovieInteractionButtonsProps {
     post: PostType;
-    setPost: React.Dispatch<React.SetStateAction<PostType | null>>;
+    onPostUpdate: (updatedPost: PostType) => void;
     session: Session | null;
     sessionStatus: 'loading' | 'authenticated' | 'unauthenticated';
 }
 
-export default function MovieInteractionButtons({ post, setPost, session, sessionStatus }: MovieInteractionButtonsProps) {
+export default function MovieInteractionButtons({ post, onPostUpdate, session, sessionStatus }: MovieInteractionButtonsProps) {
     const router = useRouter();
     const currentUser = session?.user;
 
@@ -92,13 +92,13 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
         dislikedBy: optimisticPost.dislikedBy?.length || 0,
         };
 
-        setPost(optimisticPost as PostType | null);
+        onPostUpdate(optimisticPost as PostType);
 
         startLikeTransition(async () => {
             try {
                 await toggleLikePost(post.id, likeAction === 'like');
             } catch (err) {
-                setPost(originalPost as PostType | null);
+                onPostUpdate(originalPost as PostType);
                 // Let the error boundary catch and display the error
                 throw err;
             }
@@ -125,7 +125,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
             : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
         };
         
-        setPost(optimisticPost as PostType | null);
+        onPostUpdate(optimisticPost as PostType);
 
         startFavoriteTransition(async () => {
             try {
@@ -135,7 +135,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
                     description: `Post has been ${wasFavorited ? 'removed from' : 'added to'} your favorites.`,
                 });
             } catch (err) {
-                setPost(originalPost as PostType | null);
+                onPostUpdate(originalPost as PostType);
                 // Let the error boundary catch and display the error
                 throw err;
             }
@@ -144,17 +144,12 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
     
     const handleDelete = () => {
         startDeleteTransition(async () => {
-        try {
             await deletePost(post.id);
             toast({
             title: 'Post Deleted',
             description: `"${post.title}" has been submitted for deletion.`,
             });
             router.push('/manage');
-        } catch (error: any) {
-             // Let the error boundary catch and display the error
-            throw error;
-        }
         });
     };
 
@@ -230,7 +225,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
                     </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={handleDelete} disabled={isDeleting} className="text-destructive">
-                    <Trash2 className="mr-2 h-4 w-4" />
+                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                     <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
                     </DropdownMenuItem>
                 </DropdownMenuContent>

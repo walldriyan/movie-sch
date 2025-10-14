@@ -24,11 +24,11 @@ import MovieInteractionButtons from '@/components/movie/movie-interaction-button
 
 export default function MovieDetailClient({
   post,
-  setPost,
+  onPostUpdate,
   children,
 }: {
   post: PostType;
-  setPost: React.Dispatch<React.SetStateAction<PostType | null>>;
+  onPostUpdate: (updatedPost: PostType) => void;
   children: React.ReactNode;
 }) {
   const router = useRouter();
@@ -147,7 +147,7 @@ export default function MovieDetailClient({
               </button>
             </div>
             
-            <MovieInteractionButtons post={post} setPost={setPost} session={session} sessionStatus={sessionStatus} />
+            <MovieInteractionButtons post={post} onPostUpdate={onPostUpdate} session={session} sessionStatus={sessionStatus} />
 
           </div>
         </div>

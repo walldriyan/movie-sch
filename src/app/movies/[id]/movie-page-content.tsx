@@ -188,6 +188,10 @@ export default function MoviePageContent({
     );
   }
 
+  const handlePostUpdate = (updatedPost: Post) => {
+    setPost(updatedPost);
+  };
+
   const handleReviewSubmit = async (comment: string, rating: number, parentId?: number) => {
     if (!currentUser) {
       toast({ variant: "destructive", title: "You must be logged in." });
@@ -286,7 +290,7 @@ export default function MoviePageContent({
     <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
-          <MovieDetailClient post={post} setPost={setPost}>
+          <MovieDetailClient post={post} onPostUpdate={handlePostUpdate}>
             <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div className="md:col-span-3">
