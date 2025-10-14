@@ -36,6 +36,8 @@ export default async function RootLayout({
 }>) {
   const session = await auth();
   console.log("Server [layout.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  console.log("Current User Details (Layout):", session?.user);
+
 
   return (
     <html lang="en" className="dark overflow-x-hidden">
