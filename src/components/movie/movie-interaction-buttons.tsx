@@ -48,13 +48,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
     const [isDeleting, startDeleteTransition] = useTransition();
     const { toast } = useToast();
 
-    console.log('--- [MovieInteractionButtons] Props Received ---');
-    console.log('Post:', post);
-    console.log('Session:', session);
-    console.log('Session Status:', sessionStatus);
-
     const handleLike = (likeAction: 'like' | 'dislike') => {
-        console.log(`--- [handleLike] Action: ${likeAction} ---`);
         if (!currentUser) {
         toast({
             variant: 'destructive',
@@ -95,32 +89,30 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
         optimisticPost._count = {
         ...optimisticPost._count,
         likedBy: optimisticPost.likedBy?.length || 0,
+        dislikedBy: optimisticPost.dislikedBy?.length || 0,
         };
 
-        console.log('--- [handleLike] Optimistic Post State ---', optimisticPost);
         setPost(optimisticPost as PostType | null);
 
-        startLikeTransition(() => {
-        toggleLikePost(post.id, likeAction === 'like')
-            .catch((err) => {
-            setPost(originalPost as PostType | null);
-            toast({
-                variant: 'destructive',
-                title: 'An error occurred',
-                description: err.message || "Could not update your preference. The database may be in read-only mode.",
-            });
-            });
+        startLikeTransition(async () => {
+            try {
+                await toggleLikePost(post.id, likeAction === 'like');
+            } catch (err) {
+                setPost(originalPost as PostType | null);
+                // Let the error boundary catch and display the error
+                throw err;
+            }
         });
     };
 
     const handleFavorite = () => {
         if (!currentUser) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication required',
-            description: 'You must be logged in to add a post to favorites.',
-        });
-        return;
+            toast({
+                variant: 'destructive',
+                title: 'Authentication required',
+                description: 'You must be logged in to add a post to favorites.',
+            });
+            return;
         }
         
         const wasFavorited = post.favoritePosts?.some(fav => fav.userId === currentUser.id);
@@ -133,25 +125,20 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
             : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
         };
         
-        console.log('--- [handleFavorite] Optimistic Post State ---', optimisticPost);
         setPost(optimisticPost as PostType | null);
 
-        startFavoriteTransition(() => {
-        toggleFavoritePost(post.id)
-            .then(() => {
-            toast({
-                title: 'Favorites Updated',
-                description: `Post has been ${wasFavorited ? 'removed from' : 'added to'} your favorites.`,
-            });
-            })
-            .catch((err) => {
-            setPost(originalPost as PostType | null);
-            toast({
-                variant: 'destructive',
-                title: 'An error occurred',
-                description: err.message || "Could not update favorites. The database may be in read-only mode.",
-            });
-            });
+        startFavoriteTransition(async () => {
+            try {
+                await toggleFavoritePost(post.id);
+                 toast({
+                    title: 'Favorites Updated',
+                    description: `Post has been ${wasFavorited ? 'removed from' : 'added to'} your favorites.`,
+                });
+            } catch (err) {
+                setPost(originalPost as PostType | null);
+                // Let the error boundary catch and display the error
+                throw err;
+            }
         });
     };
     
@@ -165,11 +152,8 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
             });
             router.push('/manage');
         } catch (error: any) {
-            toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: error.message || 'Failed to delete post.',
-            });
+             // Let the error boundary catch and display the error
+            throw error;
         }
         });
     };
@@ -181,8 +165,6 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
     
     const showInteractiveButtons = sessionStatus === 'authenticated' && currentUser;
     const showLoadingState = sessionStatus === 'loading';
-
-    console.log('--- [MovieInteractionButtons] Calculated State ---', { isFavorited, isLiked, isDisliked, canManage, showInteractiveButtons, showLoadingState });
 
     return (
         <div className="flex items-center gap-2 pl-4 flex-shrink-0">
@@ -203,7 +185,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
                     className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}
                 >
                     <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    <span className="text-sm w-4 text-left ml-2">{post._count?.likedBy ?? post.likedBy?.length ?? 0}</span>
+                    <span className="text-sm w-4 text-left ml-2">{post._count?.likedBy ?? 0}</span>
                 </Button>
                 
                 <Button 
@@ -214,7 +196,7 @@ export default function MovieInteractionButtons({ post, setPost, session, sessio
                     className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}
                 >
                     <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length ?? 0}</span>
+                    <span className="text-sm w-4 text-left ml-2">{post._count?.dislikedBy ?? 0}</span>
                 </Button>
                 </>
             )}

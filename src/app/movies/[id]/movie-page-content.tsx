@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -229,9 +230,9 @@ export default function MoviePageContent({
         });
         setCurrentReviews(prev => replaceOptimistic(prev));
         toast({ title: "Response Submitted!", description: "Thanks for sharing your thoughts." });
-      } catch (error: any) {
-        toast({ variant: "destructive", title: "Error", description: error.message || "Could not submit review." });
+      } catch (error) {
         setCurrentReviews(originalReviews);
+        throw error;
       }
     });
   };
@@ -249,9 +250,9 @@ export default function MoviePageContent({
     try {
       await deleteReview(reviewId);
       toast({ title: "Review Deleted", description: "The review has been removed." });
-    } catch (error: any) {
-      toast({ variant: "destructive", title: "Error", description: error.message || "Failed to delete review." });
+    } catch (error) {
       setCurrentReviews(originalReviews);
+      throw error;
     }
   };
   
@@ -381,7 +382,6 @@ export default function MoviePageContent({
                   <>
                     <ReviewForm 
                       postId={post.id} 
-                      onSuccess={() => {}}
                       isSubmitting={isSubmittingReview}
                       onSubmitReview={handleReviewSubmit}
                     />

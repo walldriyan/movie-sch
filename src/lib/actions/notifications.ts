@@ -22,24 +22,18 @@ export async function sendNotification(
     throw new Error('Not authorized');
   }
 
-  try {
-    const notification = await prisma.notification.create({
-      data: {
-        title: values.title,
-        message: values.message,
-        type: values.targetType,
-        targetId: values.targetId,
-      },
-    });
-    
-    revalidatePath('/');
-    
-    return notification;
-
-  } catch (error) {
-    const errorMessage = `Failed to create notification. Data received: ${JSON.stringify(values, null, 2)}. Original Prisma Error: ${error instanceof Error ? error.message : String(error)}`;
-    throw new Error(errorMessage);
-  }
+  const notification = await prisma.notification.create({
+    data: {
+      title: values.title,
+      message: values.message,
+      type: values.targetType,
+      targetId: values.targetId,
+    },
+  });
+  
+  revalidatePath('/');
+  
+  return notification;
 }
 
 export async function getNotifications(): Promise<Notification[]> {
