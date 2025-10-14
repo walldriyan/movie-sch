@@ -6,7 +6,7 @@ import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Header from '@/components/header';
 import React from 'react';
-import Providers from './providers'; // Import the new Providers component
+import Providers from './providers';
 import { auth } from '@/auth';
 
 export const metadata: Metadata = {

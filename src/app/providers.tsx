@@ -8,5 +8,6 @@ export default function Providers({
 }: {
   children: React.ReactNode;
 }) {
+  console.log("Client [providers.tsx] Rendering SessionProvider on client.");
   return <SessionProvider>{children}</SessionProvider>;
 }
