@@ -5,7 +5,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Header from '@/components/header';
-import { auth } from '@/auth';
 import Providers from './providers'; // Import the new Providers component
 
 export const metadata: Metadata = {
@@ -33,8 +32,9 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-  console.log("Server [layout.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  // REMOVED: Server-side session fetching. Let the client-side provider handle it.
+  // const session = await auth();
+  // console.log("Server [layout.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
 
   return (
     <html lang="en" className="dark overflow-x-hidden">
@@ -52,6 +52,7 @@ export default async function RootLayout({
           <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
         </div>
         
+        {/* The Providers component now wraps everything, without receiving a session prop */}
         <Providers>
           <Header />
           <main className="pt-16">
