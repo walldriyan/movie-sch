@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
 import type { Post, Subtitle, User } from '@/lib/types';
 import MoviePageContent from './movie-page-content';
+import { auth } from '@/auth';
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
@@ -57,6 +58,10 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
   if (isNaN(postId)) {
     notFound();
   }
+
+  const session = await auth();
+  console.log("Server [/movies/[id]/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  console.log("Server [/movies/[id]/page.tsx] Current User Details:", session?.user);
 
   const postData = await getPost(postId);
   

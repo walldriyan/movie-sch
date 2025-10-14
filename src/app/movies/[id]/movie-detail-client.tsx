@@ -34,6 +34,9 @@ export default function MovieDetailClient({
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
   const [activeTab, setActiveTab] = useState('about');
+
+  console.log("Client [/movies/[id]/movie-detail-client.tsx] Session from useSession():", JSON.stringify(session, null, 2));
+  console.log("Client [/movies/[id]/movie-detail-client.tsx] Current User Details:", session?.user);
   
   const heroImage = post.posterUrl || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
   const authorAvatarUrl = post.author.image || PlaceHolderImages.find((img) => img.id === 'avatar-1')?.imageUrl;
