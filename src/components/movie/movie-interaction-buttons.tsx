@@ -97,9 +97,13 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session, s
         startLikeTransition(async () => {
             try {
                 await toggleLikePost(post.id, likeAction === 'like');
-            } catch (err) {
+            } catch (err: any) {
                 onPostUpdate(originalPost as PostType);
-                throw err;
+                toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: err.message || 'Failed to update your preference.'
+                });
             }
         });
     };
@@ -133,9 +137,13 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session, s
                     title: 'Favorites Updated',
                     description: `Post has been ${wasFavorited ? 'removed from' : 'added to'} your favorites.`,
                 });
-            } catch (err) {
+            } catch (err: any) {
                 onPostUpdate(originalPost as PostType);
-                throw err;
+                 toast({
+                    variant: 'destructive',
+                    title: 'Error',
+                    description: err.message || 'Failed to update favorites.'
+                });
             }
         });
     };
