@@ -32,8 +32,6 @@ import { useSession } from 'next-auth/react';
 
 export default function HeaderClient() {
   const { data: session, status } = useSession();
-  console.log('[HeaderClient] Session Status:', status);
-  console.log('[HeaderClient] Session Data from useSession():', JSON.stringify(session, null, 2));
   
   const user = session?.user;
 

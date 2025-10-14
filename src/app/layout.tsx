@@ -34,7 +34,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  console.log('[layout.tsx] Session from auth() on server:', JSON.stringify(session, null, 2));
 
   return (
     <html lang="en" className="dark overflow-x-hidden">
