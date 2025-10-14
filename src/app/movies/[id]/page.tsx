@@ -1,7 +1,6 @@
-
 import { notFound } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
-import type { Post, Review, Subtitle, User } from '@/lib/types';
+import type { Post, Subtitle } from '@/lib/types';
 import MoviePageContent from './movie-page-content';
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
@@ -9,32 +8,41 @@ type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 // Helper function to serialize dates
 function serializeDate(date: Date | string | null | undefined): string | null {
   if (!date) return null;
-  // If it's already a string, return it as is.
   if (typeof date === 'string') return date;
-  // If it's a Date object, convert to ISO string.
   if (date instanceof Date) return date.toISOString();
   return null;
 }
 
-// Helper to serialize user object
-function serializeUser(user: any): User | null {
+// Helper to serialize user object - ONLY include plain serializable fields
+function serializeUser(user: any): any {
   if (!user) return null;
   return {
-    ...user,
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    image: user.image,
+    role: user.role,
+    bio: user.bio,
+    emailVerified: serializeDate(user.emailVerified),
     createdAt: serializeDate(user.createdAt),
     updatedAt: serializeDate(user.updatedAt),
-    emailVerified: serializeDate(user.emailVerified),
   };
 }
 
 // Helper to serialize review recursively
-function serializeReview(review: any): Review {
+function serializeReview(review: any): any {
+  if (!review) return null;
   return {
-    ...review,
+    id: review.id,
+    comment: review.comment,
+    rating: review.rating,
+    userId: review.userId,
+    postId: review.postId,
+    parentId: review.parentId,
     createdAt: serializeDate(review.createdAt),
     updatedAt: serializeDate(review.updatedAt),
     user: serializeUser(review.user),
-    replies: review.replies?.map(serializeReview) || [],
+    replies: (review.replies || []).map(serializeReview).filter(Boolean),
   };
 }
 
@@ -44,48 +52,89 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
     notFound();
   }
 
-  const postData = await getPost(postId) as Post | null;
+  const postData = await getPost(postId);
   
   if (!postData) {
     notFound();
   }
   
   // Serialize subtitles with permissions
-  const subtitlesWithPermissions: SubtitleWithPermission[] = await Promise.all(
+  const subtitlesWithPermissions: any[] = await Promise.all(
     (postData.subtitles || []).map(async (subtitle: any) => ({
-      ...subtitle,
+      id: subtitle.id,
+      language: subtitle.language,
+      url: subtitle.url,
+      uploaderName: subtitle.uploaderName,
+      postId: subtitle.postId,
+      userId: subtitle.userId,
       createdAt: serializeDate(subtitle.createdAt),
       updatedAt: serializeDate(subtitle.updatedAt),
       canDownload: await canUserDownloadSubtitle(subtitle.id),
     }))
   );
 
-  // Serialize post data properly
+  // Serialize post data properly - CRITICAL: Remove ALL non-serializable data
   const serializablePost = {
-    ...postData,
+    id: postData.id,
+    title: postData.title,
+    description: postData.description,
+    posterUrl: postData.posterUrl,
+    type: postData.type,
+    genres: postData.genres || [],
+    year: postData.year,
+    duration: postData.duration,
+    directors: postData.directors,
+    mainCast: postData.mainCast,
+    imdbRating: postData.imdbRating,
+    rottenTomatoesRating: postData.rottenTomatoesRating,
+    googleRating: postData.googleRating,
+    viewCount: postData.viewCount || 0,
+    status: postData.status,
+    seriesId: postData.seriesId,
+    orderInSeries: postData.orderInSeries,
+    authorId: postData.authorId,
     createdAt: serializeDate(postData.createdAt),
     updatedAt: serializeDate(postData.updatedAt),
-    author: serializeUser(postData.author) as User,
-    reviews: postData.reviews?.map(serializeReview) || [],
+    publishedAt: serializeDate(postData.publishedAt),
+    
+    // Serialize nested objects
+    author: serializeUser(postData.author),
+    
+    reviews: (postData.reviews || [])
+      .map(serializeReview)
+      .filter(Boolean),
+    
     series: postData.series ? {
-      ...postData.series,
+      id: postData.series.id,
+      title: postData.series.title,
+      description: postData.series.description,
+      posterUrl: postData.series.posterUrl,
       createdAt: serializeDate(postData.series.createdAt),
       updatedAt: serializeDate(postData.series.updatedAt),
     } : null,
-    favoritePosts: (postData.favoritePosts || []).map(fav => ({
-      ...fav,
-      createdAt: serializeDate(fav.createdAt),
+    
+    // Serialize media links
+    mediaLinks: (postData.mediaLinks || []).map((link: any) => ({
+      id: link.id,
+      url: link.url,
+      type: link.type,
+      postId: link.postId,
+      createdAt: serializeDate(link.createdAt),
     })),
-    likedBy: (postData.likedBy || []).map(user => serializeUser(user)),
-    dislikedBy: (postData.dislikedBy || []).map(user => serializeUser(user)),
-    // Remove circular/complex references that are handled separately or not needed by client
-    subtitles: undefined, 
+    
+    // _count object (for UI display)
+    _count: {
+      reviews: postData._count?.reviews || postData.reviews?.length || 0,
+      likedBy: postData._count?.likedBy || 0,
+      dislikedBy: postData._count?.dislikedBy || 0,
+      subtitles: postData._count?.subtitles || 0,
+      favoritePosts: postData._count?.favoritePosts || 0,
+    },
   };
-
 
   return (
     <MoviePageContent 
-      initialPost={serializablePost as Post}
+      initialPost={serializablePost}
       initialSubtitles={subtitlesWithPermissions}
     />
   );

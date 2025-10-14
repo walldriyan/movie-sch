@@ -1,8 +1,8 @@
-
 'use client';
 
-import { notFound, useParams } from 'next/navigation';
-import { canUserDownloadSubtitle, createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
+import { useEffect, useState, useTransition } from 'react';
+import { useSession } from 'next-auth/react';
+import { createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
 import type { Post, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -30,14 +30,31 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from '@/components/ui/button';
-import { Bot, Download, Tag, CalendarDays, Clock, User as UserIcon, Video, Star, Clapperboard, Images, Eye, ThumbsUp, MessageCircle, List, Lock, Trash2, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
-import React, { useEffect, useState, useTransition } from 'react';
+import { 
+  Bot, 
+  Download, 
+  CalendarDays, 
+  Clock, 
+  User as UserIcon, 
+  Video, 
+  Star, 
+  Clapperboard, 
+  Images, 
+  Eye, 
+  ThumbsUp, 
+  MessageCircle, 
+  List, 
+  Lock, 
+  Trash2, 
+  Loader2, 
+  ChevronDown, 
+  ChevronUp 
+} from 'lucide-react';
 import Image from 'next/image';
 import AdminActions from '@/components/admin-actions';
 import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
-import { useSession } from 'next-auth/react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 
@@ -51,8 +68,8 @@ const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: stri
   </div>
 );
 
-const TrailerSection = ({ post }: { post: Post }) => {
-  const trailer = post.mediaLinks?.find(link => link.type === 'trailer');
+const TrailerSection = ({ post }: { post: any }) => {
+  const trailer = post.mediaLinks?.find((link: any) => link.type === 'trailer');
   if (!trailer?.url) return null;
 
   const getYouTubeVideoId = (url: string): string | null => {
@@ -91,8 +108,8 @@ const TrailerSection = ({ post }: { post: Post }) => {
   );
 };
 
-const ImageGallerySection = ({ post }: { post: Post }) => {
-  const images = post.mediaLinks?.filter(link => link.type === 'image') || [];
+const ImageGallerySection = ({ post }: { post: any }) => {
+  const images = post.mediaLinks?.filter((link: any) => link.type === 'image') || [];
   if (images.length === 0) return null;
 
   return (
@@ -104,7 +121,7 @@ const ImageGallerySection = ({ post }: { post: Post }) => {
           Gallery
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {images.map((image, index) => (
+          {images.map((image: any, index: number) => (
             <div key={index} className="aspect-video relative overflow-hidden rounded-lg">
               <Image
                 src={image.url}
@@ -126,12 +143,12 @@ export default function MoviePageContent({
   initialPost, 
   initialSubtitles,
 }: { 
-  initialPost: Post;
+  initialPost: any;
   initialSubtitles: SubtitleWithPermission[];
 }) {
-  const [post, setPost] = useState<Post | null>(initialPost);
+  const [post, setPost] = useState<any>(initialPost);
   const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>(initialSubtitles);
-  const [currentReviews, setCurrentReviews] = useState<Review[]>(initialPost.reviews || []);
+  const [currentReviews, setCurrentReviews] = useState<any[]>(initialPost.reviews || []);
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [subtitleToDelete, setSubtitleToDelete] = useState<Subtitle | null>(null);
@@ -148,7 +165,7 @@ export default function MoviePageContent({
   }, [post]);
 
   if (!post) {
-      return (
+    return (
       <div className="min-h-screen w-full bg-transparent">
         <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end">
           <Skeleton className="absolute inset-0" />
@@ -177,23 +194,23 @@ export default function MoviePageContent({
     }
     
     startReviewTransition(async () => {
-      const optimisticReview: Review = {
+      const optimisticReview: any = {
         id: Date.now(),
         comment,
         rating: parentId ? 0 : rating,
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
         userId: currentUser.id,
         postId: post.id,
         parentId: parentId || null,
-        user: currentUser as any,
+        user: currentUser,
         replies: [],
       };
       
       const originalReviews = currentReviews;
 
       if (parentId) {
-        const addReply = (nodes: Review[]): Review[] => nodes.map(node => {
+        const addReply = (nodes: any[]): any[] => nodes.map(node => {
           if (node.id === parentId) return { ...node, replies: [...(node.replies || []), optimisticReview] };
           if (node.replies?.length) return { ...node, replies: addReply(node.replies) };
           return node;
@@ -205,7 +222,7 @@ export default function MoviePageContent({
 
       try {
         const newReview = await createReview(post.id, comment, rating, parentId);
-        const replaceOptimistic = (nodes: Review[]): Review[] => nodes.map(node => {
+        const replaceOptimistic = (nodes: any[]): any[] => nodes.map(node => {
           if (node.id === optimisticReview.id) return newReview;
           if (node.replies?.length) return { ...node, replies: replaceOptimistic(node.replies) };
           return node;
@@ -221,7 +238,7 @@ export default function MoviePageContent({
 
   const handleReviewDelete = async (reviewId: number) => {
     const originalReviews = [...currentReviews];
-    const removeReviewFromTree = (nodes: Review[], idToRemove: number): Review[] => 
+    const removeReviewFromTree = (nodes: any[], idToRemove: number): any[] => 
       nodes.filter(node => node.id !== idToRemove).map(node => {
         if (node.replies?.length) return { ...node, replies: removeReviewFromTree(node.replies, idToRemove) };
         return node;
@@ -287,207 +304,206 @@ export default function MoviePageContent({
                   <div
                     className="prose prose-invert max-w-none text-foreground/80"
                     dangerouslySetInnerHTML={{ __html: post.description }}
-                    />
-                    <TrailerSection post={post} />
-                    <ImageGallerySection post={post} />
-                    <Separator className="my-12" />
-                    <SponsoredAdCard />
-                    <Separator className="my-12" />
-                    <section id="recommendations">
-                      <h2 className="font-serif text-3xl font-bold mb-8">
-                        More Like This
-                      </h2>
-                      <MovieRecommendations currentPost={post} />
-                    </section>
-                  </div>
-                  
-                  <aside className="md:col-span-1">
-                    <div className="sticky top-24 space-y-6">
-                      <Card className="bg-card/50">
-                        <CardHeader>
-                          <CardTitle>Details</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                          {post.type === 'MOVIE' || post.type === 'TV_SERIES' ? (
-                            <>
-                              <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
-                              <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N/A'} />
-                              <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
-                              <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
-                              <Separator />
-                              <h4 className="font-semibold pt-2">Ratings</h4>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
-                                  <span className="font-bold">{post.imdbRating?.toFixed(1) || 'N/A'}</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                                  <span>{post.rottenTomatoesRating || 'N/A'}%</span>
-                                </div>
-                                <div className="flex items-center gap-2 text-sm">
-                                  <svg className="h-4 w-4" viewBox="0 0 24 24">
-                                    <path fill="#4285F4" d="M21.35 11.1h-9.2V16h5.28c-.45 1.6-1.9 2.7-3.73 2.7-2.2 0-4-1.8-4-4s1.8-4 4-4c1.08 0 2.05.4 2.8.9l2.7-2.7C18.6 6.3 16.5 5 14.15 5c-3.96 0-7.15 3.2-7.15 7.15s3.19 7.15 7.15 7.15c3.8 0 6.9-2.9 6.9-6.9 0-.6-.05-1.1-.15-1.6z" />
-                                  </svg>
-                                  <span>{post.googleRating || 'N/A'}%</span>
-                                </div>
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={post.viewCount.toLocaleString()} />
-                              <DetailItem icon={<ThumbsUp className="h-5 w-5" />} label="Likes" value={post._count?.likedBy || 0} />
-                              <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={currentReviews.length} />
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-                      <SponsoredAdCard />
-                    </div>
-                  </aside>
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="reviews" className='px-4 md:px-0'>
-                <section id="reviews" className="my-12">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
-                      <MessageCircle className="w-8 h-8 text-primary" />
-                      Responses ({currentReviews.length})
+                  />
+                  <TrailerSection post={post} />
+                  <ImageGallerySection post={post} />
+                  <Separator className="my-12" />
+                  <SponsoredAdCard />
+                  <Separator className="my-12" />
+                  <section id="recommendations">
+                    <h2 className="font-serif text-3xl font-bold mb-8">
+                      More Like This
                     </h2>
-                    <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
-                      {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
-                    </Button>
+                    <MovieRecommendations currentPost={post} />
+                  </section>
+                </div>
+                
+                <aside className="md:col-span-1">
+                  <div className="sticky top-24 space-y-6">
+                    <Card className="bg-card/50">
+                      <CardHeader>
+                        <CardTitle>Details</CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        {post.type === 'MOVIE' || post.type === 'TV_SERIES' ? (
+                          <>
+                            <DetailItem icon={<CalendarDays className="h-5 w-5" />} label="Release Year" value={post.year || 'N/A'} />
+                            <DetailItem icon={<Clock className="h-5 w-5" />} label="Duration" value={post.duration || 'N/A'} />
+                            <DetailItem icon={<Video className="h-5 w-5" />} label="Director(s)" value={post.directors || 'N/A'} />
+                            <DetailItem icon={<UserIcon className="h-5 w-5" />} label="Main Cast" value={post.mainCast || 'N/A'} />
+                            <Separator />
+                            <h4 className="font-semibold pt-2">Ratings</h4>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
+                                <span className="font-bold">{post.imdbRating?.toFixed(1) || 'N/A'}</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                                <span>{post.rottenTomatoesRating || 'N/A'}%</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-sm">
+                                <svg className="h-4 w-4" viewBox="0 0 24 24">
+                                  <path fill="#4285F4" d="M21.35 11.1h-9.2V16h5.28c-.45 1.6-1.9 2.7-3.73 2.7-2.2 0-4-1.8-4-4s1.8-4 4-4c1.08 0 2.05.4 2.8.9l2.7-2.7C18.6 6.3 16.5 5 14.15 5c-3.96 0-7.15 3.2-7.15 7.15s3.19 7.15 7.15 7.15c3.8 0 6.9-2.9 6.9-6.9 0-.6-.05-1.1-.15-1.6z" />
+                                </svg>
+                                <span>{post.googleRating || 'N/A'}%</span>
+                              </div>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={post.viewCount.toLocaleString()} />
+                            <DetailItem icon={<ThumbsUp className="h-5 w-5" />} label="Likes" value={post._count?.likedBy || 0} />
+                            <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={currentReviews.length} />
+                          </>
+                        )}
+                      </CardContent>
+                    </Card>
+                    <SponsoredAdCard />
+                  </div>
+                </aside>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="reviews" className='px-4 md:px-0'>
+              <section id="reviews" className="my-12">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
+                    <MessageCircle className="w-8 h-8 text-primary" />
+                    Responses ({currentReviews.length})
+                  </h2>
+                  <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
+                    {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                  </Button>
+                </div>
+                
+                {showReviews && (
+                  <>
+                    <ReviewForm 
+                      postId={post.id} 
+                      onSuccess={() => {}}
+                      isSubmitting={isSubmittingReview}
+                      onSubmitReview={handleReviewSubmit}
+                    />
+                    <Separator className="my-8" />
+                    <div className="space-y-8">
+                      {currentReviews.length > 0 ? (
+                        currentReviews.map((review: any) => (
+                          <ReviewCard 
+                            key={review.id} 
+                            review={review} 
+                            onReviewSubmit={handleReviewSubmit} 
+                            onReviewDelete={handleReviewDelete} 
+                          />
+                        ))
+                      ) : (
+                        !isSubmittingReview && (
+                          <p className="text-muted-foreground">Be the first to share your thoughts!</p>
+                        )
+                      )}
+                    </div>
+                  </>
+                )}
+              </section>
+            </TabsContent>
+            
+            <TabsContent value="subtitles" className='px-4 md:px-0'>
+              <SponsoredAdCard />
+              <section id="subtitles" className="my-12">
+                <h2 className="font-serif text-3xl font-bold mb-6">Subtitles</h2>
+                <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                  <div className="lg:col-span-2">
+                    <div className="space-y-4">
+                      {subtitles.length > 0 ? (
+                        subtitles.map((subtitle) => {
+                          const canDelete = currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.name === subtitle.uploaderName;
+                          const isCurrentlyDeleting = isDeleting && subtitleToDelete?.id === subtitle.id;
+                          
+                          return (
+                            <div key={subtitle.id} className="flex items-center justify-between rounded-lg border p-4">
+                              <div>
+                                <p className="font-semibold">{subtitle.language}</p>
+                                <p className="text-sm text-muted-foreground">by {subtitle.uploaderName}</p>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                {subtitle.canDownload ? (
+                                  <Button variant="ghost" size="icon" asChild>
+                                    <a href={subtitle.url} download>
+                                      <Download className="h-5 w-5" />
+                                    </a>
+                                  </Button>
+                                ) : (
+                                  <Lock className="h-5 w-5 text-muted-foreground" title="You don't have permission to download this file" />
+                                )}
+                                {canDelete && (
+                                  <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    onClick={() => handleDeleteClick(subtitle)} 
+                                    disabled={isCurrentlyDeleting} 
+                                    title="Delete subtitle"
+                                  >
+                                    {isCurrentlyDeleting ? (
+                                      <Loader2 className="h-5 w-5 animate-spin text-destructive" />
+                                    ) : (
+                                      <Trash2 className="h-5 w-5 text-destructive" />
+                                    )}
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      ) : (
+                        <p className="text-muted-foreground">No subtitles available for this post yet.</p>
+                      )}
+                    </div>
+                    <div className="mt-6 flex">
+                      <UploadSubtitleDialog postId={post.id} onUploadSuccess={handleUploadSuccess} />
+                    </div>
                   </div>
                   
-                  {showReviews && (
-                    <>
-                      <ReviewForm 
-                        postId={post.id} 
-                        onSuccess={() => {}}
-                        isSubmitting={isSubmittingReview}
-                        onSubmitReview={handleReviewSubmit}
-                      />
-                      <Separator className="my-8" />
-                      <div className="space-y-8">
-                        {currentReviews.length > 0 ? (
-                          currentReviews.map((review: Review) => (
-                            <ReviewCard 
-                              key={review.id} 
-                              review={review} 
-                              onReviewSubmit={handleReviewSubmit} 
-                              onReviewDelete={handleReviewDelete} 
-                            />
-                          ))
-                        ) : (
-                          !isSubmittingReview && (
-                            <p className="text-muted-foreground">Be the first to share your thoughts!</p>
-                          )
-                        )}
-                      </div>
-                    </>
-                  )}
-                </section>
-              </TabsContent>
-              
-              <TabsContent value="subtitles" className='px-4 md:px-0'>
-                <SponsoredAdCard />
-                <section id="subtitles" className="my-12">
-                  <h2 className="font-serif text-3xl font-bold mb-6">Subtitles</h2>
-                  <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                    <div className="lg:col-span-2">
-                      <div className="space-y-4">
-                        {subtitles.length > 0 ? (
-                          subtitles.map((subtitle) => {
-                            const canDelete = currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.name === subtitle.uploaderName;
-                            const isCurrentlyDeleting = isDeleting && subtitleToDelete?.id === subtitle.id;
-                            
-                            return (
-                              <div key={subtitle.id} className="flex items-center justify-between rounded-lg border p-4">
-                                <div>
-                                  <p className="font-semibold">{subtitle.language}</p>
-                                  <p className="text-sm text-muted-foreground">by {subtitle.uploaderName}</p>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  {subtitle.canDownload ? (
-                                    <Button variant="ghost" size="icon" asChild>
-                                      <a href={subtitle.url} download>
-                                        <Download className="h-5 w-5" />
-                                      </a>
-                                    </Button>
-                                  ) : (
-                                    <Lock className="h-5 w-5 text-muted-foreground" title="You don't have permission to download this file" />
-                                  )}
-                                  {canDelete && (
-                                    <Button 
-                                      variant="ghost" 
-                                      size="icon" 
-                                      onClick={() => handleDeleteClick(subtitle)} 
-                                      disabled={isCurrentlyDeleting} 
-                                      title="Delete subtitle"
-                                    >
-                                      {isCurrentlyDeleting ? (
-                                        <Loader2 className="h-5 w-5 animate-spin text-destructive" />
-                                      ) : (
-                                        <Trash2 className="h-5 w-5 text-destructive" />
-                                      )}
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })
-                        ) : (
-                          <p className="text-muted-foreground">No subtitles available for this post yet.</p>
-                        )}
-                      </div>
-                      <div className="mt-6 flex">
-                        <UploadSubtitleDialog postId={post.id} onUploadSuccess={handleUploadSuccess} />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Card className="bg-card/50 sticky top-24">
-                        <CardHeader>
-                          <CardTitle className="flex items-center gap-2">
-                            <Bot className="h-5 w-5 text-primary" />
-                            AI Subtitle Request
-                          </CardTitle>
-                          <CardDescription>
-                            Can't find a language? Let our AI check if we can generate it.
-                          </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <SubtitleRequestForm movieTitle={post.title} />
-                        </CardContent>
-                      </Card>
-                    </div>
+                  <div>
+                    <Card className="bg-card/50 sticky top-24">
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Bot className="h-5 w-5 text-primary" />
+                          AI Subtitle Request
+                        </CardTitle>
+                        <CardDescription>
+                          Can't find a language? Let our AI check if we can generate it.
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <SubtitleRequestForm movieTitle={post.title} />
+                      </CardContent>
+                    </Card>
                   </div>
-                </section>
-              </TabsContent>
-            </MovieDetailClient>
-            
-            <AdminActions post={post} />
-          </article>
+                </div>
+              </section>
+            </TabsContent>
+          </MovieDetailClient>
           
-          <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This action cannot be undone. This will permanently delete the subtitle file for &quot;{subtitleToDelete?.language}&quot;.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting}>
-                  {isDeleting ? "Deleting..." : "Continue"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </main>
-      </div>
-    );
+          <AdminActions post={post} />
+        </article>
+        
+        <AlertDialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete the subtitle file for &quot;{subtitleToDelete?.language}&quot;.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete} disabled={isDeleting}>
+                {isDeleting ? "Deleting..." : "Continue"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      </main>
+    </div>
+  );
 }
-
