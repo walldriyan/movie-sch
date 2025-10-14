@@ -2,7 +2,7 @@
 
 'use client';
 
-import React, from 'react';
+import React, { useTransition } from 'react';
 import type { Post, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
@@ -44,7 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw, Eye, ThumbsUp, ListFilter } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, RefreshCw, Eye, ThumbsUp, ListFilter, Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
@@ -83,6 +83,7 @@ export default function PostList({
 }: PostListProps) {
   const [deleteAlertOpen, setDeleteAlertOpen] = React.useState(false);
   const [postToDelete, setPostToDelete] = React.useState<PostWithDetails | null>(null);
+  const [isDeleting, startDeleteTransition] = useTransition();
 
   const handleDeleteClick = (post: PostWithDetails) => {
     setPostToDelete(post);
@@ -91,7 +92,9 @@ export default function PostList({
 
   const confirmDelete = () => {
     if (postToDelete) {
-      onDeleteConfirmed(postToDelete.id);
+      startDeleteTransition(() => {
+        onDeleteConfirmed(postToDelete.id);
+      });
     }
     setDeleteAlertOpen(false);
     setPostToDelete(null);
@@ -341,7 +344,9 @@ export default function PostList({
             <AlertDialogAction
               onClick={confirmDelete}
               className="bg-destructive hover:bg-destructive/90"
+              disabled={isDeleting}
             >
+              {isDeleting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>

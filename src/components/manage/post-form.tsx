@@ -35,7 +35,7 @@ import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries, createSeries, getGroupsForForm } from '@/lib/actions';
+import { getSeries, createSeries, getGroupsForForm, savePost } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -76,7 +76,7 @@ type PostFormValues = z.infer<typeof postSchema>;
 type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface PostFormProps {
   editingPost: PostWithLinks | null;
-  onFormSubmit: (postData: PostFormData, id?: number) => void;
+  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
   debugError: any;
 }
@@ -184,6 +184,7 @@ export default function PostForm({
   const [groups, setGroups] = useState<Group[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, startTransition] = React.useTransition();
 
 
   useEffect(() => {
@@ -253,43 +254,31 @@ export default function PostForm({
     name: 'mediaLinks',
   });
 
-  const handleSubmit = async (values: PostFormValues) => {
-    setIsSaving(true);
-    setIsSuccess(false);
-    const postData: PostFormData = {
-      title: values.title,
-      description: values.description,
-      posterUrl: values.posterUrl || null,
-      year: values.year || null,
-      duration: values.duration || null,
-      genres: values.genres || [],
-      directors: values.directors || null,
-      mainCast: values.mainCast || null,
-      imdbRating: values.imdbRating || null,
-      rottenTomatoesRating: values.rottenTomatoesRating || null,
-      googleRating: values.googleRating || null,
-      status: editingPost?.status || 'DRAFT',
-      viewCount: editingPost?.viewCount || 0,
-      mediaLinks: values.mediaLinks,
-      type: values.type,
-      seriesId: values.seriesId,
-      orderInSeries: values.orderInSeries,
-      visibility: values.visibility,
-      groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
-    };
-    
-    try {
+  const handleSubmit = (values: PostFormValues) => {
+    startTransition(async () => {
+        const postData: PostFormData = {
+          title: values.title,
+          description: values.description,
+          posterUrl: values.posterUrl || null,
+          year: values.year || null,
+          duration: values.duration || null,
+          genres: values.genres || [],
+          directors: values.directors || null,
+          mainCast: values.mainCast || null,
+          imdbRating: values.imdbRating || null,
+          rottenTomatoesRating: values.rottenTomatoesRating || null,
+          googleRating: values.googleRating || null,
+          status: editingPost?.status || 'DRAFT',
+          viewCount: editingPost?.viewCount || 0,
+          mediaLinks: values.mediaLinks,
+          type: values.type,
+          seriesId: values.seriesId,
+          orderInSeries: values.orderInSeries,
+          visibility: values.visibility,
+          groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
+        };
         await onFormSubmit(postData, editingPost?.id);
-        setIsSuccess(true);
-        setTimeout(() => {
-            onBack();
-        }, 1500); // Navigate back after 1.5 seconds
-    } catch (error) {
-        // Error will be caught by the parent boundary
-        console.error(error);
-    } finally {
-        setIsSaving(false);
-    }
+    });
   };
 
   const handleFileChange = (
@@ -784,18 +773,12 @@ export default function PostForm({
             <Button 
                 type="submit" 
                 size="lg" 
-                disabled={isSaving || isSuccess}
-                className={cn(isSuccess && "bg-green-600 hover:bg-green-700")}
+                disabled={isSubmitting}
             >
-              {isSaving ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   <span>{editingPost ? 'Saving...' : 'Publishing...'}</span>
-                </>
-              ) : isSuccess ? (
-                <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    <span>Saved</span>
                 </>
               ) : editingPost ? (
                 'Save Changes'
