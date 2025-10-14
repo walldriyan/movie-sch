@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
-import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
 import { createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
 import type { Post, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
@@ -143,9 +143,11 @@ type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 export default function MoviePageContent({ 
   initialPost, 
   initialSubtitles,
+  session,
 }: { 
   initialPost: any;
   initialSubtitles: SubtitleWithPermission[];
+  session: Session | null;
 }) {
   const [post, setPost] = useState<any>(initialPost);
   const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>(initialSubtitles);
@@ -156,7 +158,6 @@ export default function MoviePageContent({
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSubmittingReview, startReviewTransition] = useTransition();
   const [showReviews, setShowReviews] = useState(false);
-  const { data: session } = useSession();
   const currentUser = session?.user;
 
   useEffect(() => {
@@ -285,7 +286,7 @@ export default function MoviePageContent({
     <div className="min-h-screen w-full bg-transparent">
       <main className="max-w-6xl mx-auto pb-8 px-4 md:px-8">
         <article>
-          <MovieDetailClient post={post} onPostUpdate={handlePostUpdate}>
+          <MovieDetailClient post={post} onPostUpdate={handlePostUpdate} session={session}>
             <TabsContent value="about" className='px-4 md:px-0'>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
                 <div className="md:col-span-3">
@@ -383,6 +384,7 @@ export default function MoviePageContent({
                       postId={post.id} 
                       isSubmitting={isSubmittingReview}
                       onSubmitReview={handleReviewSubmit}
+                      session={session}
                     />
                     <Separator className="my-8" />
                     <div className="space-y-8">
@@ -393,6 +395,7 @@ export default function MoviePageContent({
                             review={review} 
                             onReviewSubmit={handleReviewSubmit} 
                             onReviewDelete={handleReviewDelete} 
+                            session={session}
                           />
                         ))
                       ) : (

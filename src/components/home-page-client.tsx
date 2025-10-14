@@ -164,7 +164,7 @@ export default function HomePageClient({
             </main>
             ) : (
             <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-                {unreadCount > 0 && (
+                {session && unreadCount > 0 && (
                   <Card className="mb-8">
                     <CardContent className="p-4">
                        <Tabs defaultValue="unread">

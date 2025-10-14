@@ -18,7 +18,7 @@ import RatingStars from './rating-stars';
 import { Send, Loader2 } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
+import type { Session } from 'next-auth';
 
 const reviewFormSchema = z.object({
   rating: z.number().min(0).max(5),
@@ -39,6 +39,7 @@ interface ReviewFormProps {
   showAvatar?: boolean;
   isSubmitting: boolean;
   onSubmitReview: (comment: string, rating: number, parentId?: number) => Promise<void>;
+  session: Session | null;
 }
 
 export default function ReviewForm({ 
@@ -48,8 +49,9 @@ export default function ReviewForm({
     showAvatar = true,
     isSubmitting,
     onSubmitReview,
+    session,
 }: ReviewFormProps) {
-  const user = useCurrentUser();
+  const user = session?.user;
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
 
   const form = useForm<z.infer<typeof reviewFormSchema>>({

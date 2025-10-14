@@ -5,6 +5,7 @@ import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
 import type { Post, Subtitle, User } from '@/lib/types';
 import MoviePageContent from './movie-page-content';
 import { auth } from '@/auth';
+import type { Session } from 'next-auth';
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
@@ -150,6 +151,7 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
     <MoviePageContent 
       initialPost={serializablePost}
       initialSubtitles={subtitlesWithPermissions}
+      session={session}
     />
   );
 }
