@@ -1,20 +1,16 @@
 
 'use client';
 
-import { SessionProvider } from 'next-auth/react';
+// This file is no longer needed with the new NextAuth.js v5 architecture.
+// The RootLayout now handles passing the session directly.
+// This file can be deleted.
+
 import React from 'react';
 
-// This component no longer needs to accept a session prop.
-// The SessionProvider from next-auth/react will automatically
-// fetch the session on the client side.
-export default function Providers({ 
+export default function Providers({
   children,
-}: { 
+}: {
   children: React.ReactNode,
 }) {
-  return (
-    <SessionProvider>
-      {children}
-    </SessionProvider>
-  );
+  return <>{children}</>;
 }

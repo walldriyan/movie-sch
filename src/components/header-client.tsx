@@ -21,20 +21,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import React, { ReactNode } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
-import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
 
-export default function HeaderClient() {
-  const { data: session, status } = useSession();
-  console.log('[HeaderClient] Session Status:', status, 'Session Data:', JSON.stringify(session, null, 2));
+export default function HeaderClient({ session }: { session: Session | null }) {
+  // We use a state to manage the session on the client to avoid hydration mismatches
+  const [clientSession, setClientSession] = useState<Session | null>(null);
+
+  useEffect(() => {
+    setClientSession(session);
+  }, [session]);
   
-  const user = session?.user;
+  console.log('[HeaderClient] Received session prop:', JSON.stringify(session, null, 2));
+
+  const user = clientSession?.user;
 
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
@@ -69,7 +75,7 @@ export default function HeaderClient() {
   };
 
   const renderUserMenu = () => {
-    if (status === 'loading') {
+    if (clientSession === null) {
         return <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />;
     }
 
