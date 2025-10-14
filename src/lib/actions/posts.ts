@@ -165,6 +165,14 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     return {
         posts: posts.map((post) => ({
             ...post,
+            createdAt: post.createdAt.toISOString(),
+            updatedAt: post.updatedAt.toISOString(),
+            author: {
+                ...post.author,
+                createdAt: post.author.createdAt.toISOString(),
+                updatedAt: post.author.updatedAt.toISOString(),
+                emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
+            },
             genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
@@ -372,6 +380,14 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     return {
         posts: posts.map((post) => ({
             ...post,
+            createdAt: post.createdAt.toISOString(),
+            updatedAt: post.updatedAt.toISOString(),
+            author: {
+                ...post.author,
+                createdAt: post.author.createdAt.toISOString(),
+                updatedAt: post.author.updatedAt.toISOString(),
+                emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
+            },
             genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,

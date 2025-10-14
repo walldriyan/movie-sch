@@ -418,7 +418,12 @@ export async function getPublicGroups(limit = 10) {
     },
     take: limit,
   });
-  return groups;
+  return groups.map(group => ({
+    ...group,
+    createdAt: group.createdAt.toISOString(),
+    updatedAt: group.updatedAt.toISOString(),
+    posts: group.posts.map(post => ({...post}))
+  }));
 }
 
 export async function requestToJoinGroup(groupId: string) {

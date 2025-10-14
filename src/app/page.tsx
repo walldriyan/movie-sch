@@ -35,7 +35,7 @@ export default async function HomePage({
     <>
       <HomePageClient
         initialPosts={posts}
-        initialUsers={users}
+        initialUsers={users as any}
         initialGroups={groups as any}
         totalPages={totalPages}
         currentPage={currentPage}

@@ -42,7 +42,6 @@ export default function ManagePostsClient({
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
-  const [debugError, setDebugError] = useState<any | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(MovieStatus.PENDING_APPROVAL);
@@ -116,7 +115,6 @@ export default function ManagePostsClient({
 
   const handleAddNewPost = () => {
     setEditingPost(null);
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('create', 'true');
     url.searchParams.delete('edit');
@@ -126,7 +124,6 @@ export default function ManagePostsClient({
 
   const handleEditPost = (post: Post) => {
     setEditingPost(post);
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('edit', String(post.id));
     url.searchParams.delete('create');
@@ -138,10 +135,7 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
-    setDebugError(null);
     await savePost(postData, id);
-    // The line below that throws an error is now gone.
-    // We will stay on the form page if there is an error, and the error boundary will catch it.
     await fetchPosts(id ? currentPage : 1, statusFilter);
     handleBackFromForm(); // Go back to list and clear URL params
     toast({
@@ -152,17 +146,13 @@ export default function ManagePostsClient({
 
   const handleDeleteConfirmed = async (postId: number) => {
     const postToDelete = posts.find(m => m.id === postId);
-    try {
-      if (postToDelete) {
-        await deletePost(postId);
-        await fetchPosts(currentPage, statusFilter);
-        toast({
-          title: 'Success',
-          description: `Post "${postToDelete.title}" action has been processed.`,
-        });
-      }
-    } catch(error: any) {
-      setDebugError(error);
+    if (postToDelete) {
+      await deletePost(postId);
+      await fetchPosts(currentPage, statusFilter);
+      toast({
+        title: 'Success',
+        description: `Post "${postToDelete.title}" action has been processed.`,
+      });
     }
   };
 
@@ -194,7 +184,6 @@ export default function ManagePostsClient({
   };
 
   const handleBackFromForm = () => {
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
@@ -278,18 +267,6 @@ export default function ManagePostsClient({
                   </PaginationContent>
                 </Pagination>
             )}
-             {debugError && (
-                <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
-                    <h3 className="font-semibold text-destructive mb-2">Deletion/Refresh Error Details</h3>
-                    <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
-                    {JSON.stringify({
-                        message: debugError.message,
-                        stack: debugError.stack,
-                        ...debugError,
-                    }, null, 2)}
-                    </pre>
-                </div>
-              )}
           </>
         ) : (
           <PostForm

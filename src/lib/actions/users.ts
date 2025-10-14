@@ -1,3 +1,4 @@
+
 'use server';
 
 import type { User } from '@prisma/client';
@@ -34,7 +35,7 @@ async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise
 
 async function deleteUploadedFile(filePath: string | null | undefined) {
     if (!filePath || !filePath.startsWith('/uploads/')) {
-        return;
+        return; 
     }
     try {
         const fullPath = join(process.cwd(), 'public', filePath);
@@ -48,7 +49,12 @@ export async function getUsers(): Promise<User[]> {
   const users = await prisma.user.findMany({
     orderBy: { name: 'asc' },
   });
-  return users;
+  return users.map(user => ({
+    ...user,
+    createdAt: user.createdAt.toISOString(),
+    updatedAt: user.updatedAt.toISOString(),
+    emailVerified: user.emailVerified ? user.emailVerified.toISOString() : null,
+  })) as unknown as User[];
 }
 
 export async function getPostsByUserId(userId: string, includePrivate: boolean = false) {
