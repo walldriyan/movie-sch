@@ -52,10 +52,10 @@ export default async function RootLayout({
         </div>
 
         <SessionProvider session={session}>
-          <div className="  pt-16 bg-gradient-to-t from-red-950/5 to-purple-800/2 backdrop-blur-md"></div>
-          
           <Header />
-          {children}
+          <main className="pt-16">
+            {children}
+          </main>
           <Toaster />
         </SessionProvider>
       </body>

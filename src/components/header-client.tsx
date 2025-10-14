@@ -21,22 +21,26 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import React, { ReactNode } from 'react';
-import type { Session } from 'next-auth';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
+import { useSession } from 'next-auth/react';
 
 export default function HeaderClient({
-  session,
   createButton,
 }: {
-  session: Session | null;
   createButton?: ReactNode;
 }) {
+  const { data: session, status } = useSession();
   const user = session?.user;
+
+  console.log('--- [HeaderClient] ---');
+  console.log('Session Status:', status);
+  console.log('Session Data:', session);
+
 
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
@@ -56,6 +60,10 @@ export default function HeaderClient({
   };
 
   const renderUserMenu = () => {
+    if (status === 'loading') {
+        return <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />;
+    }
+
     if (!user) {
       return (
         <Button asChild variant="ghost">
@@ -66,10 +74,7 @@ export default function HeaderClient({
         </Button>
       );
     }
-
- 
   
-
     const canManage = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(
       user.role
     );

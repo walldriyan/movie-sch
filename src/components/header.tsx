@@ -1,13 +1,13 @@
 
 'use client';
 
-import { useSession } from 'next-auth/react';
 import HeaderClient from './header-client';
 import { ROLES } from '@/lib/permissions';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import { PlusCircle } from 'lucide-react';
 import React from 'react';
+import { useSession } from 'next-auth/react';
 
 export default function Header() {
   const { data: session } = useSession();
@@ -29,6 +29,6 @@ export default function Header() {
   };
 
   return (
-    <HeaderClient session={session} createButton={renderCreateButton()} />
+    <HeaderClient createButton={renderCreateButton()} />
   );
 }

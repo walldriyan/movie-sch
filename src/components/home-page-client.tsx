@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useTransition } from 'react';
@@ -30,6 +29,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Notification as NotificationType } from '@prisma/client';
 import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import { useSession } from 'next-auth/react';
+
 
 interface HomePageClientProps {
     initialPosts: any[];
@@ -61,11 +62,16 @@ export default function HomePageClient({
     searchParams,
     initialNotifications
 }: HomePageClientProps) {
-  console.log('--- [HomePageClient] Initial Props ---');
+
+  const { data: session, status } = useSession();
+  console.log('--- [HomePageClient] ---');
+  console.log('Session Status:', status);
+  console.log('Session Data:', session);
   console.log('Initial Posts:', initialPosts);
   console.log('Initial Users:', initialUsers);
   console.log('Initial Groups:', initialGroups);
   console.log('Initial Notifications:', initialNotifications);
+
 
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();
@@ -343,5 +349,3 @@ export default function HomePageClient({
     </TooltipProvider>
   );
 }
-
-    
