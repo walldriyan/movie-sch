@@ -23,15 +23,12 @@ export async function sendNotification(
   }
 
   try {
-    // Combine message and targetId to avoid schema change
-    const messageWithTarget = values.targetId 
-      ? `${values.message} (Target ID: ${values.targetId})`
-      : values.message;
-
     const notification = await prisma.notification.create({
       data: {
         title: values.title,
-        message: messageWithTarget,
+        message: values.message,
+        type: values.targetType,
+        targetId: values.targetId,
       },
     });
     
@@ -46,11 +43,16 @@ export async function sendNotification(
 }
 
 export async function getNotifications(): Promise<Notification[]> {
-    return prisma.notification.findMany({
+    const notifications = await prisma.notification.findMany({
         orderBy: {
             createdAt: 'desc',
         },
     });
+    return notifications.map(n => ({
+      ...n,
+      createdAt: n.createdAt.toISOString(),
+      updatedAt: n.updatedAt.toISOString(),
+    })) as unknown as Notification[];
 }
 
 export async function updateNotificationStatus(notificationId: string, status: NotificationStatus): Promise<Notification> {
