@@ -25,6 +25,12 @@ export default async function HomePage({
   const groups = await getPublicGroups(5);
   const notifications = (await getNotifications()) as Notification[];
 
+  const serializableNotifications = notifications.map(n => ({
+    ...n,
+    createdAt: n.createdAt.toISOString(),
+    updatedAt: n.updatedAt.toISOString(),
+  }));
+
   return (
     <>
       <HomePageClient
@@ -34,7 +40,7 @@ export default async function HomePage({
         totalPages={totalPages}
         currentPage={currentPage}
         searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter }}
-        initialNotifications={notifications}
+        initialNotifications={serializableNotifications as any}
       />
     </>
   );

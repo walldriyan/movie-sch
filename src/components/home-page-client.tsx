@@ -60,7 +60,7 @@ export default function HomePageClient({
     searchParams,
     initialNotifications
 }: HomePageClientProps) {
-  const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications);
+  const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
