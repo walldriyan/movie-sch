@@ -24,17 +24,23 @@ export default async function HomePage({
   const users = await getUsers();
   const groups = await getPublicGroups(5);
   const notifications = (await getNotifications()) as Notification[];
+  
+  // Serialize data to plain objects
+  const plainPosts = JSON.parse(JSON.stringify(posts));
+  const plainUsers = JSON.parse(JSON.stringify(users));
+  const plainGroups = JSON.parse(JSON.stringify(groups));
+  const plainNotifications = JSON.parse(JSON.stringify(notifications));
 
   return (
     <>
       <HomePageClient
-        initialPosts={posts}
-        initialUsers={users as any}
-        initialGroups={groups as any}
+        initialPosts={plainPosts}
+        initialUsers={plainUsers}
+        initialGroups={plainGroups}
         totalPages={totalPages}
         currentPage={currentPage}
         searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter }}
-        initialNotifications={notifications as any}
+        initialNotifications={plainNotifications}
       />
     </>
   );
