@@ -6,7 +6,7 @@ import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Header from '@/components/header';
 import React from 'react';
-import Providers from './providers';
+import SessionProvider from '@/components/auth/session-provider';
 import { auth } from '@/auth';
 
 export const metadata: Metadata = {
@@ -47,7 +47,7 @@ export default async function RootLayout({
           fontSinhala.variable
         )}
       >
-        <Providers>
+        <SessionProvider session={session}>
           <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
             <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
             <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
@@ -59,7 +59,7 @@ export default async function RootLayout({
             {children}
           </main>
           <Toaster />
-        </Providers>
+        </SessionProvider>
       </body>
     </html>
   );
