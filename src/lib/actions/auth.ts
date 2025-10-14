@@ -33,6 +33,7 @@ export async function authenticate(
 
 export async function doSignOut() {
   await signOut();
+  redirect('/');
 }
 
 export async function registerUser(

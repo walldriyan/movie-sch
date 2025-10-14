@@ -29,19 +29,14 @@ import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
 import type { Session } from 'next-auth';
-import { useSession } from 'next-auth/react';
 
 export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
-  // We still use useSession() to get live updates on the client
-  // But we can use serverSession for the initial render to avoid flickering
-  const { data: clientSession, status } = useSession();
-  
-  // Choose the most up-to-date session information
-  const session = clientSession || serverSession;
-  const sessionStatus = clientSession ? status : (serverSession ? 'authenticated' : 'unauthenticated');
+  // We receive the session from the server component as a prop.
+  // We no longer use useSession() here to avoid hydration mismatches.
+  const session = serverSession;
+  const sessionStatus = session ? 'authenticated' : 'unauthenticated';
 
   console.log('[HeaderClient] Received serverSession prop:', JSON.stringify(serverSession, null, 2));
-  console.log(`[HeaderClient] useSession() Status: ${status}, Data:`, JSON.stringify(clientSession, null, 2));
   
   const user = session?.user;
 
