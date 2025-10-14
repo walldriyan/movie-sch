@@ -60,6 +60,29 @@ export const authConfig = {
       }
       return session;
     },
+     // The authorized callback is used to protect pages
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const isAuthPage = nextUrl.pathname.startsWith('/login') || nextUrl.pathname.startsWith('/register');
+      const isProtectedPage = nextUrl.pathname.startsWith('/manage') || nextUrl.pathname.startsWith('/admin') || nextUrl.pathname.startsWith('/favorites');
+
+      if (isAuthPage) {
+        if (isLoggedIn) {
+          // If a logged-in user tries to access login/register, redirect them to the home page.
+          return Response.redirect(new URL('/', nextUrl));
+        }
+        // Allow unauthenticated users to access auth pages
+        return true;
+      }
+
+      if (isProtectedPage) {
+         // If the user is not logged in, redirect them to the login page.
+        return isLoggedIn;
+      }
+      
+      // Allow access to all other pages by default
+      return true;
+    },
   },
   pages: {
     signIn: '/login',

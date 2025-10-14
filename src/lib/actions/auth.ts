@@ -14,25 +14,31 @@ export async function authenticate(
   formData: FormData
 ) {
   try {
-    await signIn('credentials', { ...Object.fromEntries(formData), redirectTo: '/' });
-    revalidatePath('/'); // revalidate session cache
+    // The signIn function will automatically handle redirection on success
+    // and throw an error on failure, which is caught below.
+    await signIn('credentials', Object.fromEntries(formData));
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
           return 'Invalid email or password.';
         default:
-          return 'Something went wrong.';
+          return 'Something went wrong. Please try again.';
       }
     }
+    // Re-throw other errors to be caught by Next.js error boundary
     throw error;
   }
+  // This part is generally not reached if signIn is successful because it redirects.
+  // But if it were, revalidation would be good practice.
+  revalidatePath('/');
 }
 
 export async function doSignOut() {
-  await signOut({redirect: false});
-  revalidatePath('/'); // revalidate session cache
-  redirect('/');
+  await signOut();
+  // signOut by default redirects to the home page after signing out.
+  // Explicit revalidation/redirection is often not needed unless you
+  // have specific requirements. The default behavior should handle UI updates.
 }
 
 export async function registerUser(
@@ -52,6 +58,7 @@ export async function registerUser(
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
 
+    // This logic ensures only the first user with the SUPER_ADMIN_EMAIL becomes a super admin.
     if (
       process.env.SUPER_ADMIN_EMAIL &&
       email === process.env.SUPER_ADMIN_EMAIL
@@ -59,10 +66,9 @@ export async function registerUser(
       const existingSuperAdmin = await prisma.user.findFirst({
           where: { role: Role.SUPER_ADMIN }
       });
-      if (existingSuperAdmin) {
-          throw new Error('A SUPER_ADMIN account already exists. Cannot create another.');
+      if (!existingSuperAdmin) {
+          userRole = Role.SUPER_ADMIN;
       }
-      userRole = Role.SUPER_ADMIN;
     }
 
     await prisma.user.create({
@@ -76,14 +82,16 @@ export async function registerUser(
 
   } catch (error: any) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          if (error.code === 'P2002') {
+          if (error.code === 'P2002') { // Unique constraint violation
               return { message: 'An account with this email already exists.', input: formInput };
           }
       }
-      return { message: error.message || 'An unexpected error occurred during registration.', input: formInput };
+      // For other errors, return a generic message.
+      console.error('Registration Error:', error);
+      return { message: 'An unexpected error occurred during registration.', input: formInput };
   }
 
-  revalidatePath('/'); // revalidate session cache
+  // After successful registration, redirect to the login page.
   redirect('/login');
 }
 
