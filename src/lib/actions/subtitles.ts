@@ -1,3 +1,4 @@
+
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -42,6 +43,7 @@ export async function uploadSubtitle(formData: FormData): Promise<Subtitle> {
       uploaderName: user.name,
       url: '', // Temporary
       post: { connect: { id: postId } },
+      user: { connect: { id: user.id } },
     },
   });
 

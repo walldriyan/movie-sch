@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -155,6 +154,12 @@ export async function getPosts(options: { page?: number; limit?: number, filters
                   select: { posts: true }
                 }
               }
+            },
+            _count: {
+              select: {
+                likedBy: true,
+                reviews: true,
+              }
             }
         },
     });
@@ -179,7 +184,6 @@ export async function getPosts(options: { page?: number; limit?: number, filters
                 createdAt: post.series.createdAt.toISOString(),
                 updatedAt: post.series.updatedAt.toISOString(),
             } : null,
-            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -401,7 +405,6 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
                 createdAt: post.series.createdAt.toISOString(),
                 updatedAt: post.series.updatedAt.toISOString(),
             } : null,
-            genres: post.genres ? post.genres.split(',') : [],
         })),
         totalPages,
         totalPosts,
@@ -497,7 +500,6 @@ export async function toggleLikePost(postId: number, like: boolean) {
   }
 
   revalidatePath(`/movies/${postId}`);
-  return new Response("ok");
 }
 
 export async function toggleFavoritePost(postId: number) {

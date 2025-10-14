@@ -99,6 +99,7 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
     seriesId: postData.seriesId,
     orderInSeries: postData.orderInSeries,
     authorId: postData.authorId,
+    groupId: postData.groupId,
     createdAt: serializeDate(postData.createdAt),
     updatedAt: serializeDate(postData.updatedAt),
     publishedAt: serializeDate(postData.publishedAt),
@@ -117,6 +118,7 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
       posterUrl: postData.series.posterUrl,
       createdAt: serializeDate(postData.series.createdAt),
       updatedAt: serializeDate(postData.series.updatedAt),
+      authorId: postData.series.authorId,
     } : null,
     
     // Serialize media links

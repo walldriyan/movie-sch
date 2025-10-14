@@ -147,6 +147,9 @@ export default function MoviePageContent({
   initialPost: any;
   initialSubtitles: SubtitleWithPermission[];
 }) {
+  console.log("--- [MoviePageContent] Received initialPost from Server ---");
+  console.log(initialPost);
+  
   const [post, setPost] = useState<any>(initialPost);
   const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>(initialSubtitles);
   const [currentReviews, setCurrentReviews] = useState<any[]>(initialPost.reviews || []);
@@ -273,16 +276,11 @@ export default function MoviePageContent({
     if (!subtitleToDelete) return;
     
     startDeleteTransition(async () => {
-      try {
-        await deleteSubtitle(subtitleToDelete.id);
-        toast({ title: "Subtitle Deleted", description: "The subtitle has been removed." });
-        setSubtitles(subs => subs.filter(s => s.id !== subtitleToDelete.id));
-      } catch (error: any) {
-        toast({ variant: "destructive", title: "Error Deleting Subtitle", description: error.message });
-      } finally {
-        setDialogOpen(false);
-        setSubtitleToDelete(null);
-      }
+      await deleteSubtitle(subtitleToDelete.id);
+      toast({ title: "Subtitle Deleted", description: "The subtitle has been removed." });
+      setSubtitles(subs => subs.filter(s => s.id !== subtitleToDelete.id));
+      setDialogOpen(false);
+      setSubtitleToDelete(null);
     });
   };
 
