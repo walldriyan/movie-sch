@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useTransition, useState } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -9,25 +9,10 @@ import { useSession } from 'next-auth/react';
 import {
   Star,
   MessageCircle,
-  Bookmark,
-  MoreHorizontal,
-  Share2,
   ListVideo,
-  Tag,
-  ThumbsUp,
-  ThumbsDown,
   ArrowLeft,
-  Edit,
-  Trash2,
-  Loader2,
   Home,
 } from 'lucide-react';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -35,10 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Post as PostType } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions';
-import { useToast } from '@/hooks/use-toast';
-import { ROLES } from '@/lib/permissions';
-import { Skeleton } from '@/components/ui/skeleton';
+import MovieInteractionButtons from '@/components/movie/movie-interaction-buttons';
 
 export default function MovieDetailClient({
   post,
@@ -51,12 +33,6 @@ export default function MovieDetailClient({
 }) {
   const router = useRouter();
   const { data: session, status: sessionStatus } = useSession();
-  const currentUser = session?.user;
-
-  const [isLikeTransitioning, startLikeTransition] = useTransition();
-  const [isFavoritePending, startFavoriteTransition] = useTransition();
-  const [isDeleting, startDeleteTransition] = useTransition();
-  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('about');
   
   const heroImage = post.posterUrl || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
@@ -65,132 +41,6 @@ export default function MovieDetailClient({
   const tabButtonStyle = 'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2 whitespace-nowrap';
   const activeTabButtonStyle = 'text-primary font-semibold border-primary';
   const inactiveTabButtonStyle = 'border-transparent';
-  
-  const handleLike = (likeAction: 'like' | 'dislike') => {
-    if (!currentUser) {
-      toast({
-        variant: 'destructive',
-        title: 'Authentication required',
-        description: 'You must be logged in to like or dislike a post.',
-      });
-      return;
-    }
-
-    const originalPost = post;
-    const currentIsLiked = post.likedBy?.some(user => user.id === currentUser.id);
-    const currentIsDisliked = post.dislikedBy?.some(user => user.id === currentUser.id);
-
-    let optimisticPost: PostType = { ...post };
-
-    if (likeAction === 'like') {
-      optimisticPost = {
-        ...optimisticPost,
-        likedBy: currentIsLiked 
-          ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) 
-          : [...(optimisticPost.likedBy || []), currentUser as any],
-        dislikedBy: currentIsDisliked 
-          ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) 
-          : optimisticPost.dislikedBy,
-      };
-    } else {
-      optimisticPost = {
-        ...optimisticPost,
-        dislikedBy: currentIsDisliked 
-          ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) 
-          : [...(optimisticPost.dislikedBy || []), currentUser as any],
-        likedBy: currentIsLiked 
-          ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) 
-          : optimisticPost.likedBy,
-      };
-    }
-    
-    optimisticPost._count = {
-      ...optimisticPost._count,
-      likedBy: optimisticPost.likedBy?.length || 0,
-    };
-
-    setPost(optimisticPost as PostType | null);
-
-    startLikeTransition(() => {
-      toggleLikePost(post.id, likeAction === 'like')
-        .catch((err) => {
-          setPost(optimisticPost as PostType | null);
-          toast({
-            variant: 'destructive',
-            title: 'An error occurred',
-            description: err.message || "Could not update your preference. The database may be in read-only mode.",
-          });
-        });
-    });
-  };
-
-  const handleFavorite = () => {
-    if (!currentUser) {
-      toast({
-        variant: 'destructive',
-        title: 'Authentication required',
-        description: 'You must be logged in to add a post to favorites.',
-      });
-      return;
-    }
-    
-    const wasFavorited = post.favoritePosts?.some(fav => fav.userId === currentUser.id);
-    const originalPost = post;
-
-    const optimisticPost = {
-      ...post,
-      favoritePosts: wasFavorited
-        ? post.favoritePosts?.filter(fav => fav.userId !== currentUser.id)
-        : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
-    };
-    
-    setPost(optimisticPost as PostType | null);
-
-    startFavoriteTransition(() => {
-      toggleFavoritePost(post.id)
-        .then(() => {
-          toast({
-            title: 'Favorites Updated',
-            description: `Post has been ${wasFavorited ? 'removed from' : 'added to'} your favorites.`,
-          });
-        })
-        .catch((err) => {
-          setPost(originalPost as PostType | null);
-          toast({
-            variant: 'destructive',
-            title: 'An error occurred',
-            description: err.message || "Could not update favorites. The database may be in read-only mode.",
-          });
-        });
-    });
-  };
-  
-  const handleDelete = () => {
-    startDeleteTransition(async () => {
-      try {
-        await deletePost(post.id);
-        toast({
-          title: 'Post Deleted',
-          description: `"${post.title}" has been submitted for deletion.`,
-        });
-        router.push('/manage');
-      } catch (error: any) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: error.message || 'Failed to delete post.',
-        });
-      }
-    });
-  };
-
-  const isFavorited = currentUser && post.favoritePosts?.some(fav => fav.userId === currentUser.id);
-  const isLiked = currentUser && post.likedBy?.some(user => user.id === currentUser.id);
-  const isDisliked = currentUser && post.dislikedBy?.some(user => user.id === currentUser.id);
-  const canManage = currentUser && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role);
-
-  const showInteractiveButtons = sessionStatus === 'authenticated' && currentUser;
-  const showLoadingState = sessionStatus === 'loading';
 
   return (
     <>
@@ -232,7 +82,7 @@ export default function MovieDetailClient({
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
           {post.genres.map((genre: string) => (
             <Button key={genre} variant="outline" size="sm" className="rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20">
-              <Tag className="mr-2 h-4 w-4" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.432 0l6.568-6.568a2.426 2.426 0 0 0 0-3.432z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
               {genre}
             </Button>
           ))}
@@ -297,76 +147,8 @@ export default function MovieDetailClient({
               </button>
             </div>
             
-            <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-              {showLoadingState && (
-                <>
-                  <Skeleton className="h-9 w-16" />
-                  <Skeleton className="h-9 w-16" />
-                </>
-              )}
-              
-              {showInteractiveButtons && (
-                <>
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleLike('like')} 
-                    disabled={isLikeTransitioning} 
-                    className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}
-                  >
-                    <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    <span className="text-sm w-4 text-left ml-2">{post._count?.likedBy ?? post.likedBy?.length ?? 0}</span>
-                  </Button>
-                  
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleLike('dislike')} 
-                    disabled={isLikeTransitioning} 
-                    className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}
-                  >
-                    <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    <span className="text-sm w-4 text-left ml-2">{post.dislikedBy?.length ?? 0}</span>
-                  </Button>
-                </>
-              )}
+            <MovieInteractionButtons post={post} setPost={setPost} session={session} sessionStatus={sessionStatus} />
 
-              <Separator orientation="vertical" className="h-6 mx-2" />
-
-              <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={!currentUser || isFavoritePending}>
-                {isFavoritePending ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <Bookmark className={cn("w-5 h-5", isFavorited ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                )}
-              </Button>
-              
-              <Button variant="ghost" size="icon">
-                <Share2 className="w-5 h-5 text-muted-foreground" />
-              </Button>
-              
-              {canManage && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent>
-                    <DropdownMenuItem asChild>
-                      <Link href={`/manage?edit=${post.id}`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                      </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDelete} disabled={isDeleting} className="text-destructive">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-            </div>
           </div>
         </div>
       </header>

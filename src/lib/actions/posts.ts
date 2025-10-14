@@ -412,7 +412,7 @@ export async function updatePostStatus(postId: number, status: string) {
 
 export async function toggleLikePost(postId: number, like: boolean) {
   const session = await auth();
-
+ 
 
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
@@ -468,6 +468,7 @@ export async function toggleLikePost(postId: number, like: boolean) {
   }
 
   revalidatePath(`/movies/${postId}`);
+  return new Response("ok");
 }
 
 export async function toggleFavoritePost(postId: number) {
