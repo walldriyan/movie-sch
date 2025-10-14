@@ -100,7 +100,7 @@ export default async function FavoritesPage() {
 
                     <Tooltip>
                       <TooltipTrigger>
-                        <ClientRelativeDate date={postDate} />
+                        <ClientRelativeDate date={postDate.toISOString()} />
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{format(postDate, "MMMM d, yyyy 'at' h:mm a")}</p>

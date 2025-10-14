@@ -6,7 +6,7 @@ import { formatRelative } from 'date-fns';
 import { Skeleton } from './ui/skeleton';
 
 interface ClientRelativeDateProps {
-  date: Date;
+  date: Date | string;
 }
 
 export default function ClientRelativeDate({ date }: ClientRelativeDateProps) {
@@ -14,7 +14,7 @@ export default function ClientRelativeDate({ date }: ClientRelativeDateProps) {
 
   useEffect(() => {
     // This effect runs only on the client after hydration
-    const formatted = formatRelative(date, new Date());
+    const formatted = formatRelative(new Date(date), new Date());
     setRelativeDate(formatted.charAt(0).toUpperCase() + formatted.slice(1));
   }, [date]);
 
