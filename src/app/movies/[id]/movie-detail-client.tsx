@@ -5,7 +5,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import type { Session } from 'next-auth';
 import {
   Star,
   MessageCircle,
@@ -26,16 +26,18 @@ export default function MovieDetailClient({
   post,
   onPostUpdate,
   children,
+  session,
 }: {
   post: PostType;
   onPostUpdate: (updatedPost: PostType) => void;
   children: React.ReactNode;
+  session: Session | null;
 }) {
   const router = useRouter();
-  const { data: session, status: sessionStatus } = useSession();
   const [activeTab, setActiveTab] = useState('about');
+  const sessionStatus = session ? 'authenticated' : 'unauthenticated';
 
-  console.log("Client [/movies/[id]/movie-detail-client.tsx] Session from useSession():", JSON.stringify(session, null, 2));
+  console.log("Client [/movies/[id]/movie-detail-client.tsx] Session from props:", JSON.stringify(session, null, 2));
   console.log("Client [/movies/[id]/movie-detail-client.tsx] Current User Details:", session?.user);
   
   const heroImage = post.posterUrl || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
