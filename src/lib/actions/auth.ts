@@ -29,16 +29,10 @@ export async function authenticate(
     // Re-throw other errors to be caught by Next.js error boundary
     throw error;
   }
-  // This part is generally not reached if signIn is successful because it redirects.
-  // But if it were, revalidation would be good practice.
-  revalidatePath('/');
 }
 
 export async function doSignOut() {
   await signOut();
-  // signOut by default redirects to the home page after signing out.
-  // Explicit revalidation/redirection is often not needed unless you
-  // have specific requirements. The default behavior should handle UI updates.
 }
 
 export async function registerUser(
