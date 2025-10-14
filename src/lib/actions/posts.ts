@@ -13,7 +13,7 @@ import prisma from '@/lib/prisma';
 import type { PostFormData } from '@/lib/types';
 
 
-async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
+export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
   if (!dataUrl.startsWith('data:image')) {
     return dataUrl; 
   }
@@ -37,7 +37,7 @@ async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise
   }
 }
 
-async function deleteUploadedFile(filePath: string | null | undefined) {
+export async function deleteUploadedFile(filePath: string | null | undefined) {
     if (!filePath || !filePath.startsWith('/uploads/')) {
         return; 
     }
