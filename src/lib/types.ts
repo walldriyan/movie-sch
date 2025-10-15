@@ -1,6 +1,6 @@
 
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, ExamSubmission as PrismaSubmission } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption } from "@prisma/client";
 
 export enum PostType {
   MOVIE = 'MOVIE',
@@ -33,6 +33,7 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres' | 'subtitles'> & {
   subtitles: Subtitle[];
   author: User;
   series?: Series | null;
+  exam?: { id: number, title: string, description: string | null } | null;
   favoritePosts?: PrismaFavoritePost[];
   likedBy?: User[];
   dislikedBy?: User[];
@@ -51,7 +52,7 @@ export type Series = Omit<PrismaSeries, 'posts'> & {
   }
 }
 
-export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series' | '_count'> & {
+export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series' | '_count' | 'exam'> & {
   mediaLinks?: Omit<MediaLink, 'id'>[];
   genres?: string[];
   seriesId?: number | null;

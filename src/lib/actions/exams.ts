@@ -1,5 +1,3 @@
-
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -343,6 +341,12 @@ export async function submitExam(
     }
   }
 
+    const submissionData = {
+        score,
+        timeTakenSeconds,
+        submittedAt: new Date(),
+    };
+
     const submission = await prisma.examSubmission.upsert({
         where: {
             userId_examId: {
@@ -351,9 +355,10 @@ export async function submitExam(
             }
         },
         update: {
-            score,
-            timeTakenSeconds,
-            submittedAt: new Date(),
+            ...submissionData,
+            attemptCount: {
+                increment: 1,
+            },
             answers: {
                 deleteMany: {},
                 create: answersToCreate
@@ -362,12 +367,7 @@ export async function submitExam(
         create: {
             userId: user.id,
             examId: examId,
-            score,
-            timeTakenSeconds,
-            submittedAt: new Date(),
-            answers: {
-                create: answersToCreate,
-            },
+            ...submissionData,
         }
     });
 
@@ -473,4 +473,3 @@ export async function updateSubmissionAttempts(submissionId: number, attempts: n
     
     revalidatePath(`/admin/exams/[id]/results`);
 }
-

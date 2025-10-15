@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import type { Exam, User, ExamSubmission as PrismaSubmission } from '@prisma/client';
 import {
   Table,
@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, MoreHorizontal, Eye, Edit, Trash2, Loader2 } from 'lucide-react';
+import { ArrowLeft, RefreshCw, MoreHorizontal, Eye, Edit, Trash2, Loader2, Check, X, Target, FileQuestion, CircleDot } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -40,9 +40,13 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getExamResultsForAdmin, updateSubmissionAttempts } from '@/lib/actions';
+import { getExamResultsForAdmin, updateSubmissionAttempts, getExamResults } from '@/lib/actions';
 import type { ExamResultSubmission } from '@/lib/types';
+import { Separator } from '../ui/separator';
+import { cn } from '@/lib/utils';
+import { ScrollArea } from '../ui/scroll-area';
 
+type ExamResultsType = Awaited<ReturnType<typeof getExamResults>>;
 
 function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResultSubmission, onUpdate: () => void }) {
     const [open, setOpen] = useState(false);
@@ -93,6 +97,115 @@ function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResult
                         {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Save
                     </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    )
+}
+
+function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, exam: any }) {
+    const [open, setOpen] = useState(false);
+    const [results, setResults] = useState<ExamResultsType | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
+    const { toast } = useToast();
+
+    const handleOpenChange = (isOpen: boolean) => {
+        setOpen(isOpen);
+        if (isOpen && !results) {
+            fetchResults();
+        }
+    };
+
+    const fetchResults = async () => {
+        setIsLoading(true);
+        try {
+            const data = await getExamResults(submissionId);
+            setResults(data);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: e.message });
+            setOpen(false);
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    
+    return (
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogTrigger asChild>
+                 <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                    <Eye className="mr-2 h-4 w-4"/>View Submission
+                </DropdownMenuItem>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Submission Details</DialogTitle>
+                    <DialogDescription>
+                        Reviewing answers for {results?.user.name} on the exam &quot;{exam.title}&quot;.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="flex-grow overflow-hidden">
+                    <ScrollArea className="h-full pr-6 -mr-6">
+                        {isLoading && (
+                            <div className="flex items-center justify-center h-full">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                        )}
+                        {results && (
+                             <div className="space-y-6 py-4">
+                                {results.submission.exam.questions.map((question, index) => {
+                                    const userAnswersIds = results.submission.answers
+                                        .filter(a => a.questionId === question.id)
+                                        .map(a => a.selectedOptionId);
+                                        
+                                    const correctOptionIds = question.options
+                                        .filter(o => o.isCorrect)
+                                        .map(o => o.id);
+                                    
+                                    return (
+                                        <div key={question.id}>
+                                            <div className="font-semibold">{index + 1}. {question.text}</div>
+                                            <p className="text-sm text-muted-foreground mb-4">{question.points} points</p>
+                                            
+                                            <div className="space-y-2">
+                                                {question.options.map(option => {
+                                                    const isUserChoice = userAnswersIds.includes(option.id);
+                                                    const isTheCorrectAnswer = correctOptionIds.includes(option.id);
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={option.id}
+                                                            className={cn(
+                                                                "flex items-start gap-3 p-3 rounded-lg border text-sm",
+                                                                isTheCorrectAnswer && "bg-green-500/10 border-green-500/30",
+                                                                isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30"
+                                                            )}
+                                                        >
+                                                            <div className="mt-0.5">
+                                                                {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
+                                                                {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
+                                                                {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
+                                                                {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
+                                                            </div>
+                                                            <div className="flex-grow">
+                                                                <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
+                                                                {isTheCorrectAnswer && !isUserChoice && (
+                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">Correct Answer</p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            {index < results.submission.exam.questions.length - 1 && <Separator className="mt-6" />}
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+                    </ScrollArea>
+                </div>
+                 <DialogFooter>
+                    <Button variant="outline" onClick={() => setOpen(false)}>Close</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
@@ -180,7 +293,7 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
                                         <Badge variant={percentage >= 50 ? 'default' : 'secondary'}>{percentage.toFixed(0)}%</Badge>
                                     </TableCell>
                                     <TableCell>{timeTaken}</TableCell>
-                                    <TableCell>{sub.attempts} / {exam.attemptsAllowed === 0 ? '∞' : exam.attemptsAllowed}</TableCell>
+                                    <TableCell>{sub.attemptCount} / {exam.attemptsAllowed === 0 ? '∞' : sub.attempts}</TableCell>
                                     <TableCell>{new Date(sub.submittedAt).toLocaleDateString()}</TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
@@ -188,11 +301,7 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
                                                 <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/exams/${exam.id}/results?submissionId=${sub.id}`} target="_blank">
-                                                        <Eye className="mr-2 h-4 w-4"/>View Submission
-                                                    </Link>
-                                                </DropdownMenuItem>
+                                                <ViewSubmissionDialog submissionId={sub.id} exam={exam} />
                                                 <ManageAttemptsDialog submission={sub} onUpdate={refreshResults}/>
                                                 <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Submission</DropdownMenuItem>
                                             </DropdownMenuContent>

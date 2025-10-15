@@ -40,7 +40,7 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
         <div className="printable-area font-sans text-black bg-white">
              <header className="text-center mb-12 border-b-2 border-gray-200 pb-8">
                 <div className="inline-flex items-center space-x-3 mb-4">
-                    <Film className="h-10 w-10 text-green-500" />
+                    <Film className="h-10 w-10 text-primary" />
                     <span className="inline-block font-bold text-4xl text-gray-800" style={{fontFamily: 'serif'}}>
                         CineVerse
                     </span>
@@ -81,7 +81,7 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                     <div className="grid grid-cols-3 gap-6 text-center">
                         <div className="bg-gray-50 p-6 rounded-lg border">
                             <p className="text-base text-gray-500">Total Score</p>
-                            <p className="text-4xl font-bold text-green-500">{submission.score} / {totalPoints}</p>
+                            <p className="text-4xl font-bold text-primary">{submission.score} / {totalPoints}</p>
                         </div>
                         <div className="bg-gray-50 p-6 rounded-lg border">
                             <p className="text-base text-gray-500">Percentage</p>
@@ -290,16 +290,16 @@ export default function ExamResultsPage() {
                                                             isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30"
                                                         )}
                                                     >
-                                                        <div>
+                                                        <div className="mt-0.5">
                                                             {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
                                                             {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
                                                             {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
                                                             {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
                                                         </div>
                                                         <div className="flex-grow">
-                                                            <p>{option.text}</p>
+                                                            <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
                                                             {isTheCorrectAnswer && !isUserChoice && (
-                                                                 <p className="text-xs text-green-400 mt-1">Correct Answer</p>
+                                                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">Correct Answer</p>
                                                             )}
                                                         </div>
                                                     </div>
