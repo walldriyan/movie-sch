@@ -1,3 +1,4 @@
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -356,9 +357,6 @@ export async function submitExam(
         },
         update: {
             ...submissionData,
-            attemptCount: {
-                increment: 1,
-            },
             answers: {
                 deleteMany: {},
                 create: answersToCreate
@@ -368,6 +366,9 @@ export async function submitExam(
             userId: user.id,
             examId: examId,
             ...submissionData,
+            answers: {
+                create: answersToCreate
+            },
         }
     });
 
