@@ -301,7 +301,7 @@ export async function submitExam(examId: number, formData: FormData) {
   }
 
   let score = 0;
-  const answers: { questionId: number, selectedOptionId: number, isCorrect: boolean }[] = [];
+  const answersToCreate: { questionId: number, selectedOptionId: number }[] = [];
 
   for (const question of exam.questions) {
     const selectedOptionIdStr = formData.get(`question-${question.id}`) as string;
@@ -313,7 +313,7 @@ export async function submitExam(examId: number, formData: FormData) {
       if (isCorrect) {
         score += question.points;
       }
-      answers.push({ questionId: question.id, selectedOptionId, isCorrect });
+      answersToCreate.push({ questionId: question.id, selectedOptionId });
     }
   }
 
@@ -323,7 +323,7 @@ export async function submitExam(examId: number, formData: FormData) {
       userId: user.id,
       score,
       answers: {
-        create: answers,
+        create: answersToCreate,
       },
     },
   });
@@ -377,3 +377,6 @@ export async function getExamResults(submissionId: number) {
 
     return { submission, submissionCount, user };
 }
+
+
+    
