@@ -91,7 +91,7 @@ export default function ExamResultsPage() {
     
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8 print:p-0">
-            <div className="max-w-4xl mx-auto">
+            <div className="max-w-4xl mx-auto printable-area">
                 <Card className="print:shadow-none print:border-none">
                     <CardHeader>
                         <CardTitle className="text-3xl font-bold font-serif flex items-center gap-3">
