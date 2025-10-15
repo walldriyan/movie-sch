@@ -175,7 +175,9 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             perspective: '1000px',
             paddingLeft: '100px',
             paddingRight: '100px',
-          }}
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.3) transparent'
+          } as React.CSSProperties}
         >
           {cards.map(card => renderCard(card))}
         </div>
