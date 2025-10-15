@@ -223,7 +223,8 @@ export default function ExamResultsPage() {
     const totalPoints = submission.exam.questions.reduce((sum, q) => sum + q.points, 0);
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
     const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
-    
+    const passMark = Math.ceil(totalPoints * 0.5);
+
     const calculateQuestionScore = (question: typeof submission.exam.questions[0]) => {
         const userAnswersForQuestion = submission.answers
             .filter(a => a.questionId === question.id)
@@ -241,7 +242,8 @@ export default function ExamResultsPage() {
                 if (correctOptionIds.includes(selectedId)) {
                     questionScore += pointsPerCorrectAnswer;
                 } else {
-                    questionScore -= pointsPerCorrectAnswer;
+                    // Deduct points for a wrong answer
+                    questionScore -= pointsPerCorrectAnswer; 
                 }
             }
             return Math.max(0, Math.round(questionScore));
@@ -274,7 +276,10 @@ export default function ExamResultsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Score</CardTitle>
-                                    <CardDescription className="text-3xl font-bold text-primary">{submission.score} / {totalPoints}</CardDescription>
+                                    <CardDescription className="text-3xl font-bold text-primary">
+                                        {submission.score} / {totalPoints}
+                                        <span className="block text-destructive text-sm font-semibold mt-1">(Pass: {passMark})</span>
+                                    </CardDescription>
                                 </CardHeader>
                             </Card>
                              <Card>
@@ -312,9 +317,8 @@ export default function ExamResultsPage() {
                                     .map(o => o.id);
                                 
                                 const awardedPoints = calculateQuestionScore(question);
-
                                 const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-
+                                
                                 return (
                                     <div key={question.id}>
                                         <div className="font-semibold text-lg">{index + 1}. {question.text}</div>
