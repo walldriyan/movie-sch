@@ -281,7 +281,7 @@ export default function ExamResultsPage() {
                                         percentage >= 50 ? "text-primary" : "text-destructive"
                                     )}>
                                         {submission.score} / {totalPoints}
-                                        <span className="block text-muted-foreground text-sm font-semibold mt-1">(Pass: {passMark})</span>
+                                        <span className="block text-muted-foreground text-sm font-semibold mt-1">(Pass: {passMark} / 50%)</span>
                                     </CardDescription>
                                 </CardHeader>
                             </Card>
