@@ -124,12 +124,15 @@
     top: 0;
     width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 1.5rem;
+    background: white;
+    color: black;
   }
-  .print\:hidden {
+  .no-print {
     display: none;
   }
 }
+
 
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
