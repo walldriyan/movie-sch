@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -297,7 +296,6 @@ export default function PostForm({
     };
     reader.readAsDataURL(file);
   };
-
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
