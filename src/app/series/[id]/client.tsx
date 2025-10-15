@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp, BookCheck, PlayCircle } from 'lucide-react';
 import { useEffect, useState, useMemo, useTransition } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -21,6 +21,39 @@ import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
 import type { Session } from 'next-auth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+
+const ExamSection = ({ exam }: { exam: { id: number; title: string; description: string | null } | null | undefined }) => {
+  if (!exam) return null;
+
+  return (
+    <>
+      <Separator className="my-12" />
+      <section id="exam">
+        <Card className="bg-card/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <BookCheck className="h-6 w-6 text-primary" />
+              Test Your Knowledge
+            </CardTitle>
+            <CardDescription>An exam is available for this content.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <h3 className="font-semibold text-lg">{exam.title}</h3>
+            {exam.description && <p className="text-muted-foreground mt-2">{exam.description}</p>}
+            <Button asChild className="mt-4">
+              <Link href={`/exams/${exam.id}`}>
+                <PlayCircle className="mr-2 h-4 w-4" />
+                Start Exam
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    </>
+  );
+};
 
 
 export default function SeriesPageClient({
@@ -288,6 +321,8 @@ export default function SeriesPageClient({
                         </div>
                     </section>
                     
+                    <ExamSection exam={currentPost.exam} />
+
                     <SponsoredAdCard />
 
                     <div className="block md:hidden">
