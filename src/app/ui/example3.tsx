@@ -14,7 +14,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null); 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     const moveY = mousePos.y * 30 * distanceMultiplier;
     const rotateAdjust = mousePos.x * 5;
     
-    return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.1)`;
+    return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.15)`;
   };
   
   const renderSeriesGrid = (series: any) => {
@@ -242,3 +242,5 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     </div>
   );
 }
+
+    
