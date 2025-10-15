@@ -1,139 +1,29 @@
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
+import type { Post } from '@/lib/types';
 
-export default function MetaSpotlight3() {
+const getRandomValue = (min, max) => Math.random() * (max - min) + min;
+
+export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef(null);
 
-  // Card data array - තවත් cards add කළා
-  const cards = [
-    {
-      id: 1,
-      image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'grid',
-      gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'],
-      rotation: -12,
-      distance: 0.8
-    },
-    {
-      id: 2,
-      image: 'https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'single',
-      rotation: 6,
-      distance: 0.7
-    },
-    {
-      id: 3,
-      image: 'https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=800&fit=crop',
-      brand: 'Hero',
-      type: 'hero',
-      rotation: 0,
-      distance: 0.5
-    },
-    {
-      id: 4,
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'dots',
-      rotation: 12,
-      distance: 0.8
-    },
-    {
-      id: 5,
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'single',
-      rotation: -6,
-      distance: 0.7
-    },
-    {
-      id: 6,
-      image: 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'single',
-      rotation: -8,
-      distance: 0.6
-    },
-    {
-      id: 7,
-      image: 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'grid',
-      gridColors: ['bg-pink-400', 'bg-yellow-400', 'bg-green-400'],
-      rotation: 8,
-      distance: 0.6
-    },
-    {
-      id: 8,
-      image: 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'single',
-      rotation: 10,
-      distance: 0.65
-    },
-    {
-      id: 9,
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'dots',
-      rotation: -10,
-      distance: 0.65
-    },
-    {
-      id: 10,
-      image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'grid',
-      gridColors: ['bg-red-400', 'bg-blue-500', 'bg-green-500'],
-      rotation: -7,
-      distance: 0.75
-    },
-    {
-      id: 11,
-      image: 'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'single',
-      rotation: 9,
-      distance: 0.7
-    },
-    {
-      id: 12,
-      image: 'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'dots',
-      rotation: -11,
-      distance: 0.65
-    },
-    {
-      id: 13,
-      image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'single',
-      rotation: 7,
-      distance: 0.7
-    },
-    {
-      id: 14,
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'grid',
-      gridColors: ['bg-purple-500', 'bg-pink-400', 'bg-orange-400'],
-      rotation: -9,
-      distance: 0.8
-    },
-    {
-      id: 15,
-      image: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=400&h=400&fit=crop',
-      brand: 'Wind & Wool',
-      type: 'single',
-      rotation: 11,
-      distance: 0.6
-    }
-  ];
+  // Map post data to card data
+  const cards = initialPosts.map((post, index) => {
+    const cardType = index === 2 ? 'hero' : (index % 3 === 0 ? 'grid' : (index % 3 === 1 ? 'dots' : 'single'));
+    return {
+      id: post.id,
+      image: post.posterUrl || `https://picsum.photos/seed/${post.id}/600/800`,
+      brand: post.author?.name || 'CineVerse',
+      type: cardType,
+      gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'], // Example colors
+      rotation: index === 2 ? 0 : getRandomValue(-12, 12),
+      distance: index === 2 ? 0.5 : getRandomValue(0.6, 0.8)
+    };
+  });
+
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -194,9 +84,9 @@ export default function MetaSpotlight3() {
         {!isHero && (
           <div className="relative">
             <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold z-10">
-              W
+              {card.brand.charAt(0)}
             </div>
-            <div className="text-xs font-semibold p-2 md:p-3 pt-2">Wind & Wool</div>
+            <div className="text-xs font-semibold p-2 md:p-3 pt-2 truncate">{card.brand}</div>
           </div>
         )}
 
@@ -243,8 +133,6 @@ export default function MetaSpotlight3() {
           className="flex gap-4 md:gap-6 lg:gap-8 overflow-x-auto pb-4 px-4 md:px-8"
           style={{ 
             perspective: '1000px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255,255,255,0.3) transparent',
             paddingLeft: '100px',
             paddingRight: '100px'
           }}
@@ -262,18 +150,12 @@ export default function MetaSpotlight3() {
       </div>
 
       <style jsx>{`
-        div::-webkit-scrollbar {
-          height: 8px;
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
         }
-        div::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        div::-webkit-scrollbar-thumb {
-          background: rgba(255,255,255,0.3);
-          border-radius: 4px;
-        }
-        div::-webkit-scrollbar-thumb:hover {
-          background: rgba(255,255,255,0.5);
+        .scrollbar-hide {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
         }
       `}</style>
     </div>

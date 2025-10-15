@@ -9,6 +9,7 @@ import { auth } from '@/auth';
 import MetaSpotlight from './ui/page';
 import MetaSpotlight1 from './ui/newexample2';
 import MetaSpotlight3 from './ui/example3';
+import { Post } from '@/lib/types';
 
 export default async function HomePage({
   searchParams,
@@ -24,8 +25,8 @@ export default async function HomePage({
   console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
 
   const { posts, totalPages } = await getPosts({
-    page: currentPage,
-    limit: 10,
+    page: 1,
+    limit: 15, // Fetch more posts for the spotlight
     filters: { timeFilter, sortBy, type: typeFilter },
   });
   const users = await getUsers();
@@ -34,9 +35,9 @@ export default async function HomePage({
   
   return (
     <>
-    <MetaSpotlight3 />
-<MetaSpotlight1 />
-    <MetaSpotlight/>
+      <MetaSpotlight3 posts={posts as Post[]} />
+      <MetaSpotlight1 />
+      <MetaSpotlight/>
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
