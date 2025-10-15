@@ -33,7 +33,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Clock, Save, Settings, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Clock, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -42,6 +42,7 @@ import { getPostsForAdmin } from '@/lib/actions';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { createOrUpdateExam } from '@/lib/actions/exams';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 
 const optionSchema = z.object({
   text: z.string().min(1, 'Option text cannot be empty.'),
@@ -67,6 +68,8 @@ const examSchema = z.object({
 });
 
 type ExamFormValues = z.infer<typeof examSchema>;
+type PostWithGroup = Post & { group: { name: string } | null };
+
 
 // New component for a single question to fix the hook error
 const QuestionItem = ({ control, qIndex, removeQuestion }: { control: any, qIndex: number, removeQuestion: (index: number) => void }) => {
@@ -181,7 +184,7 @@ const QuestionItem = ({ control, qIndex, removeQuestion }: { control: any, qInde
 
 export default function CreateExamPage() {
   const [isSubmitting, startTransition] = useTransition();
-  const [posts, setPosts] = React.useState<Post[]>([]);
+  const [posts, setPosts] = React.useState<PostWithGroup[]>([]);
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -193,7 +196,7 @@ export default function CreateExamPage() {
                 userId: 'dummy-id',
                 userRole: 'SUPER_ADMIN',
             });
-            setPosts(fetchedPosts as Post[]);
+            setPosts(fetchedPosts as PostWithGroup[]);
         } catch(error) {
             toast({
                 variant: 'destructive',
@@ -223,6 +226,9 @@ export default function CreateExamPage() {
     control: form.control,
     name: 'questions',
   });
+
+  const watchedPostId = useWatch({ control: form.control, name: 'postId' });
+  const selectedPost = React.useMemo(() => posts.find(p => String(p.id) === watchedPostId), [posts, watchedPostId]);
   
   function onSubmit(data: ExamFormValues) {
     startTransition(async () => {
@@ -311,6 +317,44 @@ export default function CreateExamPage() {
                     />
                 </CardContent>
             </Card>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle>Exam Access</CardTitle>
+                    <CardDescription>Who can take this exam is determined by the associated post's visibility.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {selectedPost ? (
+                        <Alert>
+                            <Info className="h-4 w-4" />
+                            <AlertTitle className="flex items-center gap-2">
+                                {selectedPost.visibility === 'PUBLIC' ? (
+                                    <><Eye className="h-4 w-4" /> Public Exam</>
+                                ) : (
+                                    <><Users className="h-4 w-4" /> Group Exam</>
+                                )}
+                            </AlertTitle>
+                            <AlertDescription>
+                                This exam will be available to{' '}
+                                {selectedPost.visibility === 'PUBLIC'
+                                ? 'all users.'
+                                : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}
+                                <br />
+                                To change this, edit the visibility of the post itself.
+                            </AlertDescription>
+                        </Alert>
+                    ) : (
+                         <Alert variant="destructive">
+                             <ChevronsUpDown className="h-4 w-4" />
+                            <AlertTitle>No Post Selected</AlertTitle>
+                            <AlertDescription>
+                                Please select an associated post to see its access settings.
+                            </AlertDescription>
+                        </Alert>
+                    )}
+                </CardContent>
+            </Card>
+
 
             <Card>
                 <CardHeader>
@@ -481,5 +525,7 @@ export default function CreateExamPage() {
     </div>
   );
 }
+
+    
 
     

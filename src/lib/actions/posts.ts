@@ -388,6 +388,11 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
         orderBy: { createdAt: 'desc' },
         include: {
             author: true,
+            group: {
+              select: {
+                name: true,
+              }
+            },
             _count: {
               select: { likedBy: true },
             },
@@ -590,3 +595,5 @@ export async function getFavoritePosts() {
     genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
+
+    
