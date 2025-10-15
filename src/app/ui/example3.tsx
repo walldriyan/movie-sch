@@ -147,13 +147,12 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       <div
         key={card.id}
         className={cn(
-          "flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out",
-          isHero ? 'h-[90%] rounded-3xl' : 'h-[75%]'
+          "flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
         )}
         style={{
           transform: getCardTransform(card.rotation, card.distance),
           transformOrigin: 'center center',
-          aspectRatio: '3 / 4',
+          aspectRatio: '11 / 17',
         }}
       >
         {!isHero && (
@@ -194,11 +193,11 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 
   return (
-    <div className="min-h-[450px] md:min-h-[500px] bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
-      <div className="absolute top-8 md:top-12 left-0 right-0 text-center z-20 px-4">
-        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]" 
-            style={{ textShadow: '0 24px 120px rgba(0,0,0,0.8), 0 2px 18px rgba(0,0,0,0.6)' }}>
-          Put your business in<br />the spotlight.
+    <div className="h-[290px]  bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
+      <div className="absolute top-8 md:top-12 left-0 right-0 z-20 px-4">
+        <h1 className="ml-12 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]" 
+            style={{ textShadow: '0 24px 320px rgba(0,0,0,0.8), 0 2px 318px rgba(0,0,0,0.6)' }}>
+          Put your <br />business in<br />the spotlight.
         </h1>
       </div>
 
@@ -214,7 +213,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         <div ref={scrollContainerRef} className="w-full h-full py-8 overflow-x-auto overflow-y-hidden no-scrollbar">
           <div
             ref={containerRef}
-            className="flex items-center gap-4 md:gap-6 lg:gap-8 h-full"
+            className="flex items-center gap-2 md:gap-3 lg:gap-4 h-full"
             style={{ 
               perspective: '1000px',
               paddingLeft: 'calc(50% - 8rem)',
@@ -234,10 +233,10 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         </Button>
       </div>
 
-      <div className="absolute bottom-8 md:bottom-12 left-0 right-0 flex justify-center z-20">
+      <div className="absolute bottom-8 md:bottom-12 left-0 right-0 flex z-20">
         <div className="flex items-center gap-2 md:gap-3 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
-          <div className="text-white text-4xl md:text-5xl font-bold" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>∞</div>
-          <div className="text-white text-2xl md:text-3xl font-bold tracking-wide" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>Walldriyan</div>
+          <div className="ml-[190px] text-white text-md md:text-1xl font-bold" style={{ textShadow: '0 54px 220px rgba(0,0,0,0.8)' }}>∞</div>
+          <div className="ml-12 text-white text-md md:text-lg font-bold tracking-wide" style={{ textShadow: '0 34px 320px rgba(0,0,0,0.8)' }}>Walldriyan</div>
         </div>
       </div>
     </div>
