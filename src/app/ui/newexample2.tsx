@@ -201,7 +201,7 @@ export default function MetaSpotlight1() {
       {/* Cards Container */}
       <div
         ref={containerRef}
-        className="relative w-full max-w-[700px] h-[500px] md:h-[600px] flex items-center justify-center"
+        className="relative w-full max-w-[1000px] h-[500px] md:h-[600px] flex items-center justify-center"
         style={{ perspective: '1000px' }}
       >
         {cards.map(card => renderCard(card))}

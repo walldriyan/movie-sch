@@ -8,6 +8,7 @@ import type { Notification } from '@prisma/client';
 import { auth } from '@/auth';
 import MetaSpotlight from './ui/page';
 import MetaSpotlight1 from './ui/newexample2';
+import MetaSpotlight3 from './ui/example3';
 
 export default async function HomePage({
   searchParams,
@@ -33,6 +34,7 @@ export default async function HomePage({
   
   return (
     <>
+    <MetaSpotlight3 />
 <MetaSpotlight1 />
     <MetaSpotlight/>
       <HomePageClient
