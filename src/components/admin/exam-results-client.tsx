@@ -140,19 +140,14 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
         if (userAnswersForQuestion.length === 0) return 0;
 
         const correctOptionIds = question.options.filter((o: any) => o.isCorrect).map((o: any) => o.id);
+        const incorrectSelected = userAnswersForQuestion.some((id: number) => !correctOptionIds.includes(id));
+        
+        if (incorrectSelected) return 0;
 
         if (question.isMultipleChoice) {
-             let questionScore = 0;
             const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-            
-            for (const selectedId of userAnswersForQuestion) {
-                if (correctOptionIds.includes(selectedId)) {
-                    questionScore += pointsPerCorrectAnswer;
-                } else {
-                    questionScore -= pointsPerCorrectAnswer;
-                }
-            }
-            return Math.max(0, Math.round(questionScore));
+            const score = userAnswersForQuestion.length * pointsPerCorrectAnswer;
+            return Math.round(score);
         } else {
             // Single choice
             const selectedOptionId = userAnswersForQuestion[0];
@@ -195,6 +190,8 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                     const awardedPoints = calculateQuestionScore(question, results.submission);
                                     
                                     const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+                                    const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+
 
                                     return (
                                         <div key={question.id}>
@@ -211,8 +208,9 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                             key={option.id}
                                                             className={cn(
                                                                 "flex items-start gap-3 p-3 rounded-lg border text-sm",
-                                                                isTheCorrectAnswer && "bg-green-500/10 border-green-500/30",
-                                                                isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30"
+                                                                isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
+                                                                !isUserChoice && isTheCorrectAnswer && "bg-green-500/5 border-green-500/50 border-dotted", // Correct & Not Selected
+                                                                isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
                                                             )}
                                                         >
                                                             <div className="mt-0.5">
@@ -227,13 +225,13 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                                 {isUserChoice && isTheCorrectAnswer && (
                                                                     <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
                                                                         නිවැරදි පිළිතුර (ඔබ තේරූ)
-                                                                        <span className="font-bold ml-2">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
+                                                                        <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
                                                                     </p>
                                                                 )}
                                                                 {isUserChoice && !isTheCorrectAnswer && (
                                                                     <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
                                                                         වැරදි පිළිතුර (ඔබ තේරූ)
-                                                                        <span className="font-bold ml-2">(-{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
+                                                                        <span className="font-bold ml-2 text-red-500">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
                                                                     </p>
                                                                 )}
                                                                 {!isUserChoice && isTheCorrectAnswer && (

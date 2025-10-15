@@ -203,19 +203,14 @@ export default function ExamResultsPage() {
         if (userAnswersForQuestion.length === 0) return 0;
 
         const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
+        const incorrectSelected = userAnswersForQuestion.some(id => !correctOptionIds.includes(id));
+        
+        if (incorrectSelected) return 0;
 
         if (question.isMultipleChoice) {
-            let questionScore = 0;
             const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-
-            for (const selectedId of userAnswersForQuestion) {
-                if (correctOptionIds.includes(selectedId)) {
-                    questionScore += pointsPerCorrectAnswer;
-                } else {
-                    questionScore -= pointsPerCorrectAnswer; 
-                }
-            }
-            return Math.max(0, Math.round(questionScore));
+            const score = userAnswersForQuestion.length * pointsPerCorrectAnswer;
+            return Math.round(score);
         } else {
             const selectedOptionId = userAnswersForQuestion[0];
             return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
@@ -297,7 +292,6 @@ export default function ExamResultsPage() {
     const totalPoints = submission.exam.questions.reduce((sum, q) => sum + q.points, 0);
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
     const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
-    const passMark = Math.ceil(totalPoints * 0.5);
 
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
@@ -320,13 +314,10 @@ export default function ExamResultsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Score</CardTitle>
-                                    <CardDescription className={cn(
-                                        "text-3xl font-bold",
-                                        percentage >= 50 ? "text-primary" : "text-destructive"
-                                    )}>
+                                     <CardDescription className={cn("text-3xl font-bold", percentage >= 50 ? "text-primary" : "text-destructive")}>
                                         {submission.score} / {totalPoints}
                                     </CardDescription>
-                                    <div className="text-xs font-semibold mt-1 space-y-1">
+                                     <div className="text-xs font-semibold mt-1 space-y-1">
                                         <div className="flex items-center justify-center gap-1.5 text-green-500">
                                             <CheckCircle className="h-3.5 w-3.5" />
                                             <span>Correct: +{scoreBreakdown.positive}</span>
@@ -351,7 +342,7 @@ export default function ExamResultsPage() {
                              <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
-                                    <CardDescription className="text-3xl font-bold">{percentage >= 50 ? "Passed" : "Failed"}</CardDescription>
+                                    <CardDescription className={cn("text-3xl font-bold", percentage >= 50 ? "text-primary" : "text-destructive")}>{percentage >= 50 ? "Passed" : "Failed"}</CardDescription>
                                 </CardHeader>
                             </Card>
                             <Card>
@@ -378,6 +369,7 @@ export default function ExamResultsPage() {
                                 
                                 const awardedPoints = calculateQuestionScore(question);
                                 const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+                                const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
                                 
                                 return (
                                     <div key={question.id}>
@@ -394,8 +386,9 @@ export default function ExamResultsPage() {
                                                         key={option.id}
                                                         className={cn(
                                                             "flex items-start gap-3 p-3 rounded-lg border",
-                                                            isTheCorrectAnswer && "bg-green-500/10 border-green-500/30",
-                                                            isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30"
+                                                            isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
+                                                            !isUserChoice && isTheCorrectAnswer && "bg-green-500/5 border-green-500/50 border-dotted", // Correct & Not Selected
+                                                            isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
                                                         )}
                                                     >
                                                         <div className="mt-0.5">
@@ -410,13 +403,13 @@ export default function ExamResultsPage() {
                                                             {isUserChoice && isTheCorrectAnswer && (
                                                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
                                                                     නිවැරදි පිළිතුර (ඔබ තේරූ)
-                                                                    <span className="font-bold ml-2">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
+                                                                    <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
                                                                 </p>
                                                             )}
                                                             {isUserChoice && !isTheCorrectAnswer && (
                                                                 <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
                                                                     වැරදි පිළිතුර (ඔබ තේරූ)
-                                                                    <span className="font-bold ml-2">(-{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
+                                                                    <span className="font-bold ml-2 text-red-500">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
                                                                 </p>
                                                             )}
                                                             {!isUserChoice && isTheCorrectAnswer && (

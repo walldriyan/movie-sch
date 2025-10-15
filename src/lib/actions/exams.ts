@@ -325,13 +325,12 @@ export async function submitExam(
         let questionScore = 0;
         const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
         
-        for (const selectedId of selectedOptionIds) {
-            if (correctOptionIds.includes(selectedId)) {
-                questionScore += pointsPerCorrectAnswer;
-            } else {
-                // Deduct points for a wrong answer
-                questionScore -= pointsPerCorrectAnswer; 
-            }
+        const incorrectSelected = selectedOptionIds.some(id => !correctOptionIds.includes(id));
+        
+        if (incorrectSelected) {
+            questionScore = 0; // If any incorrect answer is selected, score for the question is 0
+        } else {
+            questionScore = selectedOptionIds.length * pointsPerCorrectAnswer;
         }
         
         score += Math.max(0, Math.round(questionScore));
