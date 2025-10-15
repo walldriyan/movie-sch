@@ -91,9 +91,11 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             }
 
             for (const q of questionsToUpdate) {
+                // Temporarily remove isMultipleChoice until schema is updated by user
+                const { isMultipleChoice, ...questionUpdateData } = q;
                 await tx.question.update({
                     where: { id: q.id },
-                    data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice }
+                    data: { text: q.text, points: q.points /* isMultipleChoice: q.isMultipleChoice */ }
                 });
                 const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
                 const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
