@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -437,7 +438,15 @@ export async function getExamResultsForAdmin(examId: number) {
 
     const submissions = await prisma.examSubmission.findMany({
         where: { examId: examId },
-        include: {
+        select: {
+            id: true,
+            score: true,
+            timeTakenSeconds: true,
+            submittedAt: true,
+            userId: true,
+            examId: true,
+            attempts: true,
+            attemptCount: true,
             user: {
                 select: {
                     id: true,
@@ -466,7 +475,7 @@ export async function updateSubmissionAttempts(submissionId: number, userId: str
     }
     
     await prisma.examSubmission.update({
-        where: { id: submissionId },
+        where: { id: submissionId, userId: userId },
         data: { 
             attempts: attempts,
         }
