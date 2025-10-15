@@ -13,8 +13,8 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
-    // Map post data to card data with random values only on client-side
-    const generatedCards = initialPosts.map((post, index) => {
+    // Limit to 10 posts and map post data to card data on client-side
+    const generatedCards = initialPosts.slice(0, 10).map((post, index) => {
       const cardType = index === 2 ? 'hero' : (index % 3 === 0 ? 'grid' : (index % 3 === 1 ? 'dots' : 'single'));
       return {
         id: post.id,
@@ -137,16 +137,14 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       </div>
 
       {/* Cards Container - horizontal scroll එකක් */}
-      <div className="w-full py-8 px-4 md:px-8 overflow-x-auto">
+      <div className="w-full py-8 px-4 md:px-8 overflow-y-hidden overflow-x-auto">
         <div
           ref={containerRef}
-          className="flex gap-4 md:gap-6 lg:gap-8 overflow-x-auto pb-4 px-4 md:px-8"
+          className="flex gap-4 md:gap-6 lg:gap-8 pb-4"
           style={{ 
             perspective: '1000px',
             paddingLeft: '100px',
             paddingRight: '100px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255,255,255,0.3) transparent'
           }}
         >
           {cards.map(card => renderCard(card))}
