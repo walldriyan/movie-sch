@@ -1,7 +1,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useTransition } from 'react';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -33,11 +33,15 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar, Clock, Save, Settings, ChevronsUpDown } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar, Clock, Save, Settings, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { getPostsForAdmin } from '@/lib/actions';
+import type { Post } from '@prisma/client';
+import { useToast } from '@/hooks/use-toast';
+import { createOrUpdateExam } from '@/lib/actions/exams';
 
 const optionSchema = z.object({
   text: z.string().min(1, 'Option text cannot be empty.'),
@@ -53,7 +57,7 @@ const questionSchema = z.object({
 const examSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   description: z.string().optional(),
-  postId: z.string().min(1, 'A post must be selected.'), // Assuming posts are identified by string IDs for now
+  postId: z.string().min(1, 'A post must be selected.'),
   status: z.enum(['DRAFT', 'ACTIVE', 'INACTIVE']).default('DRAFT'),
   durationMinutes: z.coerce.number().optional(),
   attemptsAllowed: z.coerce.number().min(0, 'Attempts must be 0 or more. 0 for unlimited.').default(1),
@@ -64,14 +68,36 @@ const examSchema = z.object({
 
 type ExamFormValues = z.infer<typeof examSchema>;
 
-// Mock data for posts - in a real app, this would be fetched
-const MOCK_POSTS = [
-    { id: '1', title: 'Inception' },
-    { id: '2', title: 'The Dark Knight' },
-    { id: '3', title: 'Interstellar' },
-];
-
 export default function CreateExamPage() {
+  const [isSubmitting, startTransition] = useTransition();
+  const [posts, setPosts] = React.useState<Post[]>([]);
+  const { toast } = useToast();
+
+  React.useEffect(() => {
+    // This is a simplified fetch. In a real app, you'd get the current user's ID
+    // and role to pass to `getPostsForAdmin`. For this UI-only build, we'll
+    // fetch all posts, which will only work for a SUPER_ADMIN.
+    async function fetchPosts() {
+        try {
+            const { posts: fetchedPosts } = await getPostsForAdmin({
+                page: 1,
+                limit: 100, // Fetch a large number of posts for the dropdown
+                userId: 'dummy-id', // Dummy values since we don't have user here
+                userRole: 'SUPER_ADMIN',
+            });
+            setPosts(fetchedPosts as Post[]);
+        } catch(error) {
+            toast({
+                variant: 'destructive',
+                title: 'Failed to load posts',
+                description: 'Could not fetch the list of posts for the dropdown.'
+            })
+        }
+    }
+    fetchPosts();
+  }, [toast]);
+
+
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
     defaultValues: {
@@ -81,7 +107,7 @@ export default function CreateExamPage() {
       status: 'DRAFT',
       durationMinutes: 30,
       attemptsAllowed: 1,
-      questions: [{ text: '', points: 10, options: [{ text: '', isCorrect: false }, { text: '', isCorrect: false }] }],
+      questions: [{ text: '', points: 10, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] }],
     },
   });
 
@@ -91,9 +117,23 @@ export default function CreateExamPage() {
   });
   
   function onSubmit(data: ExamFormValues) {
-    console.log('--- Exam Data Submitted (UI Only) ---');
-    console.log(JSON.stringify(data, null, 2));
-    alert('Exam data logged to the console. Check the browser developer tools.');
+    startTransition(async () => {
+        try {
+            await createOrUpdateExam(data);
+            toast({
+                title: 'Exam Saved!',
+                description: `The exam "${data.title}" has been successfully saved.`,
+            });
+            form.reset();
+        } catch (error: any) {
+            console.error('--- Exam Save Error ---', error);
+            toast({
+                variant: 'destructive',
+                title: 'Failed to Save Exam',
+                description: error.message || 'An unexpected error occurred.',
+            });
+        }
+    });
   }
 
   return (
@@ -152,8 +192,8 @@ export default function CreateExamPage() {
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                    {MOCK_POSTS.map(post => (
-                                        <SelectItem key={post.id} value={post.id}>{post.title}</SelectItem>
+                                    {posts.map(post => (
+                                        <SelectItem key={post.id} value={String(post.id)}>{post.title}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
@@ -405,7 +445,7 @@ export default function CreateExamPage() {
                  <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => appendQuestion({ text: '', points: 10, options: [{ text: '', isCorrect: false }, { text: '', isCorrect: false }] })}
+                    onClick={() => appendQuestion({ text: '', points: 10, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Another Question
@@ -413,9 +453,18 @@ export default function CreateExamPage() {
             </div>
 
             <div className="flex justify-end sticky bottom-0 py-4 bg-background/80 backdrop-blur-sm">
-                <Button type="submit" size="lg">
-                    <Save className="mr-2 h-5 w-5" />
-                    Save Exam
+                <Button type="submit" size="lg" disabled={isSubmitting}>
+                    {isSubmitting ? (
+                        <>
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            Saving...
+                        </>
+                    ) : (
+                        <>
+                            <Save className="mr-2 h-5 w-5" />
+                            Save Exam
+                        </>
+                    )}
                 </Button>
             </div>
         </form>
