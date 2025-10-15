@@ -441,7 +441,7 @@ export default function CreateExamPage() {
   useEffect(() => {
     fetchPosts();
     fetchExams();
-  }, [toast]);
+  }, []);
 
   const handleEdit = async (examId: number) => {
     try {
