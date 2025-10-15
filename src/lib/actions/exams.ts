@@ -51,6 +51,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number) {
     }
     
     const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
+    // Assuming USER_ADMIN can also create/edit exams for any post, or we can restrict it to their own posts
     const isAuthor = post.authorId === user.id;
 
     if (!isSuperAdmin && !isAuthor) {
@@ -79,6 +80,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number) {
             // Easiest way to handle question/option updates is to delete and recreate
             const existingQuestions = await tx.question.findMany({ where: { examId }});
             for (const q of existingQuestions) {
+                await tx.submissionAnswer.deleteMany({ where: { questionId: q.id }});
                 await tx.questionOption.deleteMany({ where: { questionId: q.id }});
             }
             await tx.question.deleteMany({ where: { examId }});
@@ -175,7 +177,23 @@ export async function getExamForTaker(examId: number) {
         throw new Error(`This exam is no longer available as of ${exam.endDate.toLocaleString()}.`);
     }
 
-    return exam;
+    // Shuffle questions and options
+    const shuffledQuestions = exam.questions
+      .map(value => ({ value, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ value }) => ({
+        ...value,
+        options: value.options
+          .map(opt => ({ value: opt, sort: Math.random() }))
+          .sort((a, b) => a.sort - b.sort)
+          .map(({ value: optValue }) => optValue),
+      }));
+
+
+    return {
+        ...exam,
+        questions: shuffledQuestions,
+    };
 }
 
 export async function submitExam(examId: number, formData: FormData) {
@@ -208,6 +226,20 @@ export async function submitExam(examId: number, formData: FormData) {
   if (!exam) {
     throw new Error('Exam not found.');
   }
+
+  // Check attempts again before creating submission
+  if (exam.attemptsAllowed > 0) {
+    const submissionCount = await prisma.examSubmission.count({
+      where: {
+        examId: examId,
+        userId: session.user.id,
+      },
+    });
+    if (submissionCount >= exam.attemptsAllowed) {
+      throw new Error(`You have already submitted this exam the maximum number of times (${exam.attemptsAllowed}).`);
+    }
+  }
+
 
   let totalScore = 0;
   let submissionAnswers = [];
