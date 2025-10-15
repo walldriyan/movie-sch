@@ -256,13 +256,13 @@ export async function getExamForTaker(examId: number) {
       throw new Error("This exam has already ended.");
   }
 
-  const submissionCount = await prisma.examSubmission.count({
-      where: { examId: exam.id, userId: user.id }
-  });
-
-  if (exam.attemptsAllowed > 0 && submissionCount >= exam.attemptsAllowed) {
-      throw new Error(`You have reached the maximum number of attempts (${exam.attemptsAllowed}).`);
-  }
+  // This check is now handled by the upsert logic, but can be kept for UI feedback if needed
+  // const submissionCount = await prisma.examSubmission.count({
+  //     where: { examId: exam.id, userId: user.id }
+  // });
+  // if (exam.attemptsAllowed > 0 && submissionCount >= exam.attemptsAllowed) {
+  //     throw new Error(`You have reached the maximum number of attempts (${exam.attemptsAllowed}).`);
+  // }
 
   if (exam.post.visibility === 'GROUP_ONLY') {
       if (!exam.post.groupId) {
@@ -341,16 +341,28 @@ export async function submitExam(
 
   try {
     const submissionData = {
-      examId: exam.id,
-      userId: user.id,
       score,
       timeTakenSeconds: timeTakenSeconds,
+      submittedAt: new Date(), // Always update timestamp on new attempt
     };
-    
-    console.log('--- [Server Action] Data for prisma.examSubmission.create ---', submissionData);
 
-    const newSubmission = await prisma.examSubmission.create({ 
-      data: {
+    const newSubmission = await prisma.examSubmission.upsert({
+      where: {
+        userId_examId: {
+          userId: user.id,
+          examId: exam.id,
+        },
+      },
+      update: {
+        ...submissionData,
+        answers: {
+          deleteMany: {}, // Delete old answers
+          create: answersToCreate, // Create new ones
+        },
+      },
+      create: {
+        userId: user.id,
+        examId: exam.id,
         ...submissionData,
         answers: {
           create: answersToCreate,
@@ -358,11 +370,11 @@ export async function submitExam(
       },
     });
 
-    console.log('--- [Server Action] DB Create SUCCESS. Returning object: ---', newSubmission);
+    console.log('--- [Server Action] DB Upsert SUCCESS. Returning object: ---', newSubmission);
     return newSubmission;
 
   } catch (error: any) {
-    console.error('--- [Server Action] Error during submission create:', error);
+    console.error('--- [Server Action] Error during submission upsert:', error);
     
     throw error;
   }
