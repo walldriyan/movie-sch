@@ -327,21 +327,19 @@ export async function submitExam(
   }
 
   try {
-    console.log('--- [Server Action] Creating submission with time:', timeTakenSeconds);
     const newSubmission = await prisma.examSubmission.create({
       data: {
         examId: exam.id,
         userId: user.id,
         score,
-        timeTakenSeconds: timeTakenSeconds,
+        timeTakenSeconds: timeTakenSeconds, // Explicitly pass the value here
         answers: {
           create: answersToCreate,
         },
       },
     });
 
-    console.log('--- [Server Action] DB Create SUCCESS. Entry:', newSubmission);
-
+    console.log('--- [Server Action] DB Create SUCCESS. Re-fetching to confirm...');
     const createdSubmission = await prisma.examSubmission.findUnique({
         where: { id: newSubmission.id },
         select: {
@@ -353,8 +351,7 @@ export async function submitExam(
             timeTakenSeconds: true,
         }
     });
-    console.log('--- [Server Action] Re-fetched submission to confirm:', createdSubmission);
-    
+    console.log('--- [Server Action] Fetched submission from DB:', createdSubmission);
     return createdSubmission;
 
   } catch (error) {
