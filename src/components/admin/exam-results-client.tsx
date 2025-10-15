@@ -45,6 +45,7 @@ import type { ExamResultSubmission } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
+import ClientSideDate from '@/components/manage/client-side-date';
 
 type ExamResultsType = Awaited<ReturnType<typeof getExamResults>>;
 
@@ -294,7 +295,7 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
                                     </TableCell>
                                     <TableCell>{timeTaken}</TableCell>
                                     <TableCell>{sub.attemptCount} / {exam.attemptsAllowed === 0 ? '∞' : sub.attempts}</TableCell>
-                                    <TableCell>{new Date(sub.submittedAt).toLocaleDateString()}</TableCell>
+                                    <TableCell><ClientSideDate date={sub.submittedAt} formatString='MM/dd/yyyy' /></TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
                                             <DropdownMenuTrigger asChild>
