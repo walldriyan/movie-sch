@@ -20,6 +20,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         id: post.id,
         image: post.posterUrl || `https://picsum.photos/seed/${post.id}/600/800`,
         brand: post.author?.name || 'CineVerse',
+        authorImage: post.author?.image,
         type: cardType,
         gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'], // Example colors
         rotation: index === 2 ? 0 : getRandomValue(-12, 12),
@@ -88,8 +89,12 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       >
         {!isHero && (
           <div className="relative">
-            <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold z-10">
-              {card.brand.charAt(0)}
+            <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold z-10 overflow-hidden">
+              {card.authorImage ? (
+                <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
+              ) : (
+                card.brand.charAt(0)
+              )}
             </div>
             <div className="text-xs font-semibold p-2 md:p-3 pt-2 truncate">{card.brand}</div>
           </div>
@@ -139,7 +144,9 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           style={{ 
             perspective: '1000px',
             paddingLeft: '100px',
-            paddingRight: '100px'
+            paddingRight: '100px',
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(255,255,255,0.3) transparent'
           }}
         >
           {cards.map(card => renderCard(card))}
