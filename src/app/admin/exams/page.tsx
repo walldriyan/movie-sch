@@ -525,7 +525,3 @@ export default function CreateExamPage() {
     </div>
   );
 }
-
-    
-
-    
