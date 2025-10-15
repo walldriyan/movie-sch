@@ -366,14 +366,13 @@ export async function submitExam(
             score,
             timeTakenSeconds,
             submittedAt: new Date(),
-            attemptCount: 1,
+            // attemptCount is not needed here as it defaults to 1 in the schema
             answers: {
                 create: answersToCreate,
             },
         }
     });
 
-    console.log('--- [Server Action] DB Upsert/Create SUCCESS. Returning object: ---', submission);
     return submission;
 }
 
