@@ -227,7 +227,7 @@ export async function submitExam(examId: number, formData: FormData) {
     throw new Error('Exam not found.');
   }
 
-  // Check attempts again before creating submission
+  // Check attempts again before creating submission to prevent race conditions
   if (exam.attemptsAllowed > 0) {
     const submissionCount = await prisma.examSubmission.count({
       where: {
