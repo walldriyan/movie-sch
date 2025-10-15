@@ -1,6 +1,6 @@
 
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, ExamSubmission as PrismaSubmission } from "@prisma/client";
 
 export enum PostType {
   MOVIE = 'MOVIE',
@@ -86,4 +86,10 @@ export type GroupForProfile = PrismaGroup & {
 
 export type GroupForEditing = Pick<PrismaGroup, 'id' | 'name' | 'description' | 'profilePhoto' | 'coverPhoto'> & {
   createdById: string | null;
+};
+
+
+// Exam Types
+export type ExamResultSubmission = PrismaSubmission & {
+  user: Pick<User, 'id' | 'name' | 'email' | 'image'>;
 };
