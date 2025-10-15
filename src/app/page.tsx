@@ -7,6 +7,7 @@ import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
 import { auth } from '@/auth';
 import MetaSpotlight from './ui/page';
+import MetaSpotlight1 from './ui/newexample2';
 
 export default async function HomePage({
   searchParams,
@@ -32,7 +33,7 @@ export default async function HomePage({
   
   return (
     <>
-
+<MetaSpotlight1 />
     <MetaSpotlight/>
       <HomePageClient
         initialPosts={posts}
