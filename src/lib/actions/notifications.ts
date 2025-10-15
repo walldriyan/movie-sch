@@ -22,18 +22,23 @@ export async function sendNotification(
     throw new Error('Not authorized');
   }
 
+  // --- [Server Action: Debug Log] Received values from client ---
   console.log('--- [Server Action: sendNotification] Received values ---', values);
   
-  // Map 'PUBLIC' from client to 'FEATURE' for Prisma, as it's a valid enum.
-  const prismaType: NotificationTargetType = values.type === 'PUBLIC' ? 'FEATURE' : values.type;
+  // Hard-coded mapping to fix the enum issue.
+  // If the client sends 'PUBLIC', we save it as 'USER' type, which is a valid enum in the schema.
+  // The logic to whom it's displayed is handled on the client, so this DB value is for storage.
+  const prismaType: NotificationTargetType = values.type === 'PUBLIC' ? 'USER' : values.type;
 
   const dataToCreate = {
     title: values.title,
     message: values.message,
     type: prismaType,
-    targetId: values.targetId,
+    // When it's a public message, targetId from client will be null/undefined, which is correct.
+    targetId: values.type === 'PUBLIC' ? null : values.targetId,
   };
 
+  // --- [Server Action: Debug Log] Data being sent to Prisma ---
   console.log('--- [Server Action: sendNotification] Data for prisma.notification.create ---', dataToCreate);
 
   const notification = await prisma.notification.create({
