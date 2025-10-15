@@ -244,10 +244,9 @@ export default function NotificationsPage() {
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="ROLE"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
+                            <SelectItem value="FEATURE"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
                             <SelectItem value="USER"><div className="flex items-center gap-2"><UserIcon className="h-4 w-4"/> Specific User</div></SelectItem>
                             <SelectItem value="GROUP"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Group</div></SelectItem>
-                            <SelectItem value="ROLE"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Role</div></SelectItem>
                         </SelectContent>
                         </Select>
                         <FormMessage />
