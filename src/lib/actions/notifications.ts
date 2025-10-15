@@ -21,6 +21,9 @@ export async function sendNotification(
   if (!user || user.role !== ROLES.SUPER_ADMIN) {
     throw new Error('Not authorized');
   }
+
+  console.log('--- [Server Action: sendNotification] Received values ---');
+  console.log(JSON.stringify(values, null, 2));
   
   const dataToCreate = {
     title: values.title,
@@ -29,7 +32,7 @@ export async function sendNotification(
     targetId: values.targetId,
   };
 
-  console.log('--- [Debug] Data for prisma.notification.create ---');
+  console.log('--- [Server Action: sendNotification] Data for prisma.notification.create ---');
   console.log(JSON.stringify(dataToCreate, null, 2));
 
   const notification = await prisma.notification.create({
