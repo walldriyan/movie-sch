@@ -21,14 +21,19 @@ export async function sendNotification(
   if (!user || user.role !== ROLES.SUPER_ADMIN) {
     throw new Error('Not authorized');
   }
+  
+  const dataToCreate = {
+    title: values.title,
+    message: values.message,
+    type: values.targetType,
+    targetId: values.targetId,
+  };
+
+  console.log('--- [Debug] Data for prisma.notification.create ---');
+  console.log(JSON.stringify(dataToCreate, null, 2));
 
   const notification = await prisma.notification.create({
-    data: {
-      title: values.title,
-      message: values.message,
-      type: values.targetType,
-      targetId: values.targetId,
-    },
+    data: dataToCreate,
   });
   
   revalidatePath('/');
