@@ -95,7 +95,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 if (!q.id) continue;
                 await tx.question.update({
                     where: { id: q.id },
-                    data: { text: q.text, points: q.points }
+                    data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice }
                 });
                 const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
                 const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
@@ -322,11 +322,29 @@ export async function submitExam(
     if (question.isMultipleChoice) {
         const selectedOptionIds = (Array.isArray(userAnswers) ? userAnswers : [userAnswers]).filter(Boolean).map(id => parseInt(id, 10));
         
-        const isCorrect = correctOptionIds.length === selectedOptionIds.length && correctOptionIds.every(id => selectedOptionIds.includes(id));
-
-        if (isCorrect) {
-            score += question.points;
+        let questionPoints = 0;
+        let hasIncorrectSelection = false;
+        
+        for (const selectedId of selectedOptionIds) {
+            if (!correctOptionIds.includes(selectedId)) {
+                hasIncorrectSelection = true;
+                break;
+            }
         }
+        
+        // Only award points if no incorrect options were selected
+        if (!hasIncorrectSelection) {
+            const pointsPerCorrectAnswer = question.points / correctOptionIds.length;
+            for (const selectedId of selectedOptionIds) {
+                if (correctOptionIds.includes(selectedId)) {
+                    questionPoints += pointsPerCorrectAnswer;
+                }
+            }
+        }
+        
+        // Round to avoid floating point issues
+        score += Math.round(questionPoints);
+
         selectedOptionIds.forEach(id => {
             answersToCreate.push({ questionId: question.id, selectedOptionId: id });
         });
@@ -354,9 +372,6 @@ export async function submitExam(
             score,
             timeTakenSeconds,
             submittedAt: new Date(),
-            attemptCount: {
-                increment: 1
-            },
             answers: {
                 deleteMany: {},
                 create: answersToCreate
