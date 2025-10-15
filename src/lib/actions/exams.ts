@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -328,7 +327,8 @@ export async function submitExam(
   }
 
   try {
-    const submission = await prisma.examSubmission.create({
+    console.log('--- [Server Action] Creating submission with time:', timeTakenSeconds);
+    const newSubmission = await prisma.examSubmission.create({
       data: {
         examId: exam.id,
         userId: user.id,
@@ -338,23 +338,31 @@ export async function submitExam(
           create: answersToCreate,
         },
       },
-       select: { // Explicitly select all fields to ensure they are returned
-        id: true,
-        examId: true,
-        userId: true,
-        score: true,
-        submittedAt: true,
-        timeTakenSeconds: true,
-      }
     });
-    revalidatePath(`/exams/${examId}`);
-    console.log('--- [Server Action] Created Submission ---', submission);
-    return submission;
+
+    console.log('--- [Server Action] DB Create SUCCESS. Entry:', newSubmission);
+
+    const createdSubmission = await prisma.examSubmission.findUnique({
+        where: { id: newSubmission.id },
+        select: {
+            id: true,
+            examId: true,
+            userId: true,
+            score: true,
+            submittedAt: true,
+            timeTakenSeconds: true,
+        }
+    });
+    console.log('--- [Server Action] Re-fetched submission to confirm:', createdSubmission);
+    
+    return createdSubmission;
+
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+       console.log('--- [Server Action] Caught race condition (P2002). Finding existing submission.');
        const raceConditionSubmission = await prisma.examSubmission.findFirst({
         where: { userId: user.id, examId: examId },
-         select: { // Explicitly select all fields here too
+         select: {
             id: true,
             examId: true,
             userId: true,
@@ -363,12 +371,10 @@ export async function submitExam(
             timeTakenSeconds: true,
         },
       });
-       if (raceConditionSubmission) {
-        console.log(`--- [Server Action] Caught race condition. Returning existing submission.`);
-        return raceConditionSubmission;
-      }
+      console.log('--- [Server Action] Found existing submission:', raceConditionSubmission);
+      return raceConditionSubmission;
     }
-    // Re-throw other errors
+    console.error('--- [Server Action] Error during submission:', error);
     throw error;
   }
 }
@@ -416,6 +422,3 @@ export async function getExamResults(submissionId: number) {
 
     return { submission, submissionCount, user };
 }
-
-
-
