@@ -11,7 +11,7 @@ export async function sendNotification(
   values: {
     title: string;
     message: string;
-    targetType: NotificationTargetType;
+    type: NotificationTargetType;
     targetId?: string | null;
   }
 ) {
@@ -25,7 +25,7 @@ export async function sendNotification(
   const dataToCreate = {
     title: values.title,
     message: values.message,
-    type: values.targetType,
+    type: values.type,
     targetId: values.targetId,
   };
 

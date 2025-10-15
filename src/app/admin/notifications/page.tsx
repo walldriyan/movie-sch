@@ -161,8 +161,9 @@ export default function NotificationsPage() {
     startSubmitting(async () => {
       // The try-catch block is removed to allow the error boundary to catch errors.
       await sendNotification({
-          ...values,
-          targetType: values.targetType as NotificationTargetType,
+          title: values.title,
+          message: values.message,
+          type: values.targetType as NotificationTargetType,
           targetId: values.targetId || null,
       });
       toast({
