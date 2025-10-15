@@ -106,7 +106,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     const moveY = mousePos.y * 30 * distanceMultiplier;
     const rotateAdjust = mousePos.x * 5;
     
-    return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.05)`;
+    return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.1)`;
   };
   
   const renderSeriesGrid = (series: any) => {
@@ -210,7 +210,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
             <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="w-full h-full py-8 overflow-x-auto overflow-y-hidden no-scrollbar">
+        <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
             className="flex items-center gap-2 md:gap-2 lg:gap-2 h-full"
