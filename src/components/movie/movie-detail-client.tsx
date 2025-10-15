@@ -35,8 +35,7 @@ export default function MovieDetailClient({
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('about');
-  const sessionStatus = session ? 'authenticated' : 'unauthenticated';
-
+  
   console.log("Client [/movies/[id]/movie-detail-client.tsx] Session from props:", JSON.stringify(session, null, 2));
   console.log("Client [/movies/[id]/movie-detail-client.tsx] Current User Details:", session?.user);
   
@@ -130,7 +129,9 @@ export default function MovieDetailClient({
                 onClick={() => setActiveTab('about')}
                 className={cn(tabButtonStyle, activeTab === 'about' ? activeTabButtonStyle : inactiveTabButtonStyle)}
               >
-                <Image src="/imdb.png" alt="IMDb" width={40} height={20} />
+                <div className="relative w-10 h-5">
+                  <Image src="/imdb.png" alt="IMDb" fill className="object-contain"/>
+                </div>
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-400" />
                   <span className="text-foreground">{post.imdbRating?.toFixed(1)}</span>

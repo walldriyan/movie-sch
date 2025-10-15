@@ -17,27 +17,29 @@ import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import { useToast } from '@/hooks/use-toast';
 import { toggleLikePost, toggleFavoritePost, createReview, deleteReview } from '@/lib/actions';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
+import type { Session } from 'next-auth';
 
 
 export default function SeriesPageClient({
     series,
     postsInSeries,
-    initialPost
+    initialPost,
+    session,
 }: {
     series: Series,
     postsInSeries: Post[],
-    initialPost: Post
+    initialPost: Post,
+    session: Session | null,
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const params = useParams();
   const { toast } = useToast();
-  const currentUser = useCurrentUser();
+  const currentUser = session?.user;
   
   const [likeTransition, startLikeTransition] = useTransition();
   const [favoriteTransition, startFavoriteTransition] = useTransition();
@@ -132,7 +134,7 @@ export default function SeriesPageClient({
         userId: currentUser.id,
         postId: currentPost.id,
         parentId: parentId || null,
-        user: currentUser,
+        user: currentUser as User,
         replies: [],
       };
       
@@ -160,7 +162,7 @@ export default function SeriesPageClient({
         
         const replaceOptimistic = (nodes: Review[]): Review[] => {
           return nodes.map(node => {
-            if (node.id === optimisticReview.id) return newReview;
+            if (node.id === optimisticReview.id) return newReview as Review;
             if (node.replies && node.replies.length > 0) {
               return { ...node, replies: replaceOptimistic(node.replies) };
             }
@@ -377,6 +379,7 @@ export default function SeriesPageClient({
                             postId={currentPost.id} 
                             isSubmitting={isSubmittingReview}
                             onSubmitReview={handleReviewSubmit}
+                            session={session}
                           />
                           <Separator className="my-8" />
                           <div className="space-y-8">
@@ -397,6 +400,7 @@ export default function SeriesPageClient({
                                   review={review} 
                                   onReviewSubmit={handleReviewSubmit}
                                   onReviewDelete={handleReviewDelete}
+                                  session={session}
                                 />
                               ))
                             ) : (

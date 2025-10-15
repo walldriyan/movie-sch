@@ -34,6 +34,7 @@ function serializeUser(user: any): any {
     emailVerified: serializeDate(user.emailVerified),
     createdAt: serializeDate(user.createdAt),
     updatedAt: serializeDate(user.updatedAt),
+    permissions: user.permissions, // Pass permissions through
   };
 }
 

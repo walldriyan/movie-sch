@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getSeriesById, getPostsBySeriesId, getPost } from '@/lib/actions';
 import type { Post, Series } from '@/lib/types';
 import SeriesPageClient from './client';
+import { auth } from '@/auth';
 
 export default async function SeriesPage({
   params,
@@ -16,6 +17,8 @@ export default async function SeriesPage({
   if (isNaN(seriesId)) {
     notFound();
   }
+
+  const session = await auth();
 
   const seriesData = (await getSeriesById(seriesId)) as Series | null;
   if (!seriesData) {
@@ -52,6 +55,7 @@ export default async function SeriesPage({
       series={seriesData}
       postsInSeries={postsData}
       initialPost={currentPostData}
+      session={session}
     />
   );
 }
