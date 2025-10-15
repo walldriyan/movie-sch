@@ -22,14 +22,14 @@ type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
 
 export default function ExamResultsPage() {
     const searchParams = useSearchParams();
-    const params = useParams<{ id: string }>();
+    const params = useParams();
     const submissionIdStr = searchParams.get('submissionId');
     
     const [results, setResults] = useState<ExamResults | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     
-    const examId = parseInt(params.id, 10);
+    const examId = parseInt(params.id as string, 10);
     const submissionId = submissionIdStr ? parseInt(submissionIdStr, 10) : undefined;
     
     useEffect(() => {
@@ -53,10 +53,6 @@ export default function ExamResultsPage() {
         fetchResults();
 
     }, [examId, submissionId]);
-
-    const handlePrint = () => {
-        window.print();
-    };
 
     if (isLoading) {
         return (
@@ -90,9 +86,9 @@ export default function ExamResultsPage() {
     const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
     
     return (
-        <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8 print:p-0">
-            <div className="max-w-4xl mx-auto printable-area">
-                <Card className="print:shadow-none print:border-none">
+        <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
+            <div className="max-w-4xl mx-auto">
+                <Card>
                     <CardHeader>
                         <CardTitle className="text-3xl font-bold font-serif flex items-center gap-3">
                             <Award className="h-8 w-8 text-primary" />
@@ -174,7 +170,7 @@ export default function ExamResultsPage() {
                             })}
                         </div>
 
-                         <div className="mt-12 flex justify-center gap-4 print:hidden">
+                         <div className="mt-12 flex justify-center gap-4">
                             <Button asChild>
                                 <Link href={`/movies/${submission.exam.postId}`}>Return to Post</Link>
                             </Button>
@@ -186,9 +182,11 @@ export default function ExamResultsPage() {
                                     </Link>
                                 </Button>
                             )}
-                             <Button variant="secondary" onClick={handlePrint}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download as PDF
+                             <Button asChild variant="secondary">
+                                <Link href={`/exams/${submission.exam.id}/results/print?submissionId=${submission.id}`} target="_blank">
+                                    <Download className="mr-2 h-4 w-4" />
+                                    Download as PDF
+                                </Link>
                             </Button>
                         </div>
                     </CardContent>

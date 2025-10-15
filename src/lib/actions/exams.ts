@@ -275,12 +275,12 @@ export async function submitExam(examId: number, formData: FormData) {
               examId: examId,
           },
       },
-      update: { // If a submission exists, update its score and answers.
+      update: {
         score: totalScore,
         submittedAt: new Date(),
         answers: {
-            deleteMany: {}, // Delete old answers
-            create: submissionAnswersData, // Create new ones
+            deleteMany: {},
+            create: submissionAnswersData,
         }
       }, 
       create: {
@@ -337,5 +337,13 @@ export async function getExamResults(submissionId: number) {
         }
     });
 
-    return { submission, submissionCount };
+    const fullUser = await prisma.user.findUnique({
+        where: { id: user.id }
+    });
+
+    if (!fullUser) {
+         throw new Error('User details not found.');
+    }
+
+    return { submission, submissionCount, user: fullUser };
 }
