@@ -37,7 +37,7 @@ export default function MovieDetailClient({
   const [activeTab, setActiveTab] = useState('about');
   const sessionStatus = session ? 'authenticated' : 'unauthenticated';
 
-  console.log("Client [/movies/[id]/movie-detail-client.tsx] Received session prop:", JSON.stringify(session, null, 2));
+  console.log("Client [/movies/[id]/movie-detail-client.tsx] Session from props:", JSON.stringify(session, null, 2));
   console.log("Client [/movies/[id]/movie-detail-client.tsx] Current User Details:", session?.user);
   
   const heroImage = post.posterUrl || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
@@ -152,7 +152,7 @@ export default function MovieDetailClient({
               </button>
             </div>
             
-            <MovieInteractionButtons post={post} onPostUpdate={onPostUpdate} session={session} sessionStatus={sessionStatus} />
+            <MovieInteractionButtons post={post} onPostUpdate={onPostUpdate} session={session} />
 
           </div>
         </div>
