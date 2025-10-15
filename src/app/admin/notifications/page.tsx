@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getGroupsForForm, getUsers, sendNotification } from '@/lib/actions';
-import type { User, Group } from '@prisma/client';
+import type { User, Group, NotificationTargetType } from '@prisma/client';
 import { Loader2, Send, Users, User as UserIcon, Globe, Check, ChevronsUpDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -43,7 +43,7 @@ import { ROLES } from '@/lib/permissions';
 const notificationSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
   message: z.string().min(10, 'Message must be at least 10 characters.'),
-  targetType: z.enum(['PUBLIC', 'USER', 'GROUP', 'ROLE']),
+  targetType: z.enum(['INFO', 'USER', 'GROUP', 'ROLE']),
   targetId: z.string().optional(),
 }).superRefine((data, ctx) => {
     if ((data.targetType === 'USER' || data.targetType === 'GROUP' || data.targetType === 'ROLE') && !data.targetId) {
@@ -146,7 +146,7 @@ export default function NotificationsPage() {
     defaultValues: {
       title: '',
       message: '',
-      targetType: 'PUBLIC',
+      targetType: 'INFO',
     },
   });
 
@@ -162,6 +162,7 @@ export default function NotificationsPage() {
       // The try-catch block is removed to allow the error boundary to catch errors.
       await sendNotification({
           ...values,
+          targetType: values.targetType as NotificationTargetType,
           targetId: values.targetId || null,
       });
       toast({
@@ -232,7 +233,7 @@ export default function NotificationsPage() {
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="PUBLIC"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
+                            <SelectItem value="INFO"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
                             <SelectItem value="USER"><div className="flex items-center gap-2"><UserIcon className="h-4 w-4"/> Specific User</div></SelectItem>
                             <SelectItem value="GROUP"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Group</div></SelectItem>
                             <SelectItem value="ROLE"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Role</div></SelectItem>
