@@ -25,17 +25,17 @@ export async function sendNotification(
   // --- [Server Action: Debug Log] Received values from client ---
   console.log('--- [Server Action: sendNotification] Received values ---', values);
   
-  // CRITICAL FIX: Map the client-side 'PUBLIC' type to a valid Prisma enum value.
-  // We will use 'USER' type with a null targetId to represent a public broadcast.
-  // This ensures we are always sending a value that exists in the `NotificationTargetType` enum.
+  // CRITICAL FIX: Handle the "PUBLIC" type from the client.
+  // We will map the client-side 'PUBLIC' type to a valid Prisma enum value.
+  // The logic is: a "PUBLIC" notification is conceptually a notification to a "USER" with a `targetId` of `null`.
   const prismaType: NotificationTargetType = values.type === 'PUBLIC' ? 'USER' : values.type;
 
   const dataToCreate = {
     title: values.title,
     message: values.message,
     type: prismaType,
-    // When it's a public message, the targetId from client is null/undefined,
-    // and we ensure it is null here.
+    // When the original type is 'PUBLIC', we explicitly set targetId to null.
+    // Otherwise, we use the targetId from the form.
     targetId: values.type === 'PUBLIC' ? null : values.targetId,
   };
 
