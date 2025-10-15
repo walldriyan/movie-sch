@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useTransition } from 'react';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray, Controller, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar, Clock, Save, Settings, ChevronsUpDown, Loader2 } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Clock, Save, Settings, ChevronsUpDown, Loader2 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -68,21 +68,129 @@ const examSchema = z.object({
 
 type ExamFormValues = z.infer<typeof examSchema>;
 
+// New component for a single question to fix the hook error
+const QuestionItem = ({ control, qIndex, removeQuestion }: { control: any, qIndex: number, removeQuestion: (index: number) => void }) => {
+    const { fields: options, append: appendOption, remove: removeOption } = useFieldArray({
+        control,
+        name: `questions.${qIndex}.options`,
+    });
+
+    return (
+        <Card key={qIndex} className="mb-6 border-dashed">
+             <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Question {qIndex + 1}</CardTitle>
+                </div>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="icon"
+                  onClick={() => removeQuestion(qIndex)}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                     <div className="md:col-span-3">
+                         <FormField
+                            control={control}
+                            name={`questions.${qIndex}.text`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Question Text</FormLabel>
+                                <FormControl>
+                                    <Textarea placeholder="e.g., What was the spinning top's purpose?" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+                    <div>
+                         <FormField
+                            control={control}
+                            name={`questions.${qIndex}.points`}
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Points</FormLabel>
+                                <FormControl>
+                                    <Input type="number" placeholder="10" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
+               </div>
+
+               <Separator className="my-4"/>
+               <h4 className="font-semibold text-sm">Options</h4>
+               <div className="space-y-3">
+                   {options.map((option, oIndex) => (
+                       <div key={option.id} className="flex items-center gap-2">
+                           <FormField
+                                control={control}
+                                name={`questions.${qIndex}.options.${oIndex}.isCorrect`}
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                    <FormControl>
+                                        <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={field.onChange}
+                                        />
+                                    </FormControl>
+                                    <FormLabel className="text-sm font-normal pt-1">
+                                        Correct Answer
+                                    </FormLabel>
+                                    </FormItem>
+                                )}
+                            />
+                           <FormField
+                                control={control}
+                                name={`questions.${qIndex}.options.${oIndex}.text`}
+                                render={({ field }) => (
+                                    <FormItem className="flex-grow">
+                                    <FormControl>
+                                        <Input placeholder={`Option ${oIndex + 1}`} {...field} />
+                                    </FormControl>
+                                    </FormItem>
+                                )}
+                            />
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(oIndex)}>
+                                <Trash2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                       </div>
+                   ))}
+               </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => appendOption({ text: '', isCorrect: false })}
+                >
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Option
+                </Button>
+            </CardContent>
+        </Card>
+    );
+};
+
+
 export default function CreateExamPage() {
   const [isSubmitting, startTransition] = useTransition();
   const [posts, setPosts] = React.useState<Post[]>([]);
   const { toast } = useToast();
 
   React.useEffect(() => {
-    // This is a simplified fetch. In a real app, you'd get the current user's ID
-    // and role to pass to `getPostsForAdmin`. For this UI-only build, we'll
-    // fetch all posts, which will only work for a SUPER_ADMIN.
     async function fetchPosts() {
         try {
             const { posts: fetchedPosts } = await getPostsForAdmin({
                 page: 1,
-                limit: 100, // Fetch a large number of posts for the dropdown
-                userId: 'dummy-id', // Dummy values since we don't have user here
+                limit: 100, 
+                userId: 'dummy-id',
                 userRole: 'SUPER_ADMIN',
             });
             setPosts(fetchedPosts as Post[]);
@@ -276,7 +384,7 @@ export default function CreateExamPage() {
                                     ) : (
                                         <span>Pick a date</span>
                                     )}
-                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                    <CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" />
                                     </Button>
                                 </FormControl>
                                 </PopoverTrigger>
@@ -314,7 +422,7 @@ export default function CreateExamPage() {
                                     ) : (
                                         <span>Pick a date</span>
                                     )}
-                                    <Calendar className="ml-auto h-4 w-4 opacity-50" />
+                                    <CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" />
                                     </Button>
                                 </FormControl>
                                 </PopoverTrigger>
@@ -335,113 +443,14 @@ export default function CreateExamPage() {
             </Card>
 
             <div>
-                {questions.map((question, qIndex) => {
-                     const { fields: options, append: appendOption, remove: removeOption } = useFieldArray({
-                        control: form.control,
-                        name: `questions.${qIndex}.options`,
-                    });
-                    return (
-                        <Card key={question.id} className="mb-6 border-dashed">
-                             <CardHeader className="flex flex-row items-center justify-between">
-                                <div>
-                                    <CardTitle>Question {qIndex + 1}</CardTitle>
-                                </div>
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  onClick={() => removeQuestion(qIndex)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                                     <div className="md:col-span-3">
-                                         <FormField
-                                            control={form.control}
-                                            name={`questions.${qIndex}.text`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                <FormLabel>Question Text</FormLabel>
-                                                <FormControl>
-                                                    <Textarea placeholder="e.g., What was the spinning top's purpose?" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                                    <div>
-                                         <FormField
-                                            control={form.control}
-                                            name={`questions.${qIndex}.points`}
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                <FormLabel>Points</FormLabel>
-                                                <FormControl>
-                                                    <Input type="number" placeholder="10" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </div>
-                               </div>
-
-                               <Separator className="my-4"/>
-                               <h4 className="font-semibold text-sm">Options</h4>
-                               <div className="space-y-3">
-                                   {options.map((option, oIndex) => (
-                                       <div key={option.id} className="flex items-center gap-2">
-                                           <FormField
-                                                control={form.control}
-                                                name={`questions.${qIndex}.options.${oIndex}.isCorrect`}
-                                                render={({ field }) => (
-                                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                                    <FormControl>
-                                                        <Checkbox
-                                                        checked={field.value}
-                                                        onCheckedChange={field.onChange}
-                                                        />
-                                                    </FormControl>
-                                                    <FormLabel className="text-sm font-normal pt-1">
-                                                        Correct Answer
-                                                    </FormLabel>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                           <FormField
-                                                control={form.control}
-                                                name={`questions.${qIndex}.options.${oIndex}.text`}
-                                                render={({ field }) => (
-                                                    <FormItem className="flex-grow">
-                                                    <FormControl>
-                                                        <Input placeholder={`Option ${oIndex + 1}`} {...field} />
-                                                    </FormControl>
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(oIndex)}>
-                                                <Trash2 className="h-4 w-4 text-muted-foreground" />
-                                            </Button>
-                                       </div>
-                                   ))}
-                               </div>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="mt-2"
-                                  onClick={() => appendOption({ text: '', isCorrect: false })}
-                                >
-                                  <PlusCircle className="mr-2 h-4 w-4" />
-                                  Add Option
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    )
-                })}
+                {questions.map((question, qIndex) => (
+                    <QuestionItem
+                        key={question.id}
+                        control={form.control}
+                        qIndex={qIndex}
+                        removeQuestion={removeQuestion}
+                    />
+                ))}
                  <Button
                     type="button"
                     variant="secondary"
@@ -472,3 +481,5 @@ export default function CreateExamPage() {
     </div>
   );
 }
+
+    
