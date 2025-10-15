@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -71,9 +70,10 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     };
 
     const SubmitButton = () => {
+      const { pending } = useFormStatus();
       return (
-          <Button type="submit" size="lg" disabled={isSubmitting}>
-              {isSubmitting ? (
+          <Button type="submit" size="lg" disabled={pending}>
+              {pending ? (
                   <>
                       <Clock className="mr-2 h-4 w-4 animate-spin" />
                       Submitting...

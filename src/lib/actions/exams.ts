@@ -293,6 +293,7 @@ export async function submitExam(examId: number, formData: FormData) {
   }
 
   // Check if a submission already exists for this user and exam.
+  // This helps prevent race conditions or duplicate submissions.
   const existingSubmission = await prisma.examSubmission.findFirst({
     where: {
       userId: user.id,
