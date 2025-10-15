@@ -193,39 +193,9 @@ export default function ExamResultsPage() {
 
     }, [examId, submissionId]);
 
-    if (isLoading) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Loader2 className="h-16 w-16 animate-spin text-primary" />
-            </div>
-        );
-    }
-    
-    if (error) {
-        return (
-            <div className="flex items-center justify-center min-h-screen">
-                <Alert variant="destructive" className="max-w-lg">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>
-                        {error}
-                    </AlertDescription>
-                </Alert>
-            </div>
-        );
-    }
-    
-    if (!results) {
-        return notFound();
-    }
-        
-    const { submission } = results;
-    const totalPoints = submission.exam.questions.reduce((sum, q) => sum + q.points, 0);
-    const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
-    const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
-    const passMark = Math.ceil(totalPoints * 0.5);
-
     const calculateQuestionScore = (question: typeof submission.exam.questions[0]) => {
+        if (!results) return 0;
+        const { submission } = results;
         const userAnswersForQuestion = submission.answers
             .filter(a => a.questionId === question.id)
             .map(a => a.selectedOptionId);
@@ -253,6 +223,8 @@ export default function ExamResultsPage() {
     };
     
     const scoreBreakdown = useMemo(() => {
+        if (!results) return { positive: 0, negative: 0, missed: 0 };
+        const { submission } = results;
         let positiveMarks = 0;
         let negativeMarks = 0;
         let missedMarks = 0;
@@ -293,8 +265,39 @@ export default function ExamResultsPage() {
             negative: Math.round(negativeMarks),
             missed: Math.round(missedMarks),
         };
-    }, [submission]);
+    }, [results]);
 
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Loader2 className="h-16 w-16 animate-spin text-primary" />
+            </div>
+        );
+    }
+    
+    if (error) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <Alert variant="destructive" className="max-w-lg">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>
+                        {error}
+                    </AlertDescription>
+                </Alert>
+            </div>
+        );
+    }
+    
+    if (!results) {
+        return notFound();
+    }
+        
+    const { submission } = results;
+    const totalPoints = submission.exam.questions.reduce((sum, q) => sum + q.points, 0);
+    const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
+    const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
+    const passMark = Math.ceil(totalPoints * 0.5);
 
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
@@ -455,5 +458,3 @@ export default function ExamResultsPage() {
         </div>
     )
 }
-
-    
