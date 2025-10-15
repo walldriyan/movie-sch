@@ -33,12 +33,13 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2 } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { getPostsForAdmin } from '@/lib/actions';
+import { getPostsForAdmin, searchPostsForExam } from '@/lib/actions';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { createOrUpdateExam, getExamsForAdmin, getExamForEdit, deleteExam } from '@/lib/actions/exams';
@@ -120,7 +121,99 @@ const QuestionItem = ({ control, qIndex, removeQuestion }: { control: any, qInde
     );
 };
 
-const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId }: {
+const PostCombobox = ({
+    field,
+    initialPosts,
+    onPostsChange,
+}: {
+    field: any,
+    initialPosts: PostWithGroup[],
+    onPostsChange: (posts: PostWithGroup[]) => void,
+}) => {
+    const [open, setOpen] = useState(false);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [isSearching, startSearchTransition] = useTransition();
+
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            if (searchQuery.length > 2) {
+                startSearchTransition(async () => {
+                    const fetchedPosts = await searchPostsForExam(searchQuery);
+                    // Combine initial posts and fetched posts, removing duplicates
+                    const allPosts = [...initialPosts, ...fetchedPosts as PostWithGroup[]];
+                    const uniquePosts = Array.from(new Map(allPosts.map(p => [p.id, p])).values());
+                    onPostsChange(uniquePosts);
+                });
+            }
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [searchQuery, initialPosts, onPostsChange]);
+
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <FormControl>
+                    <Button
+                        variant="outline"
+                        role="combobox"
+                        className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                        )}
+                    >
+                        {field.value
+                            ? initialPosts.find(
+                                (post) => String(post.id) === field.value
+                            )?.title
+                            : "Select a post"}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                </FormControl>
+            </PopoverTrigger>
+            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                <Command>
+                    <CommandInput 
+                        placeholder="Search posts..."
+                        value={searchQuery}
+                        onValueChange={setSearchQuery}
+                    />
+                    <CommandList>
+                        {isSearching && <div className="p-2 text-sm text-center text-muted-foreground">Searching...</div>}
+                        <CommandEmpty>No post found.</CommandEmpty>
+                        <CommandGroup>
+                            {initialPosts.map((post) => (
+                                <CommandItem
+                                    value={post.title}
+                                    key={post.id}
+                                    onSelect={() => {
+                                        field.onChange(String(post.id));
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            String(post.id) === field.value
+                                                ? "opacity-100"
+                                                : "opacity-0"
+                                        )}
+                                    />
+                                    {post.title}
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    );
+}
+
+const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange }: {
   posts: PostWithGroup[],
   selectedPost: PostWithGroup | undefined,
   form: any,
@@ -130,7 +223,8 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
   isSubmitting: boolean,
   onSubmit: (data: ExamFormValues) => void,
   onBack: () => void,
-  editingExamId: number | null
+  editingExamId: number | null,
+  onPostsChange: (posts: PostWithGroup[]) => void,
 }) => {
   return (
     <Form {...form}>
@@ -143,7 +237,21 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
               <CardContent className="space-y-4">
                   <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief description of what this exam covers." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="postId" render={({ field }) => (<FormItem><FormLabel>Associated Post</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Select a post" /></SelectTrigger></FormControl><SelectContent>{posts.map(post => (<SelectItem key={post.id} value={String(post.id)}>{post.title}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+                  <FormField 
+                    control={form.control} 
+                    name="postId" 
+                    render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Associated Post</FormLabel>
+                          <PostCombobox 
+                              field={field} 
+                              initialPosts={posts} 
+                              onPostsChange={onPostsChange} 
+                          />
+                          <FormMessage />
+                      </FormItem>
+                    )} 
+                  />
               </CardContent>
           </Card>
           
@@ -258,7 +366,7 @@ export default function CreateExamPage() {
   
   const fetchPosts = async () => {
       try {
-          const { posts: fetchedPosts } = await getPostsForAdmin({ page: 1, limit: 1000, userId: 'dummy-id', userRole: 'SUPER_ADMIN' });
+          const { posts: fetchedPosts } = await getPostsForAdmin({ page: 1, limit: 10, userId: 'dummy-id', userRole: 'SUPER_ADMIN', sortBy: 'createdAt-desc' });
           setPosts(fetchedPosts as PostWithGroup[]);
       } catch(error) {
           toast({ variant: 'destructive', title: 'Failed to load posts', description: 'Could not fetch posts list.'})
@@ -284,6 +392,10 @@ export default function CreateExamPage() {
         const examToEdit = await getExamForEdit(examId);
         if (examToEdit) {
             setEditingExamId(examId);
+            const postInList = posts.find(p => p.id === examToEdit.postId);
+            if (!postInList && examToEdit.post) {
+                setPosts(prev => [examToEdit.post as PostWithGroup, ...prev]);
+            }
             form.reset({
                 title: examToEdit.title,
                 description: examToEdit.description || '',
@@ -382,11 +494,10 @@ export default function CreateExamPage() {
             onSubmit={onSubmit}
             onBack={handleBack}
             editingExamId={editingExamId}
+            onPostsChange={setPosts}
           />
         </TabsContent>
       </Tabs>
     </div>
   );
 }
-
-    

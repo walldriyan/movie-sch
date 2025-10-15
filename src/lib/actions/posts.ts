@@ -102,7 +102,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     
     if (sortBy) {
       const [field, direction] = sortBy.split('-');
-      if (['updatedAt', 'imdbRating'].includes(field) && ['asc', 'desc'].includes(direction)) {
+      if (['updatedAt', 'imdbRating', 'createdAt'].includes(field) && ['asc', 'desc'].includes(direction)) {
         orderBy = { [field]: direction as 'asc' | 'desc' };
       }
     }
@@ -368,8 +368,8 @@ export async function deletePost(id: number) {
 }
 
 
-export async function getPostsForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null } = {}) {
-    const { page = 1, limit = 10, userId, userRole, status } = options;
+export async function getPostsForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null, sortBy?: string } = {}) {
+    const { page = 1, limit = 10, userId, userRole, status, sortBy = 'createdAt-desc' } = options;
     const skip = (page - 1) * limit;
     
     if (!userId || !userRole) {
@@ -386,11 +386,15 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
       whereClause.status = status;
     }
 
+    const [field, direction] = sortBy.split('-');
+    const orderBy = { [field]: direction };
+
+
     const posts = await prisma.post.findMany({
         where: whereClause,
         skip: skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         include: {
             author: true,
             group: {
@@ -599,4 +603,34 @@ export async function getFavoritePosts() {
     ...fav.post,
     genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
+}
+
+export async function searchPostsForExam(query: string) {
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('Not authenticated');
+    }
+
+    const posts = await prisma.post.findMany({
+        where: {
+            title: {
+                contains: query,
+                mode: 'insensitive',
+            },
+            status: 'PUBLISHED', // Only allow exams for published posts
+        },
+        take: 10,
+        orderBy: {
+            createdAt: 'desc',
+        },
+        include: {
+            group: {
+                select: {
+                    name: true
+                }
+            }
+        }
+    });
+
+    return posts;
 }
