@@ -1,7 +1,7 @@
 
 'use client';
 
-import { notFound, redirect, useSearchParams } from 'next/navigation';
+import { notFound, redirect, useSearchParams, useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { getExamResults } from '@/lib/actions';
 import {
@@ -20,8 +20,9 @@ import Link from 'next/link';
 
 type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
 
-export default function ExamResultsPage({ params }: { params: { id: string } }) {
+export default function ExamResultsPage() {
     const searchParams = useSearchParams();
+    const params = useParams<{ id: string }>();
     const submissionIdStr = searchParams.get('submissionId');
     
     const [results, setResults] = useState<ExamResults | null>(null);
