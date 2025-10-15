@@ -33,7 +33,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
@@ -48,7 +48,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -343,7 +343,7 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
   )
 }
 
-const ManageExamsList = ({ exams, onEdit, onDelete }: { exams: ExamForListing[], onEdit: (id: number) => void, onDelete: (id: number) => void }) => {
+const ManageExamsList = ({ exams, onEdit, onDelete, onExport }: { exams: ExamForListing[], onEdit: (id: number) => void, onDelete: (id: number) => void, onExport: (id: number) => void }) => {
     return (
         <Card>
             <CardHeader>
@@ -375,6 +375,9 @@ const ManageExamsList = ({ exams, onEdit, onDelete }: { exams: ExamForListing[],
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onClick={() => onEdit(exam.id)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
                                                 <DropdownMenuItem><BarChart2 className="mr-2 h-4 w-4"/>View Results</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={() => onExport(exam.id)}><Download className="mr-2 h-4 w-4"/>Export as JSON</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
                                                 <AlertDialogTrigger asChild><DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem></AlertDialogTrigger>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
@@ -403,6 +406,7 @@ export default function CreateExamPage() {
   const [exams, setExams] = useState<ExamForListing[]>([]);
   const [editingExamId, setEditingExamId] = useState<number | null>(null);
   const { toast } = useToast();
+  const importFileInputRef = React.useRef<HTMLInputElement>(null);
 
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
@@ -489,6 +493,92 @@ export default function CreateExamPage() {
       }
     })
   }
+
+  const handleExport = async (examId: number) => {
+     try {
+        const examToExport = await getExamForEdit(examId);
+        if (examToExport) {
+            // Remove IDs and other DB-specific fields
+            const cleanExam = {
+                title: examToExport.title,
+                description: examToExport.description,
+                status: examToExport.status,
+                durationMinutes: examToExport.durationMinutes,
+                attemptsAllowed: examToExport.attemptsAllowed,
+                questions: examToExport.questions.map(q => ({
+                    text: q.text,
+                    points: q.points,
+                    isMultipleChoice: q.isMultipleChoice,
+                    options: q.options.map(o => ({
+                        text: o.text,
+                        isCorrect: o.isCorrect,
+                    })),
+                })),
+            };
+
+            const jsonString = JSON.stringify(cleanExam, null, 2);
+            const blob = new Blob([jsonString], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${examToExport.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            toast({ title: "Export successful", description: `"${examToExport.title}" has been exported.`});
+        }
+     } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Export Failed', description: error.message });
+     }
+  }
+
+  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const content = e.target?.result;
+            if (typeof content !== 'string') {
+                throw new Error('Failed to read file content.');
+            }
+            const importedData = JSON.parse(content);
+            
+            // Validate and set form data
+            const validatedData = examSchema.partial().safeParse(importedData);
+            if (validatedData.success) {
+                const data = validatedData.data;
+                 form.reset({
+                    ...form.getValues(),
+                    title: data.title || '',
+                    description: data.description || '',
+                    status: data.status || 'DRAFT',
+                    durationMinutes: data.durationMinutes,
+                    attemptsAllowed: data.attemptsAllowed || 1,
+                    questions: data.questions || [],
+                });
+                setEditingExamId(null);
+                setActiveTab('create');
+                toast({ title: "Import Successful", description: "Exam data has been loaded into the form."});
+            } else {
+                console.error("Validation failed:", validatedData.error);
+                throw new Error("Invalid JSON structure for an exam.");
+            }
+
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
+        } finally {
+            // Reset file input
+            if (importFileInputRef.current) {
+                importFileInputRef.current.value = "";
+            }
+        }
+    }
+    reader.readAsText(file);
+  }
   
   function onSubmit(data: ExamFormValues) {
     startTransition(async () => {
@@ -528,7 +618,17 @@ export default function CreateExamPage() {
     <div className="space-y-6">
        <div className="flex items-center justify-between">
         <h1 className="font-semibold text-lg md:text-2xl flex items-center gap-2"><BookCheck className="h-6 w-6" />Exam Center</h1>
-        <Button onClick={handleNewExamClick}><PlusCircle className="mr-2 h-4 w-4" />Create New Exam</Button>
+        <div className="flex gap-2">
+            <input 
+                type="file" 
+                ref={importFileInputRef}
+                className="hidden"
+                accept=".json"
+                onChange={handleImport}
+            />
+            <Button variant="outline" onClick={() => importFileInputRef.current?.click()}><Upload className="mr-2 h-4 w-4" />Import Exam</Button>
+            <Button onClick={handleNewExamClick}><PlusCircle className="mr-2 h-4 w-4" />Create New Exam</Button>
+        </div>
       </div>
 
        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -537,7 +637,7 @@ export default function CreateExamPage() {
           <TabsTrigger value="create">{editingExamId ? 'Edit Exam' : 'Create Exam'}</TabsTrigger>
         </TabsList>
         <TabsContent value="manage" className="mt-6">
-          <ManageExamsList exams={exams} onEdit={handleEdit} onDelete={handleDelete} />
+          <ManageExamsList exams={exams} onEdit={handleEdit} onDelete={handleDelete} onExport={handleExport} />
         </TabsContent>
         <TabsContent value="create" className="mt-6">
           <CreateExamForm 
