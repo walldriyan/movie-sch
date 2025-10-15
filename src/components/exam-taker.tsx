@@ -36,23 +36,25 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             return;
         }
 
-        if (timeLeft <= 0) {
-            if (formRef.current && !pending) {
-               formRef.current.requestSubmit();
-            }
-            return;
-        }
-        
-        if (timeLeft <= 60 && !showWarning) {
-            setShowWarning(true);
-        }
-
         const timerId = setInterval(() => {
-            setTimeLeft(prevTime => prevTime - 1);
+            setTimeLeft(prevTime => {
+                if (prevTime <= 1) {
+                    clearInterval(timerId);
+                    if (formRef.current && !pending) {
+                       formRef.current.requestSubmit();
+                    }
+                    return 0;
+                }
+                if (prevTime <= 61 && !showWarning) {
+                    setShowWarning(true);
+                }
+                return prevTime - 1;
+            });
         }, 1000);
 
         return () => clearInterval(timerId);
-    }, [hasStarted, timeLeft, exam.durationMinutes, showWarning, pending]);
+    }, [hasStarted, exam.durationMinutes, showWarning, pending]);
+
 
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -62,9 +64,10 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     };
 
     const SubmitButton = () => {
+        const { pending: isSubmitting } = useFormStatus();
         return (
-            <Button type="submit" size="lg" disabled={pending}>
-                {pending ? (
+            <Button type="submit" size="lg" disabled={isSubmitting}>
+                {isSubmitting ? (
                     <>
                         <Clock className="mr-2 h-4 w-4 animate-spin" />
                         Submitting...

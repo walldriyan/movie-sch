@@ -7,6 +7,7 @@ import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { redirect } from 'next/navigation';
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -291,6 +292,19 @@ export async function submitExam(examId: number, formData: FormData) {
     throw new Error('Not authenticated');
   }
 
+  // Check if a submission already exists for this user and exam.
+  const existingSubmission = await prisma.examSubmission.findFirst({
+    where: {
+      userId: user.id,
+      examId: examId,
+    },
+  });
+
+  // If a submission exists, redirect to the results page for that submission.
+  if (existingSubmission) {
+    return redirect(`/exams/${examId}/results?submissionId=${existingSubmission.id}`);
+  }
+
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: { questions: { include: { options: true } } },
@@ -308,30 +322,45 @@ export async function submitExam(examId: number, formData: FormData) {
     if (selectedOptionIdStr) {
       const selectedOptionId = parseInt(selectedOptionIdStr, 10);
       const correctOption = question.options.find(opt => opt.isCorrect);
-      const isCorrect = correctOption?.id === selectedOptionId;
-
-      if (isCorrect) {
+      
+      if (correctOption?.id === selectedOptionId) {
         score += question.points;
       }
       answersToCreate.push({ questionId: question.id, selectedOptionId });
     }
   }
 
-  const submission = await prisma.examSubmission.create({
-    data: {
-      examId: exam.id,
-      userId: user.id,
-      score,
-      answers: {
-        create: answersToCreate,
+  try {
+    const submission = await prisma.examSubmission.create({
+      data: {
+        examId: exam.id,
+        userId: user.id,
+        score,
+        answers: {
+          create: answersToCreate,
+        },
       },
-    },
-  });
-  
-  revalidatePath(`/exams/${examId}`);
-  // Use redirect from next/navigation
-  const { redirect } = await import('next/navigation');
-  redirect(`/exams/${examId}/results?submissionId=${submission.id}`);
+    });
+    
+    revalidatePath(`/exams/${examId}`);
+    redirect(`/exams/${examId}/results?submissionId=${submission.id}`);
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+       // This is a race condition fallback. If another submission was created
+       // between our initial check and this create call, find it and redirect.
+       const raceConditionSubmission = await prisma.examSubmission.findFirst({
+        where: {
+          userId: user.id,
+          examId: examId,
+        },
+      });
+       if (raceConditionSubmission) {
+        return redirect(`/exams/${examId}/results?submissionId=${raceConditionSubmission.id}`);
+      }
+    }
+    // Re-throw other errors
+    throw error;
+  }
 }
 
 
@@ -377,6 +406,3 @@ export async function getExamResults(submissionId: number) {
 
     return { submission, submissionCount, user };
 }
-
-
-    
