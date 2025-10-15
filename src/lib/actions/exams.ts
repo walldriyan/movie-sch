@@ -161,7 +161,7 @@ export async function getExamsForAdmin() {
         orderBy: { createdAt: 'desc' },
         include: {
             post: { select: { title: true }},
-            _count: { select: { questions: true, submissions: true } }
+            _count: { select: { questions: true, submissions: true, pendingRequests: true } }
         }
     });
 
@@ -324,13 +324,13 @@ export async function submitExam(
         
         let questionScore = 0;
         const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-        const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
         
         for (const selectedId of selectedOptionIds) {
             if (correctOptionIds.includes(selectedId)) {
                 questionScore += pointsPerCorrectAnswer;
             } else {
-                questionScore -= pointsToDeductPerWrong;
+                // Deduct points for a wrong answer
+                questionScore -= pointsPerCorrectAnswer; 
             }
         }
         

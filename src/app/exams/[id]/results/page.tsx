@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { notFound, redirect, useSearchParams, useParams } from 'next/navigation';
@@ -235,13 +236,12 @@ export default function ExamResultsPage() {
         if (question.isMultipleChoice) {
             let questionScore = 0;
             const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-            const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
 
             for (const selectedId of userAnswersForQuestion) {
                 if (correctOptionIds.includes(selectedId)) {
                     questionScore += pointsPerCorrectAnswer;
                 } else {
-                    questionScore -= pointsToDeductPerWrong;
+                    questionScore -= pointsPerCorrectAnswer;
                 }
             }
             return Math.max(0, Math.round(questionScore));
@@ -314,7 +314,6 @@ export default function ExamResultsPage() {
                                 const awardedPoints = calculateQuestionScore(question);
 
                                 const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-                                const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
 
                                 return (
                                     <div key={question.id}>
@@ -353,7 +352,7 @@ export default function ExamResultsPage() {
                                                             {isUserChoice && !isTheCorrectAnswer && (
                                                                 <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
                                                                     වැරදි පිළිතුර (ඔබ තේරූ)
-                                                                    <span className="font-bold ml-2">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
+                                                                    <span className="font-bold ml-2">(-{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
                                                                 </p>
                                                             )}
                                                             {!isUserChoice && isTheCorrectAnswer && (

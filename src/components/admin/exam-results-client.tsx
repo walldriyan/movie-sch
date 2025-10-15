@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -52,7 +53,7 @@ type ExamResultsType = Awaited<ReturnType<typeof getExamResults>>;
 
 function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResultSubmission, onUpdate: () => void }) {
     const [open, setOpen] = useState(false);
-    const [attemptCount, setAttemptCount] = useState(submission.attemptCount ?? 1);
+    const [attemptCount, setAttemptCount] = useState(submission.attemptCount ?? 0);
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
@@ -143,13 +144,12 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
         if (question.isMultipleChoice) {
              let questionScore = 0;
             const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-            const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
-
+            
             for (const selectedId of userAnswersForQuestion) {
                 if (correctOptionIds.includes(selectedId)) {
                     questionScore += pointsPerCorrectAnswer;
                 } else {
-                    questionScore -= pointsToDeductPerWrong;
+                    questionScore -= pointsPerCorrectAnswer;
                 }
             }
             return Math.max(0, Math.round(questionScore));
@@ -195,7 +195,6 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                     const awardedPoints = calculateQuestionScore(question, results.submission);
                                     
                                     const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-                                    const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
 
                                     return (
                                         <div key={question.id}>
@@ -234,7 +233,7 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                                 {isUserChoice && !isTheCorrectAnswer && (
                                                                     <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
                                                                         වැරදි පිළිතුර (ඔබ තේරූ)
-                                                                        <span className="font-bold ml-2">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
+                                                                        <span className="font-bold ml-2">(-{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
                                                                     </p>
                                                                 )}
                                                                 {!isUserChoice && isTheCorrectAnswer && (
