@@ -227,7 +227,6 @@ export async function submitExam(examId: number, formData: FormData) {
     throw new Error('Exam not found.');
   }
   
-  // This check is important to prevent re-submission UI bugs, but the upsert below is the ultimate fix.
   if (exam.attemptsAllowed > 0) {
     const submissionCount = await prisma.examSubmission.count({
       where: {
@@ -276,7 +275,14 @@ export async function submitExam(examId: number, formData: FormData) {
               examId: examId,
           },
       },
-      update: {}, // If it already exists, do nothing.
+      update: { // If a submission exists, update its score and answers.
+        score: totalScore,
+        submittedAt: new Date(),
+        answers: {
+            deleteMany: {}, // Delete old answers
+            create: submissionAnswersData, // Create new ones
+        }
+      }, 
       create: {
           score: totalScore,
           examId: examId,
@@ -324,5 +330,12 @@ export async function getExamResults(submissionId: number) {
         throw new Error('Submission not found or you are not authorized to view it.');
     }
 
-    return submission;
+    const submissionCount = await prisma.examSubmission.count({
+        where: {
+            examId: submission.examId,
+            userId: user.id
+        }
+    });
+
+    return { submission, submissionCount };
 }
