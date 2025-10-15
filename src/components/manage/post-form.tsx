@@ -650,8 +650,16 @@ export default function PostForm({
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="PUBLIC"><div className='flex items-center gap-2'><Eye/> Public</div></SelectItem>
-                            <SelectItem value="GROUP_ONLY"><div className='flex items-center gap-2'><Users/> Group Only</div></SelectItem>
+                          <SelectItem value="PUBLIC">
+  <div className="flex items-center gap-2">
+    <Eye className="h-4 w-4" /> Public
+  </div>
+</SelectItem>
+<SelectItem value="GROUP_ONLY">
+  <div className="flex items-center gap-2">
+    <Users className="h-4 w-4" /> Group Only
+  </div>
+</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -707,7 +715,7 @@ export default function PostForm({
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
-                            </Trigger>
+                              </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="trailer">Trailer</SelectItem>
