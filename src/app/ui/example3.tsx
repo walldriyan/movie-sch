@@ -237,7 +237,7 @@ export default function MetaSpotlight3() {
       </div>
 
       {/* Cards Container - horizontal scroll එකක් */}
-      <div className="w-full py-8 px-4 md:px-8">
+      <div className="w-full py-8 px-4 md:px-8 scrollbar-hide overflow-x-auto">
         <div
           ref={containerRef}
           className="flex gap-4 md:gap-6 lg:gap-8 overflow-x-auto pb-4 px-4 md:px-8"
