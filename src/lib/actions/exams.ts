@@ -7,6 +7,7 @@ import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { redirect } from 'next/navigation';
 
 const optionSchema = z.object({
   text: z.string().min(1, 'Option text cannot be empty.'),
@@ -122,4 +123,158 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number) {
 
     revalidatePath(`/admin/exams`);
     revalidatePath(`/movies/${post.id}`);
+}
+
+export async function getExamForTaker(examId: number) {
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('You must be logged in to take an exam.');
+    }
+
+    const exam = await prisma.exam.findUnique({
+        where: { id: examId, status: 'ACTIVE' },
+        include: {
+            questions: {
+                include: {
+                    options: {
+                        select: {
+                            id: true,
+                            text: true,
+                        },
+                    },
+                },
+            },
+        },
+    });
+
+    if (!exam) {
+        return null;
+    }
+    
+    // Check if user has already submitted and if attempts are allowed
+    if (exam.attemptsAllowed > 0) {
+        const submissionCount = await prisma.examSubmission.count({
+            where: {
+                examId: examId,
+                userId: session.user.id,
+            },
+        });
+
+        if (submissionCount >= exam.attemptsAllowed) {
+            // Potentially redirect to results page or show an error
+            throw new Error(`You have already submitted this exam the maximum number of times (${exam.attemptsAllowed}).`);
+        }
+    }
+
+    // Check start/end dates
+    const now = new Date();
+    if (exam.startDate && now < exam.startDate) {
+        throw new Error(`This exam is not available until ${exam.startDate.toLocaleString()}.`);
+    }
+    if (exam.endDate && now > exam.endDate) {
+        throw new Error(`This exam is no longer available as of ${exam.endDate.toLocaleString()}.`);
+    }
+
+    return exam;
+}
+
+export async function submitExam(examId: number, formData: FormData) {
+  'use server';
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error('Not authenticated.');
+  }
+
+  const answers = new Map<number, number>();
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith('question-')) {
+      const questionId = parseInt(key.split('-')[1], 10);
+      const optionId = parseInt(value as string, 10);
+      answers.set(questionId, optionId);
+    }
+  }
+
+  const exam = await prisma.exam.findUnique({
+    where: { id: examId },
+    include: {
+      questions: {
+        include: {
+          options: true,
+        },
+      },
+    },
+  });
+
+  if (!exam) {
+    throw new Error('Exam not found.');
+  }
+
+  let totalScore = 0;
+  let submissionAnswers = [];
+
+  for (const question of exam.questions) {
+    const correctOption = question.options.find(o => o.isCorrect);
+    const userAnswerId = answers.get(question.id);
+
+    if (correctOption && userAnswerId === correctOption.id) {
+      totalScore += question.points;
+    }
+
+    if (userAnswerId) {
+        submissionAnswers.push({
+            questionId: question.id,
+            selectedOptionId: userAnswerId
+        });
+    }
+  }
+
+  const submission = await prisma.examSubmission.create({
+    data: {
+      score: totalScore,
+      examId: examId,
+      userId: session.user.id,
+      answers: {
+        create: submissionAnswers
+      },
+    },
+  });
+  
+  revalidatePath(`/exams/${examId}`);
+  redirect(`/exams/${examId}/results?submissionId=${submission.id}`);
+}
+
+
+export async function getExamResults(submissionId: number) {
+    const session = await auth();
+    const user = session?.user;
+    if (!user) {
+        throw new Error('Not authenticated.');
+    }
+
+    const submission = await prisma.examSubmission.findUnique({
+        where: { id: submissionId },
+        include: {
+            exam: {
+                include: {
+                    questions: {
+                        include: {
+                            options: true,
+                        }
+                    }
+                }
+            },
+            answers: {
+                include: {
+                    question: true,
+                    selectedOption: true
+                }
+            }
+        }
+    });
+
+    if (!submission || submission.userId !== user.id) {
+        throw new Error('Submission not found or you are not authorized to view it.');
+    }
+
+    return submission;
 }
