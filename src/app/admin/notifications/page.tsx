@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -42,10 +43,10 @@ import { ROLES } from '@/lib/permissions';
 const notificationSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
   message: z.string().min(10, 'Message must be at least 10 characters.'),
-  targetType: z.enum(['FEATURE', 'USER', 'GROUP', 'ROLE']),
+  targetType: z.enum(['USER', 'GROUP']),
   targetId: z.string().optional(),
 }).superRefine((data, ctx) => {
-    if ((data.targetType === 'USER' || data.targetType === 'GROUP' || data.targetType === 'ROLE') && !data.targetId) {
+    if ((data.targetType === 'USER' || data.targetType === 'GROUP') && !data.targetId) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: 'Please select a target.',
@@ -114,6 +115,7 @@ function ComboboxSelector({ field, items, placeholder, notFoundText }: { field: 
     );
 }
 
+
 export default function NotificationsPage() {
   const { toast } = useToast();
   const [users, setUsers] = useState<User[]>([]);
@@ -145,7 +147,7 @@ export default function NotificationsPage() {
     defaultValues: {
       title: '',
       message: '',
-      targetType: 'FEATURE',
+      targetType: 'USER',
     },
   });
 
@@ -244,7 +246,6 @@ export default function NotificationsPage() {
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="FEATURE"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
                             <SelectItem value="USER"><div className="flex items-center gap-2"><UserIcon className="h-4 w-4"/> Specific User</div></SelectItem>
                             <SelectItem value="GROUP"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Group</div></SelectItem>
                         </SelectContent>
@@ -276,30 +277,6 @@ export default function NotificationsPage() {
                             <FormItem className="flex flex-col justify-end">
                                 <FormLabel>Select Group</FormLabel>
                                 <ComboboxSelector field={field} items={groups} placeholder="Select a group..." notFoundText="No group found." />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-                {targetType === 'ROLE' && (
-                    <FormField
-                        control={form.control}
-                        name="targetId"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col justify-end">
-                                <FormLabel>Select Role</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a role" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {roles.map(role => (
-                                            <SelectItem key={role} value={role}>{role}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
                                 <FormMessage />
                             </FormItem>
                         )}
