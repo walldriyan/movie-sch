@@ -24,6 +24,7 @@ export default function GroupCard({ group }: GroupCardProps) {
               src={groupImage}
               alt={`Image for ${group.name}`}
               fill
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
               className="object-cover"
             />
           )}

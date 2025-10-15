@@ -72,7 +72,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
     >
       <Link
         href={`/movies/${movie.id}`}
-        className="block h-full w-full"
+        className="block h-full w-full relative"
         aria-label={movie.title}
       >
         {!imageLoaded && <Skeleton className="absolute inset-0" />}
@@ -81,6 +81,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
             src={movieImageUrl}
             alt={movie.title}
             fill
+            priority={isFirst}
+            sizes={isFirst ? "(max-width: 768px) 100vw, 66vw" : "(max-width: 768px) 50vw, 33vw"}
             className={cn(
               'object-cover rounded-xl transition-transform duration-300 group-hover:scale-105',
               imageLoaded ? 'opacity-100' : 'opacity-0'

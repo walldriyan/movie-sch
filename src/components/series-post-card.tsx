@@ -41,6 +41,7 @@ export default function SeriesPostCard({
             src={postImageUrl}
             alt={post.title}
             fill
+            sizes="100px"
             className="object-cover"
           />
         )}
