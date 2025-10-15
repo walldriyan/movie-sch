@@ -1,19 +1,21 @@
 
+
 'use client';
 
 import { notFound, redirect, useSearchParams, useParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { getExamResults } from '@/lib/actions';
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot } from 'lucide-react';
+import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -40,7 +42,7 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
         <div className="printable-area font-sans text-black bg-white">
              <header className="text-center mb-12 border-b-2 border-gray-200 pb-8">
                 <div className="inline-flex items-center space-x-3 mb-4">
-                    <Film className="h-10 w-10 text-green-500" />
+                    <Film className="h-10 w-10 text-primary" />
                     <span className="inline-block font-bold text-4xl text-gray-800" style={{fontFamily: 'serif'}}>
                         CineVerse
                     </span>
@@ -81,7 +83,7 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                     <div className="grid grid-cols-3 gap-6 text-center">
                         <div className="bg-gray-50 p-6 rounded-lg border">
                             <p className="text-base text-gray-500">Total Score</p>
-                            <p className="text-4xl font-bold text-green-500">{submission.score} / {totalPoints}</p>
+                            <p className="text-4xl font-bold text-primary">{submission.score} / {totalPoints}</p>
                         </div>
                         <div className="bg-gray-50 p-6 rounded-lg border">
                             <p className="text-base text-gray-500">Percentage</p>
@@ -127,6 +129,15 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                                                     </div>
                                                     <div className="flex-grow">
                                                         <p className={cn(isTheCorrectAnswer && 'font-semibold', isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
+                                                         {isUserChoice && isTheCorrectAnswer && (
+                                                            <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ තේරූ)</p>
+                                                        )}
+                                                        {isUserChoice && !isTheCorrectAnswer && (
+                                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">වැරදි පිළිතුර (ඔබ තේරූ)</p>
+                                                        )}
+                                                        {!isUserChoice && isTheCorrectAnswer && (
+                                                            <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
+                                                        )}
                                                     </div>
                                                 </div>
                                             );
@@ -182,6 +193,75 @@ export default function ExamResultsPage() {
 
     }, [examId, submissionId]);
 
+    const calculateQuestionScore = (question: typeof submission.exam.questions[0]) => {
+        if (!results) return 0;
+        const { submission } = results;
+        const userAnswersForQuestion = submission.answers
+            .filter(a => a.questionId === question.id)
+            .map(a => a.selectedOptionId);
+
+        if (userAnswersForQuestion.length === 0) return 0;
+
+        const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
+        const incorrectSelected = userAnswersForQuestion.some(id => !correctOptionIds.includes(id));
+        
+        if (incorrectSelected) return 0;
+
+        if (question.isMultipleChoice) {
+            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+            const score = userAnswersForQuestion.length * pointsPerCorrectAnswer;
+            return Math.round(score);
+        } else {
+            const selectedOptionId = userAnswersForQuestion[0];
+            return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
+        }
+    };
+    
+    const scoreBreakdown = useMemo(() => {
+        if (!results) return { positive: 0, negative: 0, missed: 0 };
+        const { submission } = results;
+        let positiveMarks = 0;
+        let negativeMarks = 0;
+        let missedMarks = 0;
+
+        submission.exam.questions.forEach(question => {
+            const userAnswersIds = submission.answers.filter(a => a.questionId === question.id).map(a => a.selectedOptionId);
+            const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
+            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+
+            if (question.isMultipleChoice) {
+                userAnswersIds.forEach(id => {
+                    if (correctOptionIds.includes(id)) {
+                        positiveMarks += pointsPerCorrectAnswer;
+                    } else {
+                        negativeMarks += pointsPerCorrectAnswer;
+                    }
+                });
+                correctOptionIds.forEach(id => {
+                    if (!userAnswersIds.includes(id)) {
+                        missedMarks += pointsPerCorrectAnswer;
+                    }
+                });
+            } else {
+                const selectedId = userAnswersIds[0];
+                if (selectedId && correctOptionIds.includes(selectedId)) {
+                    positiveMarks += question.points;
+                } else if (selectedId) { // Wrong answer selected
+                    negativeMarks += question.points;
+                    missedMarks += question.points; // The correct answer was missed
+                } else { // No answer selected
+                     missedMarks += question.points;
+                }
+            }
+        });
+
+        return {
+            positive: Math.round(positiveMarks),
+            negative: Math.round(negativeMarks),
+            missed: Math.round(missedMarks),
+        };
+    }, [results]);
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -212,7 +292,7 @@ export default function ExamResultsPage() {
     const totalPoints = submission.exam.questions.reduce((sum, q) => sum + q.points, 0);
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
     const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
-    
+
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
             <div className="hidden print:block">
@@ -234,7 +314,23 @@ export default function ExamResultsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Score</CardTitle>
-                                    <CardDescription className="text-3xl font-bold text-primary">{submission.score} / {totalPoints}</CardDescription>
+                                     <CardDescription className={cn("text-3xl font-bold", percentage >= 50 ? "text-primary" : "text-destructive")}>
+                                        {submission.score} / {totalPoints}
+                                    </CardDescription>
+                                     <div className="text-xs font-semibold mt-1 space-y-1">
+                                        <div className="flex items-center justify-center gap-1.5 text-green-500">
+                                            <CheckCircle className="h-3.5 w-3.5" />
+                                            <span>Correct: +{scoreBreakdown.positive}</span>
+                                        </div>
+                                         <div className="flex items-center justify-center gap-1.5 text-destructive">
+                                            <XCircle className="h-3.5 w-3.5" />
+                                            <span>Incorrect: -{scoreBreakdown.negative}</span>
+                                        </div>
+                                        <div className="flex items-center justify-center gap-1.5 text-orange-400">
+                                            <HelpCircle className="h-3.5 w-3.5" />
+                                            <span>Missed: {scoreBreakdown.missed}</span>
+                                        </div>
+                                    </div>
                                 </CardHeader>
                             </Card>
                              <Card>
@@ -246,7 +342,7 @@ export default function ExamResultsPage() {
                              <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
-                                    <CardDescription className="text-3xl font-bold">{percentage >= 50 ? "Passed" : "Failed"}</CardDescription>
+                                    <CardDescription className={cn("text-3xl font-bold", percentage >= 50 ? "text-primary" : "text-destructive")}>{percentage >= 50 ? "Passed" : "Failed"}</CardDescription>
                                 </CardHeader>
                             </Card>
                             <Card>
@@ -271,6 +367,10 @@ export default function ExamResultsPage() {
                                     .filter(o => o.isCorrect)
                                     .map(o => o.id);
                                 
+                                const awardedPoints = calculateQuestionScore(question);
+                                const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+                                const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+                                
                                 return (
                                     <div key={question.id}>
                                         <div className="font-semibold text-lg">{index + 1}. {question.text}</div>
@@ -286,25 +386,42 @@ export default function ExamResultsPage() {
                                                         key={option.id}
                                                         className={cn(
                                                             "flex items-start gap-3 p-3 rounded-lg border",
-                                                            isTheCorrectAnswer && "bg-green-500/10 border-green-500/30",
-                                                            isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30"
+                                                            isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
+                                                            !isUserChoice && isTheCorrectAnswer && "bg-green-500/5 border-green-500/50 border-dotted", // Correct & Not Selected
+                                                            isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
                                                         )}
                                                     >
-                                                        <div>
+                                                        <div className="mt-0.5">
                                                             {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
                                                             {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
                                                             {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
                                                             {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
                                                         </div>
                                                         <div className="flex-grow">
-                                                            <p>{option.text}</p>
-                                                            {isTheCorrectAnswer && !isUserChoice && (
-                                                                 <p className="text-xs text-green-400 mt-1">Correct Answer</p>
+                                                            <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
+                                                            
+                                                            {isUserChoice && isTheCorrectAnswer && (
+                                                                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
+                                                                    නිවැරදි පිළිතුර (ඔබ තේරූ)
+                                                                    <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
+                                                                </p>
+                                                            )}
+                                                            {isUserChoice && !isTheCorrectAnswer && (
+                                                                <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
+                                                                    වැරදි පිළිතුර (ඔබ තේරූ)
+                                                                    <span className="font-bold ml-2 text-red-500">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
+                                                                </p>
+                                                            )}
+                                                            {!isUserChoice && isTheCorrectAnswer && (
+                                                                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
                                                             )}
                                                         </div>
                                                     </div>
                                                 );
                                             })}
+                                        </div>
+                                         <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
+                                            <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{awardedPoints}</span> / {question.points}</p>
                                         </div>
                                     </div>
                                 );
