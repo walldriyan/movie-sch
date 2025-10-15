@@ -276,9 +276,12 @@ export default function ExamResultsPage() {
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Score</CardTitle>
-                                    <CardDescription className="text-3xl font-bold text-primary">
+                                    <CardDescription className={cn(
+                                        "text-3xl font-bold",
+                                        percentage >= 50 ? "text-primary" : "text-destructive"
+                                    )}>
                                         {submission.score} / {totalPoints}
-                                        <span className="block text-destructive text-sm font-semibold mt-1">(Pass: {passMark})</span>
+                                        <span className="block text-muted-foreground text-sm font-semibold mt-1">(Pass: {passMark})</span>
                                     </CardDescription>
                                 </CardHeader>
                             </Card>
@@ -398,3 +401,5 @@ export default function ExamResultsPage() {
         </div>
     )
 }
+
+    
