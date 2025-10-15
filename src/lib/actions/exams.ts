@@ -311,8 +311,8 @@ export async function submitExam(
   });
 
   if (existingSubmission) {
-    console.log(`--- [Server Action] Submission already exists for user ${user.id} and exam ${examId}. Redirecting to results.`);
-    return redirect(`/exams/${examId}/results?submissionId=${existingSubmission.id}`);
+    console.log(`--- [Server Action] Submission already exists for user ${user.id} and exam ${examId}. Returning existing.`);
+    return existingSubmission;
   }
 
   const exam = await prisma.exam.findUnique({
@@ -346,7 +346,7 @@ export async function submitExam(
         examId: exam.id,
         userId: user.id,
         score,
-        timeTakenSeconds: timeTakenSeconds,
+        timeTakenSeconds,
         answers: {
           create: answersToCreate,
         },
@@ -354,15 +354,15 @@ export async function submitExam(
     });
     
     revalidatePath(`/exams/${examId}`);
-    redirect(`/exams/${examId}/results?submissionId=${submission.id}`);
+    return submission;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
        const raceConditionSubmission = await prisma.examSubmission.findFirst({
         where: { userId: user.id, examId: examId },
       });
        if (raceConditionSubmission) {
-        console.log(`--- [Server Action] Caught race condition. Redirecting to existing submission.`);
-        return redirect(`/exams/${examId}/results?submissionId=${raceConditionSubmission.id}`);
+        console.log(`--- [Server Action] Caught race condition. Returning existing submission.`);
+        return raceConditionSubmission;
       }
     }
     // Re-throw other errors
@@ -413,3 +413,4 @@ export async function getExamResults(submissionId: number) {
 
     return { submission, submissionCount, user };
 }
+

@@ -1,7 +1,8 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -22,6 +23,7 @@ import type { getExamForTaker } from '@/lib/actions';
 type Exam = NonNullable<Awaited<ReturnType<typeof getExamForTaker>>>;
 
 export default function ExamTaker({ exam }: { exam: Exam }) {
+    const router = useRouter();
     const [hasStarted, setHasStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
     const [timeTaken, setTimeTaken] = useState(0);
@@ -29,8 +31,40 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
-    const formRef = useRef<HTMLFormElement>(null);
 
+    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        setIsSubmitting(true);
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
+
+        const formData = new FormData(event.currentTarget);
+        
+        const answers: Record<string, string> = {};
+        for (const [key, value] of formData.entries()) {
+           answers[key] = value as string;
+        }
+
+        const payload = {
+            answers,
+            timeTakenSeconds: timeTaken,
+        };
+        
+        console.log('--- [Client] Submitting Payload ---', payload);
+        
+        const newSubmission = await submitExam(exam.id, payload);
+
+        if (newSubmission) {
+            console.log('--- [Client] Received submission result from server ---', newSubmission);
+            router.push(`/exams/${exam.id}/results?submissionId=${newSubmission.id}`);
+        } else {
+             // Handle case where submission fails but doesn't throw
+            setIsSubmitting(false);
+            alert("There was an error submitting your exam. Please try again.");
+        }
+    };
+    
     useEffect(() => {
         if (!hasStarted || !exam.durationMinutes || isSubmitting) {
             if (timerRef.current) {
@@ -44,8 +78,10 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             setTimeLeft(prevTime => {
                 if (prevTime <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    if (formRef.current && !isSubmitting) {
-                       formRef.current.requestSubmit();
+                    const formElement = document.querySelector('form');
+                    if (formElement && !isSubmitting) {
+                       setIsSubmitting(true);
+                       formElement.requestSubmit();
                     }
                     return 0;
                 }
@@ -75,31 +111,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         setHasStarted(true);
     };
 
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        setIsSubmitting(true);
-        if (timerRef.current) {
-            clearInterval(timerRef.current);
-        }
-
-        const formData = new FormData(event.currentTarget);
-        
-        const answers: Record<string, string> = {};
-        for (const [key, value] of formData.entries()) {
-            if (key !== 'timeTakenSeconds') {
-                answers[key] = value as string;
-            }
-        }
-
-        const payload = {
-            answers,
-            timeTakenSeconds: timeTaken,
-        };
-        
-        console.log('--- [Client] Submitting Payload ---', payload);
-        
-        await submitExam(exam.id, payload);
-    };
 
     if (!hasStarted) {
         return (
@@ -159,9 +170,8 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                              )}
                         </div>
                     </CardHeader>
-                    <form onSubmit={handleFormSubmit} ref={formRef}>
+                    <form onSubmit={handleFormSubmit}>
                         <CardContent className="space-y-8">
-                            <input type="hidden" name="timeTakenSeconds" value={timeTaken} />
                             {exam.questions.map((question, qIndex) => (
                                 <div key={question.id}>
                                     <Separator className={qIndex > 0 ? 'mb-8' : ''}/>
