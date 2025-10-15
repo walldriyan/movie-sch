@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -290,15 +291,20 @@ export async function savePost(postData: PostFormData, id?: number) {
     if (!existingPost) {
         throw new Error('Post not found');
     }
-    if (finalPosterUrl !== existingPost?.posterUrl) {
-      await deleteUploadedFile(existingPost?.posterUrl);
+    // Only delete the old poster if a new one is uploaded and they are different
+    if (finalPosterUrl && finalPosterUrl !== existingPost.posterUrl) {
+      await deleteUploadedFile(existingPost.posterUrl);
     }
     
     await prisma.$transaction([
       prisma.mediaLink.deleteMany({ where: { postId: id } }),
       prisma.post.update({ 
           where: { id }, 
-          data: { ...data, status: status, mediaLinks: { create: postData.mediaLinks } }
+          data: { 
+            ...data, 
+            status: status, 
+            mediaLinks: { create: postData.mediaLinks } 
+          }
       })
     ]);
 

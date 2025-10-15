@@ -29,13 +29,13 @@ import {
 } from "@/components/ui/command";
 
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries, createSeries, getGroupsForForm, savePost } from '@/lib/actions';
+import { getSeries, createSeries, getGroupsForForm } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
@@ -78,7 +78,7 @@ interface PostFormProps {
   editingPost: PostWithLinks | null;
   onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
-  debugError: any;
+  debugError?: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -182,8 +182,6 @@ export default function PostForm({
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
   const [isSubmitting, startTransition] = React.useTransition();
 
 
@@ -418,7 +416,7 @@ export default function PostForm({
                       </FormControl>
                       <SelectContent>
                         {(['MOVIE', 'TV_SERIES', 'OTHER'] as const).map((type) => (
-                           <SelectItem key={type} value={type}>{type}</SelectItem>
+                           <SelectItem key={type} value={type}>{type.replace('_', ' ')}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -669,9 +667,6 @@ export default function PostForm({
                           <FormLabel>Group</FormLabel>
                           <Select 
                               onValueChange={(value) => {
-                                console.log('Raw value from Select:', value);
-                                const selectedGroup = groups.find(g => g.id === value);
-                                console.log('Selected Group Object:', selectedGroup);
                                 field.onChange(value || null);
                               }}
                               defaultValue={field.value || ""}
@@ -712,7 +707,7 @@ export default function PostForm({
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="trailer">Trailer</SelectItem>
@@ -757,16 +752,13 @@ export default function PostForm({
           </div>
           
           {debugError && (
-            <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
-                <h3 className="font-semibold text-destructive mb-2">Submission Error Details</h3>
-                <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
-                {JSON.stringify({
-                    message: debugError.message,
-                    stack: debugError.stack,
-                    ...debugError,
-                }, null, 2)}
-                </pre>
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Submission Error</AlertTitle>
+              <AlertDescription>
+                {debugError.message || "An unexpected error occurred."}
+              </AlertDescription>
+            </Alert>
           )}
           
           <div className="flex justify-end pt-4">
