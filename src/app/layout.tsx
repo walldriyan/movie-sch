@@ -29,6 +29,10 @@ const fontSinhala = Noto_Sans_Sinhala({
   variable: '--font-sinhala',
 });
 
+export function reportWebVitals(metric: any) {
+  console.log('[Performance Metric]', metric);
+}
+
 export default async function RootLayout({
   children,
 }: Readonly<{
