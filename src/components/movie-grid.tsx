@@ -81,7 +81,6 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
             src={movieImageUrl}
             alt={movie.title}
             fill
-            priority={isFirst}
             sizes={isFirst ? "(max-width: 768px) 100vw, 66vw" : "(max-width: 768px) 50vw, 33vw"}
             className={cn(
               'object-cover rounded-xl transition-transform duration-300 group-hover:scale-105',
