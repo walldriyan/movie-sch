@@ -151,6 +151,10 @@ export async function getPosts(options: { page?: number; limit?: number, filters
             author: true,
             series: {
               include: {
+                posts: {
+                  select: { posterUrl: true },
+                  orderBy: { orderInSeries: 'asc' },
+                },
                 _count: {
                   select: { posts: true }
                 }
@@ -184,6 +188,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
                 ...post.series,
                 createdAt: post.series.createdAt.toISOString(),
                 updatedAt: post.series.updatedAt.toISOString(),
+                 posts: post.series.posts, 
             } : null,
         })),
         totalPages,
@@ -595,5 +600,3 @@ export async function getFavoritePosts() {
     genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
-
-    

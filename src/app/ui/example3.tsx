@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { Post } from '@/lib/types';
+import Image from 'next/image';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -15,14 +16,16 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   useEffect(() => {
     // Limit to 10 posts and map post data to card data on client-side
     const generatedCards = initialPosts.slice(0, 10).map((post, index) => {
-      const cardType = index === 2 ? 'hero' : (index % 3 === 0 ? 'grid' : (index % 3 === 1 ? 'dots' : 'single'));
+      const isSeriesPost = post.series && post.series.posts && post.series.posts.length > 0;
+      const cardType = index === 2 ? 'hero' : (isSeriesPost ? 'series' : (index % 3 === 1 ? 'dots' : 'single'));
+
       return {
         id: post.id,
         image: post.posterUrl || `https://picsum.photos/seed/${post.id}/600/800`,
         brand: post.author?.name || 'CineVerse',
         authorImage: post.author?.image,
+        series: post.series,
         type: cardType,
-        gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'], // Example colors
         rotation: index === 2 ? 0 : getRandomValue(-12, 12),
         distance: index === 2 ? 0.5 : getRandomValue(0.6, 0.8)
       };
@@ -73,6 +76,37 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.05)`;
   };
+  
+  const renderSeriesGrid = (series: any) => {
+    if (!series || !series.posts) return null;
+    const otherPosts = series.posts;
+    const totalCount = series._count?.posts || 0;
+    
+    return (
+      <div className="grid grid-cols-3 gap-1.5 md:gap-2 p-2 md:p-3 bg-white">
+        {Array.from({ length: 3 }).map((_, idx) => {
+          const post = otherPosts[idx];
+          if (idx < 2) {
+            return (
+              <div key={idx} className="h-10 md:h-12 lg:h-14 rounded bg-muted overflow-hidden relative">
+                {post && post.posterUrl && (
+                  <Image src={post.posterUrl} alt="series post" layout="fill" objectFit="cover" />
+                )}
+              </div>
+            );
+          }
+          if (idx === 2) {
+            return (
+              <div key={idx} className="h-10 md:h-12 lg:h-14 rounded bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+                +{totalCount}
+              </div>
+            );
+          }
+          return null;
+        })}
+      </div>
+    );
+  };
 
   const renderCard = (card: any) => {
     const isHero = card.type === 'hero';
@@ -91,7 +125,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           <div className="relative">
             <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold z-10 overflow-hidden">
               {card.authorImage ? (
-                <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
+                <Image src={card.authorImage} alt={card.brand} layout="fill" objectFit="cover" />
               ) : (
                 card.brand.charAt(0)
               )}
@@ -100,20 +134,16 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           </div>
         )}
 
-        <img
+        <Image
           src={card.image}
           alt={card.brand}
+          width={isHero ? 288 : 176}
+          height={isHero ? 384 : 224}
           className={`w-full object-cover ${isHero ? 'h-64 sm:h-72 md:h-80 lg:h-96' : 'h-40 sm:h-44 md:h-48 lg:h-56'}`}
         />
 
-        {card.type === 'grid' && (
-          <div className="grid grid-cols-3 gap-1.5 md:gap-2 p-2 md:p-3 bg-white">
-            {card.gridColors.map((color: string, idx: number) => (
-              <div key={idx} className={`${color} h-10 md:h-12 lg:h-14 rounded`}></div>
-            ))}
-          </div>
-        )}
-
+        {card.type === 'series' && renderSeriesGrid(card.series)}
+        
         {card.type === 'dots' && (
           <div className="flex justify-center gap-1 p-2 bg-white">
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
@@ -136,8 +166,8 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         </h1>
       </div>
 
-      {/* Cards Container - horizontal scroll එකක් */}
-      <div className="w-full py-8 px-4 md:px-8 overflow-y-hidden overflow-x-auto">
+      {/* Cards Container */}
+      <div className="w-full py-8 overflow-y-hidden overflow-x-auto">
         <div
           ref={containerRef}
           className="flex gap-4 md:gap-6 lg:gap-8 pb-4"
@@ -161,5 +191,3 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     </div>
   );
 }
-
-    
