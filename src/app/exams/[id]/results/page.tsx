@@ -204,7 +204,7 @@ export default function ExamResultsPage() {
     
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
-            <div className="hidden">
+            <div className="hidden print:block">
               <PrintableView results={results}/>
             </div>
             <div className="max-w-4xl mx-auto no-print">
