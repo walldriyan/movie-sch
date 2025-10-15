@@ -1,11 +1,10 @@
-
 'use server';
 
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 import { revalidatePath } from 'next/cache';
-import type { NotificationTargetType, Notification, NotificationStatus } from '@prisma/client';
+import type { Notification, NotificationStatus, NotificationType } from '@prisma/client';
 
 export async function sendNotification(
   values: {
@@ -22,57 +21,107 @@ export async function sendNotification(
     throw new Error('Not authorized');
   }
 
-  // --- [Server Action: Debug Log] Received values from client ---
   console.log('--- [Server Action: sendNotification] Received values ---', values);
-  
-  // CRITICAL FIX: Handle the "PUBLIC" type from the client.
-  // We will map the client-side 'PUBLIC' type to a valid Prisma enum value.
-  // The logic is: a "PUBLIC" notification is conceptually a notification to a "USER" with a `targetId` of `null`.
-  const prismaType: NotificationTargetType = values.type === 'PUBLIC' ? 'USER' : values.type;
 
-  const dataToCreate = {
+  let targetUserIds: string[] = [];
+
+  if (values.type === 'USER' && values.targetId) {
+    targetUserIds.push(values.targetId);
+  } else if (values.type === 'GROUP' && values.targetId) {
+    const members = await prisma.groupMember.findMany({
+      where: { groupId: values.targetId, status: 'ACTIVE' },
+      select: { userId: true },
+    });
+    targetUserIds = members.map(m => m.userId);
+  } else if (values.type === 'PUBLIC') {
+    const allUsers = await prisma.user.findMany({
+      select: { id: true },
+    });
+    targetUserIds = allUsers.map(u => u.id);
+  }
+
+  if (targetUserIds.length === 0 && values.type !== 'PUBLIC') {
+    // Don't create a notification if there are no targets, unless it's a public one with no users in db yet
+    console.log("No target users found for this notification. Aborting.");
+    return null;
+  }
+
+  const dataForNotification = {
     title: values.title,
     message: values.message,
-    type: prismaType,
-    // When the original type is 'PUBLIC', we explicitly set targetId to null.
-    // Otherwise, we use the targetId from the form.
-    targetId: values.type === 'PUBLIC' ? null : values.targetId,
+    type: 'CUSTOM' as NotificationType, // Using a valid enum from the schema
+    senderId: user.id,
+    users: {
+      create: targetUserIds.map(userId => ({
+        userId: userId,
+        status: 'UNREAD' as NotificationStatus,
+      })),
+    },
   };
 
-  // --- [Server Action: Debug Log] Data being sent to Prisma ---
-  console.log('--- [Server Action: sendNotification] Data for prisma.notification.create ---', dataToCreate);
+  console.log('--- [Server Action: sendNotification] Data for prisma.notification.create ---', JSON.stringify(dataForNotification, null, 2));
 
   const notification = await prisma.notification.create({
-    data: dataToCreate,
+    data: dataForNotification,
   });
-  
+
   revalidatePath('/');
-  
+
   return notification;
 }
 
 export async function getNotifications(): Promise<Notification[]> {
-    const notifications = await prisma.notification.findMany({
-        orderBy: {
-            createdAt: 'desc',
-        },
-    });
-    return notifications.map(n => ({
-      ...n,
-      createdAt: n.createdAt.toISOString(),
-      updatedAt: n.updatedAt.toISOString(),
-    })) as unknown as Notification[];
+  const session = await auth();
+  const user = session?.user;
+
+  if (!user) {
+    return [];
+  }
+
+  const userNotifications = await prisma.userNotification.findMany({
+    where: { userId: user.id },
+    include: {
+      notification: true,
+    },
+    orderBy: {
+      notification: {
+        createdAt: 'desc',
+      },
+    },
+  });
+
+  return userNotifications.map(un => ({
+    ...un.notification,
+    // Override notification status with user-specific status
+    status: un.status, 
+    id: un.notificationId, // Use notification ID
+    createdAt: un.notification.createdAt.toISOString(),
+    updatedAt: un.notification.updatedAt.toISOString(),
+  })) as unknown as Notification[];
 }
 
-export async function updateNotificationStatus(notificationId: string, status: NotificationStatus): Promise<Notification> {
+export async function updateNotificationStatus(notificationId: string, status: NotificationStatus): Promise<UserNotification | null> {
     const session = await auth();
     if (!session?.user) {
         throw new Error("Not authenticated");
     }
-    const updatedNotification = await prisma.notification.update({
-        where: { id: notificationId },
+    const userId = session.user.id;
+
+    const userNotification = await prisma.userNotification.findUnique({
+      where: { userId_notificationId: { userId, notificationId } },
+    });
+
+    if (!userNotification) {
+      // This might happen if a notification is created for a user who then logs out
+      // or if the notification is deleted before they can mark it as read.
+      console.warn(`UserNotification record not found for userId: ${userId} and notificationId: ${notificationId}`);
+      return null;
+    }
+
+    const updatedUserNotification = await prisma.userNotification.update({
+        where: { userId_notificationId: { userId, notificationId } },
         data: { status },
     });
     revalidatePath('/');
-    return updatedNotification;
+    return updatedUserNotification;
 }

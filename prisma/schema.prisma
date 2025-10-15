@@ -425,3 +425,8 @@ enum NotificationStatus {
   READ
   DELETED
 }
+
+enum NotificationTargetType {
+  USER
+  GROUP
+}
