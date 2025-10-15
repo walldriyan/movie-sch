@@ -445,7 +445,6 @@ export async function getExamResultsForAdmin(examId: number) {
             submittedAt: true,
             userId: true,
             examId: true,
-            attempts: true,
             attemptCount: true,
             user: {
                 select: {
