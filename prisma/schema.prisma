@@ -407,6 +407,7 @@ model ExamSubmission {
   score       Int
   submittedAt DateTime  @default(now())
   timeTakenSeconds Int
+  attemptCount Int @default(1)
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
