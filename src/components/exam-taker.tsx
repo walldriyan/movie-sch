@@ -22,6 +22,25 @@ import { useFormStatus } from 'react-dom';
 
 type Exam = NonNullable<Awaited<ReturnType<typeof getExamForTaker>>>;
 
+const SubmitButton = () => {
+    const { pending: isSubmitting } = useFormStatus();
+    return (
+        <Button type="submit" size="lg" disabled={isSubmitting}>
+            {isSubmitting ? (
+                <>
+                    <Clock className="mr-2 h-4 w-4 animate-spin" />
+                    Submitting...
+                </>
+            ) : (
+                <>
+                    <Send className="mr-2 h-4 w-4" />
+                    Submit Exam
+                </>
+            )}
+        </Button>
+    )
+}
+
 export default function ExamTaker({ exam }: { exam: Exam }) {
     const [hasStarted, setHasStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
@@ -62,25 +81,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         const s = (seconds % 60).toString().padStart(2, '0');
         return `${h}:${m}:${s}`;
     };
-
-    const SubmitButton = () => {
-        const { pending: isSubmitting } = useFormStatus();
-        return (
-            <Button type="submit" size="lg" disabled={isSubmitting}>
-                {isSubmitting ? (
-                    <>
-                        <Clock className="mr-2 h-4 w-4 animate-spin" />
-                        Submitting...
-                    </>
-                ) : (
-                    <>
-                        <Send className="mr-2 h-4 w-4" />
-                        Submit Exam
-                    </>
-                )}
-            </Button>
-        )
-    }
 
     if (!hasStarted) {
         return (
