@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -300,20 +301,6 @@ export async function submitExam(
 
   const { answers, timeTakenSeconds } = payload;
   console.log('--- [Server Action] Received Payload ---', payload);
-  console.log('--- [Server Action] Parsed timeTakenSeconds:', timeTakenSeconds);
-
-  // Check if a submission already exists to prevent race conditions.
-  const existingSubmission = await prisma.examSubmission.findFirst({
-    where: {
-      userId: user.id,
-      examId: examId,
-    },
-  });
-
-  if (existingSubmission) {
-    console.log(`--- [Server Action] Submission already exists for user ${user.id} and exam ${examId}. Returning existing.`);
-    return existingSubmission;
-  }
 
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
@@ -346,19 +333,35 @@ export async function submitExam(
         examId: exam.id,
         userId: user.id,
         score,
-        timeTakenSeconds,
+        timeTakenSeconds: timeTakenSeconds,
         answers: {
           create: answersToCreate,
         },
       },
+       select: { // Explicitly select all fields to ensure they are returned
+        id: true,
+        examId: true,
+        userId: true,
+        score: true,
+        submittedAt: true,
+        timeTakenSeconds: true,
+      }
     });
-    
     revalidatePath(`/exams/${examId}`);
+    console.log('--- [Server Action] Created Submission ---', submission);
     return submission;
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
        const raceConditionSubmission = await prisma.examSubmission.findFirst({
         where: { userId: user.id, examId: examId },
+         select: { // Explicitly select all fields here too
+            id: true,
+            examId: true,
+            userId: true,
+            score: true,
+            submittedAt: true,
+            timeTakenSeconds: true,
+        },
       });
        if (raceConditionSubmission) {
         console.log(`--- [Server Action] Caught race condition. Returning existing submission.`);
@@ -413,4 +416,5 @@ export async function getExamResults(submissionId: number) {
 
     return { submission, submissionCount, user };
 }
+
 
