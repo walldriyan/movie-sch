@@ -284,7 +284,13 @@ export async function getExamForTaker(examId: number) {
 }
 
 
-export async function submitExam(examId: number, formData: FormData) {
+export async function submitExam(
+  examId: number,
+  payload: {
+    answers: Record<string, string>;
+    timeTakenSeconds: number;
+  }
+) {
   const session = await auth();
   const user = session?.user;
 
@@ -292,23 +298,9 @@ export async function submitExam(examId: number, formData: FormData) {
     throw new Error('Not authenticated');
   }
 
-  // Debugging: Log received form data on the server
-  console.log('--- [Server Action] Received FormData ---');
-  const formDataObj: { [key: string]: any } = {};
-  for (const [key, value] of formData.entries()) {
-    formDataObj[key] = value;
-  }
-  console.log(formDataObj);
-  
-  const timeTakenSecondsValue = formData.get('timeTakenSeconds');
-  console.log(`--- [Server Action] timeTakenSeconds from FormData:`, timeTakenSecondsValue, 'Type:', typeof timeTakenSecondsValue);
-  const timeTakenSeconds = timeTakenSecondsValue ? Number(timeTakenSecondsValue) : null;
-  console.log(`--- [Server Action] Parsed timeTakenSeconds:`, timeTakenSeconds, 'Type:', typeof timeTakenSeconds);
-  
-  if (timeTakenSeconds !== null && isNaN(timeTakenSeconds)) {
-      console.error('--- [Server Action] CRITICAL: timeTakenSeconds is NaN ---');
-  }
-
+  const { answers, timeTakenSeconds } = payload;
+  console.log('--- [Server Action] Received Payload ---', payload);
+  console.log('--- [Server Action] Parsed timeTakenSeconds:', timeTakenSeconds);
 
   // Check if a submission already exists to prevent race conditions.
   const existingSubmission = await prisma.examSubmission.findFirst({
@@ -336,7 +328,7 @@ export async function submitExam(examId: number, formData: FormData) {
   const answersToCreate: { questionId: number, selectedOptionId: number }[] = [];
 
   for (const question of exam.questions) {
-    const selectedOptionIdStr = formData.get(`question-${question.id}`) as string;
+    const selectedOptionIdStr = answers[`question-${question.id}`];
     if (selectedOptionIdStr) {
       const selectedOptionId = parseInt(selectedOptionIdStr, 10);
       const correctOption = question.options.find(opt => opt.isCorrect);

@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useTransition } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -26,12 +26,10 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     const [timeLeft, setTimeLeft] = useState(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
     const [timeTaken, setTimeTaken] = useState(0);
     const [showWarning, setShowWarning] = useState(false);
-    const [isSubmitting, startTransition] = useTransition();
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
-
-    const submitExamWithId = submitExam.bind(null, exam.id);
 
     useEffect(() => {
         if (!hasStarted || !exam.durationMinutes || isSubmitting) {
@@ -65,7 +63,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         };
     }, [hasStarted, exam.durationMinutes, showWarning, isSubmitting]);
 
-
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
         const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
@@ -78,21 +75,30 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         setHasStarted(true);
     };
 
-    const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
-        startTransition(async () => {
-            const formData = new FormData(event.currentTarget);
-            
-            // Client-side debugging log
-            console.log('--- [Client] Submitting FormData ---');
-            const formDataObj: { [key: string]: any } = {};
-            for (const [key, value] of formData.entries()) {
-                formDataObj[key] = value;
-            }
-            console.log(JSON.stringify(formDataObj, null, 2));
+        setIsSubmitting(true);
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+        }
 
-            await submitExamWithId(formData);
-        });
+        const formData = new FormData(event.currentTarget);
+        
+        const answers: Record<string, string> = {};
+        for (const [key, value] of formData.entries()) {
+            if (key !== 'timeTakenSeconds') {
+                answers[key] = value as string;
+            }
+        }
+
+        const payload = {
+            answers,
+            timeTakenSeconds: timeTaken,
+        };
+        
+        console.log('--- [Client] Submitting Payload ---', payload);
+        
+        await submitExam(exam.id, payload);
     };
 
     if (!hasStarted) {
