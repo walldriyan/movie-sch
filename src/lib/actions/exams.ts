@@ -295,7 +295,6 @@ export async function submitExam(
     throw new Error('Not authenticated');
   }
 
-  console.log('--- [Server Action] Received Payload ---', payload);
   const { answers, timeTakenSeconds } = payload;
   
   const exam = await prisma.exam.findUnique({
@@ -339,45 +338,55 @@ export async function submitExam(
     }
   }
 
-  try {
-    const submissionData = {
-      score,
-      timeTakenSeconds: timeTakenSeconds,
-      submittedAt: new Date(), // Always update timestamp on new attempt
-    };
+    // Use a transaction to handle the submission process
+    const submission = await prisma.$transaction(async (tx) => {
+        // Check for an existing submission
+        const existingSubmission = await tx.examSubmission.findUnique({
+            where: {
+                userId_examId: {
+                    userId: user.id,
+                    examId: exam.id,
+                },
+            },
+            select: { id: true }
+        });
 
-    const newSubmission = await prisma.examSubmission.upsert({
-      where: {
-        userId_examId: {
-          userId: user.id,
-          examId: exam.id,
-        },
-      },
-      update: {
-        ...submissionData,
-        answers: {
-          deleteMany: {}, // Delete old answers
-          create: answersToCreate, // Create new ones
-        },
-      },
-      create: {
-        userId: user.id,
-        examId: exam.id,
-        ...submissionData,
-        answers: {
-          create: answersToCreate,
-        },
-      },
+        if (existingSubmission) {
+            // If it exists, delete old answers and then update the submission
+            await tx.submissionAnswer.deleteMany({
+                where: { submissionId: existingSubmission.id }
+            });
+
+            return tx.examSubmission.update({
+                where: { id: existingSubmission.id },
+                data: {
+                    score,
+                    timeTakenSeconds,
+                    submittedAt: new Date(),
+                    answers: {
+                        create: answersToCreate,
+                    },
+                },
+            });
+        } else {
+            // If it doesn't exist, create a new submission
+            return tx.examSubmission.create({
+                data: {
+                    userId: user.id,
+                    examId: exam.id,
+                    score,
+                    timeTakenSeconds,
+                    submittedAt: new Date(),
+                    answers: {
+                        create: answersToCreate,
+                    },
+                },
+            });
+        }
     });
 
-    console.log('--- [Server Action] DB Upsert SUCCESS. Returning object: ---', newSubmission);
-    return newSubmission;
-
-  } catch (error: any) {
-    console.error('--- [Server Action] Error during submission upsert:', error);
-    
-    throw error;
-  }
+    console.log('--- [Server Action] DB Upsert/Create SUCCESS. Returning object: ---', submission);
+    return submission;
 }
 
 
