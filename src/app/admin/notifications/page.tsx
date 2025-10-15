@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -112,7 +111,7 @@ function ComboboxSelector({ field, items, placeholder, notFoundText }: { field: 
                 </Command>
             </PopoverContent>
         </Popover>
-    )
+    );
 }
 
 export default function NotificationsPage() {
@@ -158,39 +157,47 @@ export default function NotificationsPage() {
   }, [targetType, form]);
 
   const onSubmit = (values: NotificationFormValues) => {
-    console.log('--- [Client] Data being sent to server action ---');
-    console.log(JSON.stringify(values, null, 2));
+    console.log('--- [Client] Data being sent to server action ---', values);
 
     startSubmitting(async () => {
-      // The try-catch block is removed to allow the error boundary to catch errors.
-      await sendNotification({
-          title: values.title,
-          message: values.message,
-          type: values.targetType as NotificationTargetType,
-          targetId: values.targetId || null,
-      });
-      toast({
-          title: "Notification Sent",
-          description: "Your notification has been successfully sent and saved.",
-      });
-      form.reset();
+        try {
+            const result = await sendNotification({
+                title: values.title,
+                message: values.message,
+                type: values.targetType,
+                targetId: values.targetId || null,
+            });
+            console.log('--- [Server Action] Response from sendNotification ---', result);
+            toast({
+                title: "Notification Sent",
+                description: "Your notification has been successfully sent and saved.",
+            });
+            form.reset();
+        } catch (error) {
+            console.error("--- [Notification Send Error] ---", error);
+            toast({
+                variant: 'destructive',
+                title: 'Failed to Send',
+                description: 'There was an error sending the notification. Please check the console.'
+            });
+        }
     });
   };
 
   return (
-     <div className="space-y-6">
-       <h1 className="font-semibold text-lg md:text-2xl">Send Notification</h1>
-       <Card>
-         <CardHeader>
-           <CardTitle>Compose Notification</CardTitle>
-           <CardDescription>
-             Craft and send a notification to your users.
-           </CardDescription>
-         </CardHeader>
-         <CardContent>
-           <Form {...form}>
-             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-               <FormField
+    <div className="space-y-6">
+      <h1 className="font-semibold text-lg md:text-2xl">Send Notification</h1>
+      <Card>
+        <CardHeader>
+          <CardTitle>Compose Notification</CardTitle>
+          <CardDescription>
+            Craft and send a notification to your users.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
                 control={form.control}
                 name="title"
                 render={({ field }) => (
@@ -224,7 +231,7 @@ export default function NotificationsPage() {
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <FormField
+                <FormField
                     control={form.control}
                     name="targetType"
                     render={({ field }) => (
@@ -237,7 +244,7 @@ export default function NotificationsPage() {
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                            <SelectItem value="FEATURE"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
+                            <SelectItem value="ROLE"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
                             <SelectItem value="USER"><div className="flex items-center gap-2"><UserIcon className="h-4 w-4"/> Specific User</div></SelectItem>
                             <SelectItem value="GROUP"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Group</div></SelectItem>
                             <SelectItem value="ROLE"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Role</div></SelectItem>
@@ -275,7 +282,7 @@ export default function NotificationsPage() {
                         )}
                     />
                 )}
-                 {targetType === 'ROLE' && (
+                {targetType === 'ROLE' && (
                     <FormField
                         control={form.control}
                         name="targetId"
@@ -290,7 +297,7 @@ export default function NotificationsPage() {
                                     </FormControl>
                                     <SelectContent>
                                         {roles.map(role => (
-                                             <SelectItem key={role} value={role}>{role}</SelectItem>
+                                            <SelectItem key={role} value={role}>{role}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
