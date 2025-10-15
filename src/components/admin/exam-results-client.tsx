@@ -190,8 +190,11 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                             </div>
                                                             <div className="flex-grow">
                                                                 <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                                {isTheCorrectAnswer && !isUserChoice && (
-                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">Correct Answer</p>
+                                                                {isUserChoice && !isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">ඔබ තේරූ පිළිතුර</p>
+                                                                )}
+                                                                {isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර</p>
                                                                 )}
                                                             </div>
                                                         </div>
