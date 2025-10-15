@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
@@ -51,7 +52,7 @@ type ExamResultsType = Awaited<ReturnType<typeof getExamResults>>;
 
 function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResultSubmission, onUpdate: () => void }) {
     const [open, setOpen] = useState(false);
-    const [attempts, setAttempts] = useState(submission.attempts);
+    const [attempts, setAttempts] = useState(submission.attempts ?? 0);
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
@@ -87,7 +88,7 @@ function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResult
                     <Input 
                         id="attempts"
                         type="number"
-                        value={attempts}
+                        value={attempts ?? ''}
                         onChange={(e) => setAttempts(Number(e.target.value))}
                         min="0"
                     />
