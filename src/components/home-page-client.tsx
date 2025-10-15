@@ -92,7 +92,7 @@ export default function HomePageClient({
   const unreadCount = notifications.filter(n => n.status !== 'READ').length;
   
   const posts = initialPosts;
-  const users = initialUsers;
+  const users = initialUsers.slice(0, 10);
   const groups = initialGroups;
   const timeFilter = searchParams?.timeFilter;
   const sortBy = searchParams?.sortBy;
@@ -272,10 +272,9 @@ export default function HomePageClient({
                             href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter })}
                             className={cn(
                                 "dark bg-gray-800 hover:bg-gray-700",
-                                currentPage === 1 && "pointer-events-none opacity-50"
+                                currentPage <= 1 && "pointer-events-none opacity-50"
                             )}
                             >
-                            <ChevronLeft className="h-5 w-5" />
                             </PaginationPrevious>
                         </PaginationItem>
 
@@ -290,10 +289,9 @@ export default function HomePageClient({
                             href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter })}
                             className={cn(
                                 "dark bg-gray-800 hover:bg-gray-700",
-                                currentPage === totalPages && "pointer-events-none opacity-50"
+                                currentPage >= totalPages && "pointer-events-none opacity-50"
                             )}
                             >
-                            <ChevronRight className="h-5 w-5" />
                             </PaginationNext>
                         </PaginationItem>
                         </PaginationContent>

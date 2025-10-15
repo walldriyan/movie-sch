@@ -190,7 +190,7 @@ export default function MetaSpotlight1() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden relative">
+    <div className="h-[250px] overflow-hidden relative bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-4 md:p-8 overflow-hidden relative">
       {/* Text Overlay */}
       <div className="absolute top-8 md:top-12 left-0 right-0 text-center z-20 px-4">
         <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight">

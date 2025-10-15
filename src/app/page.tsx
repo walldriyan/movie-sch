@@ -16,7 +16,7 @@ export default async function HomePage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const timeFilter = (searchParams?.timeFilter as string) || 'all';
+  const timeFilter = (searchParams?.timeFilter as string) || 'updatedAt-desc';
   const sortBy = (searchParams?.sortBy as string) || 'updatedAt-desc';
   const typeFilter = searchParams?.type as string | undefined;
   const currentPage = Number(searchParams?.page) || 1;
@@ -25,19 +25,19 @@ export default async function HomePage({
   console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
 
   const { posts, totalPages } = await getPosts({
-    page: 1,
-    limit: 15, // Fetch more posts for the spotlight
+    page: currentPage,
+    limit: 10,
     filters: { timeFilter, sortBy, type: typeFilter },
   });
   const users = await getUsers();
-  const groups = await getPublicGroups(5);
+  const groups = await getPublicGroups(10);
   const notifications = await getNotifications();
   
   return (
     <>
       <MetaSpotlight3 posts={posts as Post[]} />
-      <MetaSpotlight1 />
-      <MetaSpotlight/>
+      {/* <MetaSpotlight1 /> */}
+     
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
@@ -48,6 +48,7 @@ export default async function HomePage({
         initialNotifications={notifications}
         session={session}
       />
+       <MetaSpotlight/>
     </>
   );
 }

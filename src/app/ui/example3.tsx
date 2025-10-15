@@ -176,11 +176,11 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
+    <div className="min-h-[410px] bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
       {/* Text Overlay - dark shadow එකක් දුන්නා */}
       <div className="absolute top-8 md:top-12 left-0 right-0 text-center z-20 px-4">
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]" 
-            style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.6)' }}>
+            style={{ textShadow: '0 24px 120px rgba(0,0,0,0.8), 0 2px 18px rgba(0,0,0,0.6)' }}>
           Put your business in<br />the spotlight.
         </h1>
       </div>
@@ -204,7 +204,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       <div className="absolute bottom-8 md:bottom-12 left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-2 md:gap-3 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
           <div className="text-white text-4xl md:text-5xl font-bold" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>∞</div>
-          <div className="text-white text-2xl md:text-3xl font-bold tracking-wide" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>Meta</div>
+          <div className="text-white text-2xl md:text-3xl font-bold tracking-wide" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>Walldriyan</div>
         </div>
       </div>
     </div>
