@@ -195,8 +195,8 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   return (
     <div className="h-[290px]  bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
       <div className="absolute top-8 md:top-12 left-0 right-0 z-20 px-4">
-        <h1 className="ml-12 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]" 
-            style={{ textShadow: '0 24px 320px rgba(0,0,0,0.8), 0 2px 318px rgba(0,0,0,0.6)' }}>
+        <h1 className="w-fit max-w-[500px] ml-12 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]" 
+            style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
           Put your <br />business in<br />the spotlight.
         </h1>
       </div>
