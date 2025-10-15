@@ -49,6 +49,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -343,7 +344,18 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
   )
 }
 
-const ManageExamsList = ({ exams, onEdit, onDelete, onExport }: { exams: ExamForListing[], onEdit: (id: number) => void, onDelete: (id: number) => void, onExport: (id: number) => void }) => {
+const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDeleting }: { exams: ExamForListing[], onEdit: (id: number) => void, onDelete: (id: number) => void, onExport: (id: number) => void, isLoading: boolean, isDeleting: boolean }) => {
+    
+    const SkeletonRow = () => (
+      <TableRow>
+        <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-1/2" /></TableCell>
+        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
+        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
+      </TableRow>
+    );
+
     return (
         <Card>
             <CardHeader>
@@ -362,7 +374,13 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport }: { exams: ExamFor
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {exams.length > 0 ? exams.map(exam => (
+                        {isLoading || isDeleting ? (
+                            <>
+                                <SkeletonRow />
+                                <SkeletonRow />
+                                <SkeletonRow />
+                            </>
+                        ) : exams.length > 0 ? exams.map(exam => (
                             <TableRow key={exam.id}>
                                 <TableCell className="font-medium">{exam.title}</TableCell>
                                 <TableCell className="text-muted-foreground">{exam.post.title}</TableCell>
@@ -405,6 +423,7 @@ export default function CreateExamPage() {
   const [posts, setPosts] = React.useState<PostWithGroup[]>([]);
   const [exams, setExams] = useState<ExamForListing[]>([]);
   const [editingExamId, setEditingExamId] = useState<number | null>(null);
+  const [isLoadingExams, setIsLoadingExams] = useState(true);
   const { toast } = useToast();
   const importFileInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -434,11 +453,14 @@ export default function CreateExamPage() {
   }
 
   const fetchExams = async () => {
+    setIsLoadingExams(true);
     try {
       const fetchedExams = await getExamsForAdmin();
       setExams(fetchedExams);
     } catch(error) {
        toast({ variant: 'destructive', title: 'Failed to load exams', description: 'Could not fetch the list of exams.'})
+    } finally {
+      setIsLoadingExams(false);
     }
   }
 
@@ -637,7 +659,7 @@ export default function CreateExamPage() {
           <TabsTrigger value="create">{editingExamId ? 'Edit Exam' : 'Create Exam'}</TabsTrigger>
         </TabsList>
         <TabsContent value="manage" className="mt-6">
-          <ManageExamsList exams={exams} onEdit={handleEdit} onDelete={handleDelete} onExport={handleExport} />
+          <ManageExamsList exams={exams} onEdit={handleEdit} onDelete={handleDelete} onExport={handleExport} isLoading={isLoadingExams} isDeleting={isSubmitting} />
         </TabsContent>
         <TabsContent value="create" className="mt-6">
           <CreateExamForm 
@@ -658,3 +680,5 @@ export default function CreateExamPage() {
     </div>
   );
 }
+
+    
