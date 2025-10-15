@@ -11,7 +11,7 @@ export async function sendNotification(
   values: {
     title: string;
     message: string;
-    type: NotificationTargetType;
+    type: 'PUBLIC' | 'USER' | 'GROUP';
     targetId?: string | null;
   }
 ) {
@@ -24,10 +24,13 @@ export async function sendNotification(
 
   console.log('--- [Server Action: sendNotification] Received values ---', values);
   
+  // Map 'PUBLIC' from client to 'FEATURE' for Prisma, as it's a valid enum.
+  const prismaType: NotificationTargetType = values.type === 'PUBLIC' ? 'FEATURE' : values.type;
+
   const dataToCreate = {
     title: values.title,
     message: values.message,
-    type: values.type,
+    type: prismaType,
     targetId: values.targetId,
   };
 

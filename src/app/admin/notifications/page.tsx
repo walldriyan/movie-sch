@@ -43,7 +43,7 @@ import { ROLES } from '@/lib/permissions';
 const notificationSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters.'),
   message: z.string().min(10, 'Message must be at least 10 characters.'),
-  targetType: z.enum(['USER', 'GROUP']),
+  targetType: z.enum(['PUBLIC', 'USER', 'GROUP']),
   targetId: z.string().optional(),
 }).superRefine((data, ctx) => {
     if ((data.targetType === 'USER' || data.targetType === 'GROUP') && !data.targetId) {
@@ -56,8 +56,6 @@ const notificationSchema = z.object({
 });
 
 type NotificationFormValues = z.infer<typeof notificationSchema>;
-
-const roles = Object.values(ROLES);
 
 function ComboboxSelector({ field, items, placeholder, notFoundText }: { field: any, items: any[], placeholder: string, notFoundText: string }) {
     const [open, setOpen] = useState(false);
@@ -147,7 +145,7 @@ export default function NotificationsPage() {
     defaultValues: {
       title: '',
       message: '',
-      targetType: 'USER',
+      targetType: 'PUBLIC',
     },
   });
 
@@ -167,7 +165,7 @@ export default function NotificationsPage() {
                 title: values.title,
                 message: values.message,
                 type: values.targetType,
-                targetId: values.targetId || null,
+                targetId: values.targetType === 'PUBLIC' ? null : values.targetId,
             });
             console.log('--- [Server Action] Response from sendNotification ---', result);
             toast({
@@ -246,6 +244,7 @@ export default function NotificationsPage() {
                             </SelectTrigger>
                         </FormControl>
                         <SelectContent>
+                            <SelectItem value="PUBLIC"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
                             <SelectItem value="USER"><div className="flex items-center gap-2"><UserIcon className="h-4 w-4"/> Specific User</div></SelectItem>
                             <SelectItem value="GROUP"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Group</div></SelectItem>
                         </SelectContent>
