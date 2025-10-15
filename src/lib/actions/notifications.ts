@@ -21,7 +21,7 @@ export async function sendNotification(
     throw new Error('Not authorized');
   }
 
-  console.log('--- [Server Action: sendNotification] Received values ---', values);
+  // console.log('--- [Server Action: sendNotification] Received values ---', values);
 
   let targetUserIds: string[] = [];
 
@@ -42,7 +42,7 @@ export async function sendNotification(
 
   if (targetUserIds.length === 0 && values.type !== 'PUBLIC') {
     // Don't create a notification if there are no targets, unless it's a public one with no users in db yet
-    console.log("No target users found for this notification. Aborting.");
+    // console.log("No target users found for this notification. Aborting.");
     return null;
   }
 
@@ -59,7 +59,7 @@ export async function sendNotification(
     },
   };
 
-  console.log('--- [Server Action: sendNotification] Data for prisma.notification.create ---', JSON.stringify(dataForNotification, null, 2));
+  // console.log('--- [Server Action: sendNotification] Data for prisma.notification.create ---', JSON.stringify(dataForNotification, null, 2));
 
   const notification = await prisma.notification.create({
     data: dataForNotification,

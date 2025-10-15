@@ -65,7 +65,7 @@ export default function HomePageClient({
     session
 }: HomePageClientProps) {
 
-  console.log("Client [/components/home-page-client.tsx] Received session prop:", JSON.stringify(session, null, 2));
+//   console.log("Client [/components/home-page-client.tsx] Received session prop:", JSON.stringify(session, null, 2));
   
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();

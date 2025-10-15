@@ -18,7 +18,7 @@ import EditGroupDialog from '@/components/admin/edit-group-dialog';
 import type { Session } from 'next-auth';
 
 export default function GroupProfileClient({ group, session }: { group: GroupForProfile, session: Session | null }) {
-  console.log("Client [/groups/[id]/client.tsx] Received session prop:", JSON.stringify(session, null, 2));
+//   console.log("Client [/groups/[id]/client.tsx] Received session prop:", JSON.stringify(session, null, 2));
   
   const { toast } = useToast();
   const currentUser = session?.user;
