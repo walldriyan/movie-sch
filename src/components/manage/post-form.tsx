@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -296,7 +297,7 @@ export default function PostForm({
     };
     reader.readAsDataURL(file);
   };
-
+  
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
@@ -308,7 +309,7 @@ export default function PostForm({
             {editingPost ? 'Edit Post' : 'Add New Post'}
           </h1>
         </div>
-      </div>
+      </div> 
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
@@ -783,5 +784,3 @@ export default function PostForm({
     </div>
   );
 }
-
-    
