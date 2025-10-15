@@ -262,7 +262,7 @@ export async function getExamForTaker(examId: number) {
         where: { examId: exam.id, userId: user.id }
     });
 
-    const attemptsAllowed = submission?.attempts ?? exam.attemptsAllowed;
+    const attemptsAllowed = exam.attemptsAllowed;
     const submissionCount = submission?.attemptCount ?? 0;
 
     if (attemptsAllowed > 0 && submissionCount >= attemptsAllowed) {
@@ -354,6 +354,9 @@ export async function submitExam(
             score,
             timeTakenSeconds,
             submittedAt: new Date(),
+            attemptCount: {
+                increment: 1
+            },
             answers: {
                 deleteMany: {},
                 create: answersToCreate
@@ -463,20 +466,20 @@ export async function getExamResultsForAdmin(examId: number) {
     return { exam, submissions };
 }
 
-export async function updateSubmissionAttempts(submissionId: number, userId: string, attempts: number) {
+export async function updateSubmissionAttempts(submissionId: number, userId: string, attemptCount: number) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
     }
     
-    if (attempts < 0) {
+    if (attemptCount < 0) {
         throw new Error('Attempts cannot be negative.');
     }
     
     await prisma.examSubmission.update({
         where: { id: submissionId, userId: userId },
         data: { 
-            attempts: attempts,
+            attemptCount: attemptCount,
         }
     });
     

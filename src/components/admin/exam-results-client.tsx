@@ -52,7 +52,7 @@ type ExamResultsType = Awaited<ReturnType<typeof getExamResults>>;
 
 function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResultSubmission, onUpdate: () => void }) {
     const [open, setOpen] = useState(false);
-    const [attempts, setAttempts] = useState(submission.attempts ?? 0);
+    const [attempts, setAttempts] = useState(submission.attemptCount ?? 0);
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
@@ -80,7 +80,7 @@ function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResult
                 <DialogHeader>
                     <DialogTitle>Manage Attempts for {submission.user.name}</DialogTitle>
                     <DialogDescription>
-                        Set the number of times this user can attempt the exam. Use 0 for unlimited.
+                        Set the number of times this user can attempt the exam.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4">
@@ -275,7 +275,8 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
                             {submissions.length > 0 ? submissions.map(sub => {
                                 const percentage = totalPoints > 0 ? (sub.score / totalPoints) * 100 : 0;
                                 const timeTaken = sub.timeTakenSeconds ? `${Math.floor(sub.timeTakenSeconds / 60)}m ${sub.timeTakenSeconds % 60}s` : 'N/A';
-
+                                const attemptsAllowed = exam.attemptsAllowed;
+                                
                                 return (
                                 <TableRow key={sub.id}>
                                     <TableCell>
@@ -295,7 +296,7 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
                                         <Badge variant={percentage >= 50 ? 'default' : 'secondary'}>{percentage.toFixed(0)}%</Badge>
                                     </TableCell>
                                     <TableCell>{timeTaken}</TableCell>
-                                    <TableCell>{sub.attemptCount} / {sub.attempts === 0 ? '∞' : sub.attempts}</TableCell>
+                                    <TableCell>{sub.attemptCount} / {attemptsAllowed === 0 ? '∞' : attemptsAllowed}</TableCell>
                                     <TableCell><ClientSideDate date={sub.submittedAt} formatString='MM/dd/yyyy' /></TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>
