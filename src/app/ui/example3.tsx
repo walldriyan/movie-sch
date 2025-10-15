@@ -181,7 +181,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         {card.type === 'series' && renderSeriesGrid(card.series)}
         
         {card.type === 'dots' && (
-          <div className="flex justify-center gap-1 p-2 bg-white">
+          <div className="flex justify-center gap-0 p-2 bg-white">
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-400 rounded-full"></div>
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
@@ -213,7 +213,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         <div ref={scrollContainerRef} className="w-full h-full py-8 overflow-x-auto overflow-y-hidden no-scrollbar">
           <div
             ref={containerRef}
-            className="flex items-center gap-2 md:gap-3 lg:gap-4 h-full"
+            className="flex items-center gap-2 md:gap-2 lg:gap-2 h-full"
             style={{ 
               perspective: '1000px',
               paddingLeft: 'calc(50% - 8rem)',
