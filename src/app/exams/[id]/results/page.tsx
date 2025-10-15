@@ -3,7 +3,7 @@
 'use client';
 
 import { notFound, redirect, useSearchParams, useParams } from 'next/navigation';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { getExamResults } from '@/lib/actions';
 import {
   Card,
@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot } from 'lucide-react';
+import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -242,17 +242,58 @@ export default function ExamResultsPage() {
                 if (correctOptionIds.includes(selectedId)) {
                     questionScore += pointsPerCorrectAnswer;
                 } else {
-                    // Deduct points for a wrong answer
                     questionScore -= pointsPerCorrectAnswer; 
                 }
             }
             return Math.max(0, Math.round(questionScore));
         } else {
-            // Single choice
             const selectedOptionId = userAnswersForQuestion[0];
             return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
         }
     };
+    
+    const scoreBreakdown = useMemo(() => {
+        let positiveMarks = 0;
+        let negativeMarks = 0;
+        let missedMarks = 0;
+
+        submission.exam.questions.forEach(question => {
+            const userAnswersIds = submission.answers.filter(a => a.questionId === question.id).map(a => a.selectedOptionId);
+            const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
+            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+
+            if (question.isMultipleChoice) {
+                userAnswersIds.forEach(id => {
+                    if (correctOptionIds.includes(id)) {
+                        positiveMarks += pointsPerCorrectAnswer;
+                    } else {
+                        negativeMarks += pointsPerCorrectAnswer;
+                    }
+                });
+                correctOptionIds.forEach(id => {
+                    if (!userAnswersIds.includes(id)) {
+                        missedMarks += pointsPerCorrectAnswer;
+                    }
+                });
+            } else {
+                const selectedId = userAnswersIds[0];
+                if (selectedId && correctOptionIds.includes(selectedId)) {
+                    positiveMarks += question.points;
+                } else if (selectedId) { // Wrong answer selected
+                    negativeMarks += question.points;
+                    missedMarks += question.points; // The correct answer was missed
+                } else { // No answer selected
+                     missedMarks += question.points;
+                }
+            }
+        });
+
+        return {
+            positive: Math.round(positiveMarks),
+            negative: Math.round(negativeMarks),
+            missed: Math.round(missedMarks),
+        };
+    }, [submission]);
 
 
     return (
@@ -281,8 +322,21 @@ export default function ExamResultsPage() {
                                         percentage >= 50 ? "text-primary" : "text-destructive"
                                     )}>
                                         {submission.score} / {totalPoints}
-                                        <span className="block text-muted-foreground text-sm font-semibold mt-1">(Pass: {passMark} / 50%)</span>
                                     </CardDescription>
+                                    <div className="text-xs font-semibold mt-1 space-y-1">
+                                        <div className="flex items-center justify-center gap-1.5 text-green-500">
+                                            <CheckCircle className="h-3.5 w-3.5" />
+                                            <span>Correct: +{scoreBreakdown.positive}</span>
+                                        </div>
+                                         <div className="flex items-center justify-center gap-1.5 text-destructive">
+                                            <XCircle className="h-3.5 w-3.5" />
+                                            <span>Incorrect: -{scoreBreakdown.negative}</span>
+                                        </div>
+                                        <div className="flex items-center justify-center gap-1.5 text-orange-400">
+                                            <HelpCircle className="h-3.5 w-3.5" />
+                                            <span>Missed: {scoreBreakdown.missed}</span>
+                                        </div>
+                                    </div>
                                 </CardHeader>
                             </Card>
                              <Card>
