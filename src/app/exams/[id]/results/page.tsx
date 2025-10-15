@@ -8,6 +8,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -127,11 +128,14 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                                                     </div>
                                                     <div className="flex-grow">
                                                         <p className={cn(isTheCorrectAnswer && 'font-semibold', isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                         {isUserChoice && !isTheCorrectAnswer && (
-                                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">ඔබ තේරූ පිළිතුර</p>
+                                                         {isUserChoice && isTheCorrectAnswer && (
+                                                            <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ තේරූ)</p>
                                                         )}
-                                                        {isTheCorrectAnswer && (
-                                                            <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර</p>
+                                                        {isUserChoice && !isTheCorrectAnswer && (
+                                                            <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">වැරදි පිළිතුර (ඔබ තේරූ)</p>
+                                                        )}
+                                                        {!isUserChoice && isTheCorrectAnswer && (
+                                                            <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
                                                         )}
                                                     </div>
                                                 </div>
@@ -226,16 +230,21 @@ export default function ExamResultsPage() {
 
         if (userAnswersForQuestion.length === 0) return 0;
 
-        const correctOptions = question.options.filter(o => o.isCorrect);
-        const correctOptionIds = correctOptions.map(o => o.id);
+        const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
 
         if (question.isMultipleChoice) {
-            const hasIncorrectSelection = userAnswersForQuestion.some(id => !correctOptionIds.includes(id));
-            if (hasIncorrectSelection) return 0;
+            let questionScore = 0;
+            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+            const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
 
-            const pointsPerCorrect = question.points / correctOptionIds.length;
-            const correctAnswersGiven = userAnswersForQuestion.filter(id => correctOptionIds.includes(id));
-            return Math.round(correctAnswersGiven.length * pointsPerCorrect);
+            for (const selectedId of userAnswersForQuestion) {
+                if (correctOptionIds.includes(selectedId)) {
+                    questionScore += pointsPerCorrectAnswer;
+                } else {
+                    questionScore -= pointsToDeductPerWrong;
+                }
+            }
+            return Math.max(0, Math.round(questionScore));
         } else {
             // Single choice
             const selectedOptionId = userAnswersForQuestion[0];
@@ -331,11 +340,14 @@ export default function ExamResultsPage() {
                                                         </div>
                                                         <div className="flex-grow">
                                                             <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                            {isUserChoice && !isTheCorrectAnswer && (
-                                                                 <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">ඔබ තේරූ පිළිතුර</p>
+                                                            {isUserChoice && isTheCorrectAnswer && (
+                                                                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ තේරූ)</p>
                                                             )}
-                                                            {isTheCorrectAnswer && (
-                                                                 <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර</p>
+                                                            {isUserChoice && !isTheCorrectAnswer && (
+                                                                <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">වැරදි පිළිතුර (ඔබ තේරූ)</p>
+                                                            )}
+                                                            {!isUserChoice && isTheCorrectAnswer && (
+                                                                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
                                                             )}
                                                         </div>
                                                     </div>

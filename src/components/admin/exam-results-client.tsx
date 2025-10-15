@@ -52,14 +52,14 @@ type ExamResultsType = Awaited<ReturnType<typeof getExamResults>>;
 
 function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResultSubmission, onUpdate: () => void }) {
     const [open, setOpen] = useState(false);
-    const [attempts, setAttempts] = useState(submission.attemptCount ?? 0);
+    const [attemptCount, setAttemptCount] = useState(submission.attemptCount ?? 1);
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
     const handleSave = () => {
         startTransition(async () => {
             try {
-                await updateSubmissionAttempts(submission.id, submission.userId, attempts);
+                await updateSubmissionAttempts(submission.id, submission.userId, attemptCount);
                 toast({ title: 'Success', description: `Attempts for ${submission.user.name} updated.`});
                 onUpdate();
                 setOpen(false);
@@ -88,8 +88,8 @@ function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResult
                     <Input 
                         id="attempts"
                         type="number"
-                        value={attempts}
-                        onChange={(e) => setAttempts(Number(e.target.value))}
+                        value={attemptCount ?? ''}
+                        onChange={(e) => setAttemptCount(Number(e.target.value))}
                         min="0"
                     />
                 </div>
@@ -138,17 +138,23 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
 
         if (userAnswersForQuestion.length === 0) return 0;
 
-        const correctOptions = question.options.filter((o: any) => o.isCorrect);
-        const correctOptionIds = correctOptions.map((o: any) => o.id);
+        const correctOptionIds = question.options.filter((o: any) => o.isCorrect).map((o: any) => o.id);
 
         if (question.isMultipleChoice) {
-            const hasIncorrectSelection = userAnswersForQuestion.some((id: any) => !correctOptionIds.includes(id));
-            if (hasIncorrectSelection) return 0;
+             let questionScore = 0;
+            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+            const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
 
-            const pointsPerCorrect = question.points / correctOptionIds.length;
-            const correctAnswersGiven = userAnswersForQuestion.filter((id: any) => correctOptionIds.includes(id));
-            return Math.round(correctAnswersGiven.length * pointsPerCorrect);
+            for (const selectedId of userAnswersForQuestion) {
+                if (correctOptionIds.includes(selectedId)) {
+                    questionScore += pointsPerCorrectAnswer;
+                } else {
+                    questionScore -= pointsToDeductPerWrong;
+                }
+            }
+            return Math.max(0, Math.round(questionScore));
         } else {
+            // Single choice
             const selectedOptionId = userAnswersForQuestion[0];
             return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
         }
@@ -215,11 +221,14 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                             </div>
                                                             <div className="flex-grow">
                                                                 <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                                {isUserChoice && !isTheCorrectAnswer && (
-                                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">ඔබ තේරූ පිළිතුර</p>
+                                                                 {isUserChoice && isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ තේරූ)</p>
                                                                 )}
-                                                                {isTheCorrectAnswer && (
-                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර</p>
+                                                                {isUserChoice && !isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">වැරදි පිළිතුර (ඔබ තේරූ)</p>
+                                                                )}
+                                                                {!isUserChoice && isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
                                                                 )}
                                                             </div>
                                                         </div>

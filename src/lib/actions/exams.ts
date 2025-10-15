@@ -322,28 +322,19 @@ export async function submitExam(
     if (question.isMultipleChoice) {
         const selectedOptionIds = (Array.isArray(userAnswers) ? userAnswers : [userAnswers]).filter(Boolean).map(id => parseInt(id, 10));
         
-        let questionPoints = 0;
-        let hasIncorrectSelection = false;
+        let questionScore = 0;
+        const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+        const pointsToDeductPerWrong = question.options.length > 0 ? question.points / question.options.length : 0;
         
         for (const selectedId of selectedOptionIds) {
-            if (!correctOptionIds.includes(selectedId)) {
-                hasIncorrectSelection = true;
-                break;
+            if (correctOptionIds.includes(selectedId)) {
+                questionScore += pointsPerCorrectAnswer;
+            } else {
+                questionScore -= pointsToDeductPerWrong;
             }
         }
         
-        // Only award points if no incorrect options were selected
-        if (!hasIncorrectSelection) {
-            const pointsPerCorrectAnswer = question.points / correctOptionIds.length;
-            for (const selectedId of selectedOptionIds) {
-                if (correctOptionIds.includes(selectedId)) {
-                    questionPoints += pointsPerCorrectAnswer;
-                }
-            }
-        }
-        
-        // Round to avoid floating point issues
-        score += Math.round(questionPoints);
+        score += Math.max(0, Math.round(questionScore));
 
         selectedOptionIds.forEach(id => {
             answersToCreate.push({ questionId: question.id, selectedOptionId: id });
@@ -372,6 +363,9 @@ export async function submitExam(
             score,
             timeTakenSeconds,
             submittedAt: new Date(),
+            attemptCount: {
+                increment: 1,
+            },
             answers: {
                 deleteMany: {},
                 create: answersToCreate
@@ -492,9 +486,10 @@ export async function updateSubmissionAttempts(submissionId: number, userId: str
     }
     
     await prisma.examSubmission.update({
-        where: { id: submissionId, userId: userId },
+        where: { id: submissionId },
         data: { 
             attemptCount: attemptCount,
+            user: { connect: { id: userId } }
         }
     });
     
