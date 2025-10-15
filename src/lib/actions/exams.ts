@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -298,9 +299,9 @@ export async function submitExam(
     throw new Error('Not authenticated');
   }
 
-  const { answers, timeTakenSeconds } = payload;
   console.log('--- [Server Action] Received Payload ---', payload);
-
+  const { answers, timeTakenSeconds } = payload;
+  
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
     include: { questions: { include: { options: true } } },
@@ -327,17 +328,17 @@ export async function submitExam(
   }
 
   try {
-    const newSubmission = await prisma.examSubmission.create({
-      data: {
-        examId: exam.id,
-        userId: user.id,
-        score,
-        timeTakenSeconds: timeTakenSeconds, // Explicitly pass the value here
-        answers: {
-          create: answersToCreate,
-        },
+    const submissionData = {
+      examId: exam.id,
+      userId: user.id,
+      score,
+      timeTakenSeconds: timeTakenSeconds,
+      answers: {
+        create: answersToCreate,
       },
-    });
+    };
+    
+    const newSubmission = await prisma.examSubmission.create({ data: submissionData });
 
     console.log('--- [Server Action] DB Create SUCCESS. Re-fetching to confirm...');
     const createdSubmission = await prisma.examSubmission.findUnique({
@@ -358,7 +359,7 @@ export async function submitExam(
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
        console.log('--- [Server Action] Caught race condition (P2002). Finding existing submission.');
        const raceConditionSubmission = await prisma.examSubmission.findFirst({
-        where: { userId: user.id, examId: examId },
+        where: { userId: user.id, examId: exam.id },
          select: {
             id: true,
             examId: true,
