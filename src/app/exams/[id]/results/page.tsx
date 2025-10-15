@@ -158,6 +158,11 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
     );
 };
 
+const numberToSinhala = (num: number) => {
+    const words = ["", "පළමු", "දෙවන", "තෙවන", "හතරවන", "පස්වන", "හයවන", "හත්වන", "අටවන", "නවවන", "දසවන"];
+    if (num <= 10) return words[num];
+    return `${num} වන`;
+}
 
 export default function ExamResultsPage() {
     const searchParams = useSearchParams();
@@ -193,7 +198,39 @@ export default function ExamResultsPage() {
 
     }, [examId, submissionId]);
 
-    
+    const calculateQuestionScore = useMemo(() => (question: typeof results.submission.exam.questions[0]) => {
+        if (!results) return 0;
+        const { submission } = results;
+        const userAnswersForQuestion = submission.answers
+            .filter(a => a.questionId === question.id)
+            .map(a => a.selectedOptionId);
+
+        if (userAnswersForQuestion.length === 0) return 0;
+
+        const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
+        const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+        const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0; // Changed this logic
+        
+        let score = 0;
+        if (question.isMultipleChoice) {
+            userAnswersForQuestion.forEach(id => {
+                if (correctOptionIds.includes(id)) {
+                    score += pointsPerCorrectAnswer;
+                } else {
+                    score -= pointsToDeductPerWrong; 
+                }
+            });
+        } else {
+            const selectedOptionId = userAnswersForQuestion[0];
+            if (correctOptionIds.includes(selectedOptionId)) {
+                score = question.points;
+            } else {
+                 score = -question.points; // Incorrect single choice should result in negative points before clamping
+            }
+        }
+        return Math.max(0, Math.round(score));
+    }, [results]);
+
     const scoreBreakdown = useMemo(() => {
         if (!results) return { positive: 0, negative: 0, missed: 0 };
         const { submission } = results;
@@ -225,7 +262,7 @@ export default function ExamResultsPage() {
                     positiveMarks += question.points;
                 } else if (selectedId) { // Wrong answer selected
                     negativeMarks += question.points;
-                    missedMarks += question.points; // The correct answer was missed
+                    // The correct answer was missed, but negative marks cover the penalty
                 } else { // No answer selected
                      missedMarks += question.points;
                 }
@@ -237,36 +274,6 @@ export default function ExamResultsPage() {
             negative: Math.round(negativeMarks),
             missed: Math.round(missedMarks),
         };
-    }, [results]);
-
-    const calculateQuestionScore = useMemo(() => (question: typeof results.submission.exam.questions[0]) => {
-        if (!results) return 0;
-        const { submission } = results;
-        const userAnswersForQuestion = submission.answers
-            .filter(a => a.questionId === question.id)
-            .map(a => a.selectedOptionId);
-
-        if (userAnswersForQuestion.length === 0) return 0;
-
-        const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
-        const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-        
-        let score = 0;
-        if (question.isMultipleChoice) {
-            userAnswersForQuestion.forEach(id => {
-                if (correctOptionIds.includes(id)) {
-                    score += pointsPerCorrectAnswer;
-                } else {
-                    score -= pointsPerCorrectAnswer; 
-                }
-            });
-        } else {
-            const selectedOptionId = userAnswersForQuestion[0];
-            if (correctOptionIds.includes(selectedOptionId)) {
-                score = question.points;
-            }
-        }
-        return Math.max(0, Math.round(score));
     }, [results]);
 
     if (isLoading) {
@@ -360,12 +367,10 @@ export default function ExamResultsPage() {
                                 </CardHeader>
                             </Card>
                         </div>
-
-                        <Separator className="my-8" />
                         
                         <h2 className="text-2xl font-semibold mb-6">Review Your Answers</h2>
                         
-                        <div className="space-y-8">
+                        <div className="space-y-4">
                             {submission.exam.questions.map((question, index) => {
                                 const userAnswersIds = submission.answers
                                     .filter(a => a.questionId === question.id)
@@ -380,58 +385,64 @@ export default function ExamResultsPage() {
                                 const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
                                 
                                 return (
-                                    <div key={question.id}>
-                                        <div className="font-semibold text-lg">{index + 1}. {question.text}</div>
-                                        <p className="text-sm text-muted-foreground mb-4">{question.points} points</p>
-                                        
-                                        <div className="space-y-2">
-                                            {question.options.map(option => {
-                                                const isUserChoice = userAnswersIds.includes(option.id);
-                                                const isTheCorrectAnswer = correctOptionIds.includes(option.id);
-                                                
-                                                return (
-                                                    <div 
-                                                        key={option.id}
-                                                        className={cn(
-                                                            "flex items-start gap-3 p-3 rounded-lg border",
-                                                            isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
-                                                            !isUserChoice && isTheCorrectAnswer && "border-green-500/50 border-dotted", // Correct & Not Selected
-                                                            isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
-                                                        )}
-                                                    >
-                                                        <div className="mt-0.5">
-                                                            {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
-                                                            {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
-                                                            {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
-                                                            {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
+                                    <React.Fragment key={question.id}>
+                                    <Card className="bg-card/30 border-dashed p-6">
+                                        <CardHeader className="p-0 mb-4">
+                                            <CardDescription className="font-serif text-xs text-muted-foreground uppercase tracking-wider">{numberToSinhala(index + 1)} ප්‍රශ්නය</CardDescription>
+                                            <CardTitle className="text-lg">{question.text} <span className="text-sm font-normal text-muted-foreground">({question.points} points)</span></CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="p-0">
+                                            <div className="space-y-2">
+                                                {question.options.map(option => {
+                                                    const isUserChoice = userAnswersIds.includes(option.id);
+                                                    const isTheCorrectAnswer = correctOptionIds.includes(option.id);
+                                                    
+                                                    return (
+                                                        <div 
+                                                            key={option.id}
+                                                            className={cn(
+                                                                "flex items-start gap-3 p-3 rounded-lg border",
+                                                                isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
+                                                                !isUserChoice && isTheCorrectAnswer && "border-green-500/50 border-dotted", // Correct & Not Selected
+                                                                isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
+                                                            )}
+                                                        >
+                                                            <div className="mt-0.5">
+                                                                {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
+                                                                {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
+                                                                {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
+                                                                {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
+                                                            </div>
+                                                            <div className="flex-grow">
+                                                                <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
+                                                                
+                                                                {isUserChoice && isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
+                                                                        නිවැරදි පිළිතුර (ඔබ තේරූ)
+                                                                        <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
+                                                                    </p>
+                                                                )}
+                                                                {isUserChoice && !isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
+                                                                        වැරදි පිළිතුර (ඔබ තේරූ)
+                                                                        <span className="font-bold ml-2 text-red-500">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
+                                                                    </p>
+                                                                )}
+                                                                {!isUserChoice && isTheCorrectAnswer && (
+                                                                    <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
+                                                                )}
+                                                            </div>
                                                         </div>
-                                                        <div className="flex-grow">
-                                                            <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                            
-                                                            {isUserChoice && isTheCorrectAnswer && (
-                                                                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
-                                                                    නිවැරදි පිළිතුර (ඔබ තේරූ)
-                                                                    <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
-                                                                </p>
-                                                            )}
-                                                            {isUserChoice && !isTheCorrectAnswer && (
-                                                                <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
-                                                                    වැරදි පිළිතුර (ඔබ තේරූ)
-                                                                    <span className="font-bold ml-2 text-red-500">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
-                                                                </p>
-                                                            )}
-                                                            {!isUserChoice && isTheCorrectAnswer && (
-                                                                <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                         <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
-                                            <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{awardedPoints}</span> / {question.points}</p>
-                                        </div>
-                                    </div>
+                                                    );
+                                                })}
+                                            </div>
+                                            <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
+                                                <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{awardedPoints}</span> / {question.points}</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                    {index < submission.exam.questions.length - 1 && <Separator className="my-8"/>}
+                                    </React.Fragment>
                                 );
                             })}
                         </div>
