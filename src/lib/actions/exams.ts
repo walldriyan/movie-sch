@@ -354,7 +354,6 @@ export async function submitExam(
             score,
             timeTakenSeconds,
             submittedAt: new Date(),
-            attemptCount: { increment: 1 },
             answers: {
                 deleteMany: {},
                 create: answersToCreate
@@ -366,7 +365,6 @@ export async function submitExam(
             score,
             timeTakenSeconds,
             submittedAt: new Date(),
-            // attemptCount is not needed here as it defaults to 1 in the schema
             answers: {
                 create: answersToCreate,
             },
@@ -475,3 +473,4 @@ export async function updateSubmissionAttempts(submissionId: number, attempts: n
     
     revalidatePath(`/admin/exams/[id]/results`);
 }
+
