@@ -383,7 +383,7 @@ model Question {
   id            Int             @id @default(autoincrement())
   text          String
   points        Int             @default(10)
-
+ isMultipleChoice  Boolean      @default(false) 
   examId        Int
   exam          Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
 
@@ -406,7 +406,7 @@ model ExamSubmission {
   id          Int       @id @default(autoincrement())
   score       Int
   submittedAt DateTime  @default(now())
-
+  timeTakenSeconds Int
   userId      String
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 

@@ -14,7 +14,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null); 
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
@@ -106,7 +106,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     const moveY = mousePos.y * 30 * distanceMultiplier;
     const rotateAdjust = mousePos.x * 5;
     
-    return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.05)`;
+    return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.15)`;
   };
   
   const renderSeriesGrid = (series: any) => {
@@ -181,7 +181,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         {card.type === 'series' && renderSeriesGrid(card.series)}
         
         {card.type === 'dots' && (
-          <div className="flex justify-center gap-1 p-2 bg-white">
+          <div className="flex justify-center gap-0 p-2 bg-white">
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-400 rounded-full"></div>
             <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
@@ -195,8 +195,8 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   return (
     <div className="h-[290px]  bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
       <div className="absolute top-8 md:top-12 left-0 right-0 z-20 px-4">
-        <h1 className="ml-12 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]" 
-            style={{ textShadow: '0 24px 320px rgba(0,0,0,0.8), 0 2px 318px rgba(0,0,0,0.6)' }}>
+        <h1 className="w-fit max-w-[500px] ml-12 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]" 
+            style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
           Put your <br />business in<br />the spotlight.
         </h1>
       </div>
@@ -210,10 +210,10 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
             <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="w-full h-full py-8 overflow-x-auto overflow-y-hidden no-scrollbar">
+        <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
-            className="flex items-center gap-2 md:gap-3 lg:gap-4 h-full"
+            className="flex items-center gap-2 md:gap-2 lg:gap-2 h-full"
             style={{ 
               perspective: '1000px',
               paddingLeft: 'calc(50% - 8rem)',
@@ -242,3 +242,5 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     </div>
   );
 }
+
+    

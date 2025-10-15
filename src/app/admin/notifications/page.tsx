@@ -166,7 +166,7 @@ export default function NotificationsPage() {
                 type: values.targetType,
                 targetId: values.targetType === 'PUBLIC' ? null : values.targetId,
             });
-            console.log('--- [Server Action] Response from sendNotification ---', result);
+            // console.log('--- [Server Action] Response from sendNotification ---', result);
             toast({
                 title: "Notification Sent",
                 description: "Your notification has been successfully sent and saved.",

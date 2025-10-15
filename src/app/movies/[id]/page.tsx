@@ -62,8 +62,8 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
   }
 
   const session = await auth();
-  console.log("Server [/movies/[id]/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
-  console.log("Server [/movies/[id]/page.tsx] Current User Details:", session?.user);
+  // console.log("Server [/movies/[id]/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  // console.log("Server [/movies/[id]/page.tsx] Current User Details:", session?.user);
 
   const postData = await getPost(postId);
   

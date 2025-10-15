@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash } from 'lucide-react';
+import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -21,6 +21,12 @@ import { Film } from 'lucide-react';
 
 type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
 
+const formatTime = (totalSeconds: number | null | undefined): string => {
+    if (totalSeconds === null || totalSeconds === undefined) return 'N/A';
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+};
 
 // New component for the printable view
 const PrintableView = ({ results }: { results: ExamResults }) => {
@@ -62,6 +68,11 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                              <strong>Submission ID:</strong>
                              <span>#{submission.id}</span>
                          </div>
+                         <div className="flex items-center gap-3">
+                             <Clock className="h-5 w-5 text-gray-500" />
+                             <strong>Time Taken:</strong>
+                             <span>{formatTime(submission.timeTakenSeconds)}</span>
+                         </div>
                      </div>
                 </section>
 
@@ -87,8 +98,8 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                     <h2 className="text-2xl font-semibold border-b pb-2 mb-6 text-gray-700">Answer Review</h2>
                     <div className="space-y-8">
                         {submission.exam.questions.map((question, index) => {
-                            const userAnswer = submission.answers.find(a => a.questionId === question.id);
-                            const correctOption = question.options.find(o => o.isCorrect);
+                            const userAnswers = submission.answers.filter(a => a.questionId === question.id).map(a => a.selectedOptionId);
+                            const correctOptions = question.options.filter(o => o.isCorrect).map(o => o.id);
 
                             return (
                                 <div key={question.id} className="p-4 border border-gray-200 rounded-lg break-inside-avoid">
@@ -96,8 +107,8 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                                     
                                     <div className="mt-4 space-y-3">
                                         {question.options.map(option => {
-                                            const isUserChoice = option.id === userAnswer?.selectedOptionId;
-                                            const isTheCorrectAnswer = option.isCorrect;
+                                            const isUserChoice = userAnswers.includes(option.id);
+                                            const isTheCorrectAnswer = correctOptions.includes(option.id);
                                             
                                             return (
                                                 <div 
@@ -219,7 +230,7 @@ export default function ExamResultsPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center">
+                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 text-center">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Score</CardTitle>
@@ -238,6 +249,12 @@ export default function ExamResultsPage() {
                                     <CardDescription className="text-3xl font-bold">{percentage >= 50 ? "Passed" : "Failed"}</CardDescription>
                                 </CardHeader>
                             </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Time Taken</CardTitle>
+                                    <CardDescription className="text-3xl font-bold">{formatTime(submission.timeTakenSeconds)}</CardDescription>
+                                </CardHeader>
+                            </Card>
                         </div>
 
                         <Separator className="my-8" />
@@ -246,10 +263,14 @@ export default function ExamResultsPage() {
                         
                         <div className="space-y-8">
                             {submission.exam.questions.map((question, index) => {
-                                const userAnswer = submission.answers.find(a => a.questionId === question.id);
-                                const correctOption = question.options.find(o => o.isCorrect);
-                                const isCorrect = userAnswer?.selectedOptionId === correctOption?.id;
-
+                                const userAnswersIds = submission.answers
+                                    .filter(a => a.questionId === question.id)
+                                    .map(a => a.selectedOptionId);
+                                    
+                                const correctOptionIds = question.options
+                                    .filter(o => o.isCorrect)
+                                    .map(o => o.id);
+                                
                                 return (
                                     <div key={question.id}>
                                         <div className="font-semibold text-lg">{index + 1}. {question.text}</div>
@@ -257,8 +278,8 @@ export default function ExamResultsPage() {
                                         
                                         <div className="space-y-2">
                                             {question.options.map(option => {
-                                                const isUserChoice = option.id === userAnswer?.selectedOptionId;
-                                                const isTheCorrectAnswer = option.id === correctOption?.id;
+                                                const isUserChoice = userAnswersIds.includes(option.id);
+                                                const isTheCorrectAnswer = correctOptionIds.includes(option.id);
                                                 
                                                 return (
                                                     <div 
@@ -273,7 +294,7 @@ export default function ExamResultsPage() {
                                                             {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
                                                             {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
                                                             {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
-                                                            {!isUserChoice && !isTheCorrectAnswer && <FileQuestion className="h-5 w-5 text-muted-foreground" />}
+                                                            {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
                                                         </div>
                                                         <div className="flex-grow">
                                                             <p>{option.text}</p>

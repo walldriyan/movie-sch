@@ -44,8 +44,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  console.log("Server [layout.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
-  console.log("Current User Details (Layout):", session?.user);
+  // console.log("Server [layout.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  // console.log("Current User Details (Layout):", session?.user);
 
 
   return (
