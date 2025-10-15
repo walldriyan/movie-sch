@@ -193,29 +193,6 @@ export default function ExamResultsPage() {
 
     }, [examId, submissionId]);
 
-    const calculateQuestionScore = (question: typeof submission.exam.questions[0]) => {
-        if (!results) return 0;
-        const { submission } = results;
-        const userAnswersForQuestion = submission.answers
-            .filter(a => a.questionId === question.id)
-            .map(a => a.selectedOptionId);
-
-        if (userAnswersForQuestion.length === 0) return 0;
-
-        const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
-        const incorrectSelected = userAnswersForQuestion.some(id => !correctOptionIds.includes(id));
-        
-        if (incorrectSelected) return 0;
-
-        if (question.isMultipleChoice) {
-            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-            const score = userAnswersForQuestion.length * pointsPerCorrectAnswer;
-            return Math.round(score);
-        } else {
-            const selectedOptionId = userAnswersForQuestion[0];
-            return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
-        }
-    };
     
     const scoreBreakdown = useMemo(() => {
         if (!results) return { positive: 0, negative: 0, missed: 0 };
@@ -262,6 +239,36 @@ export default function ExamResultsPage() {
         };
     }, [results]);
 
+    const calculateQuestionScore = useMemo(() => (question: typeof results.submission.exam.questions[0]) => {
+        if (!results) return 0;
+        const { submission } = results;
+        const userAnswersForQuestion = submission.answers
+            .filter(a => a.questionId === question.id)
+            .map(a => a.selectedOptionId);
+
+        if (userAnswersForQuestion.length === 0) return 0;
+
+        const correctOptionIds = question.options.filter(o => o.isCorrect).map(o => o.id);
+        const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+        
+        let score = 0;
+        if (question.isMultipleChoice) {
+            userAnswersForQuestion.forEach(id => {
+                if (correctOptionIds.includes(id)) {
+                    score += pointsPerCorrectAnswer;
+                } else {
+                    score -= pointsPerCorrectAnswer; 
+                }
+            });
+        } else {
+            const selectedOptionId = userAnswersForQuestion[0];
+            if (correctOptionIds.includes(selectedOptionId)) {
+                score = question.points;
+            }
+        }
+        return Math.max(0, Math.round(score));
+    }, [results]);
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -292,6 +299,7 @@ export default function ExamResultsPage() {
     const totalPoints = submission.exam.questions.reduce((sum, q) => sum + q.points, 0);
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
     const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
+    
 
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
@@ -387,7 +395,7 @@ export default function ExamResultsPage() {
                                                         className={cn(
                                                             "flex items-start gap-3 p-3 rounded-lg border",
                                                             isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
-                                                            !isUserChoice && isTheCorrectAnswer && "bg-green-500/5 border-green-500/50 border-dotted", // Correct & Not Selected
+                                                            !isUserChoice && isTheCorrectAnswer && "border-green-500/50 border-dotted", // Correct & Not Selected
                                                             isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
                                                         )}
                                                     >

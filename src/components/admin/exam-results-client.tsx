@@ -140,19 +140,25 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
         if (userAnswersForQuestion.length === 0) return 0;
 
         const correctOptionIds = question.options.filter((o: any) => o.isCorrect).map((o: any) => o.id);
-        const incorrectSelected = userAnswersForQuestion.some((id: number) => !correctOptionIds.includes(id));
+        const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
         
-        if (incorrectSelected) return 0;
-
+        let score = 0;
         if (question.isMultipleChoice) {
-            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-            const score = userAnswersForQuestion.length * pointsPerCorrectAnswer;
-            return Math.round(score);
+            userAnswersForQuestion.forEach((id: number) => {
+                if (correctOptionIds.includes(id)) {
+                    score += pointsPerCorrectAnswer;
+                } else {
+                    score -= pointsPerCorrectAnswer; 
+                }
+            });
         } else {
             // Single choice
             const selectedOptionId = userAnswersForQuestion[0];
-            return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
+            if (correctOptionIds.includes(selectedOptionId)) {
+                score = question.points;
+            }
         }
+        return Math.max(0, Math.round(score));
     };
 
     return (
@@ -209,7 +215,7 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                             className={cn(
                                                                 "flex items-start gap-3 p-3 rounded-lg border text-sm",
                                                                 isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
-                                                                !isUserChoice && isTheCorrectAnswer && "bg-green-500/5 border-green-500/50 border-dotted", // Correct & Not Selected
+                                                                !isUserChoice && isTheCorrectAnswer && "border-green-500/50 border-dotted", // Correct & Not Selected
                                                                 isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
                                                             )}
                                                         >
