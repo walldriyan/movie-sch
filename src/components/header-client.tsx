@@ -35,7 +35,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
   const session = serverSession;
   const sessionStatus = session ? 'authenticated' : 'unauthenticated';
 
-  console.log('[HeaderClient] Received serverSession prop:', JSON.stringify(serverSession, null, 2));
+  // console.log('[HeaderClient] Received serverSession prop:', JSON.stringify(serverSession, null, 2));
   
   const user = session?.user;
 

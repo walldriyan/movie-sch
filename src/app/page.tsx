@@ -6,6 +6,7 @@ import { MyReusableButton } from '@/components/my-reusable-button'; // Import a 
 import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
 import { auth } from '@/auth';
+import MetaSpotlight from './ui/page';
 
 export default async function HomePage({
   searchParams,
@@ -31,6 +32,8 @@ export default async function HomePage({
   
   return (
     <>
+
+    <MetaSpotlight/>
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
