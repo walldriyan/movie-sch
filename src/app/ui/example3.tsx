@@ -4,6 +4,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { Post } from '@/lib/types';
 import Image from 'next/image';
+import { Button } from '@/components/ui/button';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -11,11 +14,10 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
+  const scrollContainerRef = useRef<HTMLDivElement>(null); 
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
-    // Limit to 10 posts and map post data to card data on client-side
     const generatedCards = initialPosts.slice(0, 10).map((post, index) => {
       const isSeriesPost = post.series && post.series.posts && post.series.posts.length > 0;
       const cardType = index === 2 ? 'hero' : (isSeriesPost ? 'series' : (index % 3 === 1 ? 'dots' : 'single'));
@@ -83,6 +85,17 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       scrollEl.removeEventListener('wheel', handleWheelScroll);
     };
   }, []);
+  
+  const handleScroll = (direction: 'left' | 'right') => {
+    const scrollEl = scrollContainerRef.current;
+    if (scrollEl) {
+      const scrollAmount = scrollEl.clientWidth * 0.8;
+      scrollEl.scrollBy({
+        left: direction === 'left' ? -scrollAmount : scrollAmount,
+        behavior: 'smooth',
+      });
+    }
+  };
 
 
   const getCardTransform = (baseRotate: number, distanceMultiplier: number) => {
@@ -107,7 +120,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           const post = otherPosts[idx];
           if (idx < 2) {
             return (
-              <div key={idx} className="h-10 md:h-12 lg:h-14 rounded bg-muted overflow-hidden relative">
+              <div key={idx} className="aspect-square rounded bg-muted overflow-hidden relative">
                 {post && post.posterUrl && (
                   <Image src={post.posterUrl} alt="series post" layout="fill" objectFit="cover" />
                 )}
@@ -116,7 +129,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           }
           if (idx === 2) {
             return (
-              <div key={idx} className="h-10 md:h-12 lg:h-14 rounded bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
+              <div key={idx} className="aspect-square rounded bg-muted flex items-center justify-center text-xs font-bold text-muted-foreground">
                 +{totalCount}
               </div>
             );
@@ -133,11 +146,14 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     return (
       <div
         key={card.id}
-        className={`flex-shrink-0 bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out
-          ${isHero ? 'w-52 sm:w-60 md:w-64 lg:w-72' : 'w-32 sm:w-36 md:w-40 lg:w-44'}`}
+        className={cn(
+          "flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out",
+          isHero ? 'h-[90%] rounded-3xl' : 'h-[75%]'
+        )}
         style={{
           transform: getCardTransform(card.rotation, card.distance),
-          transformOrigin: 'center center'
+          transformOrigin: 'center center',
+          aspectRatio: isHero ? '3 / 4' : 'auto',
         }}
       >
         {!isHero && (
@@ -152,14 +168,16 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             <div className="text-xs font-semibold p-2 md:p-3 pt-2 truncate">{card.brand}</div>
           </div>
         )}
+        
+        <div className="relative w-full h-[65%]">
+            <Image
+              src={card.image}
+              alt={card.brand}
+              layout="fill"
+              objectFit="cover"
+            />
+        </div>
 
-        <Image
-          src={card.image}
-          alt={card.brand}
-          width={isHero ? 288 : 176}
-          height={isHero ? 384 : 224}
-          className={`w-full object-cover ${isHero ? 'h-64 sm:h-72 md:h-80 lg:h-96' : 'h-40 sm:h-44 md:h-48 lg:h-56'}`}
-        />
 
         {card.type === 'series' && renderSeriesGrid(card.series)}
         
@@ -176,8 +194,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 
   return (
-    <div className="min-h-[410px] bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
-      {/* Text Overlay - dark shadow එකක් දුන්නා */}
+    <div className="min-h-[450px] md:min-h-[500px] bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
       <div className="absolute top-8 md:top-12 left-0 right-0 text-center z-20 px-4">
         <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]" 
             style={{ textShadow: '0 24px 120px rgba(0,0,0,0.8), 0 2px 18px rgba(0,0,0,0.6)' }}>
@@ -185,22 +202,38 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         </h1>
       </div>
 
-      {/* Cards Container */}
-      <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
-        <div
-          ref={containerRef}
-          className="flex gap-4 md:gap-6 lg:gap-8 pb-4"
-          style={{ 
-            perspective: '1000px',
-            paddingLeft: '100px',
-            paddingRight: '100px',
-          } as React.CSSProperties}
+      <div className="relative w-full h-[350px] flex items-center justify-center">
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleScroll('left')}
+            className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20"
         >
-          {cards.map(card => renderCard(card))}
+            <ChevronLeft className="h-6 w-6" />
+        </Button>
+        <div ref={scrollContainerRef} className="w-full h-full py-8 overflow-x-auto overflow-y-hidden no-scrollbar">
+          <div
+            ref={containerRef}
+            className="flex items-center gap-4 md:gap-6 lg:gap-8 h-full"
+            style={{ 
+              perspective: '1000px',
+              paddingLeft: 'calc(50% - 8rem)',
+              paddingRight: 'calc(50% - 8rem)',
+            } as React.CSSProperties}
+          >
+            {cards.map(card => renderCard(card))}
+          </div>
         </div>
+        <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => handleScroll('right')}
+            className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20"
+        >
+            <ChevronRight className="h-6 w-6" />
+        </Button>
       </div>
 
-      {/* Meta Logo - dark shadow එකක් දුන්නා */}
       <div className="absolute bottom-8 md:bottom-12 left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-2 md:gap-3 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
           <div className="text-white text-4xl md:text-5xl font-bold" style={{ textShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>∞</div>
