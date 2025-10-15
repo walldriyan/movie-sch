@@ -88,7 +88,7 @@ function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResult
                     <Input 
                         id="attempts"
                         type="number"
-                        value={attempts ?? ''}
+                        value={attempts}
                         onChange={(e) => setAttempts(Number(e.target.value))}
                         min="0"
                     />
@@ -131,6 +131,29 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
         }
     }
     
+    const calculateQuestionScore = (question: any, submissionData: any) => {
+        const userAnswersForQuestion = submissionData.answers
+            .filter((a: any) => a.questionId === question.id)
+            .map((a: any) => a.selectedOptionId);
+
+        if (userAnswersForQuestion.length === 0) return 0;
+
+        const correctOptions = question.options.filter((o: any) => o.isCorrect);
+        const correctOptionIds = correctOptions.map((o: any) => o.id);
+
+        if (question.isMultipleChoice) {
+            const hasIncorrectSelection = userAnswersForQuestion.some((id: any) => !correctOptionIds.includes(id));
+            if (hasIncorrectSelection) return 0;
+
+            const pointsPerCorrect = question.points / correctOptionIds.length;
+            const correctAnswersGiven = userAnswersForQuestion.filter((id: any) => correctOptionIds.includes(id));
+            return Math.round(correctAnswersGiven.length * pointsPerCorrect);
+        } else {
+            const selectedOptionId = userAnswersForQuestion[0];
+            return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
+        }
+    };
+
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -162,6 +185,8 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                     const correctOptionIds = question.options
                                         .filter(o => o.isCorrect)
                                         .map(o => o.id);
+                                    
+                                    const awardedPoints = calculateQuestionScore(question, results.submission);
                                     
                                     return (
                                         <div key={question.id}>
@@ -200,6 +225,9 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                         </div>
                                                     );
                                                 })}
+                                            </div>
+                                            <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
+                                                <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{awardedPoints}</span> / {question.points}</p>
                                             </div>
                                             {index < results.submission.exam.questions.length - 1 && <Separator className="mt-6" />}
                                         </div>

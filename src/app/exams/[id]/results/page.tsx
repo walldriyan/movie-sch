@@ -219,6 +219,31 @@ export default function ExamResultsPage() {
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
     const canRetry = submission.exam.attemptsAllowed === 0 || results.submissionCount < submission.exam.attemptsAllowed;
     
+    const calculateQuestionScore = (question: typeof submission.exam.questions[0]) => {
+        const userAnswersForQuestion = submission.answers
+            .filter(a => a.questionId === question.id)
+            .map(a => a.selectedOptionId);
+
+        if (userAnswersForQuestion.length === 0) return 0;
+
+        const correctOptions = question.options.filter(o => o.isCorrect);
+        const correctOptionIds = correctOptions.map(o => o.id);
+
+        if (question.isMultipleChoice) {
+            const hasIncorrectSelection = userAnswersForQuestion.some(id => !correctOptionIds.includes(id));
+            if (hasIncorrectSelection) return 0;
+
+            const pointsPerCorrect = question.points / correctOptionIds.length;
+            const correctAnswersGiven = userAnswersForQuestion.filter(id => correctOptionIds.includes(id));
+            return Math.round(correctAnswersGiven.length * pointsPerCorrect);
+        } else {
+            // Single choice
+            const selectedOptionId = userAnswersForQuestion[0];
+            return correctOptionIds.includes(selectedOptionId) ? question.points : 0;
+        }
+    };
+
+
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
             <div className="hidden print:block">
@@ -277,6 +302,8 @@ export default function ExamResultsPage() {
                                     .filter(o => o.isCorrect)
                                     .map(o => o.id);
                                 
+                                const awardedPoints = calculateQuestionScore(question);
+
                                 return (
                                     <div key={question.id}>
                                         <div className="font-semibold text-lg">{index + 1}. {question.text}</div>
@@ -314,6 +341,9 @@ export default function ExamResultsPage() {
                                                     </div>
                                                 );
                                             })}
+                                        </div>
+                                         <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
+                                            <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{awardedPoints}</span> / {question.points}</p>
                                         </div>
                                     </div>
                                 );
