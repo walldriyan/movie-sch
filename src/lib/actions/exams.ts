@@ -226,8 +226,8 @@ export async function submitExam(examId: number, formData: FormData) {
   if (!exam) {
     throw new Error('Exam not found.');
   }
-
-  // Check attempts again before creating submission to prevent race conditions
+  
+  // This check is important to prevent re-submission UI bugs, but the upsert below is the ultimate fix.
   if (exam.attemptsAllowed > 0) {
     const submissionCount = await prisma.examSubmission.count({
       where: {
@@ -236,13 +236,21 @@ export async function submitExam(examId: number, formData: FormData) {
       },
     });
     if (submissionCount >= exam.attemptsAllowed) {
-      throw new Error(`You have already submitted this exam the maximum number of times (${exam.attemptsAllowed}).`);
+        const latestSubmission = await prisma.examSubmission.findFirst({
+            where: { examId: examId, userId: session.user.id },
+            orderBy: { submittedAt: 'desc' }
+        });
+        if (latestSubmission) {
+             redirect(`/exams/${examId}/results?submissionId=${latestSubmission.id}`);
+        } else {
+             throw new Error(`You have already submitted this exam the maximum number of times (${exam.attemptsAllowed}).`);
+        }
     }
   }
 
 
   let totalScore = 0;
-  let submissionAnswers = [];
+  let submissionAnswersData = [];
 
   for (const question of exam.questions) {
     const correctOption = question.options.find(o => o.isCorrect);
@@ -253,22 +261,30 @@ export async function submitExam(examId: number, formData: FormData) {
     }
 
     if (userAnswerId) {
-        submissionAnswers.push({
+        submissionAnswersData.push({
             questionId: question.id,
             selectedOptionId: userAnswerId
         });
     }
   }
 
-  const submission = await prisma.examSubmission.create({
-    data: {
-      score: totalScore,
-      examId: examId,
-      userId: session.user.id,
-      answers: {
-        create: submissionAnswers
+  // Use upsert to prevent unique constraint errors on re-submission.
+  const submission = await prisma.examSubmission.upsert({
+      where: {
+          userId_examId: {
+              userId: session.user.id,
+              examId: examId,
+          },
       },
-    },
+      update: {}, // If it already exists, do nothing.
+      create: {
+          score: totalScore,
+          examId: examId,
+          userId: session.user.id,
+          answers: {
+              create: submissionAnswersData,
+          },
+      },
   });
   
   revalidatePath(`/exams/${examId}`);
