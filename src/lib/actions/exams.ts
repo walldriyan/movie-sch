@@ -300,7 +300,6 @@ export async function submitExam(examId: number, formData: FormData) {
     },
   });
 
-  // If a submission exists, redirect to the results page for that submission.
   if (existingSubmission) {
     return redirect(`/exams/${examId}/results?submissionId=${existingSubmission.id}`);
   }
@@ -316,6 +315,7 @@ export async function submitExam(examId: number, formData: FormData) {
 
   let score = 0;
   const answersToCreate: { questionId: number, selectedOptionId: number }[] = [];
+  const timeTakenSeconds = formData.get('timeTakenSeconds') ? Number(formData.get('timeTakenSeconds')) : null;
 
   for (const question of exam.questions) {
     const selectedOptionIdStr = formData.get(`question-${question.id}`) as string;
@@ -336,6 +336,7 @@ export async function submitExam(examId: number, formData: FormData) {
         examId: exam.id,
         userId: user.id,
         score,
+        timeTakenSeconds,
         answers: {
           create: answersToCreate,
         },

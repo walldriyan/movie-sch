@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash } from 'lucide-react';
+import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -21,6 +21,12 @@ import { Film } from 'lucide-react';
 
 type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
 
+const formatTime = (totalSeconds: number | null | undefined): string => {
+    if (totalSeconds === null || totalSeconds === undefined) return 'N/A';
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+};
 
 // New component for the printable view
 const PrintableView = ({ results }: { results: ExamResults }) => {
@@ -61,6 +67,11 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                              <Hash className="h-5 w-5 text-gray-500" />
                              <strong>Submission ID:</strong>
                              <span>#{submission.id}</span>
+                         </div>
+                         <div className="flex items-center gap-3">
+                             <Clock className="h-5 w-5 text-gray-500" />
+                             <strong>Time Taken:</strong>
+                             <span>{formatTime(submission.timeTakenSeconds)}</span>
                          </div>
                      </div>
                 </section>
@@ -219,7 +230,7 @@ export default function ExamResultsPage() {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 text-center">
+                         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 text-center">
                             <Card>
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Score</CardTitle>
@@ -236,6 +247,12 @@ export default function ExamResultsPage() {
                                 <CardHeader>
                                     <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
                                     <CardDescription className="text-3xl font-bold">{percentage >= 50 ? "Passed" : "Failed"}</CardDescription>
+                                </CardHeader>
+                            </Card>
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Time Taken</CardTitle>
+                                    <CardDescription className="text-3xl font-bold">{formatTime(submission.timeTakenSeconds)}</CardDescription>
                                 </CardHeader>
                             </Card>
                         </div>

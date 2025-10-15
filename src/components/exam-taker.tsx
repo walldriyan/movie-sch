@@ -44,6 +44,7 @@ const SubmitButton = () => {
 export default function ExamTaker({ exam }: { exam: Exam }) {
     const [hasStarted, setHasStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
+    const [startTime, setStartTime] = useState<Date | null>(null);
     const [showWarning, setShowWarning] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
     const { pending } = useFormStatus();
@@ -82,6 +83,16 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         return `${h}:${m}:${s}`;
     };
 
+    const handleStart = () => {
+        setStartTime(new Date());
+        setHasStarted(true);
+    };
+
+    const getTimeTaken = () => {
+        if (!startTime) return 0;
+        return Math.round((new Date().getTime() - startTime.getTime()) / 1000);
+    };
+
     if (!hasStarted) {
         return (
              <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8 flex items-center justify-center">
@@ -112,7 +123,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                          </Alert>
                     </CardContent>
                     <CardFooter>
-                        <Button size="lg" onClick={() => setHasStarted(true)}>
+                        <Button size="lg" onClick={handleStart}>
                             <PlayCircle className="mr-2 h-5 w-5" />
                             Start Exam
                         </Button>
@@ -142,6 +153,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                     </CardHeader>
                     <form action={submitExamWithId} ref={formRef}>
                         <CardContent className="space-y-8">
+                            <input type="hidden" name="timeTakenSeconds" value={getTimeTaken()} />
                             {exam.questions.map((question, qIndex) => (
                                 <div key={question.id}>
                                     <Separator className={qIndex > 0 ? 'mb-8' : ''}/>

@@ -5,11 +5,19 @@ import { notFound, useSearchParams, useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 import { getExamResults } from '@/lib/actions';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Target, FileQuestion, Loader2, Calendar, User, Hash } from 'lucide-react';
+import { AlertCircle, Check, X, Target, FileQuestion, Loader2, Calendar, User, Hash, Clock } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Film } from 'lucide-react';
 
 type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
+
+const formatTime = (totalSeconds: number | null | undefined): string => {
+    if (totalSeconds === null || totalSeconds === undefined) return 'N/A';
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}m ${seconds}s`;
+};
+
 
 // This is a self-contained layout component for printing.
 // It includes its own HTML, head, and body tags with inline styles for printing.
@@ -156,6 +164,11 @@ export default function PrintExamResultsPage() {
                                  <Hash className="h-5 w-5 text-gray-500" />
                                  <strong>Submission ID:</strong>
                                  <span>#{submission.id}</span>
+                             </div>
+                             <div className="flex items-center gap-3">
+                                 <Clock className="h-5 w-5 text-gray-500" />
+                                 <strong>Time Taken:</strong>
+                                 <span>{formatTime(submission.timeTakenSeconds)}</span>
                              </div>
                          </div>
                     </section>
