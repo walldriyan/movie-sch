@@ -33,31 +33,14 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { getGroupsForForm, getUsers, sendNotification } from '@/lib/actions';
-import type { User, Group, NotificationTargetType } from '@prisma/client';
+import type { User, Group } from '@prisma/client';
 import { Loader2, Send, Users, User as UserIcon, Globe, Check, ChevronsUpDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { ROLES } from '@/lib/permissions';
 
-const notificationSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters.'),
-  message: z.string().min(10, 'Message must be at least 10 characters.'),
-  targetType: z.enum(['PUBLIC', 'USER', 'GROUP']),
-  targetId: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if ((data.targetType === 'USER' || data.targetType === 'GROUP') && !data.targetId) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Please select a target.',
-            path: ['targetId'],
-        });
-    }
-});
-
-type NotificationFormValues = z.infer<typeof notificationSchema>;
-
-function ComboboxSelector({ field, items, placeholder, notFoundText }: { field: any, items: any[], placeholder: string, notFoundText: string }) {
+// This component is defined outside to avoid re-declaration on every render
+const ComboboxSelector = ({ field, items, placeholder, notFoundText }: { field: any, items: any[], placeholder: string, notFoundText: string }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -111,7 +94,24 @@ function ComboboxSelector({ field, items, placeholder, notFoundText }: { field: 
             </PopoverContent>
         </Popover>
     );
-}
+};
+
+const notificationSchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters.'),
+  message: z.string().min(10, 'Message must be at least 10 characters.'),
+  targetType: z.enum(['PUBLIC', 'USER', 'GROUP']),
+  targetId: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if ((data.targetType === 'USER' || data.targetType === 'GROUP') && !data.targetId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please select a target.',
+            path: ['targetId'],
+        });
+    }
+});
+
+type NotificationFormValues = z.infer<typeof notificationSchema>;
 
 
 export default function NotificationsPage() {
@@ -129,7 +129,7 @@ export default function NotificationsPage() {
                 getGroupsForForm(),
             ]);
             setUsers(usersData);
-            setGroups(groupsData);
+            setGroups(groupsData as any);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load users and groups.'})
         } finally {
