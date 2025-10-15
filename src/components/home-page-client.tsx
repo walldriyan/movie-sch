@@ -29,6 +29,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Notification as NotificationType } from '@prisma/client';
 import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
+import type { Session } from 'next-auth';
+
 
 interface HomePageClientProps {
     initialPosts: any[];
@@ -38,6 +40,7 @@ interface HomePageClientProps {
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string };
     initialNotifications: NotificationType[];
+    session: Session | null;
 }
 
 const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
@@ -58,9 +61,13 @@ export default function HomePageClient({
     totalPages, 
     currentPage, 
     searchParams,
-    initialNotifications
+    initialNotifications,
+    session
 }: HomePageClientProps) {
-  const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications);
+
+  console.log("Client [/components/home-page-client.tsx] Received session prop:", JSON.stringify(session, null, 2));
+  
+  const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
 
@@ -77,6 +84,7 @@ export default function HomePageClient({
                 title: 'Error',
                 description: 'Failed to mark notification as read.'
             })
+            console.error('--- [HomePageClient] handleMarkAsRead: Error ---', error);
         }
     });
   };
@@ -106,9 +114,9 @@ export default function HomePageClient({
   }
 
   const typeFilters = [
-    { label: 'Movies', value: 'MOVIE', icon: <Clapperboard /> },
-    { label: 'TV Series', value: 'TV_SERIES', icon: <Tv /> },
-    { label: 'Other', value: 'OTHER', icon: <Folder /> },
+    { label: 'Movies', value: 'MOVIE', icon: <Clapperboard className="w-4 h-4" /> },
+    { label: 'TV Series', value: 'TV_SERIES', icon: <Tv className="w-4 h-4" /> },
+    { label: 'Other', value: 'OTHER', icon: <Folder className="w-4 h-4" /> },
   ]
 
   const renderNotifications = (items: NotificationType[]) => {
@@ -156,7 +164,7 @@ export default function HomePageClient({
             </main>
             ) : (
             <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
-                {unreadCount > 0 && (
+                {session && unreadCount > 0 && (
                   <Card className="mb-8">
                     <CardContent className="p-4">
                        <Tabs defaultValue="unread">
@@ -179,20 +187,20 @@ export default function HomePageClient({
                 <div className="flex items-center justify-between mb-8">
                     <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                         <Button asChild variant={'outline'} className={cn(
-                        "rounded-full hover:bg-gray-800",
+                        "rounded-full hover:bg-gray-800 flex-shrink-0",
                         !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                         )}>
-                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })}>
-                            <Film />
+                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })} className="flex items-center gap-2">
+                            <Film className="w-4 h-4" />
                             <span>All</span>
                         </Link>
                         </Button>
                         {typeFilters.map(filter => (
                             <Button key={filter.value} asChild variant={'outline'} className={cn(
-                            "rounded-full hover:bg-gray-800",
+                            "rounded-full hover:bg-gray-800 flex-shrink-0",
                             typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                             )}>
-                            <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })}>
+                            <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })} className="flex items-center gap-2">
                                 {filter.icon}
                                 <span>{filter.label}</span>
                             </Link>
@@ -202,7 +210,7 @@ export default function HomePageClient({
                     
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800">
+                        <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800 ml-2 flex-shrink-0">
                         <ListFilter className="mr-2 h-4 w-4" />
                         Filter
                         </Button>

@@ -4,8 +4,9 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import SessionProvider from '@/components/auth/session-provider';
 import Header from '@/components/header';
+import React from 'react';
+import SessionProvider from '@/components/auth/session-provider';
 import { auth } from '@/auth';
 
 export const metadata: Metadata = {
@@ -16,17 +17,26 @@ export const metadata: Metadata = {
 const fontSans = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
+  display: 'swap',
 });
 
 const fontSerif = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-serif',
+  display: 'block', // Use 'block' to prevent layout shift
+  fallback: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'],
+  preload: true,
 });
 
 const fontSinhala = Noto_Sans_Sinhala({
   subsets: ['sinhala'],
   variable: '--font-sinhala',
+  display: 'swap',
 });
+
+export function reportWebVitals(metric: any) {
+  // console.log('[Performance Metric]', metric);
+}
 
 export default async function RootLayout({
   children,
@@ -34,6 +44,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
+  console.log("Server [layout.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  console.log("Current User Details (Layout):", session?.user);
+
 
   return (
     <html lang="en" className="dark overflow-x-hidden">
@@ -45,17 +58,17 @@ export default async function RootLayout({
           fontSinhala.variable
         )}
       >
-        <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
-          <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
-          <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
-          <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
-        </div>
-
         <SessionProvider session={session}>
-          <div className="  pt-16 bg-gradient-to-t from-red-950/5 to-purple-800/2 backdrop-blur-md"></div>
+          <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
+            <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
+            <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
+            <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
+          </div>
           
-          <Header />
-          {children}
+          <Header session={session} />
+          <main className="pt-16">
+            {children}
+          </main>
           <Toaster />
         </SessionProvider>
       </body>

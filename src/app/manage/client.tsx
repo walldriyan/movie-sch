@@ -37,12 +37,15 @@ export default function ManagePostsClient({
   initialTotalPages, 
   user, 
 }: ManagePostsClientProps) {
+  console.log('--- [ManagePostsClient] Initial Props ---');
+  console.log('Initial Posts:', initialPosts);
+  console.log('User:', user);
+
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(initialTotalPages);
-  const [debugError, setDebugError] = useState<any | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
   const [statusFilter, setStatusFilter] = useState<string | null>(MovieStatus.PENDING_APPROVAL);
@@ -62,8 +65,10 @@ export default function ManagePostsClient({
     const create = searchParams.get('create');
 
     if (editId) {
+      console.log(`--- [ManagePostsClient] useEffect: Found 'edit' param with ID: ${editId} ---`);
       const fetchPostToEdit = async () => {
         const postToEdit = await getPost(Number(editId));
+        console.log('--- [ManagePostsClient] useEffect: Fetched post to edit ---', postToEdit);
         if (postToEdit && (postToEdit.authorId === user.id || user.role === ROLES.SUPER_ADMIN)) {
           setEditingPost(postToEdit as any);
           setView('form');
@@ -74,6 +79,7 @@ export default function ManagePostsClient({
       };
       fetchPostToEdit();
     } else if (create === 'true') {
+      console.log("--- [ManagePostsClient] useEffect: Found 'create' param ---");
       setEditingPost(null);
       setView('form');
     } else {
@@ -83,6 +89,7 @@ export default function ManagePostsClient({
 
 
   const fetchPosts = async (page: number, status: string | null) => {
+    console.log(`--- [ManagePostsClient] fetchPosts: Fetching page ${page} with status ${status} ---`);
     setIsRefreshing(true);
     startTransition(async () => {
       try {
@@ -93,6 +100,7 @@ export default function ManagePostsClient({
           userRole: user.role,
           status,
         });
+        console.log('--- [ManagePostsClient] fetchPosts: Received data ---', { postsFromDb, newTotalPages });
         setPosts(postsFromDb as any);
         setTotalPages(newTotalPages);
         setCurrentPage(page);
@@ -102,6 +110,7 @@ export default function ManagePostsClient({
           title: 'Error',
           description: 'Failed to fetch posts.',
         });
+        console.error("--- [ManagePostsClient] fetchPosts: Error ---", error);
       } finally {
         setIsRefreshing(false);
       }
@@ -115,8 +124,8 @@ export default function ManagePostsClient({
   }, [currentPage, statusFilter, view]);
 
   const handleAddNewPost = () => {
+    console.log('--- [ManagePostsClient] handleAddNewPost: Switching to form view ---');
     setEditingPost(null);
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('create', 'true');
     url.searchParams.delete('edit');
@@ -125,8 +134,8 @@ export default function ManagePostsClient({
   };
 
   const handleEditPost = (post: Post) => {
+    console.log('--- [ManagePostsClient] handleEditPost: Editing post ---', post);
     setEditingPost(post);
-    setDebugError(null);
     const url = new URL(window.location.href);
     url.searchParams.set('edit', String(post.id));
     url.searchParams.delete('create');
@@ -138,10 +147,8 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
-    setDebugError(null);
+    console.log('--- [ManagePostsClient] handleFormSubmit: Submitting data ---', { postData, id });
     await savePost(postData, id);
-    // The line below that throws an error is now gone.
-    // We will stay on the form page if there is an error, and the error boundary will catch it.
     await fetchPosts(id ? currentPage : 1, statusFilter);
     handleBackFromForm(); // Go back to list and clear URL params
     toast({
@@ -151,23 +158,21 @@ export default function ManagePostsClient({
   };
 
   const handleDeleteConfirmed = async (postId: number) => {
+    console.log(`--- [ManagePostsClient] handleDeleteConfirmed: Deleting post with ID ${postId} ---`);
     const postToDelete = posts.find(m => m.id === postId);
-    try {
-      if (postToDelete) {
-        await deletePost(postId);
-        await fetchPosts(currentPage, statusFilter);
-        toast({
-          title: 'Success',
-          description: `Post "${postToDelete.title}" action has been processed.`,
-        });
-      }
-    } catch(error: any) {
-      setDebugError(error);
+    if (postToDelete) {
+      await deletePost(postId);
+      await fetchPosts(currentPage, statusFilter);
+      toast({
+        title: 'Success',
+        description: `Post "${postToDelete.title}" action has been processed.`,
+      });
     }
   };
 
 
   const handleStatusChange = async (postId: number, newStatus: string) => {
+    console.log(`--- [ManagePostsClient] handleStatusChange: Changing status for post ${postId} to ${newStatus} ---`);
     setStatusChangingPostId(postId);
     try {
       await updatePostStatus(postId, newStatus);
@@ -182,6 +187,7 @@ export default function ManagePostsClient({
         title: 'Error',
         description: error.message || 'Failed to update post status.',
       });
+      console.error("--- [ManagePostsClient] handleStatusChange: Error ---", error);
     } finally {
       setStatusChangingPostId(null);
     }
@@ -194,7 +200,7 @@ export default function ManagePostsClient({
   };
 
   const handleBackFromForm = () => {
-    setDebugError(null);
+    console.log('--- [ManagePostsClient] handleBackFromForm: Returning to list view ---');
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
@@ -278,18 +284,6 @@ export default function ManagePostsClient({
                   </PaginationContent>
                 </Pagination>
             )}
-             {debugError && (
-                <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
-                    <h3 className="font-semibold text-destructive mb-2">Deletion/Refresh Error Details</h3>
-                    <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
-                    {JSON.stringify({
-                        message: debugError.message,
-                        stack: debugError.stack,
-                        ...debugError,
-                    }, null, 2)}
-                    </pre>
-                </div>
-              )}
           </>
         ) : (
           <PostForm

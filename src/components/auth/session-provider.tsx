@@ -12,5 +12,6 @@ export default function SessionProvider({
   children: React.ReactNode;
   session: Session | null;
 }) {
-  return <NextAuthSessionProvider session={session} refetchOnWindowFocus={false}>{children}</NextAuthSessionProvider>;
+  console.log('[SessionProvider] Rendering NextAuthSessionProvider on client with session:', JSON.stringify(session, null, 2));
+  return <NextAuthSessionProvider session={session}>{children}</NextAuthSessionProvider>;
 }

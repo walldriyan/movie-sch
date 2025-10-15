@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
@@ -38,28 +37,9 @@ import { Loader2, Send, Users, User as UserIcon, Globe, Check, ChevronsUpDown } 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
-import { ROLES } from '@/lib/permissions';
 
-const notificationSchema = z.object({
-  title: z.string().min(5, 'Title must be at least 5 characters.'),
-  message: z.string().min(10, 'Message must be at least 10 characters.'),
-  targetType: z.enum(['PUBLIC', 'USER', 'GROUP', 'ROLE']),
-  targetId: z.string().optional(),
-}).superRefine((data, ctx) => {
-    if ((data.targetType === 'USER' || data.targetType === 'GROUP' || data.targetType === 'ROLE') && !data.targetId) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: 'Please select a target.',
-            path: ['targetId'],
-        });
-    }
-});
-
-type NotificationFormValues = z.infer<typeof notificationSchema>;
-
-const roles = Object.values(ROLES);
-
-function ComboboxSelector({ field, items, placeholder, notFoundText }: { field: any, items: any[], placeholder: string, notFoundText: string }) {
+// This component is defined outside to avoid re-declaration on every render
+const ComboboxSelector = ({ field, items, placeholder, notFoundText }: { field: any, items: any[], placeholder: string, notFoundText: string }) => {
     const [open, setOpen] = useState(false);
 
     return (
@@ -112,8 +92,26 @@ function ComboboxSelector({ field, items, placeholder, notFoundText }: { field: 
                 </Command>
             </PopoverContent>
         </Popover>
-    )
-}
+    );
+};
+
+const notificationSchema = z.object({
+  title: z.string().min(5, 'Title must be at least 5 characters.'),
+  message: z.string().min(10, 'Message must be at least 10 characters.'),
+  targetType: z.enum(['PUBLIC', 'USER', 'GROUP']),
+  targetId: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if ((data.targetType === 'USER' || data.targetType === 'GROUP') && !data.targetId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please select a target.',
+            path: ['targetId'],
+        });
+    }
+});
+
+type NotificationFormValues = z.infer<typeof notificationSchema>;
+
 
 export default function NotificationsPage() {
   const { toast } = useToast();
@@ -130,7 +128,7 @@ export default function NotificationsPage() {
                 getGroupsForForm(),
             ]);
             setUsers(usersData);
-            setGroups(groupsData);
+            setGroups(groupsData as any);
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to load users and groups.'})
         } finally {
@@ -158,17 +156,30 @@ export default function NotificationsPage() {
   }, [targetType, form]);
 
   const onSubmit = (values: NotificationFormValues) => {
+    console.log('--- [Client] Data being sent to server action ---', values);
+
     startSubmitting(async () => {
-      // The try-catch block is removed to allow the error boundary to catch errors.
-      await sendNotification({
-          ...values,
-          targetId: values.targetId || null,
-      });
-      toast({
-          title: "Notification Sent",
-          description: "Your notification has been successfully sent and saved.",
-      });
-      form.reset();
+        try {
+            const result = await sendNotification({
+                title: values.title,
+                message: values.message,
+                type: values.targetType,
+                targetId: values.targetType === 'PUBLIC' ? null : values.targetId,
+            });
+            console.log('--- [Server Action] Response from sendNotification ---', result);
+            toast({
+                title: "Notification Sent",
+                description: "Your notification has been successfully sent and saved.",
+            });
+            form.reset();
+        } catch (error) {
+            console.error("--- [Notification Send Error] ---", error);
+            toast({
+                variant: 'destructive',
+                title: 'Failed to Send',
+                description: 'There was an error sending the notification. Please check the console.'
+            });
+        }
     });
   };
 
@@ -219,7 +230,7 @@ export default function NotificationsPage() {
               />
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <FormField
+                <FormField
                     control={form.control}
                     name="targetType"
                     render={({ field }) => (
@@ -235,7 +246,6 @@ export default function NotificationsPage() {
                             <SelectItem value="PUBLIC"><div className="flex items-center gap-2"><Globe className="h-4 w-4"/> Public</div></SelectItem>
                             <SelectItem value="USER"><div className="flex items-center gap-2"><UserIcon className="h-4 w-4"/> Specific User</div></SelectItem>
                             <SelectItem value="GROUP"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Group</div></SelectItem>
-                            <SelectItem value="ROLE"><div className="flex items-center gap-2"><Users className="h-4 w-4"/> Role</div></SelectItem>
                         </SelectContent>
                         </Select>
                         <FormMessage />
@@ -265,30 +275,6 @@ export default function NotificationsPage() {
                             <FormItem className="flex flex-col justify-end">
                                 <FormLabel>Select Group</FormLabel>
                                 <ComboboxSelector field={field} items={groups} placeholder="Select a group..." notFoundText="No group found." />
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
-                 {targetType === 'ROLE' && (
-                    <FormField
-                        control={form.control}
-                        name="targetId"
-                        render={({ field }) => (
-                            <FormItem className="flex flex-col justify-end">
-                                <FormLabel>Select Role</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a role" />
-                                        </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        {roles.map(role => (
-                                             <SelectItem key={role} value={role}>{role}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
                                 <FormMessage />
                             </FormItem>
                         )}

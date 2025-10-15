@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useTransition } from 'react';
@@ -8,7 +9,6 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Button } from './ui/button';
 import { MessageSquare, Trash2, MoreHorizontal, Loader2 } from 'lucide-react';
 import ReviewForm from './review-form';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLES } from '@/lib/permissions';
 import {
   DropdownMenu,
@@ -17,21 +17,23 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
+import type { Session } from 'next-auth';
 
 interface ReviewCardProps {
   review: Review;
   onReviewSubmit: (comment: string, rating: number, parentId?: number) => Promise<void>;
   onReviewDelete: (reviewId: number) => Promise<void>;
+  session: Session | null;
 }
 
-export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: ReviewCardProps) {
+export default function ReviewCard({ review, onReviewSubmit, onReviewDelete, session }: ReviewCardProps) {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSubmittingReply, startReplyTransition] = useTransition();
 
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const currentUser = useCurrentUser();
+  const currentUser = session?.user;
   
   if (!review.user) {
     return null;
@@ -113,13 +115,14 @@ export default function ReviewCard({ review, onReviewSubmit, onReviewDelete }: R
                     showAvatar={false}
                     isSubmitting={isSubmittingReply}
                     onSubmitReview={onReviewSubmit}
+                    session={session}
                 />
             </div>
         )}
         {review.replies && review.replies.length > 0 && (
           <div className="mt-4 space-y-6 border-l pl-6">
             {review.replies.map(reply => (
-              <ReviewCard key={reply.id} review={reply} onReviewSubmit={onReviewSubmit} onReviewDelete={onReviewDelete} />
+              <ReviewCard key={reply.id} review={reply} onReviewSubmit={onReviewSubmit} onReviewDelete={onReviewDelete} session={session} />
             ))}
           </div>
         )}

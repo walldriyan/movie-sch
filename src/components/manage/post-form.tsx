@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/command";
 
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
@@ -76,9 +76,9 @@ type PostFormValues = z.infer<typeof postSchema>;
 type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface PostFormProps {
   editingPost: PostWithLinks | null;
-  onFormSubmit: (postData: PostFormData, id?: number) => void;
+  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
-  debugError: any;
+  debugError?: any;
 }
 
 function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, seriesList: any[], onSeriesCreated: (newSeries: any) => void }) {
@@ -182,8 +182,7 @@ export default function PostForm({
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
+  const [isSubmitting, startTransition] = React.useTransition();
 
 
   useEffect(() => {
@@ -253,43 +252,31 @@ export default function PostForm({
     name: 'mediaLinks',
   });
 
-  const handleSubmit = async (values: PostFormValues) => {
-    setIsSaving(true);
-    setIsSuccess(false);
-    const postData: PostFormData = {
-      title: values.title,
-      description: values.description,
-      posterUrl: values.posterUrl || null,
-      year: values.year || null,
-      duration: values.duration || null,
-      genres: values.genres || [],
-      directors: values.directors || null,
-      mainCast: values.mainCast || null,
-      imdbRating: values.imdbRating || null,
-      rottenTomatoesRating: values.rottenTomatoesRating || null,
-      googleRating: values.googleRating || null,
-      status: editingPost?.status || 'DRAFT',
-      viewCount: editingPost?.viewCount || 0,
-      mediaLinks: values.mediaLinks,
-      type: values.type,
-      seriesId: values.seriesId,
-      orderInSeries: values.orderInSeries,
-      visibility: values.visibility,
-      groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
-    };
-    
-    try {
+  const handleSubmit = (values: PostFormValues) => {
+    startTransition(async () => {
+        const postData: PostFormData = {
+          title: values.title,
+          description: values.description,
+          posterUrl: values.posterUrl || null,
+          year: values.year || null,
+          duration: values.duration || null,
+          genres: values.genres || [],
+          directors: values.directors || null,
+          mainCast: values.mainCast || null,
+          imdbRating: values.imdbRating || null,
+          rottenTomatoesRating: values.rottenTomatoesRating || null,
+          googleRating: values.googleRating || null,
+          status: editingPost?.status || 'DRAFT',
+          viewCount: editingPost?.viewCount || 0,
+          mediaLinks: values.mediaLinks,
+          type: values.type,
+          seriesId: values.seriesId,
+          orderInSeries: values.orderInSeries,
+          visibility: values.visibility,
+          groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
+        };
         await onFormSubmit(postData, editingPost?.id);
-        setIsSuccess(true);
-        setTimeout(() => {
-            onBack();
-        }, 1500); // Navigate back after 1.5 seconds
-    } catch (error) {
-        // Error will be caught by the parent boundary
-        console.error(error);
-    } finally {
-        setIsSaving(false);
-    }
+    });
   };
 
   const handleFileChange = (
@@ -429,7 +416,7 @@ export default function PostForm({
                       </FormControl>
                       <SelectContent>
                         {(['MOVIE', 'TV_SERIES', 'OTHER'] as const).map((type) => (
-                           <SelectItem key={type} value={type}>{type}</SelectItem>
+                           <SelectItem key={type} value={type}>{type.replace('_', ' ')}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -680,9 +667,6 @@ export default function PostForm({
                           <FormLabel>Group</FormLabel>
                           <Select 
                               onValueChange={(value) => {
-                                console.log('Raw value from Select:', value);
-                                const selectedGroup = groups.find(g => g.id === value);
-                                console.log('Selected Group Object:', selectedGroup);
                                 field.onChange(value || null);
                               }}
                               defaultValue={field.value || ""}
@@ -723,7 +707,7 @@ export default function PostForm({
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
-                            </SelectTrigger>
+                            </Trigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="trailer">Trailer</SelectItem>
@@ -768,34 +752,25 @@ export default function PostForm({
           </div>
           
           {debugError && (
-            <div className="mt-8 p-4 border border-destructive/50 bg-destructive/10 rounded-lg">
-                <h3 className="font-semibold text-destructive mb-2">Submission Error Details</h3>
-                <pre className="text-xs text-destructive/80 bg-background/50 p-2 rounded-md overflow-x-auto">
-                {JSON.stringify({
-                    message: debugError.message,
-                    stack: debugError.stack,
-                    ...debugError,
-                }, null, 2)}
-                </pre>
-            </div>
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Submission Error</AlertTitle>
+              <AlertDescription>
+                {debugError.message || "An unexpected error occurred."}
+              </AlertDescription>
+            </Alert>
           )}
           
           <div className="flex justify-end pt-4">
             <Button 
                 type="submit" 
                 size="lg" 
-                disabled={isSaving || isSuccess}
-                className={cn(isSuccess && "bg-green-600 hover:bg-green-700")}
+                disabled={isSubmitting}
             >
-              {isSaving ? (
+              {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   <span>{editingPost ? 'Saving...' : 'Publishing...'}</span>
-                </>
-              ) : isSuccess ? (
-                <>
-                    <CheckCircle className="mr-2 h-4 w-4" />
-                    <span>Saved</span>
                 </>
               ) : editingPost ? (
                 'Save Changes'

@@ -38,16 +38,6 @@ export const authConfig = {
       },
     }),
   ],
-  cookies: {
-    sessionToken: {
-      name: `__Secure-next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'none',
-        secure: true,
-      },
-    },
-  },
   session: {
     strategy: 'jwt',
   },
@@ -73,6 +63,17 @@ export const authConfig = {
   },
   pages: {
     signIn: '/login',
+  },
+  cookies: {
+    sessionToken: {
+      name: `authjs.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'none',
+        path: '/',
+        secure: true,
+      },
+    },
   },
 } satisfies NextAuthConfig;
 

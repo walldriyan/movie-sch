@@ -13,7 +13,7 @@ import prisma from '@/lib/prisma';
 import type { PostFormData } from '@/lib/types';
 
 
-async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
+export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
   if (!dataUrl.startsWith('data:image')) {
     return dataUrl; 
   }
@@ -37,7 +37,7 @@ async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise
   }
 }
 
-async function deleteUploadedFile(filePath: string | null | undefined) {
+export async function deleteUploadedFile(filePath: string | null | undefined) {
     if (!filePath || !filePath.startsWith('/uploads/')) {
         return; 
     }
@@ -155,6 +155,12 @@ export async function getPosts(options: { page?: number; limit?: number, filters
                   select: { posts: true }
                 }
               }
+            },
+            _count: {
+              select: {
+                likedBy: true,
+                reviews: true,
+              }
             }
         },
     });
@@ -165,7 +171,20 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: post.genres ? post.genres.split(',') : [],
+            createdAt: post.createdAt.toISOString(),
+            updatedAt: post.updatedAt.toISOString(),
+            publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
+            author: {
+                ...post.author,
+                createdAt: post.author.createdAt.toISOString(),
+                updatedAt: post.author.updatedAt.toISOString(),
+                emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
+            },
+            series: post.series ? {
+                ...post.series,
+                createdAt: post.series.createdAt.toISOString(),
+                updatedAt: post.series.updatedAt.toISOString(),
+            } : null,
         })),
         totalPages,
         totalPosts,
@@ -205,6 +224,17 @@ export async function getPost(postId: number) {
       dislikedBy: true,
       mediaLinks: true,
       series: true,
+      exam: {
+        where: {
+          status: 'ACTIVE'
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true
+        }
+      },
+      _count: true,
     },
   });
   
@@ -261,15 +291,20 @@ export async function savePost(postData: PostFormData, id?: number) {
     if (!existingPost) {
         throw new Error('Post not found');
     }
-    if (finalPosterUrl !== existingPost?.posterUrl) {
-      await deleteUploadedFile(existingPost?.posterUrl);
+    // Only delete the old poster if a new one is uploaded and they are different
+    if (finalPosterUrl && finalPosterUrl !== existingPost.posterUrl) {
+      await deleteUploadedFile(existingPost.posterUrl);
     }
     
     await prisma.$transaction([
       prisma.mediaLink.deleteMany({ where: { postId: id } }),
       prisma.post.update({ 
           where: { id }, 
-          data: { ...data, status: status, mediaLinks: { create: postData.mediaLinks } }
+          data: { 
+            ...data, 
+            status: status, 
+            mediaLinks: { create: postData.mediaLinks } 
+          }
       })
     ]);
 
@@ -353,6 +388,11 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
         orderBy: { createdAt: 'desc' },
         include: {
             author: true,
+            group: {
+              select: {
+                name: true,
+              }
+            },
             _count: {
               select: { likedBy: true },
             },
@@ -372,7 +412,20 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     return {
         posts: posts.map((post) => ({
             ...post,
-            genres: post.genres ? post.genres.split(',') : [],
+            createdAt: post.createdAt.toISOString(),
+            updatedAt: post.updatedAt.toISOString(),
+            publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
+            author: {
+                ...post.author,
+                createdAt: post.author.createdAt.toISOString(),
+                updatedAt: post.author.updatedAt.toISOString(),
+                emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
+            },
+            series: post.series ? {
+                ...post.series,
+                createdAt: post.series.createdAt.toISOString(),
+                updatedAt: post.series.updatedAt.toISOString(),
+            } : null,
         })),
         totalPages,
         totalPosts,
@@ -412,6 +465,8 @@ export async function updatePostStatus(postId: number, status: string) {
 
 export async function toggleLikePost(postId: number, like: boolean) {
   const session = await auth();
+ 
+
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
   }
@@ -540,3 +595,5 @@ export async function getFavoritePosts() {
     genres: fav.post.genres ? fav.post.genres.split(',') : [],
   }));
 }
+
+    

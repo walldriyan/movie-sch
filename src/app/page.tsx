@@ -5,6 +5,8 @@ import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button'; // Import a custom button
 import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
+import { auth } from '@/auth';
+import MetaSpotlight from './ui/page';
 
 export default async function HomePage({
   searchParams,
@@ -16,6 +18,9 @@ export default async function HomePage({
   const typeFilter = searchParams?.type as string | undefined;
   const currentPage = Number(searchParams?.page) || 1;
 
+  const session = await auth();
+  console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+
   const { posts, totalPages } = await getPosts({
     page: currentPage,
     limit: 10,
@@ -23,18 +28,21 @@ export default async function HomePage({
   });
   const users = await getUsers();
   const groups = await getPublicGroups(5);
-  const notifications = (await getNotifications()) as Notification[];
-
+  const notifications = await getNotifications();
+  
   return (
     <>
+
+    <MetaSpotlight/>
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
-        initialGroups={groups as any}
+        initialGroups={groups}
         totalPages={totalPages}
         currentPage={currentPage}
         searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter }}
         initialNotifications={notifications}
+        session={session}
       />
     </>
   );

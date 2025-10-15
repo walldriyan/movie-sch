@@ -24,7 +24,8 @@ import {
   Settings,
   Users,
   Users2,
-  Bell
+  Bell,
+  BookCheck,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import AuthGuard from '@/components/auth/auth-guard';
@@ -77,6 +78,14 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
                     </SidebarMenuItem>
                     )}
                     <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive={pathname === '/admin/exams'} className="text-base">
+                        <Link href="/admin/exams">
+                            <BookCheck />
+                            <span>Exams</span>
+                        </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
                     <SidebarMenuItem>
                         <SidebarMenuButton asChild isActive={pathname === '/admin/users'} className="text-base">
                         <Link href="/admin/users">

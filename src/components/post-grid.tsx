@@ -80,6 +80,7 @@ function PostCard({ post }: { post: Post }) {
                           src={postImageUrl}
                           alt={post.title}
                           fill
+                          sizes="(max-width: 768px) 90vw, 800px"
                           className="object-cover"
                       />
                   </div>

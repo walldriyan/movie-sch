@@ -1,39 +1,12 @@
 
-
-'use server';
-
-import { auth } from '@/auth';
 import HeaderClient from './header-client';
-import { ROLES } from '@/lib/permissions';
-import { Button } from './ui/button';
-import Link from 'next/link';
-import { PlusCircle } from 'lucide-react';
 import React from 'react';
-import { headers } from 'next/headers';
+import type { Session } from 'next-auth';
 
-export default async function Header() {
-  const session = await auth();
-  const user = session?.user;
-
-  // Reading headers to ensure this component is treated as a dynamic server component
-  const headersList = headers();
-
-  const renderCreateButton = () => {
-    if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
-      return null;
-    }
-
-    return (
-      <Button asChild variant="outline">
-        <Link href="/manage?create=true">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          <span>Create</span>
-        </Link>
-      </Button>
-    );
-  };
-
-  return (
-    <HeaderClient session={session} createButton={renderCreateButton()} />
-  );
+// This is a server-compatible component that receives the session and passes it to the client component.
+export default function Header({ session }: { session: Session | null }) {
+  // This component now just acts as a pass-through.
+  // It gets the session from a parent Server Component (like layout.tsx) 
+  // and passes it down to the Client Component.
+  return <HeaderClient session={session} />;
 }

@@ -25,14 +25,14 @@ const Step = ({ post, isLast }: { post: Post; isLast: boolean }) => {
 
       <div className="flex-grow">
         <div className="flex items-start gap-4">
-          <Link href={`/movies/${post.id}`} className="block flex-shrink-0">
+          <Link href={`/movies/${post.id}`} className="block flex-shrink-0 relative w-20 aspect-[2/3] rounded-md overflow-hidden">
             {postImage && (
               <Image
                 src={postImage}
                 alt={post.title}
-                width={80}
-                height={120}
-                className="w-20 h-auto object-cover rounded-md aspect-[2/3]"
+                fill
+                sizes="80px"
+                className="object-cover"
               />
             )}
           </Link>

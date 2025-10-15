@@ -13,13 +13,15 @@ import Link from 'next/link';
 import { useState, useTransition } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { requestToJoinGroup, leaveGroup } from '@/lib/actions';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLES } from '@/lib/permissions';
 import EditGroupDialog from '@/components/admin/edit-group-dialog';
+import type { Session } from 'next-auth';
 
-export default function GroupProfileClient({ group }: { group: GroupForProfile }) {
+export default function GroupProfileClient({ group, session }: { group: GroupForProfile, session: Session | null }) {
+  console.log("Client [/groups/[id]/client.tsx] Received session prop:", JSON.stringify(session, null, 2));
+  
   const { toast } = useToast();
-  const currentUser = useCurrentUser();
+  const currentUser = session?.user;
   const [isPending, startTransition] = useTransition();
 
   // Optimistic state

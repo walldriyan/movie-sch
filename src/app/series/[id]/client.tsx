@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp, BookCheck, PlayCircle } from 'lucide-react';
 import { useEffect, useState, useMemo, useTransition } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -17,27 +17,62 @@ import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import { useToast } from '@/hooks/use-toast';
 import { toggleLikePost, toggleFavoritePost, createReview, deleteReview } from '@/lib/actions';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
+import type { Session } from 'next-auth';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
+
+const ExamSection = ({ exam }: { exam: { id: number; title: string; description: string | null } | null | undefined }) => {
+  if (!exam) return null;
+
+  return (
+    <>
+      <Separator className="my-12" />
+      <section id="exam">
+        <Card className="bg-card/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <BookCheck className="h-6 w-6 text-primary" />
+              Test Your Knowledge
+            </CardTitle>
+            <CardDescription>An exam is available for this content.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <h3 className="font-semibold text-lg">{exam.title}</h3>
+            {exam.description && <p className="text-muted-foreground mt-2">{exam.description}</p>}
+            <Button asChild className="mt-4">
+              <Link href={`/exams/${exam.id}`}>
+                <PlayCircle className="mr-2 h-4 w-4" />
+                Start Exam
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </section>
+    </>
+  );
+};
 
 
 export default function SeriesPageClient({
     series,
     postsInSeries,
-    initialPost
+    initialPost,
+    session,
 }: {
     series: Series,
     postsInSeries: Post[],
-    initialPost: Post
+    initialPost: Post,
+    session: Session | null,
 }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const params = useParams();
   const { toast } = useToast();
-  const currentUser = useCurrentUser();
+  const currentUser = session?.user;
   
   const [likeTransition, startLikeTransition] = useTransition();
   const [favoriteTransition, startFavoriteTransition] = useTransition();
@@ -132,7 +167,7 @@ export default function SeriesPageClient({
         userId: currentUser.id,
         postId: currentPost.id,
         parentId: parentId || null,
-        user: currentUser,
+        user: currentUser as User,
         replies: [],
       };
       
@@ -160,7 +195,7 @@ export default function SeriesPageClient({
         
         const replaceOptimistic = (nodes: Review[]): Review[] => {
           return nodes.map(node => {
-            if (node.id === optimisticReview.id) return newReview;
+            if (node.id === optimisticReview.id) return newReview as Review;
             if (node.replies && node.replies.length > 0) {
               return { ...node, replies: replaceOptimistic(node.replies) };
             }
@@ -286,6 +321,8 @@ export default function SeriesPageClient({
                         </div>
                     </section>
                     
+                    <ExamSection exam={currentPost.exam} />
+
                     <SponsoredAdCard />
 
                     <div className="block md:hidden">
@@ -377,6 +414,7 @@ export default function SeriesPageClient({
                             postId={currentPost.id} 
                             isSubmitting={isSubmittingReview}
                             onSubmitReview={handleReviewSubmit}
+                            session={session}
                           />
                           <Separator className="my-8" />
                           <div className="space-y-8">
@@ -397,6 +435,7 @@ export default function SeriesPageClient({
                                   review={review} 
                                   onReviewSubmit={handleReviewSubmit}
                                   onReviewDelete={handleReviewDelete}
+                                  session={session}
                                 />
                               ))
                             ) : (

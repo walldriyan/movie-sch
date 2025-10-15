@@ -8,6 +8,7 @@ import {
   User,
   Users,
   Bookmark,
+  PlusCircle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -20,22 +21,22 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import React, { ReactNode } from 'react';
-import type { Session } from 'next-auth';
+import React from 'react';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
+import type { Session } from 'next-auth';
 
-export default function HeaderClient({
-  session,
-  createButton,
-}: {
-  session: Session | null;
-  createButton?: ReactNode;
-}) {
+export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
+  // We receive the session from the server component as a prop to avoid hydration issues in the header.
+  const session = serverSession;
+  const sessionStatus = session ? 'authenticated' : 'unauthenticated';
+
+  // console.log('[HeaderClient] Received serverSession prop:', JSON.stringify(serverSession, null, 2));
+  
   const user = session?.user;
 
   const userAvatarPlaceholder = PlaceHolderImages.find(
@@ -55,7 +56,26 @@ export default function HeaderClient({
     }
   };
 
+  const renderCreateButton = () => {
+    if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
+      return null;
+    }
+
+    return (
+      <Button asChild variant="outline">
+        <Link href="/manage?create=true">
+          <PlusCircle className="mr-2 h-5 w-5" />
+          <span>Create</span>
+        </Link>
+      </Button>
+    );
+  };
+
   const renderUserMenu = () => {
+    if (sessionStatus === 'loading') {
+        return <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />;
+    }
+
     if (!user) {
       return (
         <Button asChild variant="ghost">
@@ -66,7 +86,7 @@ export default function HeaderClient({
         </Button>
       );
     }
-
+  
     const canManage = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(
       user.role
     );
@@ -104,7 +124,7 @@ export default function HeaderClient({
             </div>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuContent align="end" className="w-56 p-2">
           <DropdownMenuLabel>
             <p>My Account</p>
             <p className="text-xs text-muted-foreground font-normal truncate">
@@ -154,13 +174,14 @@ export default function HeaderClient({
             <Link href="/" className="flex items-center space-x-2">
               <Film className="h-7 w-7 text-primary" />
               <span className="inline-block font-bold font-serif text-2xl">
-                CineVerse
+                WALL
               </span>
             </Link>
           </div>
         <div className="flex items-center justify-end space-x-2">
-          {createButton}
-          <HeaderApprovals />
+          {renderCreateButton()}
+          {user &&  <HeaderApprovals />  }
+         
           {renderUserMenu()}
         </div>
       </div>
