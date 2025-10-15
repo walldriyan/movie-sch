@@ -22,38 +22,24 @@ import { useFormStatus } from 'react-dom';
 
 type Exam = NonNullable<Awaited<ReturnType<typeof getExamForTaker>>>;
 
-function SubmitButton() {
-    const { pending } = useFormStatus();
-    return (
-        <Button type="submit" size="lg" disabled={pending}>
-            {pending ? (
-                <>
-                    <Clock className="mr-2 h-4 w-4 animate-spin" />
-                    Submitting...
-                </>
-            ) : (
-                <>
-                    <Send className="mr-2 h-4 w-4" />
-                    Submit Exam
-                </>
-            )}
-        </Button>
-    )
-}
-
 export default function ExamTaker({ exam }: { exam: Exam }) {
     const [hasStarted, setHasStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
     const [showWarning, setShowWarning] = useState(false);
     const formRef = useRef<HTMLFormElement>(null);
-    
+    const { pending } = useFormStatus();
+
     const submitExamWithId = submitExam.bind(null, exam.id);
 
     useEffect(() => {
-        if (!hasStarted || !exam.durationMinutes) return;
+        if (!hasStarted || !exam.durationMinutes || pending) {
+            return;
+        }
 
         if (timeLeft <= 0) {
-            formRef.current?.requestSubmit();
+            if (formRef.current && !pending) {
+               formRef.current.requestSubmit();
+            }
             return;
         }
         
@@ -66,7 +52,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         }, 1000);
 
         return () => clearInterval(timerId);
-    }, [hasStarted, timeLeft, exam.durationMinutes, showWarning]);
+    }, [hasStarted, timeLeft, exam.durationMinutes, showWarning, pending]);
 
     const formatTime = (seconds: number) => {
         const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
@@ -74,6 +60,24 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         const s = (seconds % 60).toString().padStart(2, '0');
         return `${h}:${m}:${s}`;
     };
+
+    const SubmitButton = () => {
+        return (
+            <Button type="submit" size="lg" disabled={pending}>
+                {pending ? (
+                    <>
+                        <Clock className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                    </>
+                ) : (
+                    <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Submit Exam
+                    </>
+                )}
+            </Button>
+        )
+    }
 
     if (!hasStarted) {
         return (
