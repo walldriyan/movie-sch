@@ -59,7 +59,7 @@ function ManageAttemptsDialog({ submission, onUpdate }: { submission: ExamResult
     const handleSave = () => {
         startTransition(async () => {
             try {
-                await updateSubmissionAttempts(submission.id, attempts);
+                await updateSubmissionAttempts(submission.id, submission.userId, attempts);
                 toast({ title: 'Success', description: `Attempts for ${submission.user.name} updated.`});
                 onUpdate();
                 setOpen(false);
@@ -295,7 +295,7 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
                                         <Badge variant={percentage >= 50 ? 'default' : 'secondary'}>{percentage.toFixed(0)}%</Badge>
                                     </TableCell>
                                     <TableCell>{timeTaken}</TableCell>
-                                    <TableCell>{sub.attemptCount} / {exam.attemptsAllowed === 0 ? '∞' : sub.attempts}</TableCell>
+                                    <TableCell>{sub.attemptCount} / {sub.attempts === 0 ? '∞' : sub.attempts}</TableCell>
                                     <TableCell><ClientSideDate date={sub.submittedAt} formatString='MM/dd/yyyy' /></TableCell>
                                     <TableCell className="text-right">
                                         <DropdownMenu>

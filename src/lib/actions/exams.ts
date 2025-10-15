@@ -342,12 +342,6 @@ export async function submitExam(
     }
   }
 
-    const submissionData = {
-        score,
-        timeTakenSeconds,
-        submittedAt: new Date(),
-    };
-
     const submission = await prisma.examSubmission.upsert({
         where: {
             userId_examId: {
@@ -356,7 +350,9 @@ export async function submitExam(
             }
         },
         update: {
-            ...submissionData,
+            score,
+            timeTakenSeconds,
+            submittedAt: new Date(),
             answers: {
                 deleteMany: {},
                 create: answersToCreate
@@ -365,7 +361,9 @@ export async function submitExam(
         create: {
             userId: user.id,
             examId: examId,
-            ...submissionData,
+            score,
+            timeTakenSeconds,
+            submittedAt: new Date(),
             answers: {
                 create: answersToCreate
             },
@@ -457,7 +455,7 @@ export async function getExamResultsForAdmin(examId: number) {
     return { exam, submissions };
 }
 
-export async function updateSubmissionAttempts(submissionId: number, attempts: number) {
+export async function updateSubmissionAttempts(submissionId: number, userId: string, attempts: number) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
@@ -469,7 +467,10 @@ export async function updateSubmissionAttempts(submissionId: number, attempts: n
     
     await prisma.examSubmission.update({
         where: { id: submissionId },
-        data: { attempts: attempts }
+        data: { 
+            attempts: attempts,
+            user: { connect: { id: userId } }
+        }
     });
     
     revalidatePath(`/admin/exams/[id]/results`);
