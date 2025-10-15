@@ -17,16 +17,21 @@ export const metadata: Metadata = {
 const fontSans = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
+  display: 'swap',
 });
 
 const fontSerif = Space_Grotesk({
   subsets: ['latin'],
   variable: '--font-serif',
+  display: 'block', // Use 'block' to prevent layout shift
+  fallback: ['-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', 'sans-serif'],
+  preload: true,
 });
 
 const fontSinhala = Noto_Sans_Sinhala({
   subsets: ['sinhala'],
   variable: '--font-sinhala',
+  display: 'swap',
 });
 
 export function reportWebVitals(metric: any) {
