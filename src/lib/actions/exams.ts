@@ -292,8 +292,25 @@ export async function submitExam(examId: number, formData: FormData) {
     throw new Error('Not authenticated');
   }
 
-  // Check if a submission already exists for this user and exam.
-  // This helps prevent race conditions or duplicate submissions.
+  // Debugging: Log received form data on the server
+  console.log('--- [Server Action] Received FormData ---');
+  const formDataObj: { [key: string]: any } = {};
+  for (const [key, value] of formData.entries()) {
+    formDataObj[key] = value;
+  }
+  console.log(formDataObj);
+  
+  const timeTakenSecondsValue = formData.get('timeTakenSeconds');
+  console.log(`--- [Server Action] timeTakenSeconds from FormData:`, timeTakenSecondsValue, 'Type:', typeof timeTakenSecondsValue);
+  const timeTakenSeconds = timeTakenSecondsValue ? Number(timeTakenSecondsValue) : null;
+  console.log(`--- [Server Action] Parsed timeTakenSeconds:`, timeTakenSeconds, 'Type:', typeof timeTakenSeconds);
+  
+  if (timeTakenSeconds !== null && isNaN(timeTakenSeconds)) {
+      console.error('--- [Server Action] CRITICAL: timeTakenSeconds is NaN ---');
+  }
+
+
+  // Check if a submission already exists to prevent race conditions.
   const existingSubmission = await prisma.examSubmission.findFirst({
     where: {
       userId: user.id,
@@ -302,6 +319,7 @@ export async function submitExam(examId: number, formData: FormData) {
   });
 
   if (existingSubmission) {
+    console.log(`--- [Server Action] Submission already exists for user ${user.id} and exam ${examId}. Redirecting to results.`);
     return redirect(`/exams/${examId}/results?submissionId=${existingSubmission.id}`);
   }
 
@@ -316,7 +334,6 @@ export async function submitExam(examId: number, formData: FormData) {
 
   let score = 0;
   const answersToCreate: { questionId: number, selectedOptionId: number }[] = [];
-  const timeTakenSeconds = formData.get('timeTakenSeconds') ? Number(formData.get('timeTakenSeconds')) : null;
 
   for (const question of exam.questions) {
     const selectedOptionIdStr = formData.get(`question-${question.id}`) as string;
@@ -337,7 +354,7 @@ export async function submitExam(examId: number, formData: FormData) {
         examId: exam.id,
         userId: user.id,
         score,
-        timeTakenSeconds,
+        timeTakenSeconds: timeTakenSeconds,
         answers: {
           create: answersToCreate,
         },
@@ -348,15 +365,11 @@ export async function submitExam(examId: number, formData: FormData) {
     redirect(`/exams/${examId}/results?submissionId=${submission.id}`);
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-       // This is a race condition fallback. If another submission was created
-       // between our initial check and this create call, find it and redirect.
        const raceConditionSubmission = await prisma.examSubmission.findFirst({
-        where: {
-          userId: user.id,
-          examId: examId,
-        },
+        where: { userId: user.id, examId: examId },
       });
        if (raceConditionSubmission) {
+        console.log(`--- [Server Action] Caught race condition. Redirecting to existing submission.`);
         return redirect(`/exams/${examId}/results?submissionId=${raceConditionSubmission.id}`);
       }
     }

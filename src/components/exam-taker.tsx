@@ -1,6 +1,7 @@
+
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useTransition } from 'react';
 import {
   Card,
   CardContent,
@@ -11,13 +12,12 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Timer, Send, PlayCircle, Clock } from 'lucide-react';
+import { AlertCircle, Timer, Send, PlayCircle, Clock, Loader2 } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { submitExam } from '@/lib/actions';
 import type { getExamForTaker } from '@/lib/actions';
-import { useFormStatus } from 'react-dom';
 
 type Exam = NonNullable<Awaited<ReturnType<typeof getExamForTaker>>>;
 
@@ -26,21 +26,26 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     const [timeLeft, setTimeLeft] = useState(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
     const [timeTaken, setTimeTaken] = useState(0);
     const [showWarning, setShowWarning] = useState(false);
+    const [isSubmitting, startTransition] = useTransition();
+
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
     const formRef = useRef<HTMLFormElement>(null);
-    const { pending: isSubmitting } = useFormStatus();
 
     const submitExamWithId = submitExam.bind(null, exam.id);
 
     useEffect(() => {
         if (!hasStarted || !exam.durationMinutes || isSubmitting) {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
             return;
         }
 
-        const timerId = setInterval(() => {
+        timerRef.current = setInterval(() => {
             setTimeTaken(prev => prev + 1);
             setTimeLeft(prevTime => {
                 if (prevTime <= 1) {
-                    clearInterval(timerId);
+                    if (timerRef.current) clearInterval(timerRef.current);
                     if (formRef.current && !isSubmitting) {
                        formRef.current.requestSubmit();
                     }
@@ -53,7 +58,11 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             });
         }, 1000);
 
-        return () => clearInterval(timerId);
+        return () => {
+            if (timerRef.current) {
+                clearInterval(timerRef.current);
+            }
+        };
     }, [hasStarted, exam.durationMinutes, showWarning, isSubmitting]);
 
 
@@ -69,24 +78,22 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         setHasStarted(true);
     };
 
-    const SubmitButton = () => {
-      const { pending } = useFormStatus();
-      return (
-          <Button type="submit" size="lg" disabled={pending}>
-              {pending ? (
-                  <>
-                      <Clock className="mr-2 h-4 w-4 animate-spin" />
-                      Submitting...
-                  </>
-              ) : (
-                  <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Submit Exam
-                  </>
-              )}
-          </Button>
-      )
-    }
+    const handleFormSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+        event.preventDefault();
+        startTransition(async () => {
+            const formData = new FormData(event.currentTarget);
+            
+            // Client-side debugging log
+            console.log('--- [Client] Submitting FormData ---');
+            const formDataObj: { [key: string]: any } = {};
+            for (const [key, value] of formData.entries()) {
+                formDataObj[key] = value;
+            }
+            console.log(JSON.stringify(formDataObj, null, 2));
+
+            await submitExamWithId(formData);
+        });
+    };
 
     if (!hasStarted) {
         return (
@@ -146,7 +153,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                              )}
                         </div>
                     </CardHeader>
-                    <form action={submitExamWithId} ref={formRef}>
+                    <form onSubmit={handleFormSubmit} ref={formRef}>
                         <CardContent className="space-y-8">
                             <input type="hidden" name="timeTakenSeconds" value={timeTaken} />
                             {exam.questions.map((question, qIndex) => (
@@ -166,7 +173,19 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                             ))}
                         </CardContent>
                         <CardFooter>
-                           <SubmitButton />
+                           <Button type="submit" size="lg" disabled={isSubmitting}>
+                              {isSubmitting ? (
+                                  <>
+                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                      Submitting...
+                                  </>
+                              ) : (
+                                  <>
+                                      <Send className="mr-2 h-4 w-4" />
+                                      Submit Exam
+                                  </>
+                              )}
+                          </Button>
                         </CardFooter>
                     </form>
                 </Card>
