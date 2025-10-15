@@ -18,6 +18,7 @@ const questionSchema = z.object({
   id: z.number().optional(),
   text: z.string().min(1, 'Question text cannot be empty.'),
   points: z.coerce.number().min(1, 'Points must be at least 1.'),
+  isMultipleChoice: z.boolean().default(false),
   options: z.array(optionSchema).min(2, 'At least two options are required.')
     .refine(options => options.some(opt => opt.isCorrect), {
         message: 'At least one option must be marked as correct.'
@@ -92,13 +93,14 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             for (const q of questionsToUpdate) {
                 await tx.question.update({
                     where: { id: q.id },
-                    data: { text: q.text, points: q.points }
+                    data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice }
                 });
                 const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
                 const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
                 const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
 
                 if (optionsToDeleteIds.length > 0) {
+                    await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDeleteIds } } });
                     await tx.questionOption.deleteMany({ where: { id: { in: optionsToDeleteIds }}});
                 }
 
@@ -113,11 +115,12 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
             if (questionsToCreate.length > 0) {
                 for (const q of questionsToCreate) {
-                     const newQuestion = await tx.question.create({
+                     await tx.question.create({
                         data: {
                             examId: examId,
                             text: q.text,
                             points: q.points,
+                            isMultipleChoice: q.isMultipleChoice,
                             options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) }
                         }
                     });
@@ -132,6 +135,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     create: data.questions.map(q => ({
                         text: q.text,
                         points: q.points,
+                        isMultipleChoice: q.isMultipleChoice,
                         options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
                     })),
                 },
@@ -179,6 +183,7 @@ export async function getExamForEdit(examId: number) {
                 },
                 orderBy: { id: 'asc' },
             },
+             post: true
         },
     });
 
@@ -196,25 +201,19 @@ export async function deleteExam(examId: number) {
         throw new Error('Exam not found');
     }
     
-    // We must ensure cascading deletes are set up correctly in schema.prisma
-    // or manually delete related records here in a transaction.
-    // Assuming cascade delete is on.
     await prisma.$transaction(async (tx) => {
-        // Delete related submission answers first, then submissions.
         const submissions = await tx.examSubmission.findMany({ where: { examId } });
         for (const submission of submissions) {
             await tx.submissionAnswer.deleteMany({ where: { submissionId: submission.id } });
         }
         await tx.examSubmission.deleteMany({ where: { examId } });
 
-        // Delete questions and options
         const questions = await tx.question.findMany({ where: { examId } });
         for (const question of questions) {
             await tx.questionOption.deleteMany({ where: { questionId: question.id } });
         }
         await tx.question.deleteMany({ where: { examId } });
 
-        // Finally, delete the exam
         await tx.exam.delete({ where: { id: examId } });
     });
 
@@ -265,7 +264,6 @@ export async function getExamForTaker(examId: number) {
       throw new Error(`You have reached the maximum number of attempts (${exam.attemptsAllowed}).`);
   }
 
-  // Check if user has access to the post
   if (exam.post.visibility === 'GROUP_ONLY') {
       if (!exam.post.groupId) {
           throw new Error('This exam is part of a group, but the group is not specified.');
@@ -286,7 +284,7 @@ export async function getExamForTaker(examId: number) {
 export async function submitExam(
   examId: number,
   payload: {
-    answers: Record<string, string>;
+    answers: Record<string, string | string[]>;
     timeTakenSeconds: number;
   }
 ) {
@@ -313,15 +311,31 @@ export async function submitExam(
   const answersToCreate: { questionId: number, selectedOptionId: number }[] = [];
 
   for (const question of exam.questions) {
-    const selectedOptionIdStr = answers[`question-${question.id}`];
-    if (selectedOptionIdStr) {
-      const selectedOptionId = parseInt(selectedOptionIdStr, 10);
-      const correctOption = question.options.find(opt => opt.isCorrect);
-      
-      if (correctOption?.id === selectedOptionId) {
-        score += question.points;
-      }
-      answersToCreate.push({ questionId: question.id, selectedOptionId });
+    const userAnswers = answers[`question-${question.id}`];
+    const correctOptions = question.options.filter(opt => opt.isCorrect);
+    const correctOptionIds = correctOptions.map(opt => opt.id);
+
+    if (question.isMultipleChoice) {
+        const selectedOptionIds = (Array.isArray(userAnswers) ? userAnswers : [userAnswers]).filter(Boolean).map(id => parseInt(id, 10));
+        
+        const isCorrect = correctOptionIds.length === selectedOptionIds.length && correctOptionIds.every(id => selectedOptionIds.includes(id));
+
+        if (isCorrect) {
+            score += question.points;
+        }
+        selectedOptionIds.forEach(id => {
+            answersToCreate.push({ questionId: question.id, selectedOptionId: id });
+        });
+
+    } else { // Single choice
+        const selectedOptionId = userAnswers ? parseInt(userAnswers as string, 10) : null;
+
+        if (selectedOptionId && correctOptionIds.includes(selectedOptionId)) {
+            score += question.points;
+        }
+        if (selectedOptionId) {
+            answersToCreate.push({ questionId: question.id, selectedOptionId: selectedOptionId });
+        }
     }
   }
 
@@ -330,24 +344,18 @@ export async function submitExam(
       examId: exam.id,
       userId: user.id,
       score,
-      timeTakenSeconds: timeTakenSeconds, // Directly using the value from payload
-      answers: {
-        create: answersToCreate,
-      },
+      timeTakenSeconds: timeTakenSeconds,
     };
     
     console.log('--- [Server Action] Data for prisma.examSubmission.create ---', submissionData);
 
     const newSubmission = await prisma.examSubmission.create({ 
-      data: submissionData,
-      select: {
-          id: true,
-          examId: true,
-          userId: true,
-          score: true,
-          submittedAt: true,
-          timeTakenSeconds: true,
-      }
+      data: {
+        ...submissionData,
+        answers: {
+          create: answersToCreate,
+        },
+      },
     });
 
     console.log('--- [Server Action] DB Create SUCCESS. Returning object: ---', newSubmission);
@@ -355,23 +363,6 @@ export async function submitExam(
 
   } catch (error: any) {
     console.error('--- [Server Action] Error during submission create:', error);
-
-    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
-       console.log('--- [Server Action] Caught race condition (P2002). Finding existing submission.');
-       const raceConditionSubmission = await prisma.examSubmission.findFirst({
-        where: { userId: user.id, examId: exam.id },
-        select: {
-            id: true,
-            examId: true,
-            userId: true,
-            score: true,
-            submittedAt: true,
-            timeTakenSeconds: true,
-        },
-      });
-      console.log('--- [Server Action] Found and returning existing submission:', raceConditionSubmission);
-      return raceConditionSubmission;
-    }
     
     throw error;
   }
@@ -398,7 +389,12 @@ export async function getExamResults(submissionId: number) {
                     }
                 }
             },
-            answers: true
+            answers: {
+                select: {
+                    questionId: true,
+                    selectedOptionId: true,
+                }
+            }
         }
     });
 
@@ -406,7 +402,6 @@ export async function getExamResults(submissionId: number) {
         throw new Error('Submission not found.');
     }
     
-    // Security check: only the user who took the exam or an admin can see results
     if (submission.userId !== user.id && user.role !== ROLES.SUPER_ADMIN) {
         throw new Error("You are not authorized to view these results.");
     }
