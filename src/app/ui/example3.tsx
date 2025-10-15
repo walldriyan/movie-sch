@@ -1,32 +1,37 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { Post } from '@/lib/types';
 
-const getRandomValue = (min, max) => Math.random() * (max - min) + min;
+const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
 export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [cards, setCards] = useState<any[]>([]);
 
-  // Map post data to card data
-  const cards = initialPosts.map((post, index) => {
-    const cardType = index === 2 ? 'hero' : (index % 3 === 0 ? 'grid' : (index % 3 === 1 ? 'dots' : 'single'));
-    return {
-      id: post.id,
-      image: post.posterUrl || `https://picsum.photos/seed/${post.id}/600/800`,
-      brand: post.author?.name || 'CineVerse',
-      type: cardType,
-      gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'], // Example colors
-      rotation: index === 2 ? 0 : getRandomValue(-12, 12),
-      distance: index === 2 ? 0.5 : getRandomValue(0.6, 0.8)
-    };
-  });
+  useEffect(() => {
+    // Map post data to card data with random values only on client-side
+    const generatedCards = initialPosts.map((post, index) => {
+      const cardType = index === 2 ? 'hero' : (index % 3 === 0 ? 'grid' : (index % 3 === 1 ? 'dots' : 'single'));
+      return {
+        id: post.id,
+        image: post.posterUrl || `https://picsum.photos/seed/${post.id}/600/800`,
+        brand: post.author?.name || 'CineVerse',
+        type: cardType,
+        gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'], // Example colors
+        rotation: index === 2 ? 0 : getRandomValue(-12, 12),
+        distance: index === 2 ? 0.5 : getRandomValue(0.6, 0.8)
+      };
+    });
+    setCards(generatedCards);
+  }, [initialPosts]);
 
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
@@ -57,7 +62,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     };
   }, []);
 
-  const getCardTransform = (baseRotate, distanceMultiplier) => {
+  const getCardTransform = (baseRotate: number, distanceMultiplier: number) => {
     if (!isHovering) {
       return `rotate(${baseRotate}deg)`;
     }
@@ -68,7 +73,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.05)`;
   };
 
-  const renderCard = (card) => {
+  const renderCard = (card: any) => {
     const isHero = card.type === 'hero';
 
     return (
@@ -98,7 +103,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
         {card.type === 'grid' && (
           <div className="grid grid-cols-3 gap-1.5 md:gap-2 p-2 md:p-3 bg-white">
-            {card.gridColors.map((color, idx) => (
+            {card.gridColors.map((color: string, idx: number) => (
               <div key={idx} className={`${color} h-10 md:h-12 lg:h-14 rounded`}></div>
             ))}
           </div>
@@ -161,3 +166,5 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     </div>
   );
 }
+
+    
