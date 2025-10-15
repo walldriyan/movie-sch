@@ -153,7 +153,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         style={{
           transform: getCardTransform(card.rotation, card.distance),
           transformOrigin: 'center center',
-          aspectRatio: isHero ? '3 / 4' : 'auto',
+          aspectRatio: '3 / 4',
         }}
       >
         {!isHero && (
