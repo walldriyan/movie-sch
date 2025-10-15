@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -8,7 +7,6 @@ import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
-import { redirect } from 'next/navigation';
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -332,35 +330,37 @@ export async function submitExam(
       examId: exam.id,
       userId: user.id,
       score,
-      timeTakenSeconds: timeTakenSeconds,
+      timeTakenSeconds: timeTakenSeconds, // Directly using the value from payload
       answers: {
         create: answersToCreate,
       },
     };
     
-    const newSubmission = await prisma.examSubmission.create({ data: submissionData });
+    console.log('--- [Server Action] Data for prisma.examSubmission.create ---', submissionData);
 
-    console.log('--- [Server Action] DB Create SUCCESS. Re-fetching to confirm...');
-    const createdSubmission = await prisma.examSubmission.findUnique({
-        where: { id: newSubmission.id },
-        select: {
-            id: true,
-            examId: true,
-            userId: true,
-            score: true,
-            submittedAt: true,
-            timeTakenSeconds: true,
-        }
+    const newSubmission = await prisma.examSubmission.create({ 
+      data: submissionData,
+      select: {
+          id: true,
+          examId: true,
+          userId: true,
+          score: true,
+          submittedAt: true,
+          timeTakenSeconds: true,
+      }
     });
-    console.log('--- [Server Action] Fetched submission from DB:', createdSubmission);
-    return createdSubmission;
 
-  } catch (error) {
+    console.log('--- [Server Action] DB Create SUCCESS. Returning object: ---', newSubmission);
+    return newSubmission;
+
+  } catch (error: any) {
+    console.error('--- [Server Action] Error during submission create:', error);
+
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
        console.log('--- [Server Action] Caught race condition (P2002). Finding existing submission.');
        const raceConditionSubmission = await prisma.examSubmission.findFirst({
         where: { userId: user.id, examId: exam.id },
-         select: {
+        select: {
             id: true,
             examId: true,
             userId: true,
@@ -369,10 +369,10 @@ export async function submitExam(
             timeTakenSeconds: true,
         },
       });
-      console.log('--- [Server Action] Found existing submission:', raceConditionSubmission);
+      console.log('--- [Server Action] Found and returning existing submission:', raceConditionSubmission);
       return raceConditionSubmission;
     }
-    console.error('--- [Server Action] Error during submission:', error);
+    
     throw error;
   }
 }

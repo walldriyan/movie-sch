@@ -22,7 +22,7 @@ export default async function HomePage({
   const currentPage = Number(searchParams?.page) || 1;
 
   const session = await auth();
-  console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  // console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
 
   const { posts, totalPages } = await getPosts({
     page: currentPage,
