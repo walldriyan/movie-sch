@@ -366,7 +366,6 @@ export async function submitExam(
             score,
             timeTakenSeconds,
             submittedAt: new Date(),
-            attempts: exam.attemptsAllowed,
             attemptCount: 1,
             answers: {
                 create: answersToCreate,
