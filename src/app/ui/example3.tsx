@@ -11,6 +11,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null); // Ref for the scrollable container
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
@@ -65,6 +66,24 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       }
     };
   }, []);
+  
+  useEffect(() => {
+    const scrollEl = scrollContainerRef.current;
+    if (!scrollEl) return;
+
+    const handleWheelScroll = (e: WheelEvent) => {
+      if (e.deltaY !== 0) {
+        e.preventDefault();
+        scrollEl.scrollLeft += e.deltaY;
+      }
+    };
+
+    scrollEl.addEventListener('wheel', handleWheelScroll);
+    return () => {
+      scrollEl.removeEventListener('wheel', handleWheelScroll);
+    };
+  }, []);
+
 
   const getCardTransform = (baseRotate: number, distanceMultiplier: number) => {
     if (!isHovering) {
@@ -167,7 +186,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       </div>
 
       {/* Cards Container */}
-      <div className="w-full py-8 overflow-y-hidden overflow-x-auto">
+      <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
         <div
           ref={containerRef}
           className="flex gap-4 md:gap-6 lg:gap-8 pb-4"
@@ -175,8 +194,6 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             perspective: '1000px',
             paddingLeft: '100px',
             paddingRight: '100px',
-            scrollbarWidth: 'thin',
-            scrollbarColor: 'rgba(255,255,255,0.3) transparent'
           } as React.CSSProperties}
         >
           {cards.map(card => renderCard(card))}
