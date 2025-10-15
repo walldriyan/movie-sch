@@ -94,7 +94,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 if (!q.id) continue;
                 await tx.question.update({
                     where: { id: q.id },
-                    data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice }
+                    data: { text: q.text, points: q.points }
                 });
                 const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
                 const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
@@ -469,7 +469,6 @@ export async function updateSubmissionAttempts(submissionId: number, userId: str
         where: { id: submissionId },
         data: { 
             attempts: attempts,
-            user: { connect: { id: userId } }
         }
     });
     
