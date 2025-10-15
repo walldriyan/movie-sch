@@ -223,6 +223,16 @@ export async function getPost(postId: number) {
       dislikedBy: true,
       mediaLinks: true,
       series: true,
+      exam: {
+        where: {
+          status: 'ACTIVE'
+        },
+        select: {
+          id: true,
+          title: true,
+          description: true
+        }
+      },
       _count: true,
     },
   });

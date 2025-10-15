@@ -49,7 +49,9 @@ import {
   Trash2, 
   Loader2, 
   ChevronDown, 
-  ChevronUp 
+  ChevronUp,
+  BookCheck,
+  PlayCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import AdminActions from '@/components/admin-actions';
@@ -133,6 +135,37 @@ const ImageGallerySection = ({ post }: { post: any }) => {
             </div>
           ))}
         </div>
+      </section>
+    </>
+  );
+};
+
+const ExamSection = ({ exam }: { exam: { id: number; title: string; description: string | null } | null }) => {
+  if (!exam) return null;
+
+  return (
+    <>
+      <Separator className="my-12" />
+      <section id="exam">
+        <Card className="bg-card/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <BookCheck className="h-6 w-6 text-primary" />
+              Test Your Knowledge
+            </CardTitle>
+            <CardDescription>An exam is available for this content.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <h3 className="font-semibold text-lg">{exam.title}</h3>
+            {exam.description && <p className="text-muted-foreground mt-2">{exam.description}</p>}
+            <Button asChild className="mt-4">
+              <Link href={`/exams/${exam.id}`}>
+                <PlayCircle className="mr-2 h-4 w-4" />
+                Start Exam
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
       </section>
     </>
   );
@@ -308,6 +341,7 @@ export default function MoviePageContent({
                   />
                   <TrailerSection post={post} />
                   <ImageGallerySection post={post} />
+                  <ExamSection exam={post.exam} />
                   <Separator className="my-12" />
                   <SponsoredAdCard />
                   <Separator className="my-12" />

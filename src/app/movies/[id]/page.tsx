@@ -129,6 +129,12 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
       authorId: postData.series.authorId,
     } : null,
     
+    exam: postData.exam ? {
+        id: postData.exam.id,
+        title: postData.exam.title,
+        description: postData.exam.description,
+    } : null,
+    
     // Serialize media links
     mediaLinks: (postData.mediaLinks || []).map((link: any) => ({
       id: link.id,
