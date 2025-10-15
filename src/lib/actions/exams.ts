@@ -51,6 +51,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number) {
     }
     
     const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
+    // Assuming USER_ADMIN can also create/edit exams for any post, or we can restrict it to their own posts
     const isAuthor = post.authorId === user.id;
 
     if (!isSuperAdmin && !isAuthor) {
@@ -79,6 +80,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number) {
             // Easiest way to handle question/option updates is to delete and recreate
             const existingQuestions = await tx.question.findMany({ where: { examId }});
             for (const q of existingQuestions) {
+                await tx.submissionAnswer.deleteMany({ where: { questionId: q.id }});
                 await tx.questionOption.deleteMany({ where: { questionId: q.id }});
             }
             await tx.question.deleteMany({ where: { examId }});
@@ -175,7 +177,23 @@ export async function getExamForTaker(examId: number) {
         throw new Error(`This exam is no longer available as of ${exam.endDate.toLocaleString()}.`);
     }
 
-    return exam;
+    // Shuffle questions and options
+    const shuffledQuestions = exam.questions
+      .map(value => ({ value, sort: Math.random() }))
+      .sort((a, b) => a.sort - b.sort)
+      .map(({ value }) => ({
+        ...value,
+        options: value.options
+          .map(opt => ({ value: opt, sort: Math.random() }))
+          .sort((a, b) => a.sort - b.sort)
+          .map(({ value: optValue }) => optValue),
+      }));
+
+
+    return {
+        ...exam,
+        questions: shuffledQuestions,
+    };
 }
 
 export async function submitExam(examId: number, formData: FormData) {
@@ -208,9 +226,30 @@ export async function submitExam(examId: number, formData: FormData) {
   if (!exam) {
     throw new Error('Exam not found.');
   }
+  
+  if (exam.attemptsAllowed > 0) {
+    const submissionCount = await prisma.examSubmission.count({
+      where: {
+        examId: examId,
+        userId: session.user.id,
+      },
+    });
+    if (submissionCount >= exam.attemptsAllowed) {
+        const latestSubmission = await prisma.examSubmission.findFirst({
+            where: { examId: examId, userId: session.user.id },
+            orderBy: { submittedAt: 'desc' }
+        });
+        if (latestSubmission) {
+             redirect(`/exams/${examId}/results?submissionId=${latestSubmission.id}`);
+        } else {
+             throw new Error(`You have already submitted this exam the maximum number of times (${exam.attemptsAllowed}).`);
+        }
+    }
+  }
+
 
   let totalScore = 0;
-  let submissionAnswers = [];
+  let submissionAnswersData = [];
 
   for (const question of exam.questions) {
     const correctOption = question.options.find(o => o.isCorrect);
@@ -221,22 +260,37 @@ export async function submitExam(examId: number, formData: FormData) {
     }
 
     if (userAnswerId) {
-        submissionAnswers.push({
+        submissionAnswersData.push({
             questionId: question.id,
             selectedOptionId: userAnswerId
         });
     }
   }
 
-  const submission = await prisma.examSubmission.create({
-    data: {
-      score: totalScore,
-      examId: examId,
-      userId: session.user.id,
-      answers: {
-        create: submissionAnswers
+  // Use upsert to prevent unique constraint errors on re-submission.
+  const submission = await prisma.examSubmission.upsert({
+      where: {
+          userId_examId: {
+              userId: session.user.id,
+              examId: examId,
+          },
       },
-    },
+      update: {
+        score: totalScore,
+        submittedAt: new Date(),
+        answers: {
+            deleteMany: {},
+            create: submissionAnswersData,
+        }
+      }, 
+      create: {
+          score: totalScore,
+          examId: examId,
+          userId: session.user.id,
+          answers: {
+              create: submissionAnswersData,
+          },
+      },
   });
   
   revalidatePath(`/exams/${examId}`);
@@ -276,5 +330,20 @@ export async function getExamResults(submissionId: number) {
         throw new Error('Submission not found or you are not authorized to view it.');
     }
 
-    return submission;
+    const submissionCount = await prisma.examSubmission.count({
+        where: {
+            examId: submission.examId,
+            userId: user.id
+        }
+    });
+
+    const fullUser = await prisma.user.findUnique({
+        where: { id: user.id }
+    });
+
+    if (!fullUser) {
+         throw new Error('User details not found.');
+    }
+
+    return { submission, submissionCount, user: fullUser };
 }

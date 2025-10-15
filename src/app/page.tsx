@@ -7,13 +7,16 @@ import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
 import { auth } from '@/auth';
 import MetaSpotlight from './ui/page';
+import MetaSpotlight1 from './ui/newexample2';
+import MetaSpotlight3 from './ui/example3';
+import { Post } from '@/lib/types';
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const timeFilter = (searchParams?.timeFilter as string) || 'all';
+  const timeFilter = (searchParams?.timeFilter as string) || 'updatedAt-desc';
   const sortBy = (searchParams?.sortBy as string) || 'updatedAt-desc';
   const typeFilter = searchParams?.type as string | undefined;
   const currentPage = Number(searchParams?.page) || 1;
@@ -27,13 +30,14 @@ export default async function HomePage({
     filters: { timeFilter, sortBy, type: typeFilter },
   });
   const users = await getUsers();
-  const groups = await getPublicGroups(5);
+  const groups = await getPublicGroups(10);
   const notifications = await getNotifications();
   
   return (
     <>
-
-    <MetaSpotlight/>
+      <MetaSpotlight3 posts={posts as Post[]} />
+      {/* <MetaSpotlight1 /> */}
+     
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
@@ -44,6 +48,7 @@ export default async function HomePage({
         initialNotifications={notifications}
         session={session}
       />
+       <MetaSpotlight/>
     </>
   );
 }
