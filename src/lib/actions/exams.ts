@@ -155,17 +155,35 @@ export async function getExamsForAdmin() {
     if (!session?.user) {
         throw new Error('Not authenticated');
     }
-    // Add role check if necessary
     
     const exams = await prisma.exam.findMany({
         orderBy: { createdAt: 'desc' },
         include: {
-            post: { select: { title: true }},
-            _count: { select: { questions: true, submissions: true, pendingRequests: true } }
+            post: { select: { title: true, groupId: true }},
+            _count: { select: { questions: true, submissions: true } }
         }
     });
 
-    return exams;
+    const examsWithPendingCounts = await Promise.all(exams.map(async (exam) => {
+        let pendingRequestsCount = 0;
+        if (exam.post.groupId) {
+            pendingRequestsCount = await prisma.groupMember.count({
+                where: {
+                    groupId: exam.post.groupId,
+                    status: 'PENDING',
+                },
+            });
+        }
+        return {
+            ...exam,
+            _count: {
+                ...exam._count,
+                pendingRequests: pendingRequestsCount,
+            }
+        }
+    }));
+
+    return examsWithPendingCounts;
 }
 
 
@@ -488,7 +506,6 @@ export async function updateSubmissionAttempts(submissionId: number, userId: str
         where: { id: submissionId },
         data: { 
             attemptCount: attemptCount,
-            user: { connect: { id: userId } }
         }
     });
     
