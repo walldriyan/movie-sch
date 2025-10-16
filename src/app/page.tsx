@@ -16,10 +16,10 @@ export default async function HomePage({
 }: {
   searchParams: { [key: string]: string | string[] | undefined };
 }) {
-  const timeFilter = (searchParams?.timeFilter as string) || 'updatedAt-desc';
-  const sortBy = (searchParams?.sortBy as string) || 'updatedAt-desc';
-  const typeFilter = searchParams?.type as string | undefined;
-  const currentPage = Number(searchParams?.page) || 1;
+  const timeFilter = (searchParams.timeFilter as string) || 'updatedAt-desc';
+  const sortBy = (searchParams.sortBy as string) || 'updatedAt-desc';
+  const typeFilter = searchParams.type as string | undefined;
+  const currentPage = Number(searchParams.page) || 1;
 
   const session = await auth();
   // console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
