@@ -61,14 +61,13 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
     notFound();
   }
 
-  const [postData, session] = await Promise.all([
-    getPost(postId),
-    auth()
-  ]);
+  const postData = await getPost(postId);
   
   if (!postData) {
     notFound();
   }
+
+  const session = await auth();
   
   // Serialize subtitles with permissions
   const subtitlesWithPermissions: any[] = await Promise.all(
