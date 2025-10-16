@@ -102,16 +102,6 @@ export default function RegisterPage() {
           </form>
         </Card>
 
-         <div className="p-4 border border-dashed rounded-lg text-left">
-            <h2 className="text-lg font-semibold mb-2">Debug Information</h2>
-            <pre className="text-xs bg-muted p-2 rounded-md overflow-x-auto">
-              {JSON.stringify({
-                "SUPER_ADMIN_EMAIL_from_env": superAdminEmail || 'Loading or N/A in prod...',
-                "isMatch?": isMatch ? "true" : "false",
-                "lastServerActionState": state,
-              }, null, 2)}
-            </pre>
-          </div>
 
       </div>
     </div>

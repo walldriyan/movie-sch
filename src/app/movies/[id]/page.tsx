@@ -61,15 +61,13 @@ export default async function MoviePage({ params }: { params: { id: string }}) {
     notFound();
   }
 
-  const session = await auth();
-  // console.log("Server [/movies/[id]/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
-  // console.log("Server [/movies/[id]/page.tsx] Current User Details:", session?.user);
-
   const postData = await getPost(postId);
   
   if (!postData) {
     notFound();
   }
+
+  const session = await auth();
   
   // Serialize subtitles with permissions
   const subtitlesWithPermissions: any[] = await Promise.all(
