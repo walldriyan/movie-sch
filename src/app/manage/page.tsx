@@ -10,18 +10,25 @@ import type { Post } from '@prisma/client';
 export default async function ManagePostsPage({
   searchParams
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const session = await auth();
+
+  const resolvedSearchParams = await searchParams; // ✅ await කරනවා
+
+
+
+   const session = await auth();
   const user = session?.user;
 
   if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     notFound();
   }
 
-  const page = Number(searchParams?.page) || 1;
-  const status = (searchParams?.status as string) || MovieStatus.PENDING_APPROVAL;
+  const page = Number(resolvedSearchParams?.page) || 1;
+  const status =
+    (resolvedSearchParams?.status as string) || MovieStatus.PENDING_APPROVAL;
 
+    
   // Fetch initial data on the server with the default filter.
   const { posts, totalPages } = await getPostsForAdmin({ 
     page: page, 
