@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useTransition } from 'react';
@@ -36,12 +37,12 @@ interface MovieInteractionButtonsProps {
     post: PostType;
     onPostUpdate: (updatedPost: PostType) => void;
     session: Session | null;
-    sessionStatus: 'loading' | 'authenticated' | 'unauthenticated';
 }
 
-export default function MovieInteractionButtons({ post, onPostUpdate, session, sessionStatus }: MovieInteractionButtonsProps) {
+export default function MovieInteractionButtons({ post, onPostUpdate, session }: MovieInteractionButtonsProps) {
     const router = useRouter();
     const currentUser = session?.user;
+    const sessionStatus = session ? 'authenticated' : 'unauthenticated';
 
     const [isLikeTransitioning, startLikeTransition] = useTransition();
     const [isFavoritePending, startFavoriteTransition] = useTransition();
