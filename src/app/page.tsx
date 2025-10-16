@@ -1,8 +1,6 @@
-
-
 import { getPosts, getUsers, getPublicGroups, getNotifications } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
-import { MyReusableButton } from '@/components/my-reusable-button'; // Import a custom button
+import { MyReusableButton } from '@/components/my-reusable-button';
 import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
 import { auth } from '@/auth';
@@ -14,12 +12,16 @@ import { Post } from '@/lib/types';
 export default async function HomePage({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>; // ✅ Promise type එක හරි
 }) {
-  const timeFilter = (searchParams.timeFilter as string) || 'updatedAt-desc';
-  const sortBy = (searchParams.sortBy as string) || 'updatedAt-desc';
-  const typeFilter = searchParams.type as string | undefined;
-  const currentPage = Number(searchParams.page) || 1;
+  // 👇 මෙතන await කරන්න ඕනේ!
+  const params = await searchParams;
+  
+  // දැන් params use කරන්න
+  const timeFilter = (params.timeFilter as string) || 'updatedAt-desc';
+  const sortBy = (params.sortBy as string) || 'updatedAt-desc';
+  const typeFilter = params.type as string | undefined;
+  const currentPage = Number(params.page) || 1;
 
   const session = await auth();
   // console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));

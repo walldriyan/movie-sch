@@ -5,7 +5,7 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { permissions, ROLES } from '@/lib/permissions';
 import type { NextAuthConfig } from 'next-auth';
-
+export const dynamic = 'force-dynamic';
 const prisma = new PrismaClient();
 
 export const authConfig = {
