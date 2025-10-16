@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect } from 'react';
 import type { Exam, User, ExamSubmission as PrismaSubmission } from '@prisma/client';
 import {
   Table,
@@ -147,7 +146,7 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
 
         const correctOptionIds = question.options.filter((o: any) => o.isCorrect).map((o: any) => o.id);
         const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-        const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0; // Changed this logic
+        const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0; 
         
         let score = 0;
         if (question.isMultipleChoice) {
@@ -393,3 +392,5 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
         </div>
     )
 }
+
+    
