@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import type { Post } from '@/lib/types';
-import { getMovieRecommendations, MovieRecommendationOutput } from '@/ai/flows/ai-movie-recommendation';
+// import { getMovieRecommendations, MovieRecommendationOutput } from '@/ai/flows/ai-movie-recommendation';
 import { Skeleton } from './ui/skeleton';
 import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { XCircle, Star } from 'lucide-react';

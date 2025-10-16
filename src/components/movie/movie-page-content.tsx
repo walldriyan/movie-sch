@@ -12,8 +12,8 @@ import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import UploadSubtitleDialog from '@/components/upload-subtitle-dialog';
-import SubtitleRequestForm from '@/components/subtitle-request-form';
-import MovieRecommendations from '@/components/movie-recommendations';
+// import SubtitleRequestForm from '@/components/subtitle-request-form';
+// import MovieRecommendations from '@/components/movie-recommendations';
 import {
   Card,
   CardContent,
@@ -350,7 +350,7 @@ export default function MoviePageContent({
                     <h2 className="font-serif text-3xl font-bold mb-8">
                       More Like This
                     </h2>
-                    <MovieRecommendations currentPost={post} />
+                    {/* <MovieRecommendations currentPost={post} /> */}
                   </section>
                 </div>
                 
@@ -512,7 +512,7 @@ export default function MoviePageContent({
                         </CardDescription>
                       </CardHeader>
                       <CardContent>
-                        <SubtitleRequestForm movieTitle={post.title} />
+                        {/* <SubtitleRequestForm movieTitle={post.title} /> */}
                       </CardContent>
                     </Card>
                   </div>
