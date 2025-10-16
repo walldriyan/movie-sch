@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -29,13 +30,11 @@ import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
 import type { Session } from 'next-auth';
 
-export default async function HeaderClient({ session: serverSession }: { session: Session | null }) {
+export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
   // We receive the session from the server component as a prop to avoid hydration issues in the header.
   const session = serverSession;
   const sessionStatus = session ? 'authenticated' : 'unauthenticated';
 
-  // console.log('[HeaderClient] Received serverSession prop:', JSON.stringify(serverSession, null, 2));
-  
   const user = session?.user;
 
   const userAvatarPlaceholder = PlaceHolderImages.find(

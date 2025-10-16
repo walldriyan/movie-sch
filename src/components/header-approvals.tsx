@@ -1,5 +1,7 @@
-'use server';
 
+'use client';
+
+import React, { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -11,14 +13,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bell, Film, Users, Inbox } from 'lucide-react';
+import { Bell, Film, Users, Inbox, RefreshCw, Loader2 } from 'lucide-react';
 import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES } from '@/lib/permissions';
 import { getPendingApprovals } from '@/lib/actions';
 import type { Post, User } from '@prisma/client';
 import { ScrollArea } from './ui/scroll-area';
-import ApprovalRefreshButton from './header-approvals-client';
-
+import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from './ui/skeleton';
 
 type PendingPost = Pick<Post, 'id' | 'title'> & { author: Pick<User, 'name'> | null };
 type PendingUser = Pick<User, 'id' | 'name' | 'email'>;
@@ -87,8 +89,43 @@ const renderContent = (approvals: ApprovalsState | null) => {
     )
   };
 
-export default async function HeaderApprovals() {
-  const approvals = await getPendingApprovals() as ApprovalsState;
+export default function HeaderApprovals() {
+  const [approvals, setApprovals] = useState<ApprovalsState | null>(null);
+  const [isRefreshing, startRefreshTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchApprovals = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await getPendingApprovals() as ApprovalsState;
+      setApprovals(data);
+    } catch (error) {
+      console.error(error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not fetch approvals.",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }, [toast]);
+  
+  useEffect(() => {
+    fetchApprovals();
+  }, [fetchApprovals]);
+  
+  const handleRefresh = () => {
+    startRefreshTransition(async () => {
+      await fetchApprovals();
+       toast({
+        title: 'Refreshed',
+        description: 'Approval list has been updated.',
+      });
+    });
+  }
+
   const totalApprovals = (approvals?.pendingPosts?.length || 0) + (approvals?.pendingUsers?.length || 0);
 
   return (
@@ -97,8 +134,11 @@ export default async function HeaderApprovals() {
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
             <Bell />
-            {totalApprovals > 0 && (
+            {totalApprovals > 0 && !isLoading && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{totalApprovals}</Badge>
+            )}
+            {isLoading && (
+              <Loader2 className="absolute -top-1 -right-1 h-5 w-5 animate-spin" />
             )}
             <span className="sr-only">Toggle approvals</span>
           </Button>
@@ -106,10 +146,26 @@ export default async function HeaderApprovals() {
         <DropdownMenuContent align="end" className="w-80">
             <div className="flex items-center justify-between p-2">
                  <DropdownMenuLabel className="p-0">Approvals</DropdownMenuLabel>
-                 <ApprovalRefreshButton />
+                 <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7"
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  </Button>
             </div>
             <DropdownMenuSeparator />
-            {renderContent(approvals)}
+            {isLoading ? (
+              <div className="p-4 space-y-4">
+                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-6 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            ) : (
+              renderContent(approvals)
+            )}
         </DropdownMenuContent>
       </DropdownMenu>
     </AuthGuard>
