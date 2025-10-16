@@ -1,6 +1,5 @@
-'use client';
+'use server';
 
-import { useState, useEffect, useTransition } from 'react';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -12,14 +11,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Bell, Film, RefreshCw, Users, Inbox, ExternalLink } from 'lucide-react';
+import { Bell, Film, Users, Inbox } from 'lucide-react';
 import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES } from '@/lib/permissions';
 import { getPendingApprovals } from '@/lib/actions';
 import type { Post, User } from '@prisma/client';
 import { ScrollArea } from './ui/scroll-area';
-import { useToast } from '@/hooks/use-toast';
+import ApprovalRefreshButton from './header-approvals-client';
+
 
 type PendingPost = Pick<Post, 'id' | 'title'> & { author: Pick<User, 'name'> | null };
 type PendingUser = Pick<User, 'id' | 'name' | 'email'>;
@@ -29,18 +28,7 @@ interface ApprovalsState {
   pendingUsers: PendingUser[];
 }
 
-const renderContent = (approvals: ApprovalsState | null, isLoading: boolean) => {
-    if (isLoading) {
-      return (
-        <div className="p-2 space-y-4">
-          <Skeleton className="h-4 w-20" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-8 w-full" />
-        </div>
-      );
-    }
-    
+const renderContent = (approvals: ApprovalsState | null) => {
     if (!approvals) return null;
 
     const safePendingPosts = approvals.pendingPosts?.filter(p => p) || [];
@@ -99,31 +87,8 @@ const renderContent = (approvals: ApprovalsState | null, isLoading: boolean) => 
     )
   };
 
-export default function HeaderApprovals() {
-  const [approvals, setApprovals] = useState<ApprovalsState | null>(null);
-  const [isRefreshing, startRefreshTransition] = useTransition();
-  const { toast } = useToast();
-
-  const fetchApprovals = async () => {
-    startRefreshTransition(async () => {
-        try {
-            const approvalsData = await getPendingApprovals() as ApprovalsState;
-            setApprovals(approvalsData);
-        } catch (error) {
-            console.error("Failed to fetch approvals:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not fetch pending approvals.'
-            });
-        }
-    });
-  }
-
-  useEffect(() => {
-    fetchApprovals();
-  }, []);
-
+export default async function HeaderApprovals() {
+  const approvals = await getPendingApprovals() as ApprovalsState;
   const totalApprovals = (approvals?.pendingPosts?.length || 0) + (approvals?.pendingUsers?.length || 0);
 
   return (
@@ -141,12 +106,10 @@ export default function HeaderApprovals() {
         <DropdownMenuContent align="end" className="w-80">
             <div className="flex items-center justify-between p-2">
                  <DropdownMenuLabel className="p-0">Approvals</DropdownMenuLabel>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={fetchApprovals} disabled={isRefreshing}>
-                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                </Button>
+                 <ApprovalRefreshButton />
             </div>
             <DropdownMenuSeparator />
-            {renderContent(approvals, isRefreshing)}
+            {renderContent(approvals)}
         </DropdownMenuContent>
       </DropdownMenu>
     </AuthGuard>

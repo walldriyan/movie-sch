@@ -29,7 +29,7 @@ import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
 import type { Session } from 'next-auth';
 
-export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
+export default async function HeaderClient({ session: serverSession }: { session: Session | null }) {
   // We receive the session from the server component as a prop to avoid hydration issues in the header.
   const session = serverSession;
   const sessionStatus = session ? 'authenticated' : 'unauthenticated';
