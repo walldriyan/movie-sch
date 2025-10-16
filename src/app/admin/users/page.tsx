@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -78,12 +79,16 @@ export default function ManageUsersPage() {
       const user = users.find((u) => u.id === userId);
       if (!user) return;
 
-      let newStatus = user.permissionRequestStatus;
+      let newStatus: string | null = user.permissionRequestStatus;
       if (user.permissionRequestStatus === 'PENDING') {
         newStatus = newRole === ROLES.USER ? 'REJECTED' : 'APPROVED';
       }
 
-      await updateUserRole(userId, newRole, newStatus);
+      if (newStatus === null) {
+        newStatus = user.permissionRequestStatus;
+      }
+      
+      await updateUserRole(userId, newRole, newStatus!);
       await fetchUsers(); // Refetch users to update the list
       toast({
         title: 'Success',
