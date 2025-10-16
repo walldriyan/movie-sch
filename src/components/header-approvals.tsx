@@ -1,8 +1,7 @@
 
 
-'use client';
+'use server';
 
-import { useEffect, useState, useTransition } from 'react';
 import Link from 'next/link';
 import {
   DropdownMenu,
@@ -20,8 +19,8 @@ import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES } from '@/lib/permissions';
 import { getPendingApprovals } from '@/lib/actions';
 import type { Post, User } from '@prisma/client';
-import { useToast } from '@/hooks/use-toast';
 import { ScrollArea } from './ui/scroll-area';
+import { revalidatePath } from 'next/cache';
 
 type PendingPost = Pick<Post, 'id' | 'title'> & { author: Pick<User, 'name'> | null };
 type PendingUser = Pick<User, 'id' | 'name' | 'email'>;
@@ -31,39 +30,8 @@ interface ApprovalsState {
   pendingUsers: PendingUser[];
 }
 
-export default function HeaderApprovals() {
-  const [approvals, setApprovals] = useState<ApprovalsState | null>(null);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-
-  const fetchApprovals = () => {
-    startTransition(async () => {
-      try {
-        const data = await getPendingApprovals();
-        setApprovals(data as any);
-      } catch (error) {
-        console.error("Failed to fetch approvals:", error);
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Could not fetch approvals.',
-        });
-        // Set empty state on error to avoid crash
-        setApprovals({ pendingPosts: [], pendingUsers: [] });
-      }
-    });
-  };
-
-  useEffect(() => {
-    fetchApprovals();
-  }, []);
-
-  const safePendingPosts = approvals?.pendingPosts?.filter(p => p) || [];
-  const safePendingUsers = approvals?.pendingUsers?.filter(u => u) || [];
-  const totalApprovals = safePendingPosts.length + safePendingUsers.length;
-
-  const renderContent = () => {
-    if (isPending && !approvals) {
+const renderContent = (approvals: ApprovalsState | null) => {
+    if (!approvals) {
       return (
         <div className="p-2 space-y-4">
           <Skeleton className="h-4 w-20" />
@@ -74,6 +42,10 @@ export default function HeaderApprovals() {
       );
     }
     
+    const safePendingPosts = approvals.pendingPosts?.filter(p => p) || [];
+    const safePendingUsers = approvals.pendingUsers?.filter(u => u) || [];
+    const totalApprovals = safePendingPosts.length + safePendingUsers.length;
+
     if (totalApprovals === 0) {
         return (
             <div className="flex flex-col items-center justify-center p-8 text-center">
@@ -126,27 +98,36 @@ export default function HeaderApprovals() {
     )
   };
 
+export default async function HeaderApprovals() {
+  const approvals = await getPendingApprovals() as ApprovalsState;
+  const totalApprovals = (approvals?.pendingPosts?.length || 0) + (approvals?.pendingUsers?.length || 0);
+
+  async function refreshApprovalsAction() {
+    'use server'
+    revalidatePath('/')
+  }
+
   return (
     <AuthGuard requiredRole={ROLES.SUPER_ADMIN || ROLES.USER_ADMIN}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
             <Bell />
-            {totalApprovals > 0 && !isPending && (
+            {totalApprovals > 0 && (
                 <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{totalApprovals}</Badge>
             )}
             <span className="sr-only">Toggle approvals</span>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80">
-            <div className="flex items-center justify-between p-2">
+            <form action={refreshApprovalsAction} className="flex items-center justify-between p-2">
                  <DropdownMenuLabel className="p-0">Approvals</DropdownMenuLabel>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={fetchApprovals} disabled={isPending}>
-                    <RefreshCw className={`h-4 w-4 ${isPending ? 'animate-spin' : ''}`} />
+                <Button variant="ghost" size="icon" className="h-7 w-7" type="submit">
+                    <RefreshCw className="h-4 w-4" />
                 </Button>
-            </div>
+            </form>
             <DropdownMenuSeparator />
-            {renderContent()}
+            {renderContent(approvals)}
         </DropdownMenuContent>
       </DropdownMenu>
     </AuthGuard>
