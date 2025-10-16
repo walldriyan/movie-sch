@@ -55,8 +55,10 @@ function serializeReview(review: any): any {
   };
 }
 
-export default async function MoviePage({ params }: { params: { id: string }}) {
-  const postId = Number(params.id);
+export default async function MoviePage({ params }: { params: Promise<{ id: string }>}) {
+  const resolvedParams = await params; // ✅ params await කරලා resolve කරන්න
+  const postId = Number(resolvedParams.id);
+
   if (isNaN(postId)) {
     notFound();
   }
