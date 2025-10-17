@@ -79,8 +79,9 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       }
 
     } else {
-      // Guests can only see public posts.
+      // Guests can only see public posts and they must not be locked by default.
       whereClause.visibility = 'PUBLIC';
+      whereClause.isLockedByDefault = false;
     }
     
     let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
@@ -673,3 +674,4 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
