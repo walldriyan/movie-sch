@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -6,34 +7,56 @@ import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import type { Post } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { PlayCircle, CheckCircle } from 'lucide-react';
+import { PlayCircle, CheckCircle, Lock } from 'lucide-react';
+import { useMemo } from 'react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { ROLES } from '@/lib/permissions';
 
 interface SeriesPostCardProps {
   post: Post;
   seriesId: number;
   isActive: boolean;
+  isPassed: boolean;
 }
 
 export default function SeriesPostCard({
   post,
   seriesId,
   isActive,
+  isPassed,
 }: SeriesPostCardProps) {
+  const currentUser = useCurrentUser();
   const postImageUrl =
     post.posterUrl ||
     PlaceHolderImages.find(
       (p) => p.id === 'movie-poster-placeholder'
     )?.imageUrl;
 
+  const isLocked = useMemo(() => {
+    if (post.isLockedByDefault === false) return false;
+    if (currentUser?.role === ROLES.SUPER_ADMIN) return false;
+    if (currentUser?.id === post.authorId) return false;
+    return !isPassed;
+  }, [post, currentUser, isPassed]);
+
+
+  const Wrapper = isLocked ? 'div' : Link;
+  const linkProps = isLocked ? {} : { href: `/series/${seriesId}?post=${post.id}` };
+
   return (
-    <Link
-      href={`/series/${seriesId}?post=${post.id}`}
+    <Wrapper
+      {...linkProps}
       className={cn(
         'flex items-center gap-4 p-2 rounded-lg transition-colors',
         isActive
           ? 'bg-primary/10 border-primary/50'
-          : 'hover:bg-muted/50'
+          : 'hover:bg-muted/50',
+        isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
       )}
+      aria-disabled={isLocked}
+      onClick={(e) => {
+        if(isLocked) e.preventDefault();
+      }}
     >
       <div className="relative w-24 h-14 flex-shrink-0 overflow-hidden rounded-md">
         {postImageUrl && (
@@ -58,12 +81,14 @@ export default function SeriesPostCard({
         <p className="text-xs text-muted-foreground truncate">{post.duration}</p>
       </div>
       <div className="flex-shrink-0">
-        {isActive ? (
+        {isLocked ? (
+          <Lock className="w-6 h-6 text-yellow-400" />
+        ) : isActive ? (
           <PlayCircle className="w-6 h-6 text-primary" />
         ) : (
           <CheckCircle className="w-6 h-6 text-muted-foreground/50" />
         )}
       </div>
-    </Link>
+    </Wrapper>
   );
 }

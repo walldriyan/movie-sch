@@ -119,6 +119,12 @@ model Post {
   type                  PostType         @default(MOVIE)
   orderInSeries         Int?
 
+
+
+  isLockedByDefault   Boolean  @default(false)
+  requiresExamToUnlock Boolean @default(false)
+  
+
   authorId              String
   author                User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
 

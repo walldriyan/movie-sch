@@ -5,6 +5,7 @@ import { getSeriesById, getPostsBySeriesId, getPost } from '@/lib/actions';
 import type { Post, Series } from '@/lib/types';
 import SeriesPageClient from './client';
 import { auth } from '@/auth';
+import prisma from '@/lib/prisma';
 
 export default async function SeriesPage({
   params,
@@ -19,6 +20,7 @@ export default async function SeriesPage({
   }
 
   const session = await auth();
+  const user = session?.user;
 
   const seriesData = (await getSeriesById(seriesId)) as Series | null;
   if (!seriesData) {
@@ -50,12 +52,41 @@ export default async function SeriesPage({
     notFound();
   }
 
+  const userSubmissions = user ? await prisma.examSubmission.findMany({
+    where: {
+      userId: user.id,
+      exam: {
+        post: {
+          seriesId: seriesId,
+        },
+      },
+    },
+    include: {
+      exam: {
+        include: {
+          questions: { select: { points: true }},
+        },
+      },
+    },
+  }) : [];
+  
+  const passedExamIds = new Set<number>();
+  userSubmissions.forEach(sub => {
+    const totalPoints = sub.exam.questions.reduce((sum, q) => sum + q.points, 0);
+    const percentage = totalPoints > 0 ? (sub.score / totalPoints) * 100 : 0;
+    if (percentage >= 50) {
+      passedExamIds.add(sub.examId);
+    }
+  });
+
+
   return (
     <SeriesPageClient
       series={seriesData}
       postsInSeries={postsData}
       initialPost={currentPostData}
       session={session}
+      passedExamIds={passedExamIds}
     />
   );
 }

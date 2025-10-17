@@ -16,12 +16,15 @@ import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import { useToast } from '@/hooks/use-toast';
-import { toggleLikePost, toggleFavoritePost, createReview, deleteReview } from '@/lib/actions';
+import { toggleLikePost, toggleFavoritePost, createReview, deleteReview, updatePostLockSettings } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
 import type { Session } from 'next-auth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { ROLES } from '@/lib/permissions';
 
 
 const ExamSection = ({ exam }: { exam: { id: number; title: string; description: string | null } | null | undefined }) => {
@@ -61,11 +64,13 @@ export default function SeriesPageClient({
   postsInSeries,
   initialPost,
   session,
+  passedExamIds,
 }: {
   series: Series,
   postsInSeries: Post[],
   initialPost: Post,
   session: Session | null,
+  passedExamIds: Set<number>,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -77,16 +82,22 @@ export default function SeriesPageClient({
   const [likeTransition, startLikeTransition] = useTransition();
   const [favoriteTransition, startFavoriteTransition] = useTransition();
   const [isSubmittingReview, startReviewTransition] = useTransition();
+  const [lockSettingsTransition, startLockSettingsTransition] = useTransition();
 
   const [currentPost, setCurrentPost] = useState(initialPost);
   const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
   const [showReviews, setShowReviews] = useState(false);
+  
+  const [isLockedByDefault, setIsLockedByDefault] = useState(initialPost.isLockedByDefault);
+  const [requiresExamToUnlock, setRequiresExamToUnlock] = useState(initialPost.requiresExamToUnlock);
 
   const author = postsInSeries[0]?.author;
 
   useEffect(() => {
     setCurrentPost(initialPost);
     setReviews(initialPost.reviews);
+    setIsLockedByDefault(initialPost.isLockedByDefault);
+    setRequiresExamToUnlock(initialPost.requiresExamToUnlock);
   }, [initialPost]);
 
   const heroImage =
@@ -233,12 +244,24 @@ export default function SeriesPageClient({
       setReviews(originalReviews);
     }
   };
+  
+  const handleLockSettingsChange = () => {
+    startLockSettingsTransition(async () => {
+        try {
+            await updatePostLockSettings(currentPost.id, isLockedByDefault, requiresExamToUnlock);
+            toast({ title: 'Lock settings updated successfully' });
+            router.refresh();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+    });
+  };
 
 
   const isFavorited = currentUser && currentPost.favoritePosts && currentPost.favoritePosts.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && currentPost.likedBy?.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && currentPost.dislikedBy?.some(user => user.id === currentUser.id);
-
+  const canManageLocks = currentUser && (currentUser.id === author?.id || currentUser.role === ROLES.SUPER_ADMIN);
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -343,6 +366,46 @@ export default function SeriesPageClient({
                   </Button>
                 </div>
               </section>
+
+             {canManage && (
+                 <>
+                    <Separator className="my-12" />
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Lock Settings</CardTitle>
+                            <CardDescription>Manage access control for this post within the series.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                <div className="space-y-0.5">
+                                    <Label className="text-base">Lock Post by Default</Label>
+                                    <p className="text-sm text-muted-foreground">If on, this post will be locked until a previous requirement is met.</p>
+                                </div>
+                                <Switch
+                                    checked={isLockedByDefault}
+                                    onCheckedChange={setIsLockedByDefault}
+                                    aria-label="Lock post by default"
+                                />
+                            </div>
+                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                 <div className="space-y-0.5">
+                                    <Label className="text-base">Exam Unlocks Next Post</Label>
+                                    <p className="text-sm text-muted-foreground">If on, passing this post's exam unlocks the next one in the series.</p>
+                                </div>
+                                <Switch
+                                    checked={requiresExamToUnlock}
+                                    onCheckedChange={setRequiresExamToUnlock}
+                                    aria-label="Exam unlocks next post"
+                                />
+                            </div>
+                             <Button onClick={handleLockSettingsChange} disabled={lockSettingsTransition}>
+                                {lockSettingsTransition ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</> : 'Save Lock Settings'}
+                            </Button>
+                        </CardContent>
+                    </Card>
+                 </>
+             )}
+
 
               <ExamSection exam={currentPost.exam} />
 
@@ -482,26 +545,12 @@ export default function SeriesPageClient({
                   <List className="h-6 w-6 text-primary" />
                   <span>{series.title}</span>
                 </h1>
-                {/* {author && (
-                        <div className="flex flex-col items-start gap-3 mt-3 w-full">
-                          <div className='flex items-center gap-2'>
-                            <Avatar className="h-6 w-6">
-                              <AvatarImage src={author.image || ''} alt={author.name || ''} />
-                              <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
-                            </Avatar>
-                            <span className="text-sm font-medium">{author.name}</span>
-                          </div>
-                          <Button variant="outline" size="sm">
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            Follow
-                          </Button>
-                        </div>
-                      )} */}
               </div>
               <SeriesTracker
                 seriesId={series.id}
                 posts={postsInSeries}
                 currentPostId={currentPost.id}
+                passedExamIds={passedExamIds}
               />
             </div>
           </aside>

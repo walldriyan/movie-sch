@@ -27,10 +27,11 @@ export default function SeriesTracker({
       defaultValue="item-1"
     >
       <AccordionItem value="item-1" className="border-b-0">
-        <AccordionTrigger className="text-base font-semibold hover:no-underline">
-          <div className="flex gap-2 flex-row items-center  ">   <span>Episodes</span>
-          <span className="rounded-2xl p-[3px] px-3 bg-gray-900">{posts.length}</span></div>
-      
+        <AccordionTrigger className="text-base font-semibold hover:no-underline flex justify-between">
+          <div className="flex gap-2 flex-row items-center">
+            <span>Episodes</span>
+          </div>
+          <span className="rounded-2xl p-[3px] px-3 bg-gray-900">{posts.length}</span>
         </AccordionTrigger>
         <AccordionContent>
           <div className="space-y-2">

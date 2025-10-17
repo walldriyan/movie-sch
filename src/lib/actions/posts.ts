@@ -287,6 +287,8 @@ export async function savePost(postData: PostFormData, id?: number) {
     updatedAt: new Date(),
     visibility: postData.visibility,
     groupId: postData.visibility === 'GROUP_ONLY' ? postData.groupId : null,
+    isLockedByDefault: postData.isLockedByDefault,
+    requiresExamToUnlock: postData.requiresExamToUnlock,
   };
 
   const status = MovieStatus.PENDING_APPROVAL;
@@ -633,4 +635,41 @@ export async function searchPostsForExam(query: string) {
     });
 
     return posts;
+}
+
+export async function updatePostLockSettings(
+  postId: number,
+  isLockedByDefault: boolean,
+  requiresExamToUnlock: boolean
+) {
+  const session = await auth();
+  const user = session?.user;
+  if (!user) {
+    throw new Error("Not authenticated");
+  }
+
+  const post = await prisma.post.findUnique({ where: { id: postId } });
+  if (!post) {
+    throw new Error("Post not found");
+  }
+
+  const isAuthor = post.authorId === user.id;
+  const isAdmin = user.role === ROLES.SUPER_ADMIN || user.role === ROLES.USER_ADMIN;
+
+  if (!isAuthor && !isAdmin) {
+    throw new Error("Not authorized to update this post's lock settings.");
+  }
+  
+  await prisma.post.update({
+    where: { id: postId },
+    data: {
+      isLockedByDefault,
+      requiresExamToUnlock,
+    },
+  });
+
+  revalidatePath(`/manage`);
+  if (post.seriesId) {
+    revalidatePath(`/series/${post.seriesId}`);
+  }
 }

@@ -322,17 +322,22 @@ export async function submitExam(
   
   const exam = await prisma.exam.findUnique({
     where: { id: examId },
-    include: { questions: { include: { options: true } } },
+    include: { 
+        questions: { include: { options: true } },
+        post: { select: { seriesId: true, orderInSeries: true }}
+    },
   });
 
   if (!exam) {
     throw new Error('Exam not found');
   }
 
+  let totalPoints = 0;
   let score = 0;
   const answersToCreate: { questionId: number, selectedOptionId: number }[] = [];
 
   for (const question of exam.questions) {
+    totalPoints += question.points;
     const userAnswers = answers[`question-${question.id}`];
     const correctOptions = question.options.filter(opt => opt.isCorrect);
     const correctOptionIds = correctOptions.map(opt => opt.id);
@@ -399,6 +404,25 @@ export async function submitExam(
             },
         }
     });
+
+  // Check if exam is passed and unlock next post
+  const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
+  if (percentage >= 50 && exam.post.seriesId && exam.post.orderInSeries) {
+    const nextPostInSeries = await prisma.post.findFirst({
+      where: {
+        seriesId: exam.post.seriesId,
+        orderInSeries: exam.post.orderInSeries + 1,
+      },
+    });
+
+    if (nextPostInSeries) {
+      await prisma.post.update({
+        where: { id: nextPostInSeries.id },
+        data: { isLockedByDefault: false },
+      });
+      revalidatePath(`/series/${exam.post.seriesId}`);
+    }
+  }
 
     return submission;
 }
