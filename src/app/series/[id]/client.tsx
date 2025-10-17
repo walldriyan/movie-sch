@@ -57,15 +57,15 @@ const ExamSection = ({ exam }: { exam: { id: number; title: string; description:
 
 
 export default function SeriesPageClient({
-    series,
-    postsInSeries,
-    initialPost,
-    session,
+  series,
+  postsInSeries,
+  initialPost,
+  session,
 }: {
-    series: Series,
-    postsInSeries: Post[],
-    initialPost: Post,
-    session: Session | null,
+  series: Series,
+  postsInSeries: Post[],
+  initialPost: Post,
+  session: Session | null,
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -73,7 +73,7 @@ export default function SeriesPageClient({
   const params = useParams();
   const { toast } = useToast();
   const currentUser = session?.user;
-  
+
   const [likeTransition, startLikeTransition] = useTransition();
   const [favoriteTransition, startFavoriteTransition] = useTransition();
   const [isSubmittingReview, startReviewTransition] = useTransition();
@@ -92,7 +92,7 @@ export default function SeriesPageClient({
   const heroImage =
     currentPost.posterUrl ||
     PlaceHolderImages.find((p) => p.id === 'movie-poster-placeholder')?.imageUrl;
-    
+
   const handleLike = (like: boolean) => {
     if (!currentUser) {
       toast({
@@ -111,7 +111,7 @@ export default function SeriesPageClient({
           });
           // Note: This won't re-render the like count immediately without more state management.
           // For a full optimistic update, we'd manage the post state here.
-          router.refresh(); 
+          router.refresh();
         })
         .catch((err) => {
           toast({
@@ -139,7 +139,7 @@ export default function SeriesPageClient({
             title: 'Favorites Updated',
             description: `Post has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`,
           });
-           router.refresh();
+          router.refresh();
         })
         .catch((err) => {
           toast({
@@ -156,7 +156,7 @@ export default function SeriesPageClient({
       toast({ variant: "destructive", title: "You must be logged in." });
       return;
     }
-    
+
     startReviewTransition(async () => {
       const optimisticReview: Review = {
         id: Date.now(),
@@ -170,7 +170,7 @@ export default function SeriesPageClient({
         user: currentUser as User,
         replies: [],
       };
-      
+
       const originalReviews = reviews;
 
       if (parentId) {
@@ -192,7 +192,7 @@ export default function SeriesPageClient({
 
       try {
         const newReview = await createReview(currentPost.id, comment, rating, parentId);
-        
+
         const replaceOptimistic = (nodes: Review[]): Review[] => {
           return nodes.map(node => {
             if (node.id === optimisticReview.id) return newReview as Review;
@@ -202,7 +202,7 @@ export default function SeriesPageClient({
             return node;
           });
         };
-        
+
         setReviews(prev => replaceOptimistic(prev));
         toast({ title: "Response Submitted!", description: "Thanks for sharing your thoughts." });
       } catch (error: any) {
@@ -211,10 +211,10 @@ export default function SeriesPageClient({
       }
     });
   };
-  
+
   const handleReviewDelete = async (reviewId: number) => {
     const originalReviews = [...reviews];
-    
+
     const removeReviewFromTree = (nodes: Review[], idToRemove: number): Review[] => {
       return nodes.filter(node => node.id !== idToRemove).map(node => {
         if (node.replies && node.replies.length > 0) {
@@ -244,222 +244,245 @@ export default function SeriesPageClient({
     <div className="w-full bg-background text-foreground">
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div className="md:col-span-3">
-                <article>
-                    <div className="relative h-[400px] w-full rounded-xl overflow-hidden mb-8">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => router.back()}
-                          className="absolute top-4 left-4 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-                        >
-                          <ArrowLeft className="h-5 w-5" />
-                          <span className="sr-only">Back</span>
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          asChild
-                          className="absolute top-4 left-16 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-                        >
-                          <Link href="/">
-                            <Home className="h-5 w-5" />
-                            <span className="sr-only">Home</span>
-                          </Link>
-                        </Button>
+          <div className="md:col-span-3">
+            <article>
+              <div className="relative h-[400px] w-full rounded-xl overflow-hidden mb-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => router.back()}
+                  className="absolute top-4 left-4 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                  <span className="sr-only">Back</span>
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  asChild
+                  className="absolute top-4 left-16 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
+                >
+                  <Link href="/">
+                    <Home className="h-5 w-5" />
+                    <span className="sr-only">Home</span>
+                  </Link>
+                </Button>
 
-                        {heroImage && (
-                            <Image
-                                src={heroImage}
-                                alt={`Poster for ${currentPost.title}`}
-                                fill
-                                className="object-cover"
-                                priority
-                            />
-                        )}
-                         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+                {heroImage && (
+                  <Image
+                    src={heroImage}
+                    alt={`Poster for ${currentPost.title}`}
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                )}
+
+                {/* gradent mask */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
+                {/* fallow button with image */}
+                <div className="absolute bottom-2 right-2 h-[100px] w-auto flex items-center justify-center">
+                  {author && (
+                    <div className="flex flex-col items-end gap-3 mt-3 w-full text-right">
+                      <div className="flex flex-row-reverse items-center gap-2">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={author.image || ''} alt={author.name || ''} />
+                          <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-lg font-medium">{author.name}</span>
+                      </div>
+
+                      <Button variant="outline" size="sm" className="flex flex-row-reverse">
+                        <UserPlus className="ml-2 h-4 w-4" />
+                        Follow
+                      </Button>
                     </div>
+                  )}
 
-                    <h2 className="text-4xl font-bold font-serif mb-4">{currentPost.title}</h2>
-                    <div
-                      className="prose prose-lg prose-invert max-w-none text-foreground/80"
-                      dangerouslySetInnerHTML={{ __html: currentPost.description }}
-                    />
-                    
-                    <Separator className="my-12" />
+                </div>
 
-                    <section id="stats" className="flex items-center justify-between text-muted-foreground mb-12">
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-2" title="Total views">
-                                <Eye className="w-5 h-5" />
-                                <span className="text-sm font-medium">{currentPost.viewCount.toLocaleString()}</span>
-                            </div>
-                             <div className="flex items-center gap-2" title="Total likes">
-                                <ThumbsUp className="w-5 h-5" />
-                                <span className="text-sm font-medium">{currentPost.likedBy?.length || 0}</span>
-                            </div>
-                              <div className="flex items-center gap-2" title="Total dislikes">
-                                <ThumbsDown className="w-5 h-5" />
-                                <span className="text-sm font-medium">{currentPost.dislikedBy?.length || 0}</span>
-                            </div>
+              </div>
+
+              <h2 className="text-4xl font-bold font-serif mb-4">{currentPost.title}</h2>
+              <div
+                className="prose prose-lg prose-invert max-w-none text-foreground/80"
+                dangerouslySetInnerHTML={{ __html: currentPost.description }}
+              />
+
+              <Separator className="my-12" />
+
+              <section id="stats" className="flex items-center justify-between text-muted-foreground mb-12">
+                <div className="flex items-center gap-6">
+                  <div className="flex items-center gap-2" title="Total views">
+                    <Eye className="w-5 h-5" />
+                    <span className="text-sm font-medium">{currentPost.viewCount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center gap-2" title="Total likes">
+                    <ThumbsUp className="w-5 h-5" />
+                    <span className="text-sm font-medium">{currentPost.likedBy?.length || 0}</span>
+                  </div>
+                  <div className="flex items-center gap-2" title="Total dislikes">
+                    <ThumbsDown className="w-5 h-5" />
+                    <span className="text-sm font-medium">{currentPost.dislikedBy?.length || 0}</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 pl-4 flex-shrink-0">
+                  <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
+                    <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
+                  </Button>
+
+                  <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={likeTransition} title={isDisliked ? 'Remove dislike' : 'Dislike'}>
+                    <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
+                  </Button>
+
+                  <Separator orientation="vertical" className="h-6 mx-2" />
+
+                  <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
+                    <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
+                  </Button>
+                </div>
+              </section>
+
+              <ExamSection exam={currentPost.exam} />
+
+              <SponsoredAdCard />
+
+              <div className="block md:hidden">
+                <Separator className="my-12" />
+                <aside>
+                  <div className="flex flex-col items-start gap-4 mb-4">
+                    <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                      <List className="h-6 w-6 text-primary" />
+                      <span>{series.title}</span>
+                    </h1>
+                    {author && (
+                      <div className="flex flex-col items-start gap-3 mt-3 w-full">
+                        <div className='flex items-center gap-2'>
+                          <Avatar className="h-6 w-6">
+                            <AvatarImage src={author.image || ''} alt={author.name || ''} />
+                            <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
+                          </Avatar>
+                          <span className="text-sm font-medium">{author.name}</span>
                         </div>
-
-                         <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-                           <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
-                               <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
-                           </Button>
-                           
-                           <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={likeTransition} title={isDisliked ? 'Remove dislike' : 'Dislike'}>
-                               <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
-                           </Button>
-
-                           <Separator orientation="vertical" className="h-6 mx-2" />
-
-                           <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
-                               <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
-                           </Button>
-                        </div>
-                    </section>
-                    
-                    <ExamSection exam={currentPost.exam} />
-
-                    <SponsoredAdCard />
-
-                    <div className="block md:hidden">
-                        <Separator className="my-12" />
-                        <aside>
-                             <div className="flex flex-col items-start gap-4 mb-4">
-                              <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-                                  <List className="h-6 w-6 text-primary" />
-                                  <span>{series.title}</span>
-                              </h1>
-                               {author && (
-                                <div className="flex flex-col items-start gap-3 mt-3 w-full">
-                                  <div className='flex items-center gap-2'>
-                                    <Avatar className="h-6 w-6">
-                                      <AvatarImage src={author.image || ''} alt={author.name || ''} />
-                                      <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
-                                    </Avatar>
-                                    <span className="text-sm font-medium">{author.name}</span>
-                                  </div>
-                                  <Button variant="outline" size="sm">
-                                    <UserPlus className="mr-2 h-4 w-4" />
-                                    Follow
-                                  </Button>
-                                </div>
-                              )}
-                            </div>
-                            <SeriesTracker
-                                seriesId={series.id}
-                                posts={postsInSeries}
-                                currentPostId={currentPost.id}
-                            />
-                        </aside>
-                    </div>
-
-                    {currentPost.subtitles && currentPost.subtitles.length > 0 && (
-                      <>
-                        <Separator className="my-12" />
-                        <section id="downloads">
-                           <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
-                              <Download className="w-8 h-8 text-primary" />
-                              Downloads
-                           </h2>
-                           <div className="space-y-4">
-                            {currentPost.subtitles.map((subtitle) => (
-                              <div
-                                key={subtitle.id}
-                                className="flex items-center justify-between rounded-lg border p-4"
-                              >
-                                <div>
-                                  <p className="font-semibold">
-                                    {subtitle.language}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    by {subtitle.uploaderName}
-                                  </p>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                  {currentUser ? (
-                                    <Button variant="ghost" size="icon" asChild>
-                                      <a href={subtitle.url} download>
-                                        <Download className="h-5 w-5" />
-                                      </a>
-                                    </Button>
-                                  ) : (
-                                    <Lock className="h-5 w-5 text-muted-foreground" title="Login to download" />
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                           </div>
-                        </section>
-                      </>
-                    )}
-
-
-                    <section id="reviews" className="my-12">
-                      <div className="flex justify-between items-center mb-6">
-                        <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
-                          <MessageCircle className="w-8 h-8 text-primary" />
-                          Responses ({reviews.length})
-                        </h2>
-                        <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
-                            {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                        <Button variant="outline" size="sm">
+                          <UserPlus className="mr-2 h-4 w-4" />
+                          Follow
                         </Button>
                       </div>
-                      {showReviews && (
-                        <>
-                          <ReviewForm 
-                            postId={currentPost.id} 
-                            isSubmitting={isSubmittingReview}
-                            onSubmitReview={handleReviewSubmit}
-                            session={session}
-                          />
-                          <Separator className="my-8" />
-                          <div className="space-y-8">
-                            {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
-                              <div className="flex items-start gap-4">
-                                  <Skeleton className="h-8 w-8 rounded-full" />
-                                  <div className="w-full space-y-2">
-                                    <Skeleton className="h-4 w-1/4" />
-                                    <Skeleton className="h-4 w-full" />
-                                    <Skeleton className="h-4 w-2/3" />
-                                  </div>
-                              </div>
-                            )}
-                            {reviews.length > 0 ? (
-                              reviews.map((review: Review) => (
-                                <ReviewCard 
-                                  key={review.id} 
-                                  review={review} 
-                                  onReviewSubmit={handleReviewSubmit}
-                                  onReviewDelete={handleReviewDelete}
-                                  session={session}
-                                />
-                              ))
+                    )}
+                  </div>
+                  <SeriesTracker
+                    seriesId={series.id}
+                    posts={postsInSeries}
+                    currentPostId={currentPost.id}
+                  />
+                </aside>
+              </div>
+
+              {currentPost.subtitles && currentPost.subtitles.length > 0 && (
+                <>
+                  <Separator className="my-12" />
+                  <section id="downloads">
+                    <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
+                      <Download className="w-8 h-8 text-primary" />
+                      Downloads
+                    </h2>
+                    <div className="space-y-4">
+                      {currentPost.subtitles.map((subtitle) => (
+                        <div
+                          key={subtitle.id}
+                          className="flex items-center justify-between rounded-lg border p-4"
+                        >
+                          <div>
+                            <p className="font-semibold">
+                              {subtitle.language}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              by {subtitle.uploaderName}
+                            </p>
+                          </div>
+                          <div className="flex items-center space-x-4">
+                            {currentUser ? (
+                              <Button variant="ghost" size="icon" asChild>
+                                <a href={subtitle.url} download>
+                                  <Download className="h-5 w-5" />
+                                </a>
+                              </Button>
                             ) : (
-                              !isSubmittingReview && (
-                                <p className="text-muted-foreground">
-                                  Be the first to share your thoughts!
-                                </p>
-                              )
+                              <Lock className="h-5 w-5 text-muted-foreground" title="Login to download" />
                             )}
                           </div>
-                        </>
-                      )}
-                    </section>
+                        </div>
+                      ))}
+                    </div>
+                  </section>
+                </>
+              )}
 
-                </article>
-            </div>
-             <aside className="hidden md:block md:col-span-1 md:h-screen">
-                <div className="md:sticky md:top-24 overflow-y-auto">
-                    <div className="flex flex-col items-start gap-4 mb-4">
-                      <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-                          <List className="h-6 w-6 text-primary" />
-                          <span>{series.title}</span>
-                      </h1>
-                       {author && (
+
+              <section id="reviews" className="my-12">
+                <div className="flex justify-between items-center mb-6">
+                  <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
+                    <MessageCircle className="w-8 h-8 text-primary" />
+                    Responses ({reviews.length})
+                  </h2>
+                  <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
+                    {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                  </Button>
+                </div>
+                {showReviews && (
+                  <>
+                    <ReviewForm
+                      postId={currentPost.id}
+                      isSubmitting={isSubmittingReview}
+                      onSubmitReview={handleReviewSubmit}
+                      session={session}
+                    />
+                    <Separator className="my-8" />
+                    <div className="space-y-8">
+                      {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
+                        <div className="flex items-start gap-4">
+                          <Skeleton className="h-8 w-8 rounded-full" />
+                          <div className="w-full space-y-2">
+                            <Skeleton className="h-4 w-1/4" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-2/3" />
+                          </div>
+                        </div>
+                      )}
+                      {reviews.length > 0 ? (
+                        reviews.map((review: Review) => (
+                          <ReviewCard
+                            key={review.id}
+                            review={review}
+                            onReviewSubmit={handleReviewSubmit}
+                            onReviewDelete={handleReviewDelete}
+                            session={session}
+                          />
+                        ))
+                      ) : (
+                        !isSubmittingReview && (
+                          <p className="text-muted-foreground">
+                            Be the first to share your thoughts!
+                          </p>
+                        )
+                      )}
+                    </div>
+                  </>
+                )}
+              </section>
+
+            </article>
+          </div>
+          <aside className="hidden md:block md:col-span-1 md:h-screen">
+            <div className="md:sticky md:top-24 overflow-y-auto">
+              <div className="flex flex-col items-start gap-4 mb-4">
+                <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                  <List className="h-6 w-6 text-primary" />
+                  <span>{series.title}</span>
+                </h1>
+                {/* {author && (
                         <div className="flex flex-col items-start gap-3 mt-3 w-full">
                           <div className='flex items-center gap-2'>
                             <Avatar className="h-6 w-6">
@@ -473,15 +496,15 @@ export default function SeriesPageClient({
                             Follow
                           </Button>
                         </div>
-                      )}
-                    </div>
-                    <SeriesTracker
-                        seriesId={series.id}
-                        posts={postsInSeries}
-                        currentPostId={currentPost.id}
-                    />
-                </div>
-            </aside>
+                      )} */}
+              </div>
+              <SeriesTracker
+                seriesId={series.id}
+                posts={postsInSeries}
+                currentPostId={currentPost.id}
+              />
+            </div>
+          </aside>
         </div>
       </main>
     </div>

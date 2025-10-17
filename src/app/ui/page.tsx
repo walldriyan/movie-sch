@@ -1,121 +1,88 @@
-// "use client"
-
-// import React, { useState, useEffect } from 'react';
-
-// export default function MetaSpotlight() {
-//   const [hoveredCard, setHoveredCard] = useState(null);
-
-//   // Simulate card rotation animation
-//   useEffect(() => {
-//     const interval = setInterval(() => {
-//       const cards = document.querySelectorAll('.floating-card');
-//       cards.forEach((card, index) => {
-//         const randomDelay = Math.random() * 2000;
-//         setTimeout(() => {
-//           card.style.transform = `translateY(${Math.sin(Date.now() / 1000 + index) * 10}px) rotate(${Math.sin(Date.now() / 2000 + index) * 3}deg)`;
-//         }, randomDelay);
-//       });
-//     }, 100);
-//     return () => clearInterval(interval);
-//   }, []);
-
-//   return (
-//     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex items-center justify-center p-8 overflow-hidden relative">
-//       {/* Background Cards - Left Side */}
-//       <div className="floating-card absolute left-8 top-20 w-40 bg-white rounded-2xl shadow-2xl overflow-hidden transform -rotate-12 transition-all duration-300">
-//         <div className="relative">
-//           <div className="absolute top-3 left-3 bg-black text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-//             W
-//           </div>
-//           <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-//         </div>
-//         <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop" alt="Portrait" className="w-full h-48 object-cover" />
-//         <div className="grid grid-cols-3 gap-2 p-3 bg-white">
-//           <div className="bg-blue-400 h-16 rounded"></div>
-//           <div className="bg-purple-400 h-16 rounded"></div>
-//           <div className="bg-orange-500 h-16 rounded"></div>
-//         </div>
-//       </div>
-
-//       <div className="floating-card absolute left-4 bottom-32 w-40 bg-white rounded-2xl shadow-2xl overflow-hidden transform rotate-6 transition-all duration-300">
-//         <div className="relative">
-//           <div className="absolute top-3 left-3 bg-black text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-//             W
-//           </div>
-//           <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-//         </div>
-//         <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400&h=400&fit=crop" alt="Orange bag" className="w-full h-56 object-cover" />
-//       </div>
-
-//       {/* Center Hero Card */}
-//       <div className="relative z-10 floating-card">
-//         <div className="w-72 bg-white rounded-3xl shadow-2xl overflow-hidden">
-//           <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=800&fit=crop" alt="Fashion" className="w-full h-96 object-cover" />
-//         </div>
-//       </div>
-
-//       {/* Background Cards - Right Side */}
-//       <div className="floating-card absolute right-8 top-20 w-40 bg-white rounded-2xl shadow-2xl overflow-hidden transform rotate-12 transition-all duration-300">
-//         <div className="relative">
-//           <div className="absolute top-3 left-3 bg-black text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-//             W
-//           </div>
-//           <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-//         </div>
-//         <div className="bg-gradient-to-br from-yellow-400 to-purple-500 w-full h-48 flex items-center justify-center">
-//           <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" alt="Portrait" className="w-full h-full object-cover" />
-//         </div>
-//         <div className="flex justify-center gap-1 p-2 bg-white">
-//           <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-//           <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-//           <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-//           <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-//         </div>
-//       </div>
-
-//       <div className="floating-card absolute right-4 bottom-32 w-40 bg-white rounded-2xl shadow-2xl overflow-hidden transform -rotate-6 transition-all duration-300">
-//         <div className="relative">
-//           <div className="absolute top-3 left-3 bg-black text-white rounded-full w-8 h-8 flex items-center justify-center text-xs font-bold">
-//             W
-//           </div>
-//           <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-//         </div>
-//         <div className="bg-gradient-to-br from-orange-400 to-yellow-500 w-full h-56 flex items-center justify-center">
-//           <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop" alt="Sunglasses" className="w-full h-full object-cover" />
-//         </div>
-//       </div>
-
-//       {/* Text Overlay */}
-//       <div className="absolute top-12 left-0 right-0 text-center z-20 px-4">
-//         <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
-//           Put your business in<br />the spotlight.
-//         </h1>
-//       </div>
-
-//       {/* Meta Logo */}
-//       <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
-//         <div className="flex items-center gap-3">
-//           <div className="text-white text-5xl font-bold">∞</div>
-//           <div className="text-white text-3xl font-bold tracking-wide">Meta</div>
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
+import type { Post } from '@/lib/types';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
-export default function MetaSpotlight() {
+// Helper function to get a random value in a range
+const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
+
+
+export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef(null);
+  const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    let postsToDisplay: Post[] = [];
+    const numPosts = initialPosts.length;
+
+    if (numPosts === 0) {
+      setCards([]);
+      return;
+    }
+
+    if (numPosts >= 10) {
+      postsToDisplay = initialPosts.slice(0, 10);
+    } else if (numPosts >= 5) {
+      postsToDisplay = initialPosts;
+    } else { // numPosts < 5
+      postsToDisplay = [...initialPosts];
+      // Duplicate posts to reach the minimum of 5
+      let i = 0;
+      while (postsToDisplay.length < 5) {
+        postsToDisplay.push(initialPosts[i % numPosts]);
+        i++;
+      }
+    }
+    
+    const cardConfigs = [
+        { type: 'grid', rotation: -12, distance: 0.8, position: 'left-0 top-8' },
+        { type: 'single', rotation: 6, distance: 0.7, position: 'left-2 bottom-8' },
+        { type: 'hero', rotation: 0, distance: 0.5, position: 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2' },
+        { type: 'dots', rotation: 12, distance: 0.8, position: 'right-0 top-8' },
+        { type: 'single', rotation: -6, distance: 0.7, position: 'right-2 bottom-8' },
+        { type: 'single', rotation: -8, distance: 0.6, position: 'left-20 top-32' },
+        { type: 'grid', rotation: 8, distance: 0.6, position: 'right-20 top-32' },
+        { type: 'single', rotation: 10, distance: 0.65, position: 'left-24 bottom-24' },
+        { type: 'dots', rotation: -10, distance: 0.65, position: 'right-24 bottom-24' },
+        { type: 'grid', rotation: -15, distance: 0.9, position: 'left-10 bottom-40' },
+    ];
+
+
+    const generatedCards = postsToDisplay.map((post, index) => {
+      const config = cardConfigs[index % cardConfigs.length];
+      const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
+      const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
+      
+      let gridColors: string[] = [];
+      if (config.type === 'grid') {
+        gridColors = ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'];
+      }
+      
+      return {
+        id: `post-${post.id}-${index}`, // Unique key
+        image: post.posterUrl || defaultImage,
+        brand: post.author?.name || 'CineVerse',
+        authorImage: post.author?.image || authorImageDefault,
+        type: config.type,
+        gridColors: gridColors,
+        position: config.position,
+        rotation: config.rotation,
+        distance: config.distance,
+      };
+    });
+
+    setCards(generatedCards);
+
+  }, [initialPosts]);
+
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
+        const rect = (containerRef.current as HTMLElement).getBoundingClientRect();
         const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
         const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
         setMousePos({ x, y });
@@ -128,7 +95,7 @@ export default function MetaSpotlight() {
       setMousePos({ x: 0, y: 0 });
     };
 
-    const container = containerRef.current;
+    const container = containerRef.current as HTMLElement | null;
     if (container) {
       container.addEventListener('mousemove', handleMouseMove);
       container.addEventListener('mouseenter', handleMouseEnter);
@@ -144,15 +111,73 @@ export default function MetaSpotlight() {
     };
   }, []);
 
-  const getCardTransform = (baseRotate, distanceMultiplier) => {
+  const getCardTransform = (baseRotate: number, distanceMultiplier: number, isHeroCard = false) => {
     if (!isHovering) {
-      return `rotate(${baseRotate}deg)`;
+      return isHeroCard ? 'translate(-50%, -50%)' : `rotate(${baseRotate}deg)`;
     }
     const moveX = mousePos.x * 30 * distanceMultiplier;
     const moveY = mousePos.y * 30 * distanceMultiplier;
     const rotateAdjust = mousePos.x * 5;
+    
+    if (isHeroCard) {
+      return `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px)) scale(1.02)`;
+    }
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg)`;
   };
+  
+    const renderCard = (card: any) => {
+    const isHero = card.type === 'hero';
+    const cardWidth = isHero ? 'w-64 md:w-72' : 'w-32 md:w-36';
+    const cardHeight = isHero ? 'h-[400px] md:h-[420px]' : 'h-44 md:h-52';
+
+    return (
+      <div
+        key={card.id}
+        className={`absolute ${card.position} bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out ${isHero ? 'z-10' : ''} ${cardWidth}`}
+        style={{
+          transform: getCardTransform(card.rotation, card.distance, isHero),
+          transformOrigin: 'center center'
+        }}
+      >
+        {!isHero && (
+          <div className="relative">
+            <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
+               {card.authorImage ? (
+                <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
+              ) : (
+                card.brand.charAt(0)
+              )}
+            </div>
+            <div className="text-xs font-semibold p-2 md:p-3 pt-2 truncate">{card.brand}</div>
+          </div>
+        )}
+
+        <img
+          src={card.image}
+          alt={card.brand}
+          className={`w-full object-cover ${cardHeight}`}
+        />
+
+        {card.type === 'grid' && (
+          <div className="grid grid-cols-3 gap-2 p-2 md:p-3 bg-white">
+            {card.gridColors.map((color: string, idx: number) => (
+              <div key={idx} className={`${color} h-12 md:h-14 rounded`}></div>
+            ))}
+          </div>
+        )}
+
+        {card.type === 'dots' && (
+          <div className="flex justify-center gap-1 p-2 bg-white">
+            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
 
   return (
     <div className="h-[320px] bg-gradient-to-r from-zinc-950 via-stone-900/20  to-zinc-950 flex flex-col items-center justify-center mb-1 p-8 overflow-hidden relative">
@@ -169,103 +194,7 @@ export default function MetaSpotlight() {
         className="relative w-full max-w-[700px] h-[600px] flex items-center justify-center"
         style={{ perspective: '1000px' }}
       >
-        {/* Background Card - Top Left */}
-        <div 
-          className="absolute left-0 top-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
-            transform: getCardTransform(-12, 0.8),
-            transformOrigin: 'center center'
-          }}
-        >
-          <div className="relative">
-            <div className="absolute top-3 left-3 bg-black text-white rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
-              W
-            </div>
-            <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-          </div>
-          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=400&h=400&fit=crop" alt="Portrait" className="w-full h-44 object-cover" />
-          <div className="grid grid-cols-3 gap-2 p-3 bg-white">
-            <div className="bg-blue-400 h-14 rounded"></div>
-            <div className="bg-purple-400 h-14 rounded"></div>
-            <div className="bg-orange-500 h-14 rounded"></div>
-          </div>
-        </div>
-
-        {/* Background Card - Bottom Left */}
-        <div 
-          className="absolute left-2 bottom-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
-            transform: getCardTransform(6, 0.7),
-            transformOrigin: 'center center'
-          }}
-        >
-          <div className="relative">
-            <div className="absolute top-3 left-3 bg-black text-white rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
-              W
-            </div>
-            <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-          </div>
-          <img src="https://images.unsplash.com/photo-1618354691373-d851c5c3a990?w=400&h=400&fit=crop" alt="Orange bag" className="w-full h-52 object-cover" />
-        </div>
-
-        {/* Center Hero Card */}
-        <div 
-          className="relative z-10 transition-all duration-500 ease-out"
-          style={{ 
-            transform: isHovering 
-              ? `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px) scale(1.02)` 
-              : 'translate(0, 0) scale(1)',
-            transformOrigin: 'center center'
-          }}
-        >
-          <div className="w-64 bg-white rounded-3xl shadow-2xl overflow-hidden">
-            <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=600&h=800&fit=crop" alt="Fashion" className="w-full h-[420px] object-cover" />
-          </div>
-        </div>
-
-        {/* Background Card - Top Right */}
-        <div 
-          className="absolute right-0 top-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
-            transform: getCardTransform(12, 0.8),
-            transformOrigin: 'center center'
-          }}
-        >
-          <div className="relative">
-            <div className="absolute top-3 left-3 bg-black text-white rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
-              W
-            </div>
-            <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-          </div>
-          <div className="bg-gradient-to-br from-yellow-400 to-purple-500 w-full h-44 flex items-center justify-center">
-            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop" alt="Portrait" className="w-full h-full object-cover" />
-          </div>
-          <div className="flex justify-center gap-1 p-2 bg-white">
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          </div>
-        </div>
-
-        {/* Background Card - Bottom Right */}
-        <div 
-          className="absolute right-2 bottom-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
-            transform: getCardTransform(-6, 0.7),
-            transformOrigin: 'center center'
-          }}
-        >
-          <div className="relative">
-            <div className="absolute top-3 left-3 bg-black text-white rounded-full w-7 h-7 flex items-center justify-center text-xs font-bold">
-              W
-            </div>
-            <div className="text-xs font-semibold p-3 pt-2">Wind & Wool</div>
-          </div>
-          <div className="bg-gradient-to-br from-orange-400 to-yellow-500 w-full h-52 flex items-center justify-center">
-            <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&h=400&fit=crop" alt="Sunglasses" className="w-full h-full object-cover" />
-          </div>
-        </div>
+        {cards.map(card => renderCard(card))}
       </div>
 
       {/* Meta Logo */}
