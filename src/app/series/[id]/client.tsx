@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useRouter, useSearchParams, usePathname, useParams, redirect } from 'next/navigation';
@@ -9,7 +8,7 @@ import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp, BookCheck, PlayCircle } from 'lucide-react';
+import { ArrowLeft, Home, List, UserPlus, MessageCircle, Eye, ThumbsUp, ThumbsDown, Bookmark, Download, Lock, ChevronDown, ChevronUp, BookCheck, PlayCircle, Loader2 } from 'lucide-react';
 import { useEffect, useState, useMemo, useTransition } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Separator } from '@/components/ui/separator';
@@ -560,3 +559,5 @@ export default function SeriesPageClient({
     </div>
   );
 }
+
+    

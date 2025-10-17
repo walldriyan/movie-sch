@@ -11,10 +11,13 @@ export default async function SeriesPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
-  searchParams?: { post?: string };
+  params: Promise<{ id: string }>;
+  searchParams?: Promise<{ post?: string }>;
 }) {
-  const seriesId = Number(params.id);
+  // params එක await කරන්න
+  const { id } = await params;
+  const seriesId = Number(id);
+  
   if (isNaN(seriesId)) {
     notFound();
   }
@@ -33,8 +36,9 @@ export default async function SeriesPage({
     notFound();
   }
 
-  const currentPostIdFromSearch = searchParams?.post
-    ? Number(searchParams.post)
+  const resolvedSearchParams = await searchParams;
+  const currentPostIdFromSearch = resolvedSearchParams?.post
+    ? Number(resolvedSearchParams.post)
     : undefined;
     
   if (currentPostIdFromSearch && isNaN(currentPostIdFromSearch)) {
