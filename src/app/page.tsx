@@ -8,6 +8,7 @@ import MetaSpotlight from './ui/page';
 
 import MetaSpotlight3 from './ui/example3';
 import { Post } from '@/lib/types';
+import MetaSpotlightPostGrid from './ui/postGrid';
 
 export default async function HomePage({
   searchParams,
@@ -40,6 +41,8 @@ export default async function HomePage({
       <MetaSpotlight3 posts={posts as Post[]} />
       {/* <MetaSpotlight1 /> */}
      
+      <MetaSpotlightPostGrid />
+      
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
@@ -50,7 +53,7 @@ export default async function HomePage({
         initialNotifications={notifications}
         session={session}
       />
-       <MetaSpotlight/>
+       <MetaSpotlight posts={posts as Post[]} />
     </>
   );
 }
