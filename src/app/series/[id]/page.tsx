@@ -7,6 +7,8 @@ import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 
+export const dynamic = 'force-dynamic';
+
 export default async function SeriesPage({
   params,
   searchParams,
@@ -53,8 +55,7 @@ export default async function SeriesPage({
   if (!currentPostData) {
     notFound();
   }
-
-  // --- SERVER-SIDE ACCESS CONTROL ---
+  
   const userSubmissions = user ? await prisma.examSubmission.findMany({
     where: {
       userId: user.id,
