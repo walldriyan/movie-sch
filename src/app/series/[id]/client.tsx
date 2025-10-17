@@ -389,7 +389,7 @@ export default function SeriesPageClient({
                             <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
                                  <div className="space-y-0.5">
                                     <Label className="text-base">Exam Unlocks Next Post</Label>
-                                    <p className="text-sm text-muted-foreground">If on, passing this post's exam unlocks the next one in the series.</p>
+                                    <p className="text-sm text-muted-foreground">If on, passing this post's exam will unlock the next one in the series.</p>
                                 </div>
                                 <Switch
                                     checked={requiresExamToUnlock}
@@ -439,6 +439,7 @@ export default function SeriesPageClient({
                     posts={postsInSeries}
                     currentPostId={currentPost.id}
                     passedExamIds={passedExamIds}
+                    session={session}
                   />
                 </aside>
               </div>
@@ -551,6 +552,7 @@ export default function SeriesPageClient({
                 posts={postsInSeries}
                 currentPostId={currentPost.id}
                 passedExamIds={passedExamIds}
+                session={session}
               />
             </div>
           </aside>
@@ -559,5 +561,3 @@ export default function SeriesPageClient({
     </div>
   );
 }
-
-    

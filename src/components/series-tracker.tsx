@@ -7,12 +7,14 @@ import {
 } from '@/components/ui/accordion';
 import type { Post } from '@/lib/types';
 import SeriesPostCard from './series-post-card';
+import type { Session } from 'next-auth';
 
 interface SeriesTrackerProps {
   seriesId: number;
   posts: Post[];
   currentPostId: number;
   passedExamIds: Set<number>;
+  session: Session | null;
 }
 
 export default function SeriesTracker({
@@ -20,6 +22,7 @@ export default function SeriesTracker({
   posts,
   currentPostId,
   passedExamIds,
+  session,
 }: SeriesTrackerProps) {
 
   // Create a map for quick lookup of which exams have been passed.
@@ -64,6 +67,7 @@ export default function SeriesTracker({
                   seriesId={seriesId}
                   isActive={post.id === currentPostId}
                   isPassed={isPassed}
+                  session={session}
                 />
               )
             })}

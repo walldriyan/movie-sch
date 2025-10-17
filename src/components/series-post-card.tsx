@@ -8,15 +8,16 @@ import type { Post } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { PlayCircle, CheckCircle, Lock } from 'lucide-react';
 import { useMemo } from 'react';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
+import type { Session } from 'next-auth';
 
 interface SeriesPostCardProps {
   post: Post;
   seriesId: number;
   isActive: boolean;
   isPassed: boolean;
+  session: Session | null;
 }
 
 export default function SeriesPostCard({
@@ -24,8 +25,9 @@ export default function SeriesPostCard({
   seriesId,
   isActive,
   isPassed,
+  session,
 }: SeriesPostCardProps) {
-  const currentUser = useCurrentUser();
+  const currentUser = session?.user;
   const { toast } = useToast();
   
   const isLocked = useMemo(() => {
