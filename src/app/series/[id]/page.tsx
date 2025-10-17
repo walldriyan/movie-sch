@@ -82,48 +82,6 @@ export default async function SeriesPage({
     }
   });
 
-  const isPostLockedForCurrentUser = () => {
-    // If post is not locked by default, it's open for everyone.
-    if (!currentPostData.isLockedByDefault) {
-      return false;
-    }
-    // If it's locked by default, check for exceptions.
-    // Exception 1: User is not logged in, so it's locked.
-    if (!user) {
-      return true;
-    }
-    // Exception 2: User is a super admin or the author.
-    if (user.role === ROLES.SUPER_ADMIN || user.id === currentPostData.authorId) {
-      return false;
-    }
-    
-    // Exception 3: User has passed the prerequisite exam.
-    const currentPostIndex = postsData.findIndex(p => p.id === currentPostData.id);
-    if (currentPostIndex <= 0) {
-      // First post in a series is never locked by exam logic.
-      return false; 
-    }
-    
-    const previousPost = postsData[currentPostIndex - 1];
-    // If the previous post doesn't require an exam to unlock, this one isn't locked by it.
-    if (!previousPost.requiresExamToUnlock) {
-      return false;
-    }
-    
-    // If previous post requires exam, check if user passed it.
-    if (previousPost.exam && passedExamIds.has(previousPost.exam.id)) {
-      return false; // User passed the exam, so it's unlocked.
-    }
-    
-    // If none of the unlock conditions are met, the post is locked.
-    return true;
-  };
-
-  if (isPostLockedForCurrentUser()) {
-    notFound();
-  }
-  // --- END OF SERVER-SIDE ACCESS CONTROL ---
-
 
   return (
     <SeriesPageClient
