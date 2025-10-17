@@ -184,7 +184,7 @@ export default function MetaSpotlight({
       </div>
 
       {/* Cards Container */}
-      <div className="flex flex-row gap-3 p-3 w-full justify-center">
+      <div className="flex flex-row gap-3  p-3 w-full justify-center">
       <div 
         ref={containerRef}
         className="relative  bg-gradient-to-r from-zinc-950 via-stone-900  to-zinc-950 rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
