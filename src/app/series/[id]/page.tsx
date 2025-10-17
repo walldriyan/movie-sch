@@ -86,34 +86,28 @@ export default async function SeriesPage({
 
   // Server-side calculation of lock status for each post
   const postsData = postsDataRaw.map((post, index) => {
-    // If not locked by default, it's always open.
-    if (!post.isLockedByDefault) {
-      return { ...post, isLocked: false };
-    }
+    let isLocked = post.isLockedByDefault;
 
-    // Admins and the author can always see their posts.
-    if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
-      return { ...post, isLocked: false };
+    if (isLocked) {
+      // Admins and the author can always see their posts.
+      if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
+        isLocked = false;
+      }
+      // For everyone else (including public users), check lock logic.
+      else if (index === 0) {
+        // The first post is locked if it's set to be locked by default.
+        isLocked = post.isLockedByDefault;
+      } else {
+        // For subsequent posts, check the predecessor.
+        const previousPost = postsDataRaw[index - 1];
+        const previousPostPassed = !previousPost.requiresExamToUnlock || (previousPost.exam ? passedExamIds.has(previousPost.exam.id) : false);
+
+        if(previousPostPassed) {
+            isLocked = false;
+        }
+      }
     }
     
-    // For everyone else (including public users), check lock logic.
-    if (index === 0) {
-      // The first post is locked if it's set to be locked by default.
-      return { ...post, isLocked: post.isLockedByDefault };
-    }
-
-    // For subsequent posts, check the predecessor.
-    const previousPost = postsDataRaw[index - 1];
-    
-    // If the previous post doesn't require an exam, this post is unlocked.
-    if (!previousPost.requiresExamToUnlock || !previousPost.exam) {
-        return { ...post, isLocked: false };
-    }
-    
-    // If previous post requires exam, check if user passed it.
-    // Public users will have an empty passedExamIds set, so this will be true.
-    const isLocked = !passedExamIds.has(previousPost.exam.id);
-
     return {
       ...post,
       isLocked,
@@ -122,6 +116,10 @@ export default async function SeriesPage({
   
   // Final check for the *currently requested* post before rendering
   const currentPostWithLockStatus = postsData.find(p => p.id === currentPostId);
+
+  if (currentPostWithLockStatus?.isLocked) {
+      notFound();
+  }
 
 
   return (
@@ -134,4 +132,5 @@ export default async function SeriesPage({
     />
   );
 }
+
 
