@@ -10,21 +10,26 @@ import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 
-export default async function ProfilePage({ 
+export default async function ProfilePage({
   params,
   searchParams,
-}: { 
-  params: { username: string },
-  searchParams: { filter?: string, 'show-all-series'?: string } 
+}: {
+  params: Promise<{ username: string }>;
+  searchParams: Promise<{ filter?: string; 'show-all-series'?: string }>;
 }) {
+  // 🟢 Promise resolve කරලා values ගන්නවා
+  const { username } = await params;
+  const resolvedSearchParams = await searchParams;
+
   const session = await auth();
   const loggedInUser = session?.user;
-  const currentFilter = searchParams.filter || 'posts';
-  const showAllSeries = searchParams['show-all-series'] === 'true';
+
+  const currentFilter = resolvedSearchParams.filter || 'posts';
+  const showAllSeries = resolvedSearchParams['show-all-series'] === 'true';
 
   // Fetch the user whose profile is being viewed
   const allUsers = await getUsers();
-  const profileUser = allUsers.find(u => u.id === params.username) as PrismaUser | undefined;
+  const profileUser = allUsers.find(u => u.id === username) as PrismaUser | undefined;
 
   if (!profileUser) {
     notFound();
@@ -37,13 +42,18 @@ export default async function ProfilePage({
   let totalSeriesCount = 0;
 
   if (currentFilter === 'posts') {
-    const { posts: allPosts } = await getPosts({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
+    const { posts: allPosts } = await getPosts({
+      filters: { authorId: profileUser.id, includePrivate: isOwnProfile },
+    });
     displayPosts = allPosts || [];
   } else if (currentFilter === 'favorites') {
     const favoritePosts = await getFavoritePostsByUserId(profileUser.id);
     displayPosts = favoritePosts || [];
   } else if (currentFilter === 'series') {
-    const { series, totalSeries } = await getSeriesByAuthorId(profileUser.id, showAllSeries ? undefined : 3);
+    const { series, totalSeries } = await getSeriesByAuthorId(
+      profileUser.id,
+      showAllSeries ? undefined : 3
+    );
     displaySeries = series || [];
     totalSeriesCount = totalSeries;
   }

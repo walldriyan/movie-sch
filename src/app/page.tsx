@@ -5,7 +5,7 @@ import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
 import { auth } from '@/auth';
 import MetaSpotlight from './ui/page';
-import MetaSpotlight1 from './ui/newexample2';
+
 import MetaSpotlight3 from './ui/example3';
 import { Post } from '@/lib/types';
 
