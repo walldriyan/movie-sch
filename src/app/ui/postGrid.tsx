@@ -177,7 +177,7 @@ export default function MetaSpotlightPostGrid() {
 
       {/* Footer Section */}
       <footer className="absolute bottom-0 left-0 right-0 p-8 text-white bg-gradient-to-t from-black via-black/70 to-transparent z-10">
-        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 rounded-lg bg-black/20 backdrop-blur-sm p-6">
           {/* Contact */}
           <div>
             <h3 className="font-semibold mb-2">Contact</h3>
@@ -221,5 +221,7 @@ export default function MetaSpotlightPostGrid() {
     </div>
   );
 }
+
+    
 
     
