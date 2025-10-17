@@ -48,9 +48,14 @@ export default function SeriesTracker({
           <div className="space-y-2">
             {posts.map((post, index) => {
                // Determine if the prerequisite for the current post is met.
-               // The first post is always "passed" in terms of prerequisites.
                const previousPost = index > 0 ? posts[index - 1] : null;
-               const isPassed = !previousPost || !previousPost.requiresExamToUnlock || (previousPost.exam ? passedExamIds.has(previousPost.exam.id) : true);
+               
+               // The current step is considered "passed" if:
+               // 1. It's the first post (no previous post).
+               // 2. The previous post doesn't require an exam to unlock the next one.
+               // 3. The previous post does not have an exam associated with it.
+               // 4. The user has passed the exam of the previous post.
+               const isPassed = !previousPost || !previousPost.requiresExamToUnlock || !previousPost.exam || passedExamIds.has(previousPost.exam.id);
 
               return (
                 <SeriesPostCard
