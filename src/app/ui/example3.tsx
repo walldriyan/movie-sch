@@ -230,7 +230,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 // bg-gradient-to-br from-slate-900/70 via-sky-950/5 to-teal-800/20
   return (
-    <div className="h-[240px] p-2 bg-gradient-to-b  from-zinc-950/50  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
+    <div className="h-[240px] p-2 bg-gradient-to-b  from-zinc-950/70  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
       
       {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
