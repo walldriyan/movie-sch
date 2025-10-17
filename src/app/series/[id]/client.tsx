@@ -261,7 +261,7 @@ export default function SeriesPageClient({
   const isFavorited = currentUser && currentPost.favoritePosts && currentPost.favoritePosts.some(fav => fav.userId === currentUser?.id);
   const isLiked = currentUser && currentPost.likedBy?.some(user => user.id === currentUser.id);
   const isDisliked = currentUser && currentPost.dislikedBy?.some(user => user.id === currentUser.id);
-  const canManageLocks = currentUser && (currentUser.id === author?.id || currentUser.role === ROLES.SUPER_ADMIN);
+  const canManage = currentUser && (currentUser.id === author?.id || currentUser.role === ROLES.SUPER_ADMIN);
 
   return (
     <div className="w-full bg-background text-foreground">
@@ -439,6 +439,7 @@ export default function SeriesPageClient({
                     seriesId={series.id}
                     posts={postsInSeries}
                     currentPostId={currentPost.id}
+                    passedExamIds={passedExamIds}
                   />
                 </aside>
               </div>
