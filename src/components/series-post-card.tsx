@@ -27,6 +27,7 @@ export default function SeriesPostCard({
 }: SeriesPostCardProps) {
   const currentUser = useCurrentUser();
   const { toast } = useToast();
+  
   const postImageUrl =
     post.posterUrl ||
     PlaceHolderImages.find(
