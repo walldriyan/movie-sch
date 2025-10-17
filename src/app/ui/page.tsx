@@ -4,6 +4,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Post } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 
+// Helper function to get a random value in a range
+const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
+
+
 export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
@@ -11,44 +15,67 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
-    if (initialPosts && initialPosts.length > 0) {
-      const generateCard = (post: Post, type: string, rotation: number, distance: number, position: string, index: number) => {
-        const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
-        const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
+    let postsToDisplay: Post[] = [];
+    const numPosts = initialPosts.length;
 
-        let gridColors: string[] = [];
-        if (type === 'grid') {
-          gridColors = ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'];
-        }
+    if (numPosts === 0) {
+      setCards([]);
+      return;
+    }
 
-        return {
-          id: `post-${post.id}-${index}`, // Unique key generation
-          image: post.posterUrl || defaultImage,
-          brand: post.author?.name || 'CineVerse',
-          authorImage: post.author?.image || authorImageDefault,
-          type: type,
-          gridColors: gridColors,
-          position: position,
-          rotation: rotation,
-          distance: distance
-        };
-      };
-
-      const cardConfigs = [
+    if (numPosts >= 10) {
+      postsToDisplay = initialPosts.slice(0, 10);
+    } else if (numPosts >= 5) {
+      postsToDisplay = initialPosts;
+    } else { // numPosts < 5
+      postsToDisplay = [...initialPosts];
+      // Duplicate posts to reach the minimum of 5
+      let i = 0;
+      while (postsToDisplay.length < 5) {
+        postsToDisplay.push(initialPosts[i % numPosts]);
+        i++;
+      }
+    }
+    
+    const cardConfigs = [
         { type: 'grid', rotation: -12, distance: 0.8, position: 'left-0 top-8' },
         { type: 'single', rotation: 6, distance: 0.7, position: 'left-2 bottom-8' },
         { type: 'hero', rotation: 0, distance: 0.5, position: 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2' },
         { type: 'dots', rotation: 12, distance: 0.8, position: 'right-0 top-8' },
         { type: 'single', rotation: -6, distance: 0.7, position: 'right-2 bottom-8' },
-      ];
-      
-      const generatedCards = cardConfigs.map((config, index) => {
-        const post = initialPosts[index % initialPosts.length];
-        return generateCard(post, config.type, config.rotation, config.distance, config.position, index);
-      });
+        { type: 'single', rotation: -8, distance: 0.6, position: 'left-20 top-32' },
+        { type: 'grid', rotation: 8, distance: 0.6, position: 'right-20 top-32' },
+        { type: 'single', rotation: 10, distance: 0.65, position: 'left-24 bottom-24' },
+        { type: 'dots', rotation: -10, distance: 0.65, position: 'right-24 bottom-24' },
+        { type: 'grid', rotation: -15, distance: 0.9, position: 'left-10 bottom-40' },
+    ];
 
-      setCards(generatedCards);
-    }
+
+    const generatedCards = postsToDisplay.map((post, index) => {
+      const config = cardConfigs[index % cardConfigs.length];
+      const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
+      const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
+      
+      let gridColors: string[] = [];
+      if (config.type === 'grid') {
+        gridColors = ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'];
+      }
+      
+      return {
+        id: `post-${post.id}-${index}`, // Unique key
+        image: post.posterUrl || defaultImage,
+        brand: post.author?.name || 'CineVerse',
+        authorImage: post.author?.image || authorImageDefault,
+        type: config.type,
+        gridColors: gridColors,
+        position: config.position,
+        rotation: config.rotation,
+        distance: config.distance,
+      };
+    });
+
+    setCards(generatedCards);
+
   }, [initialPosts]);
 
 
