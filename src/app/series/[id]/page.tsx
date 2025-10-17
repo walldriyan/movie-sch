@@ -34,7 +34,8 @@ export default async function SeriesPage({
 
   const postsDataRaw = (await getPostsBySeriesId(seriesId)) as Post[];
   if (!postsDataRaw || postsDataRaw.length === 0) {
-    notFound();
+    // If a series has no posts, it's better to show the series page with an empty state
+    // rather than a 404. The client component can handle this.
   }
 
   const resolvedSearchParams = await searchParams;
@@ -88,23 +89,23 @@ export default async function SeriesPage({
   const postsData = postsDataRaw.map((post, index) => {
     let isLocked = post.isLockedByDefault;
 
-    if (isLocked) {
-      // Admins and the author can always see their posts.
-      if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
-        isLocked = false;
-      }
-      // For everyone else (including public users), check lock logic.
-      else if (index === 0) {
-        // The first post is locked if it's set to be locked by default.
+    // Condition 1: Admins and authors can always see their posts.
+    if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
+      isLocked = false;
+    }
+    // Condition 2: For other users (including public), check lock logic.
+    else {
+      if (index === 0) {
+        // The first post is locked only if it's set to be locked by default.
         isLocked = post.isLockedByDefault;
       } else {
         // For subsequent posts, check the predecessor.
         const previousPost = postsDataRaw[index - 1];
-        const previousPostPassed = !previousPost.requiresExamToUnlock || (previousPost.exam ? passedExamIds.has(previousPost.exam.id) : false);
-
-        if(previousPostPassed) {
-            isLocked = false;
-        }
+        // It's locked if the current post is locked by default AND the previous post's unlock conditions are not met.
+        isLocked = post.isLockedByDefault && (
+          previousPost.requiresExamToUnlock && 
+          (!previousPost.exam || !passedExamIds.has(previousPost.exam.id))
+        );
       }
     }
     
@@ -114,12 +115,8 @@ export default async function SeriesPage({
     };
   });
   
-  // Final check for the *currently requested* post before rendering
-  const currentPostWithLockStatus = postsData.find(p => p.id === currentPostId);
-
-  if (currentPostWithLockStatus?.isLocked) {
-      notFound();
-  }
+  // This log will show the final array sent to the client, with correct isLocked status
+  console.log('--- [Server] Final postsData with lock status ---', postsData);
 
 
   return (
@@ -132,5 +129,3 @@ export default async function SeriesPage({
     />
   );
 }
-
-
