@@ -318,7 +318,9 @@ export async function savePost(postData: PostFormData, id?: number) {
     revalidatePath(`/manage`);
     revalidatePath(`/movies/${id}`);
   } else {
-    await prisma.post.create({ data: { ...data, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } });
+    // TEMPORARY FIX: Remove new fields from create operation
+    const { isLockedByDefault, requiresExamToUnlock, ...createData } = data;
+    await prisma.post.create({ data: { ...createData, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } });
     revalidatePath(`/manage`);
   }
   revalidatePath('/');
