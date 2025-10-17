@@ -34,7 +34,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload, FileQuestion, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
@@ -272,7 +272,7 @@ const PostCombobox = ({
     );
 }
 
-const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange }: {
+const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange, currentStep, onNextStep, onPrevStep }: {
   posts: PostWithGroup[],
   selectedPost: PostWithGroup | undefined,
   form: any,
@@ -284,14 +284,18 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
   onBack: () => void,
   editingExamId: number | null,
   onPostsChange: (posts: PostWithGroup[]) => void,
+  currentStep: number,
+  onNextStep: () => void,
+  onPrevStep: () => void,
 }) => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <div className={cn("space-y-8", currentStep !== 1 && "hidden")}>
           <Card>
               <CardHeader>
                   <CardTitle>{editingExamId ? 'Edit Exam' : 'Create New Exam'}</CardTitle>
-                  <CardDescription>Basic information and settings for the exam.</CardDescription>
+                  <CardDescription>Step 1: Basic information and settings for the exam.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                   <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
@@ -313,16 +317,17 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
                   />
               </CardContent>
           </Card>
-          
-          <Card>
+        </div>
+
+        <div className={cn("space-y-8", currentStep !== 2 && "hidden")}>
+           <Card>
               <CardHeader><CardTitle>Exam Access</CardTitle><CardDescription>Who can take this exam is determined by the associated post's visibility.</CardDescription></CardHeader>
               <CardContent>
                   {selectedPost ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2">{selectedPost.visibility === 'PUBLIC' ? (<><Eye className="h-4 w-4" /> Public</>) : (<><Users className="h-4 w-4" /> Group</>)}</AlertTitle><AlertDescription>This exam will be available to {selectedPost.visibility === 'PUBLIC' ? 'all users.' : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}</AlertDescription></Alert>) : (<Alert variant="destructive"><ChevronsUpDown className="h-4 w-4" /><AlertTitle>No Post Selected</AlertTitle><AlertDescription>Please select a post to see access settings.</AlertDescription></Alert>)}
               </CardContent>
           </Card>
-
-          <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" />Exam Settings</CardTitle></CardHeader>
+           <Card>
+              <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" />Exam Settings</CardTitle><CardDescription>Step 2: Configuration and rules.</CardDescription></CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="DRAFT">Draft</SelectItem><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                    <FormField control={form.control} name="durationMinutes" render={({ field }) => (<FormItem><FormLabel>Duration (Minutes)</FormLabel><FormControl><Input type="number" placeholder="e.g., 30" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Leave empty for no time limit.</FormDescription><FormMessage /></FormItem>)} />
@@ -331,16 +336,40 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
                    <FormField control={form.control} name="endDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}<CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarIcon mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>)} />
               </CardContent>
           </Card>
+        </div>
 
-          <div>
+        <div className={cn("space-y-8", currentStep !== 3 && "hidden")}>
+          <Card>
+            <CardHeader><CardTitle>Exam Questions</CardTitle><CardDescription>Step 3: Add questions and options.</CardDescription></CardHeader>
+            <CardContent>
               {questions.map((question, qIndex) => (<QuestionItem key={question.id} control={form.control} qIndex={qIndex} removeQuestion={removeQuestion} form={form}/>))}
-               <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
-          </div>
+              <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
+            </CardContent>
+          </Card>
+        </div>
 
-          <div className="flex justify-end sticky bottom-0 py-4 bg-background/80 backdrop-blur-sm">
-               <Button type="button" variant="ghost" onClick={onBack} disabled={isSubmitting}>Cancel</Button>
-               <Button type="submit" size="lg" disabled={isSubmitting}>{isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Saving...</> : <><Save className="mr-2 h-5 w-5" />{editingExamId ? 'Update Exam' : 'Save Exam'}</>}</Button>
-          </div>
+
+        <div className="flex justify-between sticky bottom-0 py-4 bg-background/80 backdrop-blur-sm">
+            <div>
+              {currentStep > 1 && (
+                <Button type="button" variant="outline" onClick={onPrevStep} disabled={isSubmitting}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" onClick={onBack} disabled={isSubmitting}>Cancel</Button>
+                {currentStep < 3 ? (
+                  <Button type="button" onClick={onNextStep} disabled={isSubmitting}>
+                    Next <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                ) : (
+                  <Button type="submit" size="lg" disabled={isSubmitting}>
+                    {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Saving...</> : <><Save className="mr-2 h-5 w-5" />{editingExamId ? 'Update Exam' : 'Save Exam'}</>}
+                  </Button>
+                )}
+            </div>
+        </div>
       </form>
     </Form>
   )
@@ -420,6 +449,11 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
     )
 }
 
+const steps = [
+    { id: 1, name: 'Basic Details', icon: Info, fields: ['title', 'description', 'postId'] },
+    { id: 2, name: 'Configuration', icon: Settings, fields: ['status', 'durationMinutes', 'attemptsAllowed', 'startDate', 'endDate'] },
+    { id: 3, name: 'Questions', icon: FileQuestion, fields: ['questions'] },
+];
 
 export default function CreateExamPage() {
   const [activeTab, setActiveTab] = useState('manage');
@@ -430,6 +464,7 @@ export default function CreateExamPage() {
   const [isLoadingExams, setIsLoadingExams] = useState(true);
   const { toast } = useToast();
   const importFileInputRef = React.useRef<HTMLInputElement>(null);
+  const [currentStep, setCurrentStep] = useState(1);
 
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
@@ -473,6 +508,21 @@ export default function CreateExamPage() {
     fetchExams();
   }, []);
 
+  const handleNextStep = async () => {
+    const fields = steps[currentStep - 1].fields;
+    const output = await form.trigger(fields as any, { shouldFocus: true });
+    if (!output) return;
+    if (currentStep < 3) {
+      setCurrentStep(prev => prev + 1);
+    }
+  }
+
+  const handlePrevStep = () => {
+     if (currentStep > 1) {
+      setCurrentStep(prev => prev - 1);
+    }
+  }
+
   const handleEdit = async (examId: number) => {
     try {
         const examToEdit = await getExamForEdit(examId);
@@ -499,6 +549,7 @@ export default function CreateExamPage() {
                   options: q.options.map(o => ({ id: o.id, text: o.text, isCorrect: o.isCorrect }))
                 }))
             });
+            setCurrentStep(1);
             setActiveTab('create');
         } else {
             toast({ variant: 'destructive', title: 'Error', description: 'Exam data could not be found.' });
@@ -587,6 +638,7 @@ export default function CreateExamPage() {
                     questions: data.questions || [],
                 });
                 setEditingExamId(null);
+                setCurrentStep(1);
                 setActiveTab('create');
                 toast({ title: "Import Successful", description: "Exam data has been loaded into the form."});
             } else {
@@ -614,6 +666,7 @@ export default function CreateExamPage() {
             form.reset();
             setEditingExamId(null);
             replaceQuestions([]); // Clear questions field array
+            setCurrentStep(1);
             setActiveTab('manage');
             await fetchExams();
         } catch (error: any) {
@@ -629,6 +682,7 @@ export default function CreateExamPage() {
         durationMinutes: 30, attemptsAllowed: 1, questions: [{ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] }],
     });
     setEditingExamId(null);
+    setCurrentStep(1);
     setActiveTab('create');
   }
 
@@ -636,6 +690,7 @@ export default function CreateExamPage() {
     form.reset();
     setEditingExamId(null);
     replaceQuestions([]);
+    setCurrentStep(1);
     setActiveTab('manage');
   }
 
@@ -666,23 +721,48 @@ export default function CreateExamPage() {
           <ManageExamsList exams={exams} onEdit={handleEdit} onDelete={handleDelete} onExport={handleExport} isLoading={isLoadingExams} isDeleting={isSubmitting} />
         </TabsContent>
         <TabsContent value="create" className="mt-6">
-          <CreateExamForm 
-            posts={posts}
-            selectedPost={selectedPost}
-            form={form}
-            questions={questions}
-            appendQuestion={appendQuestion}
-            removeQuestion={removeQuestion}
-            isSubmitting={isSubmitting}
-            onSubmit={onSubmit}
-            onBack={handleBack}
-            editingExamId={editingExamId}
-            onPostsChange={setPosts}
-          />
+          <div className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
+            <ol className="flex items-center w-full">
+              {steps.map((step, index) => (
+                <li key={step.id} className={cn("flex w-full items-center", index !== steps.length - 1 && "after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block",
+                  index < currentStep && "after:border-primary",
+                  index >= currentStep && "after:border-muted"
+                )}>
+                  <span className={cn("flex items-center justify-center w-10 h-10 rounded-full shrink-0",
+                    step.id < currentStep ? "bg-primary" :
+                    step.id === currentStep ? "bg-primary/80 border-4 border-primary" : "bg-muted text-muted-foreground"
+                  )}>
+                    <step.icon className="w-5 h-5"/>
+                  </span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          <div className="mt-6">
+            <CreateExamForm 
+              posts={posts}
+              selectedPost={selectedPost}
+              form={form}
+              questions={questions}
+              appendQuestion={appendQuestion}
+              removeQuestion={removeQuestion}
+              isSubmitting={isSubmitting}
+              onSubmit={onSubmit}
+              onBack={handleBack}
+              editingExamId={editingExamId}
+              onPostsChange={setPosts}
+              currentStep={currentStep}
+              onNextStep={handleNextStep}
+              onPrevStep={handlePrevStep}
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
   );
 }
+
+    
 
     
