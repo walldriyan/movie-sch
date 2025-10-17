@@ -19,19 +19,43 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
-    const generatedCards = initialPosts.slice(0, 10).map((post, index) => {
+    let postsToDisplay: Post[] = [];
+    const numPosts = initialPosts.length;
+
+    if (numPosts === 0) {
+      setCards([]);
+      return;
+    }
+
+    if (numPosts >= 10) {
+      postsToDisplay = initialPosts.slice(0, 10);
+    } else if (numPosts >= 5) {
+      postsToDisplay = initialPosts;
+    } else { // numPosts < 5
+      postsToDisplay = [...initialPosts];
+      // Duplicate posts to reach the minimum of 5
+      let i = 0;
+      while (postsToDisplay.length < 5) {
+        postsToDisplay.push(initialPosts[i % numPosts]);
+        i++;
+      }
+    }
+    
+    const generatedCards = postsToDisplay.map((post, index) => {
       const isSeriesPost = post.series && post.series.posts && post.series.posts.length > 0;
-      const cardType = index === 2 ? 'hero' : (isSeriesPost ? 'series' : (index % 3 === 1 ? 'dots' : 'single'));
+      // Ensure the hero card is still somewhat centered if possible
+      const isHeroIndex = postsToDisplay.length > 2 ? Math.floor(postsToDisplay.length / 2) : 0;
+      const cardType = index === isHeroIndex ? 'hero' : (isSeriesPost ? 'series' : (index % 3 === 1 ? 'dots' : 'single'));
 
       return {
-        id: post.id,
+        id: `${post.id}-${index}`, // Create a unique key
         image: post.posterUrl || `https://picsum.photos/seed/${post.id}/600/800`,
         brand: post.author?.name || 'CineVerse',
         authorImage: post.author?.image,
         series: post.series,
         type: cardType,
-        rotation: index === 2 ? 0 : getRandomValue(-12, 12),
-        distance: index === 2 ? 0.5 : getRandomValue(0.6, 0.8)
+        rotation: index === isHeroIndex ? 0 : getRandomValue(-12, 12),
+        distance: index === isHeroIndex ? 0.5 : getRandomValue(0.6, 0.8)
       };
     });
     setCards(generatedCards);
@@ -245,4 +269,6 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     </div>
   );
 }
+
+
 
