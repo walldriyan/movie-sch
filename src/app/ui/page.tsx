@@ -1,20 +1,29 @@
+
 "use client"
 
-import React, { useState, useEffect, useRef } from 'react';
-import type { Post } from '@/lib/types';
+import React from 'react';
+import type { Post, User, GroupWithCount } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import GroupsUsersSpotlight from './groups-users-spotlight';
 
 // Helper function to get a random value in a range
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
+export default function MetaSpotlight({
+  posts: initialPosts,
+  users,
+  groups,
+}: {
+  posts: Post[];
+  users: User[];
+  groups: (GroupWithCount & { posts: { posterUrl: string | null }[] })[]
+}) {
+  const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = React.useState(false);
+  const containerRef = React.useRef(null);
+  const [cards, setCards] = React.useState<any[]>([]);
 
-export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }) {
-  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [isHovering, setIsHovering] = useState(false);
-  const containerRef = useRef(null);
-  const [cards, setCards] = useState<any[]>([]);
-
-  useEffect(() => {
+  React.useEffect(() => {
     let postsToDisplay: Post[] = [];
     const numPosts = initialPosts.length;
 
@@ -22,55 +31,40 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
       setCards([]);
       return;
     }
-
+    
     if (numPosts >= 10) {
       postsToDisplay = initialPosts.slice(0, 10);
     } else if (numPosts >= 5) {
       postsToDisplay = initialPosts;
     } else { // numPosts < 5
       postsToDisplay = [...initialPosts];
-      // Duplicate posts to reach the minimum of 5
       let i = 0;
       while (postsToDisplay.length < 5) {
         postsToDisplay.push(initialPosts[i % numPosts]);
         i++;
       }
     }
-    
-    const cardConfigs = [
-        { type: 'grid', rotation: -12, distance: 0.8, position: 'left-0 top-8' },
-        { type: 'single', rotation: 6, distance: 0.7, position: 'left-2 bottom-8' },
-        { type: 'hero', rotation: 0, distance: 0.5, position: 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2' },
-        { type: 'dots', rotation: 12, distance: 0.8, position: 'right-0 top-8' },
-        { type: 'single', rotation: -6, distance: 0.7, position: 'right-2 bottom-8' },
-        { type: 'single', rotation: -8, distance: 0.6, position: 'left-20 top-32' },
-        { type: 'grid', rotation: 8, distance: 0.6, position: 'right-20 top-32' },
-        { type: 'single', rotation: 10, distance: 0.65, position: 'left-24 bottom-24' },
-        { type: 'dots', rotation: -10, distance: 0.65, position: 'right-24 bottom-24' },
-        { type: 'grid', rotation: -15, distance: 0.9, position: 'left-10 bottom-40' },
-    ];
-
 
     const generatedCards = postsToDisplay.map((post, index) => {
-      const config = cardConfigs[index % cardConfigs.length];
       const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
       const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
+      const cardType = index === 2 ? 'hero' : (index % 3 === 1 ? 'dots' : 'single');
       
-      let gridColors: string[] = [];
-      if (config.type === 'grid') {
-        gridColors = ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'];
-      }
+      const cardPositions = [
+        'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8',
+        'left-20 top-32', 'right-20 top-32', 'left-24 bottom-24', 'right-24 bottom-24', 'left-10 bottom-40'
+      ];
       
       return {
         id: `post-${post.id}-${index}`, // Unique key
         image: post.posterUrl || defaultImage,
         brand: post.author?.name || 'CineVerse',
         authorImage: post.author?.image || authorImageDefault,
-        type: config.type,
-        gridColors: gridColors,
-        position: config.position,
-        rotation: config.rotation,
-        distance: config.distance,
+        type: cardType,
+        gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'],
+        position: cardPositions[index % cardPositions.length],
+        rotation: getRandomValue(-15, 15),
+        distance: getRandomValue(0.6, 0.9),
       };
     });
 
@@ -79,7 +73,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
   }, [initialPosts]);
 
 
-  useEffect(() => {
+  React.useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
         const rect = (containerRef.current as HTMLElement).getBoundingClientRect();
@@ -199,13 +193,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
         {cards.map(card => renderCard(card))}
       </div>
 
-      <div 
-       
-        className="relative  bg-gradient-to-r from-zinc-950 via-stone-900  to-zinc-950 rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
-        style={{ perspective: '1000px' }}
-      >
-       groups card here
-      </div>
+      <GroupsUsersSpotlight users={users} groups={groups} />
      
       </div>
 
