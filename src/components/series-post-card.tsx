@@ -28,22 +28,17 @@ export default function SeriesPostCard({
   const currentUser = useCurrentUser();
   const { toast } = useToast();
   
-  const postImageUrl =
-    post.posterUrl ||
-    PlaceHolderImages.find(
-      (p) => p.id === 'movie-poster-placeholder'
-    )?.imageUrl;
-
   const isLocked = useMemo(() => {
-    // If it's not locked by default, it's always unlocked
-    if (post.isLockedByDefault === false) return false;
-    
-    // Super admins and the author can always access
-    if (currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.id === post.authorId) return false;
-    
-    // If it is locked by default, check if the user has passed the prerequisite
+    // If the user is a super admin or the author of the post, it's never locked.
+    if (currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.id === post.authorId) {
+        return false;
+    }
+    // If the post is not locked by default, it's never locked.
+    if (post.isLockedByDefault === false) {
+        return false;
+    }
+    // Otherwise, the lock status depends on whether the prerequisite is passed.
     return !isPassed;
-
   }, [post, currentUser, isPassed]);
 
 
@@ -58,34 +53,47 @@ export default function SeriesPostCard({
     }
   };
 
+  const postImageUrl =
+    post.posterUrl ||
+    PlaceHolderImages.find(
+      (p) => p.id === 'movie-poster-placeholder'
+    )?.imageUrl;
+
+  const StatusIcon = () => {
+    if (isLocked) return <Lock className="w-4 h-4 text-white" />;
+    if (isActive) return <PlayCircle className="w-4 h-4 text-primary" />;
+    return <CheckCircle className="w-4 h-4 text-muted-foreground/80" />;
+  };
+
+
   return (
     <Link
       href={`/series/${seriesId}?post=${post.id}`}
       className={cn(
-        'flex items-center gap-4 p-2 rounded-lg transition-colors',
+        'flex items-center gap-4 p-2 rounded-lg transition-colors group',
         isActive
-          ? 'bg-primary/10 border-primary/50'
+          ? 'bg-primary/10'
           : 'hover:bg-muted/50',
-        isLocked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
+        isLocked ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'
       )}
       aria-disabled={isLocked}
       onClick={handleClick}
     >
-      <div className="relative w-24 h-14 flex-shrink-0 overflow-hidden rounded-md group">
+      <div className="relative w-24 h-14 flex-shrink-0 overflow-hidden rounded-md">
         {postImageUrl && (
           <Image
             src={postImageUrl}
             alt={post.title}
             fill
             sizes="100px"
-            className="object-cover"
+            className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
         )}
-        {isLocked && (
-          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <Lock className="w-6 h-6 text-white" />
-          </div>
-        )}
+        <div 
+          className="absolute bottom-1 right-1 h-6 w-6 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm"
+        >
+          <StatusIcon />
+        </div>
       </div>
       <div className="flex-grow overflow-hidden">
         <p
@@ -97,15 +105,6 @@ export default function SeriesPostCard({
           Part {post.orderInSeries}: {post.title}
         </p>
         <p className="text-xs text-muted-foreground truncate">{post.duration}</p>
-      </div>
-       <div className="flex-shrink-0">
-         {!isLocked && (
-           isActive ? (
-              <PlayCircle className="w-6 h-6 text-primary" />
-           ) : (
-              <CheckCircle className="w-6 h-6 text-muted-foreground/50" />
-           )
-         )}
       </div>
     </Link>
   );
