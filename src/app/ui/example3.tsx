@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -153,13 +154,14 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           transform: getCardTransform(card.rotation, card.distance),
           transformOrigin: 'center center',
           aspectRatio: '11 / 17',
+          height: '100%',
         }}
       >
         {!isHero && (
           <div className="relative">
             <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold z-10 overflow-hidden">
               {card.authorImage ? (
-                <Image src={card.authorImage} alt={card.brand} layout="fill" objectFit="cover" />
+                <Image src={card.authorImage} alt={card.brand} layout="fill" objectFit="cover"  />
               ) : (
                 card.brand.charAt(0)
               )}
@@ -193,15 +195,15 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 
   return (
-    <div className="h-[290px]  bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center overflow-hidden relative">
-      <div className="absolute top-8 md:top-12 left-0 right-0 z-20 px-4">
+    <div className="h-[290px] bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center  justify-center overflow-hidden relative">
+      <div className="absolute max-w-[500px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[500px] ml-12 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]" 
             style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
           Put your <br />business in<br />the spotlight.
         </h1>
       </div>
 
-      <div className="relative w-full h-[350px] flex items-center justify-center">
+      <div className="w-full h-[350px] flex items-center justify-center">
         <Button
             variant="ghost"
             size="icon"
@@ -213,7 +215,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
-            className="flex items-center gap-2 md:gap-2 lg:gap-2 h-full"
+            className="flex bg-red-400 p-5 items-center gap-2 md:gap-2 lg:gap-2 h-full"
             style={{ 
               perspective: '1000px',
               paddingLeft: 'calc(50% - 8rem)',
@@ -233,7 +235,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         </Button>
       </div>
 
-      <div className="absolute bottom-8 md:bottom-12 left-0 right-0 flex z-20">
+      <div className="absolute  bottom-8 md:bottom-12 left-0 right-0 flex z-20">
         <div className="flex items-center gap-2 md:gap-3 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
           <div className="ml-[190px] text-white text-md md:text-1xl font-bold" style={{ textShadow: '0 54px 220px rgba(0,0,0,0.8)' }}>∞</div>
           <div className="ml-12 text-white text-md md:text-lg font-bold tracking-wide" style={{ textShadow: '0 34px 320px rgba(0,0,0,0.8)' }}>Walldriyan</div>
