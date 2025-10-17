@@ -1,3 +1,4 @@
+
 import { getPosts, getUsers, getPublicGroups, getNotifications } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button';
@@ -33,16 +34,16 @@ export default async function HomePage({
     filters: { timeFilter, sortBy, type: typeFilter },
   });
   const users = await getUsers();
-  const groups = await getPublicGroups(10);
+  const groups = await getPublicGroups();
   const notifications = await getNotifications();
   
   return (
     <>
-      <MetaSpotlight3 posts={posts as Post[]} />
+     
       {/* <MetaSpotlight1 /> */}
      
-     <MetaSpotlight posts={posts as Post[]} />
-
+     <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
+ <MetaSpotlight3 posts={posts as Post[]} />
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
