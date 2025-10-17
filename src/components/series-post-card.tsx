@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -11,6 +10,7 @@ import { PlayCircle, CheckCircle, Lock } from 'lucide-react';
 import { useMemo } from 'react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { ROLES } from '@/lib/permissions';
+import { useToast } from '@/hooks/use-toast';
 
 interface SeriesPostCardProps {
   post: Post;
@@ -26,6 +26,7 @@ export default function SeriesPostCard({
   isPassed,
 }: SeriesPostCardProps) {
   const currentUser = useCurrentUser();
+  const { toast } = useToast();
   const postImageUrl =
     post.posterUrl ||
     PlaceHolderImages.find(
@@ -45,25 +46,31 @@ export default function SeriesPostCard({
   }, [post, currentUser, isPassed]);
 
 
-  const Wrapper = isLocked ? 'div' : Link;
-  const linkProps = isLocked ? {} : { href: `/series/${seriesId}?post=${post.id}` };
+  const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (isLocked) {
+      e.preventDefault();
+      toast({
+        variant: 'destructive',
+        title: 'Post Locked',
+        description: 'You must pass the previous exam to unlock this post.',
+      });
+    }
+  };
 
   return (
-    <Wrapper
-      {...linkProps}
+    <Link
+      href={`/series/${seriesId}?post=${post.id}`}
       className={cn(
         'flex items-center gap-4 p-2 rounded-lg transition-colors',
         isActive
           ? 'bg-primary/10 border-primary/50'
           : 'hover:bg-muted/50',
-        isLocked ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer'
+        isLocked ? 'opacity-70 cursor-not-allowed' : 'cursor-pointer'
       )}
       aria-disabled={isLocked}
-      onClick={(e) => {
-        if(isLocked) e.preventDefault();
-      }}
+      onClick={handleClick}
     >
-      <div className="relative w-24 h-14 flex-shrink-0 overflow-hidden rounded-md">
+      <div className="relative w-24 h-14 flex-shrink-0 overflow-hidden rounded-md group">
         {postImageUrl && (
           <Image
             src={postImageUrl}
@@ -72,6 +79,11 @@ export default function SeriesPostCard({
             sizes="100px"
             className="object-cover"
           />
+        )}
+        {isLocked && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <Lock className="w-6 h-6 text-white" />
+          </div>
         )}
       </div>
       <div className="flex-grow overflow-hidden">
@@ -85,15 +97,15 @@ export default function SeriesPostCard({
         </p>
         <p className="text-xs text-muted-foreground truncate">{post.duration}</p>
       </div>
-      <div className="flex-shrink-0">
-        {isLocked ? (
-          <Lock className="w-6 h-6 text-yellow-400" />
-        ) : isActive ? (
-          <PlayCircle className="w-6 h-6 text-primary" />
-        ) : (
-          <CheckCircle className="w-6 h-6 text-muted-foreground/50" />
-        )}
+       <div className="flex-shrink-0">
+         {!isLocked && (
+           isActive ? (
+              <PlayCircle className="w-6 h-6 text-primary" />
+           ) : (
+              <CheckCircle className="w-6 h-6 text-muted-foreground/50" />
+           )
+         )}
       </div>
-    </Wrapper>
+    </Link>
   );
 }
