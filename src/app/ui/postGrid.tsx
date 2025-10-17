@@ -57,9 +57,9 @@ export default function MetaSpotlightPostGrid() {
     <div className="h-[320px] bg-gradient-to-r from-zinc-950 via-stone-900/20  to-zinc-950 flex flex-col items-center justify-center mb-1 p-8 overflow-hidden relative">
       {/* Text Overlay */}
       <div className="absolute top-12 left-0 right-0 text-center z-20 px-4">
-        <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+        {/* <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
           Put your business in<br />the spotlight.
-        </h1>
+        </h1> */}
       </div>
 
       {/* Cards Container */}
@@ -171,7 +171,7 @@ export default function MetaSpotlightPostGrid() {
       <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-3">
           <div className="text-white text-5xl font-bold">∞</div>
-          <div className="text-white text-3xl font-bold tracking-wide">Meta</div>
+          <div className="text-white text-3xl font-bold tracking-wide">Walldriyan.inc</div>
         </div>
       </div>
 
