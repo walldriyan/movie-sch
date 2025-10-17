@@ -182,19 +182,30 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
   return (
     <div className="h-[520px] p-3  bg-gradient-to-r from-zinc-950 via-stone-900/20  to-zinc-950 flex flex-col items-center justify-center mb-1 overflow-hidden relative">
       {/* Text Overlay */}
-      <div className="absolute top-12 left-0 right-0 text-center z-20 px-4">
-        <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight">
+      <div className="absolute top-12 left-0 right-0 text-start z-20 px-4">
+        <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
           Put your business in<br />the spotlight.
         </h1>
       </div>
 
       {/* Cards Container */}
+      <div className="flex flex-row gap-3 p-3 w-full justify-center">
       <div 
         ref={containerRef}
-        className="relative  bg-gradient-to-r from-zinc-950 via-stone-900  to-zinc-950  w-full max-w-[700px] h-[700px] flex items-center justify-center "
+        className="relative  bg-gradient-to-r from-zinc-950 via-stone-900  to-zinc-950 rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
         style={{ perspective: '1000px' }}
       >
         {cards.map(card => renderCard(card))}
+      </div>
+
+      <div 
+       
+        className="relative  bg-gradient-to-r from-zinc-950 via-stone-900  to-zinc-950 rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
+        style={{ perspective: '1000px' }}
+      >
+       groups card here
+      </div>
+
       </div>
 
       {/* Meta Logo */}

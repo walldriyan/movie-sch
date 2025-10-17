@@ -231,15 +231,16 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
   return (
     <div className="h-[240px] p-2  bg-gradient-to-br from-slate-900/70 via-sky-950/5 to-teal-800/20 flex flex-col items-center  justify-center overflow-hidden relative">
-      <div className="absolute max-w-[500px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
+      
+      {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
           style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
           Put your <br />business in<br />the spotlight.
         </h1>          <div className="ml-[80px]  text-white text-md md:text-lg font-bold tracking-wide" style={{ textShadow: '0 34px 320px rgba(0,0,0,0.8)' }}>Walldriyan</div>
 
-      </div>
+      </div> */}
 
-      <div className="w-full h-[150px] flex items-center p-2 justify-center">
+      <div className="w-full  flex items-center p-2 justify-center">
         <Button
           variant="ghost"
           size="icon"
