@@ -7,8 +7,6 @@ import { cn } from '@/lib/utils';
 import type { Post } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { PlayCircle, CheckCircle, Lock } from 'lucide-react';
-import { useMemo } from 'react';
-import { ROLES } from '@/lib/permissions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 
@@ -16,7 +14,7 @@ interface SeriesPostCardProps {
   post: Post;
   seriesId: number;
   isActive: boolean;
-  isPassed: boolean;
+  isLocked: boolean; // Directly receive lock status
   session: Session | null;
 }
 
@@ -24,32 +22,10 @@ export default function SeriesPostCard({
   post,
   seriesId,
   isActive,
-  isPassed,
+  isLocked,
   session,
 }: SeriesPostCardProps) {
-  const currentUser = session?.user;
   const { toast } = useToast();
-  
-  const isLocked = useMemo(() => {
-    // If the post is not configured to be locked by default, it's always open.
-    if (!post.isLockedByDefault) {
-      return false;
-    }
-
-    // For public/unauthenticated users, if it's locked by default, it's locked.
-    if (!currentUser) {
-      return true;
-    }
-
-    // For logged-in users, check for exceptions (Admin/Author).
-    if (currentUser.role === ROLES.SUPER_ADMIN || currentUser.id === post.authorId) {
-        return false;
-    }
-    
-    // For regular logged-in users, it's locked if the prerequisite is not passed.
-    return !isPassed;
-  }, [post, currentUser, isPassed]);
-
 
   const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
     if (isLocked) {

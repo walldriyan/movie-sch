@@ -11,7 +11,7 @@ import type { Session } from 'next-auth';
 
 interface SeriesTrackerProps {
   seriesId: number;
-  posts: Post[];
+  posts: (Post & { isLocked?: boolean })[]; // Expect isLocked from server
   currentPostId: number;
   passedExamIds: Set<number>;
   session: Session | null;
@@ -24,14 +24,6 @@ export default function SeriesTracker({
   passedExamIds,
   session,
 }: SeriesTrackerProps) {
-
-  // Create a map for quick lookup of which exams have been passed.
-  const passedExamsByPostId = new Map<number, boolean>();
-  posts.forEach(post => {
-    if (post.exam) {
-      passedExamsByPostId.set(post.id, passedExamIds.has(post.exam.id));
-    }
-  });
 
   return (
     <Accordion
@@ -49,24 +41,14 @@ export default function SeriesTracker({
         </AccordionTrigger>
         <AccordionContent>
           <div className="space-y-2">
-            {posts.map((post, index) => {
-               // Determine if the prerequisite for the current post is met.
-               const previousPost = index > 0 ? posts[index - 1] : null;
-               
-               // The current step is considered "passed" if:
-               // 1. It's the first post (no previous post).
-               // 2. The previous post doesn't require an exam to unlock the next one.
-               // 3. The previous post does not have an exam associated with it.
-               // 4. The user has passed the exam of the previous post.
-               const isPassed = !previousPost || !previousPost.requiresExamToUnlock || !previousPost.exam || passedExamIds.has(previousPost.exam.id);
-
+            {posts.map((post) => {
               return (
                 <SeriesPostCard
                   key={post.id}
                   post={post}
                   seriesId={seriesId}
                   isActive={post.id === currentPostId}
-                  isPassed={isPassed}
+                  isLocked={post.isLocked ?? true} // Default to locked if not provided
                   session={session}
                 />
               )

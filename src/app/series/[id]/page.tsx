@@ -31,8 +31,8 @@ export default async function SeriesPage({
     notFound();
   }
 
-  const postsData = (await getPostsBySeriesId(seriesId)) as Post[];
-  if (!postsData || postsData.length === 0) {
+  const postsDataRaw = (await getPostsBySeriesId(seriesId)) as Post[];
+  if (!postsDataRaw || postsDataRaw.length === 0) {
     notFound();
   }
 
@@ -45,7 +45,7 @@ export default async function SeriesPage({
       notFound();
   }
     
-  const currentPostId = currentPostIdFromSearch ?? postsData[0]?.id;
+  const currentPostId = currentPostIdFromSearch ?? postsDataRaw[0]?.id;
 
   if (!currentPostId) {
     notFound();
@@ -81,6 +81,39 @@ export default async function SeriesPage({
     if (percentage >= 50) {
       passedExamIds.add(sub.examId);
     }
+  });
+
+  // Server-side calculation of lock status for each post
+  const postsData = postsDataRaw.map((post, index) => {
+    let isLocked = post.isLockedByDefault; // Default to the DB value
+
+    if (user) {
+      // Admins and authors can always view
+      if (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId) {
+        isLocked = false;
+      }
+    }
+    
+    // If still locked, check exam requirements
+    if (isLocked) {
+      const previousPost = index > 0 ? postsDataRaw[index - 1] : null;
+      if (previousPost && previousPost.requiresExamToUnlock && previousPost.exam) {
+        if (passedExamIds.has(previousPost.exam.id)) {
+          isLocked = false; // Unlock if previous exam is passed
+        }
+      } else if (!previousPost) {
+        // First post is locked by default but has no predecessor exam to pass
+        // It remains locked unless user is admin/author
+      } else {
+         // Previous post does not require an exam to unlock this one
+         isLocked = false;
+      }
+    }
+
+    return {
+      ...post,
+      isLocked,
+    };
   });
 
 
