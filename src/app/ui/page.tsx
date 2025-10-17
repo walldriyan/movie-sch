@@ -198,10 +198,10 @@ export default function MetaSpotlight({
       </div>
 
       {/* Meta Logo */}
-      <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
+      <div className="absolute bottom-[150px] left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-3">
           <div className="text-white text-5xl font-bold">∞</div>
-          <div className="text-white text-3xl font-bold tracking-wide">Meta</div>
+          <div className="text-white text-3xl font-bold tracking-wide">Walldriyan.inc</div>
         </div>
       </div>
     </div>
