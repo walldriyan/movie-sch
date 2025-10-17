@@ -33,10 +33,15 @@ export default function SeriesPostCard({
     )?.imageUrl;
 
   const isLocked = useMemo(() => {
+    // If it's not locked by default, it's always unlocked
     if (post.isLockedByDefault === false) return false;
-    if (currentUser?.role === ROLES.SUPER_ADMIN) return false;
-    if (currentUser?.id === post.authorId) return false;
+    
+    // Super admins and the author can always access
+    if (currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.id === post.authorId) return false;
+    
+    // If it is locked by default, check if the user has passed the prerequisite
     return !isPassed;
+
   }, [post, currentUser, isPassed]);
 
 

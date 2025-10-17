@@ -12,13 +12,24 @@ interface SeriesTrackerProps {
   seriesId: number;
   posts: Post[];
   currentPostId: number;
+  passedExamIds: Set<number>;
 }
 
 export default function SeriesTracker({
   seriesId,
   posts,
   currentPostId,
+  passedExamIds,
 }: SeriesTrackerProps) {
+
+  // Create a map for quick lookup of which exams have been passed.
+  const passedExamsByPostId = new Map<number, boolean>();
+  posts.forEach(post => {
+    if (post.exam) {
+      passedExamsByPostId.set(post.id, passedExamIds.has(post.exam.id));
+    }
+  });
+
   return (
     <Accordion
       type="single"
@@ -27,7 +38,7 @@ export default function SeriesTracker({
       defaultValue="item-1"
     >
       <AccordionItem value="item-1" className="border-b-0">
-        <AccordionTrigger className="text-base font-semibold hover:no-underline flex justify-between">
+        <AccordionTrigger className="text-base font-semibold hover:no-underline flex justify-between p-2 rounded-lg hover:bg-muted/50">
           <div className="flex gap-2 flex-row items-center">
             <span>Episodes</span>
           </div>
@@ -35,14 +46,22 @@ export default function SeriesTracker({
         </AccordionTrigger>
         <AccordionContent>
           <div className="space-y-2">
-            {posts.map((post) => (
-              <SeriesPostCard
-                key={post.id}
-                post={post}
-                seriesId={seriesId}
-                isActive={post.id === currentPostId}
-              />
-            ))}
+            {posts.map((post, index) => {
+               // Determine if the prerequisite for the current post is met.
+               // The first post is always "passed" in terms of prerequisites.
+               const previousPost = index > 0 ? posts[index - 1] : null;
+               const isPassed = !previousPost || !previousPost.requiresExamToUnlock || (previousPost.exam ? passedExamIds.has(previousPost.exam.id) : true);
+
+              return (
+                <SeriesPostCard
+                  key={post.id}
+                  post={post}
+                  seriesId={seriesId}
+                  isActive={post.id === currentPostId}
+                  isPassed={isPassed}
+                />
+              )
+            })}
           </div>
         </AccordionContent>
       </AccordionItem>
