@@ -215,7 +215,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
-            className="flex bg-red-400 p-5 items-center gap-2 md:gap-2 lg:gap-2 h-full"
+            className="flex bg-red-400 p-5 items-center gap-2 md:gap-2 lg:gap-2 h-[240px]"
             style={{ 
               perspective: '1000px',
               paddingLeft: 'calc(50% - 8rem)',
