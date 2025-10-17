@@ -12,7 +12,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
 
   useEffect(() => {
     if (initialPosts && initialPosts.length > 0) {
-      const generateCard = (post: Post, type: string, rotation: number, distance: number, position: string) => {
+      const generateCard = (post: Post, type: string, rotation: number, distance: number, position: string, index: number) => {
         const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
         const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
 
@@ -22,7 +22,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
         }
 
         return {
-          id: post.id,
+          id: `post-${post.id}-${index}`, // Unique key generation
           image: post.posterUrl || defaultImage,
           brand: post.author?.name || 'CineVerse',
           authorImage: post.author?.image || authorImageDefault,
@@ -44,7 +44,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
       
       const generatedCards = cardConfigs.map((config, index) => {
         const post = initialPosts[index % initialPosts.length];
-        return generateCard(post, config.type, config.rotation, config.distance, config.position);
+        return generateCard(post, config.type, config.rotation, config.distance, config.position, index);
       });
 
       setCards(generatedCards);
@@ -53,9 +53,9 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
 
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
-        const rect = containerRef.current.getBoundingClientRect();
+        const rect = (containerRef.current as HTMLElement).getBoundingClientRect();
         const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
         const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
         setMousePos({ x, y });
@@ -68,7 +68,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
       setMousePos({ x: 0, y: 0 });
     };
 
-    const container = containerRef.current;
+    const container = containerRef.current as HTMLElement | null;
     if (container) {
       container.addEventListener('mousemove', handleMouseMove);
       container.addEventListener('mouseenter', handleMouseEnter);
@@ -84,7 +84,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
     };
   }, []);
 
-  const getCardTransform = (baseRotate, distanceMultiplier, isHeroCard = false) => {
+  const getCardTransform = (baseRotate: number, distanceMultiplier: number, isHeroCard = false) => {
     if (!isHovering) {
       return isHeroCard ? 'translate(-50%, -50%)' : `rotate(${baseRotate}deg)`;
     }
@@ -98,7 +98,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg)`;
   };
   
-    const renderCard = (card) => {
+    const renderCard = (card: any) => {
     const isHero = card.type === 'hero';
     const cardWidth = isHero ? 'w-64 md:w-72' : 'w-32 md:w-36';
     const cardHeight = isHero ? 'h-[400px] md:h-[420px]' : 'h-44 md:h-52';
@@ -133,7 +133,7 @@ export default function MetaSpotlight({ posts: initialPosts }: { posts: Post[] }
 
         {card.type === 'grid' && (
           <div className="grid grid-cols-3 gap-2 p-2 md:p-3 bg-white">
-            {card.gridColors.map((color, idx) => (
+            {card.gridColors.map((color: string, idx: number) => (
               <div key={idx} className={`${color} h-12 md:h-14 rounded`}></div>
             ))}
           </div>
