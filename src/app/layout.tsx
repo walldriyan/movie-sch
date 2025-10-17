@@ -52,7 +52,7 @@ export default async function RootLayout({
     <html lang="en" className="dark overflow-x-hidden">
       <body
         className={cn(
-          'min-h-screen bg-[#0a0a0a] font-sans antialiased relative ',
+          'min-h-screen bg-gradient-to-r from-zinc-950/60 via-stone-900/10 to-zinc-950/50  font-sans antialiased relative ',
           fontSans.variable,
           fontSerif.variable,
           fontSinhala.variable

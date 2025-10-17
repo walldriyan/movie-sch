@@ -1,6 +1,10 @@
+
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
+import { Copyright, Mail, MapPin, Phone } from 'lucide-react';
+
 
 export default function MetaSpotlightPostGrid() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -163,13 +167,59 @@ export default function MetaSpotlightPostGrid() {
         </div>
       </div>
 
-      {/* Meta Logo */}
+       {/* Meta Logo */}
       <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-3">
           <div className="text-white text-5xl font-bold">∞</div>
           <div className="text-white text-3xl font-bold tracking-wide">Meta</div>
         </div>
       </div>
+
+      {/* Footer Section */}
+      <footer className="absolute bottom-0 left-0 right-0 p-8 text-white bg-gradient-to-t from-black via-black/70 to-transparent z-10">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
+          {/* Contact */}
+          <div>
+            <h3 className="font-semibold mb-2">Contact</h3>
+            <ul className="space-y-2 text-sm text-muted-foreground">
+              <li><Link href="mailto:info@cineverse.com" className="flex items-center gap-2 hover:text-primary"><Mail className="h-4 w-4" /> info@cineverse.com</Link></li>
+              <li><Link href="tel:+123456789" className="flex items-center gap-2 hover:text-primary"><Phone className="h-4 w-4" /> +1 (234) 567-89</Link></li>
+            </ul>
+          </div>
+          {/* Address */}
+          <div>
+            <h3 className="font-semibold mb-2">Address</h3>
+            <div className="text-sm text-muted-foreground flex items-start gap-2">
+                <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
+                <p>123 Movie Lane,<br/>Hollywood, CA 90210</p>
+            </div>
+          </div>
+          {/* Legal */}
+          <div>
+            <h3 className="font-semibold mb-2">Legal</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="#" className="text-muted-foreground hover:text-primary">Privacy Policy</Link></li>
+              <li><Link href="#" className="text-muted-foreground hover:text-primary">Cookie Policy</Link></li>
+              <li><Link href="#" className="text-muted-foreground hover:text-primary">Terms of Service</Link></li>
+            </ul>
+          </div>
+          {/* Socials */}
+           <div>
+            <h3 className="font-semibold mb-2">Socials</h3>
+            <ul className="space-y-2 text-sm">
+              <li><Link href="#" className="text-muted-foreground hover:text-primary">Facebook</Link></li>
+              <li><Link href="#" className="text-muted-foreground hover:text-primary">Twitter</Link></li>
+              <li><Link href="#" className="text-muted-foreground hover:text-primary">Instagram</Link></li>
+            </ul>
+          </div>
+        </div>
+        <div className="mt-8 pt-8 border-t border-white/10 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+            <Copyright className="h-4 w-4" />
+            <span>{new Date().getFullYear()} CineVerse. All rights reserved.</span>
+        </div>
+      </footer>
     </div>
   );
 }
+
+    
