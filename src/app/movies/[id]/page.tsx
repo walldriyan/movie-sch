@@ -7,6 +7,8 @@ import MoviePageContent from './movie-page-content';
 import { auth } from '@/auth';
 import type { Session } from 'next-auth';
 
+export const dynamic = 'force-dynamic';
+
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
 // Helper function to serialize dates safely

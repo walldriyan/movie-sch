@@ -36,11 +36,7 @@ export default function MovieDetailClient({
 }) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState('about');
-  const sessionStatus = session ? 'authenticated' : 'unauthenticated';
 
-  // console.log("Client [/movies/[id]/movie-detail-client.tsx] Session from props:", JSON.stringify(session, null, 2));
-  // console.log("Client [/movies/[id]/movie-detail-client.tsx] Current User Details:", session?.user);
-  
   const heroImage = post.posterUrl || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
   const authorAvatarUrl = post.author.image || PlaceHolderImages.find((img) => img.id === 'avatar-1')?.imageUrl;
 
@@ -134,7 +130,7 @@ export default function MovieDetailClient({
                 <Image src="/imdb.png" alt="IMDb" width={40} height={20} />
                 <div className="flex items-center gap-1">
                   <Star className="w-5 h-5 text-yellow-400" />
-                  <span className="text-foreground">{post.imdbRating?.toFixed(1)}</span>
+                  <span className="text-foreground">{post.imdbRating ? post.imdbRating.toFixed(1) : 'N/A'}</span>
                 </div>
               </button>
               <button
