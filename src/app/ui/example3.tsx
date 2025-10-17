@@ -228,7 +228,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       </div>
     );
   };
-// bg-gradient-to-br from-slate-900/70 via-sky-950/5 to-teal-800/20
+// bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
   return (
     <div className="h-[240px] p-2 bg-gradient-to-b  from-zinc-950/70  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
       
@@ -240,7 +240,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
       </div> */}
 
-      <div className="w-full  flex items-center p-2 justify-center">
+      <div className="relative max-w-[80%] flex items-center p-2 justify-center">
         <Button
           variant="ghost"
           size="icon"
@@ -252,7 +252,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
-            className="flex p-5 items-center gap-2 md:gap-2 lg:gap-2 h-[240px]"
+            className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-[240px]"
             style={{
               perspective: '1000px',
               paddingLeft: 'calc(50% - 8rem)',
