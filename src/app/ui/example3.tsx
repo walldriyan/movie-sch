@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Post } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ThumbsUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -19,8 +19,11 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
+    // Sort posts by like count in descending order
+    const sortedPosts = [...initialPosts].sort((a, b) => (b._count?.likedBy ?? 0) - (a._count?.likedBy ?? 0));
+
     let postsToDisplay: Post[] = [];
-    const numPosts = initialPosts.length;
+    const numPosts = sortedPosts.length;
 
     if (numPosts === 0) {
       setCards([]);
@@ -28,15 +31,15 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     }
 
     if (numPosts >= 10) {
-      postsToDisplay = initialPosts.slice(0, 10);
+      postsToDisplay = sortedPosts.slice(0, 10);
     } else if (numPosts >= 5) {
-      postsToDisplay = initialPosts;
+      postsToDisplay = sortedPosts;
     } else { // numPosts < 5
-      postsToDisplay = [...initialPosts];
+      postsToDisplay = [...sortedPosts];
       // Duplicate posts to reach the minimum of 5
       let i = 0;
       while (postsToDisplay.length < 5) {
-        postsToDisplay.push(initialPosts[i % numPosts]);
+        postsToDisplay.push(sortedPosts[i % numPosts]);
         i++;
       }
     }
@@ -53,6 +56,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         brand: post.author?.name || 'CineVerse',
         authorImage: post.author?.image,
         series: post.series,
+        likeCount: post._count?.likedBy ?? 0,
         type: cardType,
         rotation: index === isHeroIndex ? 0 : getRandomValue(-12, 12),
         distance: index === isHeroIndex ? 0.5 : getRandomValue(0.6, 0.8)
@@ -172,7 +176,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       <div
         key={card.id}
         className={cn(
-          "flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
+          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
         )}
         style={{
           transform: getCardTransform(card.rotation, card.distance),
@@ -201,6 +205,13 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             layout="fill"
             objectFit="cover"
           />
+          {/* Like count display */}
+           <div className="absolute inset-0 flex items-center justify-center">
+            <div className="hidden group-hover:flex items-center gap-2 bg-black/20 text-white backdrop-blur-sm px-4 py-2 rounded-full transition-all duration-300">
+              <ThumbsUp className="w-4 h-4" />
+              <span className="font-bold text-sm">{card.likeCount}</span>
+            </div>
+          </div>
         </div>
 
 
@@ -269,6 +280,3 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     </div>
   );
 }
-
-
-
