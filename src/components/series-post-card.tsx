@@ -29,15 +29,22 @@ export default function SeriesPostCard({
   const { toast } = useToast();
   
   const isLocked = useMemo(() => {
-    // If the user is a super admin or the author of the post, it's never locked.
-    if (currentUser?.role === ROLES.SUPER_ADMIN || currentUser?.id === post.authorId) {
+    // If the post is not configured to be locked by default, it's always open.
+    if (!post.isLockedByDefault) {
+      return false;
+    }
+
+    // For public/unauthenticated users, if it's locked by default, it's locked.
+    if (!currentUser) {
+      return true;
+    }
+
+    // For logged-in users, check for exceptions (Admin/Author).
+    if (currentUser.role === ROLES.SUPER_ADMIN || currentUser.id === post.authorId) {
         return false;
     }
-    // If the post is not locked by default, it's never locked.
-    if (post.isLockedByDefault === false) {
-        return false;
-    }
-    // Otherwise, the lock status depends on whether the prerequisite is passed.
+    
+    // For regular logged-in users, it's locked if the prerequisite is not passed.
     return !isPassed;
   }, [post, currentUser, isPassed]);
 
@@ -60,7 +67,7 @@ export default function SeriesPostCard({
     )?.imageUrl;
 
   const StatusIcon = () => {
-    if (isLocked) return <Lock className="w-4 h-4 text-white" />;
+    if (isLocked) return <Lock className="w-4 h-4 text-yellow-400" />;
     if (isActive) return <PlayCircle className="w-4 h-4 text-primary" />;
     return <CheckCircle className="w-4 h-4 text-muted-foreground/80" />;
   };
@@ -88,6 +95,11 @@ export default function SeriesPostCard({
             sizes="100px"
             className="object-cover group-hover:scale-105 transition-transform duration-300"
           />
+        )}
+        {isLocked && (
+            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                 <Lock className="w-5 h-5 text-white" />
+            </div>
         )}
         <div 
           className="absolute bottom-1 right-1 h-6 w-6 rounded-full flex items-center justify-center bg-black/50 backdrop-blur-sm"
