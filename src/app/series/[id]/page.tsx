@@ -1,4 +1,5 @@
 
+
 import { notFound } from 'next/navigation';
 import { getSeriesById, getPostsBySeriesId, getPost } from '@/lib/actions';
 import type { Post, Series } from '@/lib/types';
@@ -85,36 +86,49 @@ export default async function SeriesPage({
 
   // Server-side calculation of lock status for each post
   const postsData = postsDataRaw.map((post, index) => {
-    let isLocked = post.isLockedByDefault; // Default to the DB value
+    let isLocked = post.isLockedByDefault;
 
-    if (user) {
-      // Admins and authors can always view
-      if (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId) {
-        isLocked = false;
+    // Condition 1: Post is not locked by default, so it's always open.
+    if (!post.isLockedByDefault) {
+      isLocked = false;
+    }
+    // Condition 2: User is an admin or the author, so it's always open for them.
+    else if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
+      isLocked = false;
+    }
+    // Condition 3: For all other users (including guests), check exam requirements.
+    else {
+      // The very first post in a series.
+      if (index === 0) {
+        // If it's locked by default, it remains locked (unless unlocked by admin/author role above).
+        isLocked = post.isLockedByDefault;
+      } else {
+        // For subsequent posts, check the predecessor.
+        const previousPost = postsDataRaw[index - 1];
+        if (previousPost) {
+            // If the previous post does NOT require an exam, this one is unlocked.
+            if (!previousPost.requiresExamToUnlock || !previousPost.exam) {
+                 isLocked = false;
+            } else {
+                // If it does require an exam, check if the user has passed it.
+                isLocked = !passedExamIds.has(previousPost.exam.id);
+            }
+        }
       }
     }
     
-    // If still locked, check exam requirements
-    if (isLocked) {
-      const previousPost = index > 0 ? postsDataRaw[index - 1] : null;
-      if (previousPost && previousPost.requiresExamToUnlock && previousPost.exam) {
-        if (passedExamIds.has(previousPost.exam.id)) {
-          isLocked = false; // Unlock if previous exam is passed
-        }
-      } else if (!previousPost) {
-        // First post is locked by default but has no predecessor exam to pass
-        // It remains locked unless user is admin/author
-      } else {
-         // Previous post does not require an exam to unlock this one
-         isLocked = false;
-      }
-    }
-
     return {
       ...post,
       isLocked,
     };
   });
+  
+  // Final check for the *currently requested* post before rendering
+  const currentPostWithLockStatus = postsData.find(p => p.id === currentPostId);
+  if (currentPostWithLockStatus?.isLocked) {
+      // Instead of notFound(), we allow the page to render,
+      // and the client-side will handle the locked UI state.
+  }
 
 
   return (

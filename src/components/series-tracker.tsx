@@ -1,4 +1,5 @@
 
+
 import {
   Accordion,
   AccordionContent,
@@ -48,7 +49,8 @@ export default function SeriesTracker({
                   post={post}
                   seriesId={seriesId}
                   isActive={post.id === currentPostId}
-                  isLocked={post.isLocked ?? true} // Default to locked if not provided
+                  isLocked={post.isLocked ?? true} // Use the server-provided lock status
+                  isPassed={post.exam ? passedExamIds.has(post.exam.id) : false}
                   session={session}
                 />
               )
