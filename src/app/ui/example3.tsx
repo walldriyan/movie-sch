@@ -207,7 +207,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           />
           {/* Like count display */}
            <div className="absolute inset-0 flex items-center justify-center">
-            <div className="hidden group-hover:flex items-center gap-2 bg-black/20 text-white backdrop-blur-sm px-4 py-2 rounded-full transition-all duration-300">
+            <div className="flex items-center gap-2 bg-black/20 text-white backdrop-blur-sm px-4 py-2 rounded-full transition-all duration-300">
               <ThumbsUp className="w-4 h-4" />
               <span className="font-bold text-sm">{card.likeCount}</span>
             </div>
