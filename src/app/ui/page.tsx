@@ -184,7 +184,7 @@ export default function MetaSpotlight({
       </div>
 
       {/* Cards Container */}
-      <div className="flex flex-row gap-3 p-3 w-full justify-center">
+      <div className="flex flex-row gap-3  p-3 w-full justify-center">
       <div 
         ref={containerRef}
         className="relative  bg-gradient-to-r from-zinc-950 via-stone-900  to-zinc-950 rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
@@ -198,10 +198,10 @@ export default function MetaSpotlight({
       </div>
 
       {/* Meta Logo */}
-      <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
+      <div className="absolute bottom-[150px] left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-3">
           <div className="text-white text-5xl font-bold">∞</div>
-          <div className="text-white text-3xl font-bold tracking-wide">Meta</div>
+          <div className="text-white text-3xl font-bold tracking-wide">Walldriyan.inc</div>
         </div>
       </div>
     </div>
