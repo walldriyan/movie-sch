@@ -25,6 +25,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { ROLES } from '@/lib/permissions';
+import PostViewsAndLikes from '@/components/post-views-and-likes';
 
 
 const ExamSection = ({ exam }: { exam: { id: number; title: string; description: string | null } | null | undefined }) => {
@@ -337,32 +338,22 @@ export default function SeriesPageClient({
                       </p>
                   </div>
               ) : (
+                <>
                   <div
                       className="prose prose-lg prose-invert max-w-none text-foreground/80"
                       dangerouslySetInnerHTML={{ __html: currentPost.description }}
                   />
+                  <div className="mt-8">
+                    <PostViewsAndLikes post={currentPost} />
+                  </div>
+                </>
               )}
 
               {!currentPost.isLocked && (
                 <>
                     <Separator className="my-12" />
 
-                    <section id="stats" className="flex items-center justify-between text-muted-foreground mb-12">
-                      <div className="flex items-center gap-6">
-                        <div className="flex items-center gap-2" title="Total views">
-                          <Eye className="w-5 h-5" />
-                          <span className="text-sm font-medium">{currentPost.viewCount.toLocaleString()}</span>
-                        </div>
-                        <div className="flex items-center gap-2" title="Total likes">
-                          <ThumbsUp className="w-5 h-5" />
-                          <span className="text-sm font-medium">{currentPost.likedBy?.length || 0}</span>
-                        </div>
-                        <div className="flex items-center gap-2" title="Total dislikes">
-                          <ThumbsDown className="w-5 h-5" />
-                          <span className="text-sm font-medium">{currentPost.dislikedBy?.length || 0}</span>
-                        </div>
-                      </div>
-
+                    <section id="interactions" className="flex items-center justify-between text-muted-foreground mb-12">
                       <div className="flex items-center gap-2 pl-4 flex-shrink-0">
                         <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
                           <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
