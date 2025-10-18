@@ -84,11 +84,11 @@ const examSchema = z.object({
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
 }).superRefine((data, ctx) => {
-    if (data.assignmentType === 'POST' && !data.postId) {
+    if (!data.postId) {
         ctx.addIssue({
             code: 'custom',
             path: ['postId'],
-            message: 'A post must be selected when assigning to a post.',
+            message: 'An associated post is required for every exam.',
         });
     }
     if (data.assignmentType === 'GROUP' && !data.groupId) {
@@ -308,16 +308,6 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
 
   const assignmentType = form.watch('assignmentType');
 
-  useEffect(() => {
-    if (assignmentType === 'POST') {
-      form.setValue('groupId', undefined);
-    }
-    if (assignmentType === 'GROUP') {
-      form.setValue('postId', undefined);
-    }
-  }, [assignmentType, form]);
-
-
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -331,6 +321,22 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
                 <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief description of what this exam covers." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                 
+                <FormField 
+                    control={form.control} 
+                    name="postId" 
+                    render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Associated Post</FormLabel>
+                          <PostCombobox 
+                              field={field} 
+                              initialPosts={posts} 
+                              onPostsChange={onPostsChange} 
+                          />
+                          <FormMessage />
+                      </FormItem>
+                    )} 
+                />
+
                 <FormField
                   control={form.control}
                   name="assignmentType"
@@ -347,13 +353,13 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
                             <FormControl>
                               <RadioGroupItem value="POST" />
                             </FormControl>
-                            <FormLabel className="font-normal">A Specific Post</FormLabel>
+                            <FormLabel className="font-normal">Public on Post</FormLabel>
                           </FormItem>
                           <FormItem className="flex items-center space-x-3 space-y-0">
                             <FormControl>
                               <RadioGroupItem value="GROUP" />
                             </FormControl>
-                            <FormLabel className="font-normal">A User Group</FormLabel>
+                            <FormLabel className="font-normal">Specific User Group</FormLabel>
                           </FormItem>
                         </RadioGroup>
                       </FormControl>
@@ -361,24 +367,6 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
                     </FormItem>
                   )}
                 />
-
-                {assignmentType === 'POST' && (
-                  <FormField 
-                    control={form.control} 
-                    name="postId" 
-                    render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Associated Post</FormLabel>
-                          <PostCombobox 
-                              field={field} 
-                              initialPosts={posts} 
-                              onPostsChange={onPostsChange} 
-                          />
-                          <FormMessage />
-                      </FormItem>
-                    )} 
-                  />
-                )}
 
                 {assignmentType === 'GROUP' && (
                    <FormField
@@ -414,9 +402,8 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
                 <Card>
                   <CardHeader><CardTitle>Exam Access</CardTitle><CardDescription>Who can take this exam is determined by the associated post or group visibility.</CardDescription></CardHeader>
                   <CardContent>
-                      {assignmentType === 'POST' && selectedPost ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2">{selectedPost.visibility === 'PUBLIC' ? (<><Eye className="h-4 w-4" /> Public</>) : (<><Users className="h-4 w-4" /> Group</>)}</AlertTitle><AlertDescription>This exam will be available to {selectedPost.visibility === 'PUBLIC' ? 'all users.' : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}</AlertDescription></Alert>)
-                       : assignmentType === 'GROUP' ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2"><Users className="h-4 w-4"/> Group Access</AlertTitle><AlertDescription>This exam will be available to all members of the selected group.</AlertDescription></Alert>)
-                      : (<Alert variant="destructive"><ChevronsUpDown className="h-4 w-4" /><AlertTitle>No Association Selected</AlertTitle><AlertDescription>Please select a post or group to see access settings.</AlertDescription></Alert>)}
+                      {selectedPost ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2">{selectedPost.visibility === 'PUBLIC' ? (<><Eye className="h-4 w-4" /> Public</>) : (<><Users className="h-4 w-4" /> Group</>)}</AlertTitle><AlertDescription>This exam will be available to {selectedPost.visibility === 'PUBLIC' ? 'all users.' : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}</AlertDescription></Alert>)
+                      : (<Alert variant="destructive"><ChevronsUpDown className="h-4 w-4" /><AlertTitle>No Association Selected</AlertTitle><AlertDescription>Please select a post to see access settings.</AlertDescription></Alert>)}
                   </CardContent>
                 </Card>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
