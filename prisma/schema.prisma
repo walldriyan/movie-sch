@@ -261,7 +261,7 @@ model Group {
   visibility      GroupVisibility  @default(PUBLIC)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
-  
+  exams             Exam[]
   createdById     String
   createdBy       User             @relation(fields: [createdById], references: [id])
   
@@ -383,7 +383,8 @@ model Exam {
 
   postId          Int               @unique
   post            Post              @relation(fields: [postId], references: [id], onDelete: Cascade)
-
+ groupId           String?
+  group             Group?  @relation(fields: [groupId], references: [id])
   questions       Question[]
   submissions     ExamSubmission[]
 }

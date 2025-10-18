@@ -66,7 +66,6 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         throw new Error('Not authenticated');
     }
     
-    // Authorization check
     if (user.role !== ROLES.SUPER_ADMIN) {
         if (data.postId) {
             const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) }});
@@ -98,7 +97,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     const questionsToCreate = data.questions.filter(q => !q.id);
     const questionsToUpdate = data.questions.filter(q => q.id);
 
-    if (examId) {
+    if (examId) { // This is a clear update case for an existing exam
         await prisma.$transaction(async (tx) => {
             await tx.exam.update({ where: { id: examId }, data: examData });
 
@@ -150,20 +149,51 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 }
             }
         });
-    } else {
-        await prisma.exam.create({
-            data: {
-                ...examData,
-                questions: {
-                    create: data.questions.map(q => ({
-                        text: q.text,
-                        points: q.points,
-                        isMultipleChoice: q.isMultipleChoice,
-                        options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
-                    })),
+    } else { // This is a create case. We might be creating a new exam for a post that already has one.
+        if (examData.postId) {
+             // Use upsert to prevent unique constraint violation on postId
+             const createdOrUpdatedExam = await prisma.exam.upsert({
+                where: { postId: examData.postId },
+                update: {
+                    ...examData,
+                    questions: {
+                        deleteMany: {}, // Clear old questions
+                        create: data.questions.map(q => ({
+                            text: q.text,
+                            points: q.points,
+                            isMultipleChoice: q.isMultipleChoice,
+                            options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
+                        })),
+                    },
                 },
-            },
-        });
+                create: {
+                     ...examData,
+                     questions: {
+                        create: data.questions.map(q => ({
+                            text: q.text,
+                            points: q.points,
+                            isMultipleChoice: q.isMultipleChoice,
+                            options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
+                        })),
+                    },
+                }
+             });
+        } else {
+            // If it's a group-based exam or has no post, create it directly.
+             await prisma.exam.create({
+                data: {
+                    ...examData,
+                    questions: {
+                        create: data.questions.map(q => ({
+                            text: q.text,
+                            points: q.points,
+                            isMultipleChoice: q.isMultipleChoice,
+                            options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
+                        })),
+                    },
+                },
+            });
+        }
     }
 
     revalidatePath(`/admin/exams`);
