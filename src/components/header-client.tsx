@@ -76,44 +76,46 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     }
 
     return (
-        <DropdownMenu>
+      <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="outline" disabled={isPending}>
-                {isPending ? (
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                ) : (
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                )}
-                <span>Create</span>
-            </Button>
+          <Button variant="outline" disabled={isPending}>
+            {isPending ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <PlusCircle className="mr-2 h-5 w-5" />
+            )}
+            <span>Create</span>
+          </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Create New</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onSelect={() => handleNavigation('/manage?create=true')}>
-                <FilePlus className="mr-2 h-4 w-4" />
-                <span>Post</span>
-            </DropdownMenuItem>
-            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-                <DropdownMenuItem onSelect={() => handleNavigation('/admin/groups')}>
-                    <Users2 className="mr-2 h-4 w-4" />
-                    <span>Group</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => handleNavigation('/admin/users')}>
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    <span>User</span>
-                </DropdownMenuItem>
-                 <DropdownMenuItem onSelect={() => handleNavigation('/admin/exams')}>
-                    <BookCheck className="mr-2 h-4 w-4" />
-                    <span>Exam</span>
-                </DropdownMenuItem>
-                 <DropdownMenuItem onSelect={() => handleNavigation('/admin/notifications')}>
-                    <BellPlus className="mr-2 h-4 w-4" />
-                    <span>Notification</span>
-                </DropdownMenuItem>
-            </AuthGuard>
+          <DropdownMenuLabel>Create New</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onSelect={() => handleNavigation('/manage?create=true')}>
+            <FilePlus className="mr-2 h-4 w-4" />
+            <span>Post</span>
+          </DropdownMenuItem>
+          <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+            <>
+              <DropdownMenuItem onSelect={() => handleNavigation('/admin/groups')}>
+                <Users2 className="mr-2 h-4 w-4" />
+                <span>Group</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleNavigation('/admin/users')}>
+                <UserPlus className="mr-2 h-4 w-4" />
+                <span>User</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleNavigation('/admin/exams')}>
+                <BookCheck className="mr-2 h-4 w-4" />
+                <span>Exam</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => handleNavigation('/admin/notifications')}>
+                <BellPlus className="mr-2 h-4 w-4" />
+                <span>Notification</span>
+              </DropdownMenuItem>
+            </>
+          </AuthGuard>
         </DropdownMenuContent>
-    </DropdownMenu>
+      </DropdownMenu>
     );
   };
 
