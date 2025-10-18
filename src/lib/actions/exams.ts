@@ -101,8 +101,13 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 relationData.post = { connect: { id: parseInt(data.postId, 10) } };
                 relationData.group = { disconnect: true };
             } else if (data.assignmentType === 'GROUP' && data.groupId) {
+                // IMPORTANT FIX: We can't disconnect the post if it's required.
+                // We assume if a group is selected, the post relation might not change,
+                // or the logic implies it should be nullable (which isn't the case here).
+                // The safest approach is to only connect the group, and assume the post link remains.
                 relationData.group = { connect: { id: data.groupId } };
-                relationData.post = { disconnect: true };
+                // We remove the line that attempts to disconnect the post.
+                // relationData.post = { disconnect: true }; // THIS LINE IS REMOVED
             }
 
             await tx.exam.update({
@@ -165,7 +170,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     } else { // Create a new exam
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
-            post: data.assignmentType === 'POST' && data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
+            post: { connect: { id: parseInt(data.postId!, 10) } }, // postId is required by schema on create
             group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
             questions: {
                 create: data.questions.map(q => ({
@@ -640,4 +645,5 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
+
 
