@@ -54,45 +54,63 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     const skip = (page - 1) * limit;
     const session = await auth();
     const user = session?.user;
+    const userRole = user?.role;
 
-    let whereClause: Prisma.PostWhereInput = {
-      status: MovieStatus.PUBLISHED,
-    };
+    let whereClause: Prisma.PostWhereInput = {};
     
-    if (user) {
-      // Logged-in users can see public posts and posts from groups they are in.
-      const userGroupIds = await prisma.groupMember.findMany({
-        where: { userId: user.id, status: 'ACTIVE' },
-        select: { groupId: true },
-      }).then(members => members.map(m => m.groupId));
-
-      whereClause.OR = [
-        { visibility: 'PUBLIC' },
-        { 
-          visibility: 'GROUP_ONLY',
-          groupId: { in: userGroupIds }
-        }
-      ];
-      // Super admins can see posts with any status except PENDING_DELETION
-      if (user.role === ROLES.SUPER_ADMIN) {
-        whereClause.status = { not: 'PENDING_DELETION' };
-      }
-
-    } else {
-      // Guests can only see public posts and they must not be locked by default.
-      whereClause.visibility = 'PUBLIC';
-    }
-    
-    let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
-
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
     
-    // Default to unlocked posts if no lockStatus is specified
-    if (lockStatus === 'locked') {
-      whereClause.isLockedByDefault = true;
-    } else if (lockStatus === 'unlocked' || lockStatus === undefined) {
-      whereClause.isLockedByDefault = false;
+    // --- START Role-Based Access Control Logic ---
+
+    if (userRole === ROLES.SUPER_ADMIN) {
+        // Super Admins can see almost everything, except what's explicitly filtered.
+        whereClause.status = { not: MovieStatus.PENDING_DELETION };
+    } else if (userRole === ROLES.USER_ADMIN) {
+        // User Admins see their own posts OR public, published posts.
+        const publicCriteria: Prisma.PostWhereInput = {
+            status: MovieStatus.PUBLISHED,
+            isLockedByDefault: lockStatus === 'locked' ? true : false,
+            visibility: 'PUBLIC',
+        };
+        whereClause = {
+            OR: [
+                { authorId: user.id }, // Their own posts
+                publicCriteria
+            ],
+        };
+    } else {
+        // Guests and regular Users see the same set of public, published, unlocked content.
+        whereClause = {
+            status: MovieStatus.PUBLISHED,
+            visibility: 'PUBLIC',
+            isLockedByDefault: lockStatus === 'locked' ? true : false,
+        };
+        // Logged-in users (non-admin) can also see group content.
+        if (user) {
+            const userGroupIds = await prisma.groupMember.findMany({
+                where: { userId: user.id, status: 'ACTIVE' },
+                select: { groupId: true },
+            }).then(members => members.map(m => m.groupId));
+
+            whereClause = {
+                 OR: [
+                    whereClause, // The public criteria from above
+                    { // Or posts from their groups
+                        status: MovieStatus.PUBLISHED,
+                        visibility: 'GROUP_ONLY',
+                        groupId: { in: userGroupIds },
+                        isLockedByDefault: lockStatus === 'locked' ? true : false,
+                    }
+                ]
+            }
+        }
     }
+    
+    // --- END Role-Based Access Control Logic ---
+
+
+    // Apply additional filters on top of the base access control
+    let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
 
     if (authorId) {
       whereClause.authorId = authorId;
@@ -149,6 +167,13 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
     }
 
+    // This handles the locked/unlocked filter buttons
+    if (lockStatus === 'locked') {
+        whereClause.isLockedByDefault = true;
+    } else if (lockStatus === 'unlocked') {
+        whereClause.isLockedByDefault = false;
+    }
+
     const posts = await prisma.post.findMany({
         where: whereClause,
         skip: skip,
@@ -166,6 +191,14 @@ export async function getPosts(options: { page?: number; limit?: number, filters
                   select: { posts: true }
                 }
               }
+            },
+            likedBy: {
+              select: {
+                  id: true,
+                  name: true,
+                  image: true,
+              },
+              take: 5,
             },
             _count: {
               select: {
@@ -680,3 +713,4 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
