@@ -343,9 +343,6 @@ export default function SeriesPageClient({
                       className="prose prose-lg prose-invert max-w-none text-foreground/80"
                       dangerouslySetInnerHTML={{ __html: currentPost.description }}
                   />
-                  <div className="mt-8">
-                    <PostViewsAndLikes post={currentPost} />
-                  </div>
                 </>
               )}
 
@@ -354,6 +351,7 @@ export default function SeriesPageClient({
                     <Separator className="my-12" />
 
                     <section id="interactions" className="flex items-center justify-between text-muted-foreground mb-12">
+                      <PostViewsAndLikes post={currentPost} />
                       <div className="flex items-center gap-2 pl-4 flex-shrink-0">
                         <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
                           <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
