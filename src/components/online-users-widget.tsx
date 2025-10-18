@@ -30,8 +30,9 @@ export default function OnlineUsersWidget() {
   return (
     <div className="fixed bottom-4 right-4 z-50">
       <AnimatePresence>
-        {isOpen ? (
+        {isOpen && (
           <motion.div
+            key="widget-card"
             initial={{ opacity: 0, y: 50, scale: 0.9 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -65,8 +66,12 @@ export default function OnlineUsersWidget() {
               </CardContent>
             </Card>
           </motion.div>
-        ) : (
-          <motion.div
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {!isOpen && (
+           <motion.div
+            key="widget-button"
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             exit={{ scale: 0 }}
