@@ -25,7 +25,7 @@ const onlineUsers = [
 ];
 
 export default function OnlineUsersWidget() {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
 
   if (!isOpen) {
     return (
@@ -48,7 +48,7 @@ export default function OnlineUsersWidget() {
             key="widget-card"
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 30, scale: 0.9, transition: { duration: 0.2 } }}
+            exit={{ opacity: 0, y: 30, scale: 0.9 }}
             transition={{ type: "spring", stiffness: 800, damping: 30 }}
           >
             <Card className="w-[300px] max-h-[500px] flex flex-col bg-background/80 backdrop-blur-lg  shadow-lg shadow-stone-950/10">
