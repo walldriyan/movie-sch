@@ -454,7 +454,7 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
             <div className="flex items-center gap-2">
                 <Button type="button" variant="ghost" onClick={onBack} disabled={isSubmitting}>Cancel</Button>
                 {currentStep < 3 ? (
-                  <Button type="button" onClick={onNextStep} disabled={isSubmitting}>
+                  <Button type="button" onClick={onNextStep}>
                     Next <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 ) : (
@@ -623,6 +623,7 @@ export default function CreateExamPage() {
     const fields = steps[currentStep - 1].fields;
     const output = await form.trigger(fields as any, { shouldFocus: true });
     if (!output) return;
+    
     if (currentStep < 3) {
       setCurrentStep(prev => prev + 1);
     }
@@ -887,5 +888,3 @@ export default function CreateExamPage() {
     </div>
   );
 }
-
-    
