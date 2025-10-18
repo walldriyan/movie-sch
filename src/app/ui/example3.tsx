@@ -162,6 +162,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           transform: getCardTransform(card.rotation, card.distance),
           transformOrigin: 'center center',
           aspectRatio: '11 / 17',
+     
         }}
       >
         {!isHero && (
