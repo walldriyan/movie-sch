@@ -18,7 +18,7 @@ export default async function HomePage({
 }) {
   // 👇 මෙතන await කරන්න ඕනේ!
   const params = await searchParams;
-  
+
   // දැන් params use කරන්න
   const timeFilter = (params.timeFilter as string) || 'updatedAt-desc';
   const sortBy = (params.sortBy as string) || 'updatedAt-desc';
@@ -37,14 +37,14 @@ export default async function HomePage({
   const users = await getUsers();
   const groups = await getPublicGroups();
   const notifications = await getNotifications();
-  
+
   return (
     <>
-     
+
       {/* <MetaSpotlight1 /> */}
-     
-     <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
- <MetaSpotlight3 posts={posts as Post[]} />
+
+      <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
+      <MetaSpotlight3 posts={posts as Post[]} />
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
@@ -55,7 +55,7 @@ export default async function HomePage({
         initialNotifications={notifications}
         session={session}
       />
-        <MetaSpotlightPostGrid />
+      <MetaSpotlightPostGrid />
     </>
   );
 }
