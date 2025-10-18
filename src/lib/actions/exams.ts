@@ -578,6 +578,15 @@ export async function getExamsForUser(userId: string) {
                 select: {
                     questions: true
                 }
+            },
+            questions: {
+                select: {
+                    points: true
+                }
+            },
+            submissions: {
+                where: { userId: userId },
+                orderBy: { submittedAt: 'desc' },
             }
         },
         orderBy: {
