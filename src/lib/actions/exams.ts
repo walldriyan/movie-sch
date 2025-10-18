@@ -38,11 +38,11 @@ const examSchema = z.object({
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
 }).superRefine((data, ctx) => {
-    if (data.assignmentType === 'POST' && !data.postId) {
+    if (data.assignmentType === 'GROUP' && !data.groupId) {
         ctx.addIssue({
             code: 'custom',
-            path: ['postId'],
-            message: 'A post must be selected when assigning to a post.',
+            path: ['groupId'],
+            message: 'A group must be selected when assigning to a group.',
         });
     }
 });
@@ -149,26 +149,9 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             }
         });
     } else { // Create a new exam
-        let finalPostId: number | undefined = data.postId ? parseInt(data.postId, 10) : undefined;
-        
-        if (!finalPostId) {
-             const placeholderPost = await prisma.post.upsert({
-                where: { title: '__internal_group_exams_placeholder__' },
-                update: {},
-                create: {
-                    title: '__internal_group_exams_placeholder__',
-                    description: 'This is an internal post used as a placeholder for exams that are not associated with a specific public post.',
-                    authorId: user.id,
-                    status: 'PRIVATE',
-                    type: 'OTHER',
-                }
-            });
-            finalPostId = placeholderPost.id;
-        }
-
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
-            post: { connect: { id: finalPostId } },
+            post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
             group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
             questions: {
                 create: data.questions.map(q => ({
@@ -245,7 +228,7 @@ export async function deleteExam(examId: number) {
         throw new Error('Not authorized');
     }
 
-    const exam = await prisma.exam.findUnique({ where: { id: examId }});
+    const exam = await prisma.exam.findUnique({ where: { id: examId }, include: { post: true } });
     if (!exam) {
         throw new Error('Exam not found');
     }
@@ -264,6 +247,10 @@ export async function deleteExam(examId: number) {
         await tx.question.deleteMany({ where: { examId } });
 
         await tx.exam.delete({ where: { id: examId } });
+
+        if (exam.post?.title === '__internal_group_exams_placeholder__') {
+            await tx.post.delete({ where: { id: exam.postId! } });
+        }
     });
 
 
@@ -641,3 +628,4 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
+
