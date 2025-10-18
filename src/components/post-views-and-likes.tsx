@@ -3,41 +3,46 @@
 
 import type { Post } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from './ui/separator';
 import { Eye, ThumbsUp } from 'lucide-react';
 
 export default function PostViewsAndLikes({ post }: { post: Post }) {
   const likers = post.likedBy || [];
-  if (likers.length === 0) return null;
+  const displayLikers = likers.slice(0, 3);
+  const remainingLikersCount = (post._count?.likedBy || 0) > 3 ? (post._count?.likedBy || 0) - 3 : 0;
+  const hasLikesOrViews = (post._count?.likedBy || 0) > 0 || post.viewCount > 0;
 
-  const displayLikers = likers.slice(0, 5);
-  const remainingLikersCount = (post._count?.likedBy || 0) > 5 ? (post._count?.likedBy || 0) - 5 : 0;
+  if (!hasLikesOrViews) return null;
 
   return (
-    <div className="relative flex items-center justify-center p-8">
+    <div className="relative flex items-center h-12">
         <div className="flex -space-x-4">
-          {displayLikers.map(liker => (
-            <Avatar key={liker.id} className="h-12 w-12 border-2 border-background">
+           {/* Like Count Avatar */}
+           <div className="relative z-20 flex h-12 w-12 items-center justify-center rounded-full border-2 border-background bg-muted">
+                <div className="flex flex-col items-center gap-0.5 text-xs font-bold text-muted-foreground">
+                    <ThumbsUp className="h-4 w-4" />
+                    <span className="text-[10px]">{post._count?.likedBy || 0}</span>
+                </div>
+            </div>
+
+            {/* View Count Avatar */}
+            <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 border-background bg-muted">
+                 <div className="flex flex-col items-center gap-0.5 text-xs font-bold text-muted-foreground">
+                    <Eye className="h-4 w-4" />
+                    <span className="text-[10px]">{post.viewCount.toLocaleString()}</span>
+                </div>
+            </div>
+
+          {displayLikers.map((liker, index) => (
+            <Avatar key={liker.id} className="h-12 w-12 border-2 border-background" style={{ zIndex: -index }}>
               <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
               <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
             </Avatar>
           ))}
           {remainingLikersCount > 0 && (
-            <Avatar className="h-12 w-12 border-2 border-background">
+            <Avatar className="h-12 w-12 border-2 border-background" style={{ zIndex: -displayLikers.length }}>
               <AvatarFallback>+{remainingLikersCount}</AvatarFallback>
             </Avatar>
           )}
-        </div>
-        <div className="absolute top-1/2 -translate-y-1/2 right-0 flex items-center gap-4 bg-black/30 text-white backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-            <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                <span className="font-bold text-sm">{post.viewCount.toLocaleString()}</span>
-            </div>
-            <Separator orientation="vertical" className="h-4 bg-white/30" />
-            <div className="flex items-center gap-2">
-                <ThumbsUp className="w-4 h-4" />
-                <span className="font-bold text-sm">{post._count?.likedBy || 0}</span>
-            </div>
         </div>
     </div>
   );
