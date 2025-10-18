@@ -97,14 +97,12 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         }
     }
     
-    // --- Lock Status Filter Logic ---
     if (lockStatus === 'locked') {
-      whereClause.isLockedByDefault = true;
+        whereClause.isLockedByDefault = true;
     } else if (lockStatus === 'unlocked' || (lockStatus === undefined && userRole !== ROLES.SUPER_ADMIN)) {
-      // Default for non-admins is to show only unlocked posts unless 'locked' is specified
-      whereClause.isLockedByDefault = false;
+        whereClause.isLockedByDefault = false;
     }
-    // If lockStatus is undefined for a SUPER_ADMIN, no isLockedByDefault clause is added, showing both.
+
 
     // Apply additional filters
     let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
@@ -229,6 +227,16 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 export async function getPost(postId: number) {
   const session = await auth();
   const userId = session?.user?.id;
+
+  // Atomically increment the view count
+  await prisma.post.update({
+    where: { id: postId },
+    data: {
+      viewCount: {
+        increment: 1,
+      },
+    },
+  });
 
   const post = await prisma.post.findUnique({
     where: { id: postId },
@@ -703,3 +711,4 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+

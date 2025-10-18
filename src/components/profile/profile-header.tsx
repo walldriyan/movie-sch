@@ -2,7 +2,7 @@
 
 'use client';
 
-import { MoreHorizontal, Grid3x3, Bookmark, Users, Images, Clapperboard, Camera } from 'lucide-react';
+import { MoreHorizontal, Grid3x3, Bookmark, Users, Images, Clapperboard, Camera, BookCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
@@ -83,6 +83,9 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
              </Button>
               <Button asChild variant={currentFilter === 'favorites' ? 'secondary' : 'ghost'} className="rounded-full whitespace-nowrap">
                 <Link href={`/profile/${user.id}?filter=favorites`}><Bookmark className="mr-2 h-4 w-4" /> Favorites</Link>
+             </Button>
+              <Button asChild variant={currentFilter === 'exams' ? 'secondary' : 'ghost'} className="rounded-full whitespace-nowrap">
+                <Link href={`/profile/${user.id}?filter=exams`}><BookCheck className="mr-2 h-4 w-4" /> My Exams</Link>
              </Button>
               <Button variant="ghost" className="rounded-full whitespace-nowrap" disabled>
                 <Users className="mr-2 h-4 w-4" /> Followers

@@ -34,14 +34,14 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload, FileQuestion, ArrowLeft, ArrowRight } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload, FileQuestion, ArrowLeft, ArrowRight, Folder } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { getPostsForAdmin, searchPostsForExam } from '@/lib/actions';
-import type { Post } from '@prisma/client';
+import { getPostsForAdmin, searchPostsForExam, getGroupsForForm } from '@/lib/actions';
+import type { Post, Group } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { createOrUpdateExam, getExamsForAdmin, getExamForEdit, deleteExam } from '@/lib/actions/exams';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -52,6 +52,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -73,14 +74,25 @@ const questionSchema = z.object({
 const examSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   description: z.string().optional(),
-  postId: z.string().min(1, 'A post must be selected.'),
+  assignmentType: z.enum(['POST', 'GROUP']).default('POST'),
+  postId: z.string().optional(),
+  groupId: z.string().optional(),
   status: z.enum(['DRAFT', 'ACTIVE', 'INACTIVE']).default('DRAFT'),
   durationMinutes: z.coerce.number().optional().nullable(),
   attemptsAllowed: z.coerce.number().min(0, 'Attempts must be 0 or more. 0 for unlimited.').default(1),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
+}).superRefine((data, ctx) => {
+    if (data.assignmentType === 'GROUP' && !data.groupId) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['groupId'],
+            message: 'A group must be selected when assigning to a group.',
+        });
+    }
 });
+
 
 type ExamFormValues = z.infer<typeof examSchema>;
 type PostWithGroup = Post & { group: { name: string } | null };
@@ -272,8 +284,9 @@ const PostCombobox = ({
     );
 }
 
-const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange, currentStep, onNextStep, onPrevStep }: {
+const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange }: {
   posts: PostWithGroup[],
+  groups: Group[],
   selectedPost: PostWithGroup | undefined,
   form: any,
   questions: any[],
@@ -284,23 +297,55 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
   onBack: () => void,
   editingExamId: number | null,
   onPostsChange: (posts: PostWithGroup[]) => void,
-  currentStep: number,
-  onNextStep: () => void,
-  onPrevStep: () => void,
 }) => {
+
+  const assignmentType = form.watch('assignmentType');
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <div className={cn("space-y-8", currentStep !== 1 && "hidden")}>
-          <Card>
-              <CardHeader>
-                  <CardTitle>{editingExamId ? 'Edit Exam' : 'Create New Exam'}</CardTitle>
-                  <CardDescription>Step 1: Basic information and settings for the exam.</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                  <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief description of what this exam covers." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField 
+        {/* Section 1: Basic Details */}
+        <Card>
+            <CardHeader>
+                <CardTitle>{editingExamId ? 'Edit Exam' : 'Create New Exam'}</CardTitle>
+                <CardDescription>Basic information and settings for the exam.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief description of what this exam covers." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
+                
+                <FormField
+                  control={form.control}
+                  name="assignmentType"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>Assign To</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="flex flex-col space-y-1"
+                        >
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="POST" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Public on Post</FormLabel>
+                          </FormItem>
+                          <FormItem className="flex items-center space-x-3 space-y-0">
+                            <FormControl>
+                              <RadioGroupItem value="GROUP" />
+                            </FormControl>
+                            <FormLabel className="font-normal">Specific User Group</FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField 
                     control={form.control} 
                     name="postId" 
                     render={({ field }) => (
@@ -311,64 +356,70 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
                               initialPosts={posts} 
                               onPostsChange={onPostsChange} 
                           />
+                           <FormDescription>
+                            Optionally associate a post. If assigning to a group, this is not required but can provide context.
+                           </FormDescription>
                           <FormMessage />
                       </FormItem>
                     )} 
+                />
+
+                {assignmentType === 'GROUP' && (
+                   <FormField
+                    control={form.control}
+                    name="groupId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Associated Group</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a group" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {groups.map(group => (
+                              <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-              </CardContent>
-          </Card>
-        </div>
-
-        <div className={cn("space-y-8", currentStep !== 2 && "hidden")}>
-           <Card>
-              <CardHeader><CardTitle>Exam Access</CardTitle><CardDescription>Who can take this exam is determined by the associated post's visibility.</CardDescription></CardHeader>
-              <CardContent>
-                  {selectedPost ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2">{selectedPost.visibility === 'PUBLIC' ? (<><Eye className="h-4 w-4" /> Public</>) : (<><Users className="h-4 w-4" /> Group</>)}</AlertTitle><AlertDescription>This exam will be available to {selectedPost.visibility === 'PUBLIC' ? 'all users.' : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}</AlertDescription></Alert>) : (<Alert variant="destructive"><ChevronsUpDown className="h-4 w-4" /><AlertTitle>No Post Selected</AlertTitle><AlertDescription>Please select a post to see access settings.</AlertDescription></Alert>)}
-              </CardContent>
-          </Card>
-           <Card>
-              <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" />Exam Settings</CardTitle><CardDescription>Step 2: Configuration and rules.</CardDescription></CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="DRAFT">Draft</SelectItem><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                   <FormField control={form.control} name="durationMinutes" render={({ field }) => (<FormItem><FormLabel>Duration (Minutes)</FormLabel><FormControl><Input type="number" placeholder="e.g., 30" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Leave empty for no time limit.</FormDescription><FormMessage /></FormItem>)} />
-                   <FormField control={form.control} name="attemptsAllowed" render={({ field }) => (<FormItem><FormLabel>Attempts Allowed</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Use 0 for unlimited attempts.</FormDescription><FormMessage /></FormItem>)} />
-                   <FormField control={form.control} name="startDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}<CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarIcon mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                   <FormField control={form.control} name="endDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}<CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarIcon mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>)} />
-              </CardContent>
-          </Card>
-        </div>
-
-        <div className={cn("space-y-8", currentStep !== 3 && "hidden")}>
-          <Card>
-            <CardHeader><CardTitle>Exam Questions</CardTitle><CardDescription>Step 3: Add questions and options.</CardDescription></CardHeader>
-            <CardContent>
-              {questions.map((question, qIndex) => (<QuestionItem key={question.id} control={form.control} qIndex={qIndex} removeQuestion={removeQuestion} form={form}/>))}
-              <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
-            </CardContent>
-          </Card>
-        </div>
-
-
-        <div className="flex justify-between sticky bottom-0 py-4 bg-background/80 backdrop-blur-sm">
-            <div>
-              {currentStep > 1 && (
-                <Button type="button" variant="outline" onClick={onPrevStep} disabled={isSubmitting}>
-                  <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-                </Button>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-                <Button type="button" variant="ghost" onClick={onBack} disabled={isSubmitting}>Cancel</Button>
-                {currentStep < 3 ? (
-                  <Button type="button" onClick={onNextStep} disabled={isSubmitting}>
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button type="submit" size="lg" disabled={isSubmitting}>
-                    {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Saving...</> : <><Save className="mr-2 h-5 w-5" />{editingExamId ? 'Update Exam' : 'Save Exam'}</>}
-                  </Button>
                 )}
-            </div>
+            </CardContent>
+        </Card>
+
+        {/* Section 2: Settings */}
+        <Card>
+            <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" />Exam Settings</CardTitle><CardDescription>Configuration and rules.</CardDescription></CardHeader>
+            <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                     <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="DRAFT">Draft</SelectItem><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name="durationMinutes" render={({ field }) => (<FormItem><FormLabel>Duration (Minutes)</FormLabel><FormControl><Input type="number" placeholder="e.g., 30" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Leave empty for no time limit.</FormDescription><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name="attemptsAllowed" render={({ field }) => (<FormItem><FormLabel>Attempts Allowed</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Use 0 for unlimited attempts.</FormDescription><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name="startDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}<CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarIcon mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                     <FormField control={form.control} name="endDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}<CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarIcon mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>)} />
+                </div>
+            </CardContent>
+        </Card>
+
+        {/* Section 3: Questions */}
+        <Card>
+          <CardHeader><CardTitle>Exam Questions</CardTitle><CardDescription>Add questions and options for the exam.</CardDescription></CardHeader>
+          <CardContent>
+            {questions.map((question, qIndex) => (<QuestionItem key={question.id} control={form.control} qIndex={qIndex} removeQuestion={removeQuestion} form={form}/>))}
+            <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
+          </CardContent>
+        </Card>
+
+        {/* Form Actions */}
+        <div className="flex justify-end sticky bottom-0 py-4 bg-background/80 backdrop-blur-sm gap-2">
+            <Button type="button" variant="ghost" onClick={onBack} disabled={isSubmitting}>Cancel</Button>
+            <Button type="submit" size="lg" disabled={isSubmitting}>
+              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Saving...</> : <><Save className="mr-2 h-5 w-5" />{editingExamId ? 'Update Exam' : 'Save Exam'}</>}
+            </Button>
         </div>
       </form>
     </Form>
@@ -398,7 +449,7 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
                     <TableHeader>
                         <TableRow>
                             <TableHead>Title</TableHead>
-                            <TableHead>Post</TableHead>
+                            <TableHead>Associated With</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Questions</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
@@ -414,7 +465,19 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
                         ) : exams.length > 0 ? exams.map(exam => (
                             <TableRow key={exam.id}>
                                 <TableCell className="font-medium">{exam.title}</TableCell>
-                                <TableCell className="text-muted-foreground">{exam.post.title}</TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {exam.group ? (
+                                        <div className='flex items-center gap-2'>
+                                            <Folder className="h-4 w-4" />
+                                            <span>{exam.group.name}</span>
+                                        </div>
+                                     ) : exam.post ? (
+                                        <div className='flex items-center gap-2'>
+                                            <FileText className="h-4 w-4" />
+                                            <span>{exam.post.title}</span>
+                                        </div>
+                                    ) : 'N/A'}
+                                </TableCell>
                                 <TableCell><Badge variant={exam.status === 'ACTIVE' ? 'default' : 'secondary'}>{exam.status}</Badge></TableCell>
                                 <TableCell>{exam._count.questions}</TableCell>
                                 <TableCell className="text-right">
@@ -449,27 +512,21 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
     )
 }
 
-const steps = [
-    { id: 1, name: 'Basic Details', icon: Info, fields: ['title', 'description', 'postId'] },
-    { id: 2, name: 'Configuration', icon: Settings, fields: ['status', 'durationMinutes', 'attemptsAllowed', 'startDate', 'endDate'] },
-    { id: 3, name: 'Questions', icon: FileQuestion, fields: ['questions'] },
-];
-
 export default function CreateExamPage() {
   const [activeTab, setActiveTab] = useState('manage');
   const [isSubmitting, startTransition] = useTransition();
   const [posts, setPosts] = React.useState<PostWithGroup[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [exams, setExams] = useState<ExamForListing[]>([]);
   const [editingExamId, setEditingExamId] = useState<number | null>(null);
   const [isLoadingExams, setIsLoadingExams] = useState(true);
   const { toast } = useToast();
   const importFileInputRef = React.useRef<HTMLInputElement>(null);
-  const [currentStep, setCurrentStep] = useState(1);
 
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
     defaultValues: {
-      title: '', description: '', postId: '', status: 'DRAFT',
+      title: '', description: '', assignmentType: 'POST', postId: '', groupId: '', status: 'DRAFT',
       durationMinutes: 30, attemptsAllowed: 1, questions: [],
     },
   });
@@ -482,12 +539,16 @@ export default function CreateExamPage() {
   const watchedPostId = form.watch('postId');
   const selectedPost = React.useMemo(() => posts.find(p => String(p.id) === watchedPostId), [posts, watchedPostId]);
   
-  const fetchPosts = async () => {
+  const fetchInitialData = async () => {
       try {
-          const { posts: fetchedPosts } = await getPostsForAdmin({ page: 1, limit: 10, userId: 'dummy-id', userRole: 'SUPER_ADMIN', sortBy: 'createdAt-desc' });
+          const [{ posts: fetchedPosts }, fetchedGroups] = await Promise.all([
+            getPostsForAdmin({ page: 1, limit: 10, userId: 'dummy-id', userRole: 'SUPER_ADMIN', sortBy: 'createdAt-desc' }),
+            getGroupsForForm(),
+          ]);
           setPosts(fetchedPosts as PostWithGroup[]);
+          setGroups(fetchedGroups);
       } catch(error) {
-          toast({ variant: 'destructive', title: 'Failed to load posts', description: 'Could not fetch posts list.'})
+          toast({ variant: 'destructive', title: 'Failed to load data', description: 'Could not fetch posts and groups list.'})
       }
   }
 
@@ -504,38 +565,29 @@ export default function CreateExamPage() {
   }
 
   useEffect(() => {
-    fetchPosts();
+    fetchInitialData();
     fetchExams();
   }, []);
-
-  const handleNextStep = async () => {
-    const fields = steps[currentStep - 1].fields;
-    const output = await form.trigger(fields as any, { shouldFocus: true });
-    if (!output) return;
-    if (currentStep < 3) {
-      setCurrentStep(prev => prev + 1);
-    }
-  }
-
-  const handlePrevStep = () => {
-     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
-    }
-  }
 
   const handleEdit = async (examId: number) => {
     try {
         const examToEdit = await getExamForEdit(examId);
         if (examToEdit) {
             setEditingExamId(examId);
-            const postInList = posts.find(p => p.id === examToEdit.postId);
-            if (!postInList && examToEdit.post) {
-                setPosts(prev => [examToEdit.post as PostWithGroup, ...prev]);
+            
+            if (examToEdit.postId) {
+              const postInList = posts.find(p => p.id === examToEdit.postId);
+              if (!postInList && examToEdit.post) {
+                  setPosts(prev => [examToEdit.post as PostWithGroup, ...prev]);
+              }
             }
+            
             form.reset({
                 title: examToEdit.title,
                 description: examToEdit.description || '',
-                postId: String(examToEdit.postId),
+                assignmentType: examToEdit.groupId ? 'GROUP' : 'POST',
+                postId: examToEdit.postId ? String(examToEdit.postId) : undefined,
+                groupId: examToEdit.groupId ? String(examToEdit.groupId) : undefined,
                 status: examToEdit.status,
                 durationMinutes: examToEdit.durationMinutes,
                 attemptsAllowed: examToEdit.attemptsAllowed,
@@ -549,7 +601,6 @@ export default function CreateExamPage() {
                   options: q.options.map(o => ({ id: o.id, text: o.text, isCorrect: o.isCorrect }))
                 }))
             });
-            setCurrentStep(1);
             setActiveTab('create');
         } else {
             toast({ variant: 'destructive', title: 'Error', description: 'Exam data could not be found.' });
@@ -624,32 +675,35 @@ export default function CreateExamPage() {
             }
             const importedData = JSON.parse(content);
             
-            // Validate and set form data
-            const validatedData = examSchema.partial().safeParse(importedData);
-            if (validatedData.success) {
-                const data = validatedData.data;
-                 form.reset({
-                    ...form.getValues(),
-                    title: data.title || '',
-                    description: data.description || '',
-                    status: data.status || 'DRAFT',
-                    durationMinutes: data.durationMinutes,
-                    attemptsAllowed: data.attemptsAllowed || 1,
-                    questions: data.questions || [],
-                });
-                setEditingExamId(null);
-                setCurrentStep(1);
-                setActiveTab('create');
-                toast({ title: "Import Successful", description: "Exam data has been loaded into the form."});
-            } else {
-                console.error("Validation failed:", validatedData.error);
-                throw new Error("Invalid JSON structure for an exam.");
+            const questionsValidation = z.array(questionSchema).safeParse(importedData.questions);
+
+            if (!questionsValidation.success) {
+                console.error("Questions validation failed:", questionsValidation.error);
+                throw new Error("Invalid question structure in JSON file.");
             }
 
+            form.reset({
+                ...form.getValues(),
+                title: importedData.title || '',
+                description: importedData.description || '',
+                status: importedData.status || 'DRAFT',
+                durationMinutes: importedData.durationMinutes,
+                attemptsAllowed: importedData.attemptsAllowed || 1,
+                questions: questionsValidation.data || [],
+                postId: undefined,
+                groupId: undefined,
+                assignmentType: 'POST',
+                startDate: undefined,
+                endDate: undefined,
+            });
+
+            setEditingExamId(null);
+            setActiveTab('create');
+            toast({ title: "Import Successful", description: "Exam data has been loaded into the form."});
+            
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
         } finally {
-            // Reset file input
             if (importFileInputRef.current) {
                 importFileInputRef.current.value = "";
             }
@@ -666,7 +720,6 @@ export default function CreateExamPage() {
             form.reset();
             setEditingExamId(null);
             replaceQuestions([]); // Clear questions field array
-            setCurrentStep(1);
             setActiveTab('manage');
             await fetchExams();
         } catch (error: any) {
@@ -678,11 +731,10 @@ export default function CreateExamPage() {
 
   const handleNewExamClick = () => {
     form.reset({
-        title: '', description: '', postId: '', status: 'DRAFT',
+        title: '', description: '', assignmentType: 'POST', postId: '', groupId: '', status: 'DRAFT',
         durationMinutes: 30, attemptsAllowed: 1, questions: [{ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] }],
     });
     setEditingExamId(null);
-    setCurrentStep(1);
     setActiveTab('create');
   }
 
@@ -690,8 +742,17 @@ export default function CreateExamPage() {
     form.reset();
     setEditingExamId(null);
     replaceQuestions([]);
-    setCurrentStep(1);
     setActiveTab('manage');
+  }
+
+  const handleTabChange = (newTab: string) => {
+    if (newTab === 'create' && activeTab !== 'create') {
+        handleNewExamClick();
+    } else if (newTab === 'manage') {
+        handleBack();
+    } else {
+        setActiveTab(newTab);
+    }
   }
 
 
@@ -712,7 +773,7 @@ export default function CreateExamPage() {
         </div>
       </div>
 
-       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="manage">Manage Exams</TabsTrigger>
           <TabsTrigger value="create">{editingExamId ? 'Edit Exam' : 'Create Exam'}</TabsTrigger>
@@ -721,27 +782,10 @@ export default function CreateExamPage() {
           <ManageExamsList exams={exams} onEdit={handleEdit} onDelete={handleDelete} onExport={handleExport} isLoading={isLoadingExams} isDeleting={isSubmitting} />
         </TabsContent>
         <TabsContent value="create" className="mt-6">
-          <div className="p-4 rounded-lg border bg-card text-card-foreground shadow-sm">
-            <ol className="flex items-center w-full">
-              {steps.map((step, index) => (
-                <li key={step.id} className={cn("flex w-full items-center", index !== steps.length - 1 && "after:content-[''] after:w-full after:h-1 after:border-b after:border-4 after:inline-block",
-                  index < currentStep && "after:border-primary",
-                  index >= currentStep && "after:border-muted"
-                )}>
-                  <span className={cn("flex items-center justify-center w-10 h-10 rounded-full shrink-0",
-                    step.id < currentStep ? "bg-primary" :
-                    step.id === currentStep ? "bg-primary/80 border-4 border-primary" : "bg-muted text-muted-foreground"
-                  )}>
-                    <step.icon className="w-5 h-5"/>
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
-
           <div className="mt-6">
             <CreateExamForm 
               posts={posts}
+              groups={groups}
               selectedPost={selectedPost}
               form={form}
               questions={questions}
@@ -752,9 +796,6 @@ export default function CreateExamPage() {
               onBack={handleBack}
               editingExamId={editingExamId}
               onPostsChange={setPosts}
-              currentStep={currentStep}
-              onNextStep={handleNextStep}
-              onPrevStep={handlePrevStep}
             />
           </div>
         </TabsContent>
@@ -762,7 +803,3 @@ export default function CreateExamPage() {
     </div>
   );
 }
-
-    
-
-    

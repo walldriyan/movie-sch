@@ -5,7 +5,7 @@
 import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
-import { ROLES } from '@/lib/permissions';
+import { ROLES, MovieStatus } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -29,14 +29,25 @@ const questionSchema = z.object({
 const examSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   description: z.string().optional(),
-  postId: z.string().min(1, 'A post must be selected.'),
+  assignmentType: z.enum(['POST', 'GROUP']).default('POST'),
+  postId: z.string().optional(),
+  groupId: z.string().optional(),
   status: z.enum(['DRAFT', 'ACTIVE', 'INACTIVE']).default('DRAFT'),
   durationMinutes: z.coerce.number().optional().nullable(),
   attemptsAllowed: z.coerce.number().min(0, 'Attempts must be 0 or more. 0 for unlimited.').default(1),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
+}).superRefine((data, ctx) => {
+    if (data.assignmentType === 'GROUP' && !data.groupId) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['groupId'],
+            message: 'A group must be selected when assigning to a group.',
+        });
+    }
 });
+
 
 type ExamFormData = z.infer<typeof examSchema>;
 
@@ -48,22 +59,14 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         throw new Error('Not authenticated');
     }
 
-    const post = await prisma.post.findUnique({
-        where: { id: parseInt(data.postId, 10) },
-    });
-
-    if (!post) {
-        throw new Error('Associated post not found.');
+    if (user.role !== ROLES.SUPER_ADMIN && data.postId) {
+        const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) } });
+        if (post?.authorId !== user.id) {
+            throw new Error('Not authorized to create or edit an exam for this post.');
+        }
     }
     
-    const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
-    const isAuthor = post.authorId === user.id;
-
-    if (!isSuperAdmin && !isAuthor) {
-        throw new Error('Not authorized to create or edit an exam for this post.');
-    }
-    
-    const examData = {
+    const baseExamData = {
         title: data.title,
         description: data.description,
         status: data.status,
@@ -71,16 +74,27 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         attemptsAllowed: data.attemptsAllowed,
         startDate: data.startDate,
         endDate: data.endDate,
-        postId: post.id,
     };
     
     const questionsToCreate = data.questions.filter(q => !q.id);
     const questionsToUpdate = data.questions.filter(q => q.id);
 
-    if (examId) {
+    if (examId) { // Update an existing exam
         await prisma.$transaction(async (tx) => {
-            await tx.exam.update({ where: { id: examId }, data: examData });
+             const relationData: any = {
+                post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true },
+                group: data.groupId ? { connect: { id: data.groupId } } : { disconnect: true }
+            };
 
+            await tx.exam.update({
+              where: { id: examId },
+              data: {
+                ...baseExamData,
+                ...relationData
+              },
+            });
+
+            // Logic to update questions and options
             const existingQuestionIds = (await tx.question.findMany({ where: { examId }, select: { id: true }})).map(q => q.id);
             const questionsToUpdateIds = questionsToUpdate.map(q => q.id).filter(Boolean) as number[];
             const questionsToDeleteIds = existingQuestionIds.filter(id => !questionsToUpdateIds.includes(id));
@@ -129,24 +143,28 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 }
             }
         });
-    } else {
-        await prisma.exam.create({
-            data: {
-                ...examData,
-                questions: {
-                    create: data.questions.map(q => ({
-                        text: q.text,
-                        points: q.points,
-                        isMultipleChoice: q.isMultipleChoice,
-                        options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
-                    })),
-                },
+    } else { // Create a new exam
+        const createData: Prisma.ExamCreateInput = {
+            ...baseExamData,
+            post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
+            group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
+            questions: {
+                create: data.questions.map(q => ({
+                    text: q.text,
+                    points: q.points,
+                    isMultipleChoice: q.isMultipleChoice,
+                    options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
+                })),
             },
-        });
+        };
+
+        await prisma.exam.create({ data: createData });
     }
 
     revalidatePath(`/admin/exams`);
-    revalidatePath(`/movies/${post.id}`);
+    if (data.postId) {
+        revalidatePath(`/movies/${data.postId}`);
+    }
 }
 
 
@@ -160,30 +178,18 @@ export async function getExamsForAdmin() {
         orderBy: { createdAt: 'desc' },
         include: {
             post: { select: { title: true, groupId: true }},
+            group: { select: { name: true }},
             _count: { select: { questions: true, submissions: true } }
         }
     });
 
-    const examsWithPendingCounts = await Promise.all(exams.map(async (exam) => {
-        let pendingRequestsCount = 0;
-        if (exam.post.groupId) {
-            pendingRequestsCount = await prisma.groupMember.count({
-                where: {
-                    groupId: exam.post.groupId,
-                    status: 'PENDING',
-                },
-            });
-        }
-        return {
-            ...exam,
-            _count: {
-                ...exam._count,
-                pendingRequests: pendingRequestsCount,
-            }
+    return exams.map(exam => ({
+        ...exam,
+        _count: {
+            ...exam._count,
+            pendingRequests: 0, // Placeholder
         }
     }));
-
-    return examsWithPendingCounts;
 }
 
 
@@ -203,7 +209,8 @@ export async function getExamForEdit(examId: number) {
                 },
                 orderBy: { id: 'asc' },
             },
-             post: true
+             post: true,
+             group: true
         },
     });
 
@@ -216,7 +223,7 @@ export async function deleteExam(examId: number) {
         throw new Error('Not authorized');
     }
 
-    const exam = await prisma.exam.findUnique({ where: { id: examId }});
+    const exam = await prisma.exam.findUnique({ where: { id: examId }, include: { post: true } });
     if (!exam) {
         throw new Error('Exam not found');
     }
@@ -235,11 +242,17 @@ export async function deleteExam(examId: number) {
         await tx.question.deleteMany({ where: { examId } });
 
         await tx.exam.delete({ where: { id: examId } });
+
+        if (exam.post?.title === '__internal_group_exams_placeholder__') {
+            await tx.post.delete({ where: { id: exam.postId! } });
+        }
     });
 
 
     revalidatePath('/admin/exams');
-    revalidatePath(`/movies/${exam.postId}`);
+    if (exam.postId) {
+        revalidatePath(`/movies/${exam.postId}`);
+    }
 }
 
 
@@ -255,6 +268,7 @@ export async function getExamForTaker(examId: number) {
     where: { id: examId, status: 'ACTIVE' },
     include: {
       post: true,
+      group: true,
       questions: {
         include: {
           options: {
@@ -287,18 +301,28 @@ export async function getExamForTaker(examId: number) {
         throw new Error(`You have reached the maximum number of attempts (${attemptsAllowed}).`);
     }
 
-  if (exam.post.visibility === 'GROUP_ONLY') {
-      if (!exam.post.groupId) {
-          throw new Error('This exam is part of a group, but the group is not specified.');
-      }
+  let hasAccess = false;
+  
+  if (exam.groupId) { // If it's a group exam, membership is required
       const membership = await prisma.groupMember.findFirst({
-          where: { groupId: exam.post.groupId, userId: user.id, status: 'ACTIVE' }
+          where: { groupId: exam.groupId, userId: user.id, status: 'ACTIVE' }
       });
-      if (!membership) {
-          throw new Error('You must be a member of the associated group to take this exam.');
+      if (membership) {
+          hasAccess = true;
       }
+  } else if (exam.postId && exam.post) { // Regular post-based access
+      if (exam.post.visibility === 'PUBLIC') {
+          hasAccess = true;
+      }
+  } else if (!exam.groupId && !exam.postId) {
+      // Should not happen with proper schema, but as a fallback for old data
+      hasAccess = user.role === ROLES.SUPER_ADMIN;
   }
 
+
+  if (!hasAccess) {
+       throw new Error('You do not have permission to access this exam.');
+  }
 
   return exam;
 }
@@ -407,7 +431,7 @@ export async function submitExam(
 
   // Check if exam is passed and unlock next post
   const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
-  if (percentage >= 50 && exam.post.seriesId && exam.post.orderInSeries) {
+  if (percentage >= 50 && exam.post?.seriesId && exam.post.orderInSeries) {
     const nextPostInSeries = await prisma.post.findFirst({
       where: {
         seriesId: exam.post.seriesId,
@@ -535,3 +559,74 @@ export async function updateSubmissionAttempts(submissionId: number, userId: str
     
     revalidatePath(`/admin/exams/[id]/results`);
 }
+
+
+export async function getExamsForUser(userId: string) {
+    const session = await auth();
+    const user = session?.user;
+
+    // A user can only view their own exams list unless they are a super admin
+    if (!user || (user.id !== userId && user.role !== ROLES.SUPER_ADMIN)) {
+        throw new Error("Not authorized");
+    }
+
+    const userGroupIds = await prisma.groupMember.findMany({
+        where: { userId: userId, status: 'ACTIVE' },
+        select: { groupId: true },
+    }).then(members => members.map(m => m.groupId));
+
+    const exams = await prisma.exam.findMany({
+        where: {
+            status: 'ACTIVE',
+            OR: [
+                { // Exams associated with posts the user can see
+                    post: {
+                        OR: [
+                            { visibility: 'PUBLIC' },
+                            {
+                                visibility: 'GROUP_ONLY',
+                                groupId: { in: userGroupIds }
+                            }
+                        ]
+                    }
+                },
+                { // Exams associated directly with groups the user is in
+                   groupId: { in: userGroupIds }
+                }
+            ]
+        },
+        include: {
+            post: {
+                select: {
+                    title: true
+                }
+            },
+            group: {
+                select: {
+                    name: true
+                }
+            },
+            _count: {
+                select: {
+                    questions: true
+                }
+            },
+            questions: {
+                select: {
+                    points: true
+                }
+            },
+            submissions: {
+                where: { userId: userId },
+                orderBy: { submittedAt: 'desc' },
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    return exams;
+}
+
+
