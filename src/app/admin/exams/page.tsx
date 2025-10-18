@@ -741,28 +741,35 @@ export default function CreateExamPage() {
             }
             const importedData = JSON.parse(content);
             
-            // Validate and set form data
-            const validatedData = examSchema.partial().safeParse(importedData);
-            if (validatedData.success) {
-                const data = validatedData.data;
-                 form.reset({
-                    ...form.getValues(),
-                    title: data.title || '',
-                    description: data.description || '',
-                    status: data.status || 'DRAFT',
-                    durationMinutes: data.durationMinutes,
-                    attemptsAllowed: data.attemptsAllowed || 1,
-                    questions: data.questions || [],
-                });
-                setEditingExamId(null);
-                setCurrentStep(1);
-                setActiveTab('create');
-                toast({ title: "Import Successful", description: "Exam data has been loaded into the form."});
-            } else {
-                console.error("Validation failed:", validatedData.error);
-                throw new Error("Invalid JSON structure for an exam.");
+            // Basic validation for questions structure
+            const questionsValidation = z.array(questionSchema).safeParse(importedData.questions);
+
+            if (!questionsValidation.success) {
+                console.error("Questions validation failed:", questionsValidation.error);
+                throw new Error("Invalid question structure in JSON file.");
             }
 
+            form.reset({
+                ...form.getValues(),
+                title: importedData.title || '',
+                description: importedData.description || '',
+                status: importedData.status || 'DRAFT',
+                durationMinutes: importedData.durationMinutes,
+                attemptsAllowed: importedData.attemptsAllowed || 1,
+                questions: questionsValidation.data || [],
+                // Reset fields not in JSON to avoid carrying over old data
+                postId: undefined,
+                groupId: undefined,
+                assignmentType: 'POST',
+                startDate: undefined,
+                endDate: undefined,
+            });
+
+            setEditingExamId(null);
+            setCurrentStep(1);
+            setActiveTab('create');
+            toast({ title: "Import Successful", description: "Exam data has been loaded into the form."});
+            
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
         } finally {
