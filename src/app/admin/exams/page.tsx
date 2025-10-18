@@ -357,7 +357,7 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
                               onPostsChange={onPostsChange} 
                           />
                            <FormDescription>
-                            Even for group exams, a post must be associated for context. It can be a private post.
+                            Optionally associate a post. If assigning to a group, this is not required but can provide context.
                            </FormDescription>
                           <FormMessage />
                       </FormItem>
@@ -395,13 +395,6 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
         <Card>
             <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" />Exam Settings</CardTitle><CardDescription>Configuration and rules.</CardDescription></CardHeader>
             <CardContent className="space-y-6">
-                <Card>
-                  <CardHeader><CardTitle>Exam Access</CardTitle><CardDescription>Who can take this exam is determined by the associated post or group visibility.</CardDescription></CardHeader>
-                  <CardContent>
-                      {selectedPost ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2">{selectedPost.visibility === 'PUBLIC' ? (<><Eye className="h-4 w-4" /> Public</>) : (<><Users className="h-4 w-4" /> Group</>)}</AlertTitle><AlertDescription>This exam will be available to {selectedPost.visibility === 'PUBLIC' ? 'all users.' : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}</AlertDescription></Alert>)
-                      : (<Alert variant="destructive"><ChevronsUpDown className="h-4 w-4" /><AlertTitle>No Association Selected</AlertTitle><AlertDescription>Please select a post to see access settings.</AlertDescription></Alert>)}
-                  </CardContent>
-                </Card>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                      <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="DRAFT">Draft</SelectItem><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
                      <FormField control={form.control} name="durationMinutes" render={({ field }) => (<FormItem><FormLabel>Duration (Minutes)</FormLabel><FormControl><Input type="number" placeholder="e.g., 30" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Leave empty for no time limit.</FormDescription><FormMessage /></FormItem>)} />
@@ -473,15 +466,15 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
                             <TableRow key={exam.id}>
                                 <TableCell className="font-medium">{exam.title}</TableCell>
                                 <TableCell className="text-muted-foreground">
-                                    {exam.post ? (
+                                    {exam.group ? (
                                         <div className='flex items-center gap-2'>
-                                            <FileText className="h-4 w-4" />
-                                            <span>{exam.post.title === '__internal_group_exams_placeholder__' ? 'Group Only' : exam.post.title}</span>
-                                        </div>
-                                    ) : exam.group ? (
-                                         <div className='flex items-center gap-2'>
                                             <Folder className="h-4 w-4" />
                                             <span>{exam.group.name}</span>
+                                        </div>
+                                     ) : exam.post ? (
+                                        <div className='flex items-center gap-2'>
+                                            <FileText className="h-4 w-4" />
+                                            <span>{exam.post.title}</span>
                                         </div>
                                     ) : 'N/A'}
                                 </TableCell>
@@ -753,7 +746,7 @@ export default function CreateExamPage() {
   }
 
   const handleTabChange = (newTab: string) => {
-    if (newTab === 'create' && editingExamId === null) {
+    if (newTab === 'create' && activeTab !== 'create') {
         handleNewExamClick();
     } else if (newTab === 'manage') {
         handleBack();
@@ -810,3 +803,4 @@ export default function CreateExamPage() {
     </div>
   );
 }
+
