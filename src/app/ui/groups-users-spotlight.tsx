@@ -1,7 +1,7 @@
 
 "use client"
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { User, GroupWithCount } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,6 +9,12 @@ import Image from 'next/image';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
+
+type SkeletonItem = {
+    type: 'user' | 'group';
+    rotation: number;
+    position: string;
+};
 
 export default function GroupsUsersSpotlight({ users, groups, loading }: {
   users: User[];
@@ -19,6 +25,23 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
   const [isHovering, setIsHovering] = React.useState(false);
   const containerRef = React.useRef(null);
   const [items, setItems] = React.useState<any[]>([]);
+  const [skeletons, setSkeletons] = useState<SkeletonItem[]>([]);
+
+  const positionClasses = [
+      'top-1/4 left-1/4', 'top-1/2 right-1/4', 'bottom-1/4 left-1/2', 'top-1/3 right-1/3',
+      'bottom-1/3 left-1/4', 'top-1/2 left-1/3', 'bottom-1/4 right-1/2', 'top-1/4 right-1/4',
+      'bottom-1/2 left-1/2'
+  ];
+  
+  useEffect(() => {
+    // Generate skeletons only on the client, after hydration
+    const generatedSkeletons = Array.from({ length: 9 }).map((_, index) => ({
+        type: index % 2 === 0 ? 'user' : 'group',
+        rotation: getRandomValue(-25, 25),
+        position: positionClasses[index % positionClasses.length],
+    }));
+    setSkeletons(generatedSkeletons);
+  }, []); // Empty dependency array ensures this runs once on the client
 
   React.useEffect(() => {
     const userItems = users.slice(0, 5).map(user => ({
@@ -84,12 +107,6 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.05)`;
   };
   
-  const positionClasses = [
-      'top-1/4 left-1/4', 'top-1/2 right-1/4', 'bottom-1/4 left-1/2', 'top-1/3 right-1/3',
-      'bottom-1/3 left-1/4', 'top-1/2 left-1/3', 'bottom-1/4 right-1/2', 'top-1/4 right-1/4',
-      'bottom-1/2 left-1/2'
-  ];
-
   const renderItem = (item: any, index: number) => {
     if (item.type === 'user') {
       return (
@@ -130,15 +147,13 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
   };
   
   const renderSkeletons = () => {
-    return Array.from({ length: 9 }).map((_, index) => {
-        const isUser = index % 2 === 0;
-        const rotation = getRandomValue(-25, 25);
-        if (isUser) {
+    return skeletons.map((skeleton, index) => {
+        if (skeleton.type === 'user') {
            return (
                 <div
                 key={`skeleton-user-${index}`}
-                className={`absolute ${positionClasses[index % positionClasses.length]} -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out`}
-                style={{ transform: `rotate(${rotation}deg)` }}
+                className={`absolute ${skeleton.position} -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out`}
+                style={{ transform: `rotate(${skeleton.rotation}deg)` }}
                 >
                     <Skeleton className="w-20 h-20 md:w-24 md:h-24 rounded-full" />
                 </div>
@@ -147,9 +162,9 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
              return (
                 <div
                 key={`skeleton-group-${index}`}
-                className={`absolute ${positionClasses[index % positionClasses.length]} bg-muted rounded-lg shadow-xl overflow-hidden transition-all duration-500 ease-out w-40 md:w-48 -translate-x-1/2 -translate-y-1/2`}
+                className={`absolute ${skeleton.position} bg-muted rounded-lg shadow-xl overflow-hidden transition-all duration-500 ease-out w-40 md:w-48 -translate-x-1/2 -translate-y-1/2`}
                 style={{
-                    transform: `rotate(${rotation}deg)`,
+                    transform: `rotate(${skeleton.rotation}deg)`,
                     height: '200px',
                     aspectRatio: '11/17',
                 }}
