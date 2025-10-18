@@ -156,61 +156,61 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       <div
         key={card.id}
         className={cn(
-          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out w-auto h-full"
+          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out w-auto h-full flex flex-col"
         )}
         style={{
           transform: getCardTransform(card.rotation, card.distance),
           transformOrigin: 'center center',
           aspectRatio: '11 / 17',
-     
         }}
       >
-        {!isHero && (
-          <div className="relative">
-            <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold z-10 overflow-hidden">
-              {card.authorImage ? (
-                <Image src={card.authorImage} alt={card.brand} layout="fill" objectFit="cover" />
-              ) : (
-                card.brand.charAt(0)
-              )}
+        <div className="relative flex-grow">
+            {!isHero && (
+            <div className="absolute top-2 md:top-3 left-2 md:left-3 z-10 flex items-center gap-2">
+                <div className="bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden relative">
+                {card.authorImage ? (
+                    <Image src={card.authorImage} alt={card.brand} layout="fill" objectFit="cover" />
+                ) : (
+                    card.brand.charAt(0)
+                )}
+                </div>
+                <div className="text-xs font-semibold p-1 bg-white/50 backdrop-blur-sm rounded-md truncate">{card.brand}</div>
             </div>
-            <div className="text-xs font-semibold p-2 md:p-3 pt-2 truncate">{card.brand}</div>
-          </div>
-        )}
+            )}
 
-        <div className="relative p-2 w-full h-full">
-          <Image
-            src={card.image}
-            alt={card.brand}
-            layout="fill"
-            objectFit="cover"
-          />
-          {/* Like count display */}
-           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex items-center gap-2 bg-black/20 text-white backdrop-blur-sm px-4 py-2 rounded-full transition-all duration-300">
-              <ThumbsUp className="w-4 h-4" />
-              <span className="font-bold text-sm">{card.likeCount}</span>
+            <Image
+                src={card.image}
+                alt={card.brand}
+                layout="fill"
+                objectFit="cover"
+            />
+            {/* Like count display */}
+            <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex items-center gap-2 bg-black/20 text-white backdrop-blur-sm px-4 py-2 rounded-full transition-all duration-300">
+                <ThumbsUp className="w-4 h-4" />
+                <span className="font-bold text-sm">{card.likeCount}</span>
+                </div>
             </div>
-          </div>
         </div>
 
+        <div className="flex-shrink-0">
+          {card.type === 'series' && renderSeriesGrid(card.series)}
 
-        {card.type === 'series' && renderSeriesGrid(card.series)}
-
-        {card.type === 'dots' && (
-          <div className="flex justify-center gap-0 p-2 bg-white">
-            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-400 rounded-full"></div>
-            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
-          </div>
-        )}
+          {card.type === 'dots' && (
+            <div className="flex justify-center gap-1 p-2 bg-white">
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-400 rounded-full"></div>
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
+              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
+            </div>
+          )}
+        </div>
       </div>
     );
   };
 // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
   return (
-    <div className="h-[280px] p-8 bg-gradient-to-b  from-zinc-950/70  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
+    <div className="h-[580px] p-8 bg-gradient-to-b  from-zinc-950/70  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
       
       {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
@@ -229,7 +229,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="w-full h-[200px] overflow-y-hidden overflow-x-auto">
+        <div ref={scrollContainerRef} className="w-full h-[420px] overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
             className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
@@ -261,3 +261,5 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     </div>
   );
 }
+
+    
