@@ -69,7 +69,6 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         // User Admins see their own posts OR public, published posts.
         const publicCriteria: Prisma.PostWhereInput = {
             status: MovieStatus.PUBLISHED,
-            isLockedByDefault: lockStatus === 'locked' ? true : false,
             visibility: 'PUBLIC',
         };
         whereClause = {
@@ -80,12 +79,11 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         };
     } else {
         // Guests and regular Users see the same set of public, published, unlocked content.
-        whereClause = {
+        let publicCriteria: Prisma.PostWhereInput = {
             status: MovieStatus.PUBLISHED,
             visibility: 'PUBLIC',
-            isLockedByDefault: lockStatus === 'locked' ? true : false,
         };
-        // Logged-in users (non-admin) can also see group content.
+
         if (user) {
             const userGroupIds = await prisma.groupMember.findMany({
                 where: { userId: user.id, status: 'ACTIVE' },
@@ -94,15 +92,16 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 
             whereClause = {
                  OR: [
-                    whereClause, // The public criteria from above
+                    publicCriteria, // The public criteria from above
                     { // Or posts from their groups
                         status: MovieStatus.PUBLISHED,
                         visibility: 'GROUP_ONLY',
                         groupId: { in: userGroupIds },
-                        isLockedByDefault: lockStatus === 'locked' ? true : false,
                     }
                 ]
             }
+        } else {
+            whereClause = publicCriteria;
         }
     }
     
@@ -167,11 +166,14 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
     }
 
-    // This handles the locked/unlocked filter buttons
-    if (lockStatus === 'locked') {
-        whereClause.isLockedByDefault = true;
-    } else if (lockStatus === 'unlocked') {
-        whereClause.isLockedByDefault = false;
+    // This handles the locked/unlocked filter buttons for non-super-admins
+    if (userRole !== ROLES.SUPER_ADMIN) {
+      if (lockStatus === 'locked') {
+          whereClause.isLockedByDefault = true;
+      } else {
+          // Default to showing only unlocked posts for non-admins
+          whereClause.isLockedByDefault = false;
+      }
     }
 
     const posts = await prisma.post.findMany({
