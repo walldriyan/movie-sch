@@ -35,8 +35,8 @@ export default function OnlineUsersWidget() {
             key="widget-card"
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.8, transition: { type: 'spring', stiffness: 800, damping: 30 } }}
-            transition={{ type: "spring", stiffness: 800, damping: 30 }}
+            exit={{ opacity: 0, y: 50, scale: 0.7, transition: { type: 'spring', stiffness: 2500, damping: 50 } }}
+            transition={{ type: "spring", stiffness:2500, damping: 50 }}
           >
             <Card className="w-[300px] max-h-[500px] flex flex-col bg-background/80 backdrop-blur-lg  shadow-lg shadow-stone-950/10">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -69,9 +69,29 @@ export default function OnlineUsersWidget() {
         ) : (
             <motion.div
               key="widget-button"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+              initial={{ opacity: 0, scale: 0.8, y: 40, backdropFilter: "blur(0px)" }}
+              animate={{
+                opacity: 1,
+                scale: 1,
+                y: 0,
+                backdropFilter: "blur(20px)",
+                transition: {
+                  type: "easeInOut",
+                  stiffness: 2900,
+                  damping: 60,
+                  duration: 0.1,
+                },
+              }}
+              exit={{
+                opacity: 0,
+                scale: 0.9,
+                y: 30,
+                backdropFilter: "blur(0px)",
+                transition: {
+                  duration: 0.25,
+                  ease: "easeInOut",
+                },
+              }}
             >
               <Button
                 className="rounded-full w-14 h-14 bg-primary/80 backdrop-blur-lg shadow-lg"
