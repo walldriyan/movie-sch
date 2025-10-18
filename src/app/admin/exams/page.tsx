@@ -84,13 +84,6 @@ const examSchema = z.object({
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
 }).superRefine((data, ctx) => {
-    if (!data.postId) {
-        ctx.addIssue({
-            code: 'custom',
-            path: ['postId'],
-            message: 'An associated post is required for every exam.',
-        });
-    }
     if (data.assignmentType === 'GROUP' && !data.groupId) {
         ctx.addIssue({
             code: 'custom',
@@ -321,22 +314,6 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
                 <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
                 <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief description of what this exam covers." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
                 
-                <FormField 
-                    control={form.control} 
-                    name="postId" 
-                    render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Associated Post</FormLabel>
-                          <PostCombobox 
-                              field={field} 
-                              initialPosts={posts} 
-                              onPostsChange={onPostsChange} 
-                          />
-                          <FormMessage />
-                      </FormItem>
-                    )} 
-                />
-
                 <FormField
                   control={form.control}
                   name="assignmentType"
@@ -366,6 +343,25 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
                       <FormMessage />
                     </FormItem>
                   )}
+                />
+
+                <FormField 
+                    control={form.control} 
+                    name="postId" 
+                    render={({ field }) => (
+                      <FormItem>
+                          <FormLabel>Associated Post</FormLabel>
+                          <PostCombobox 
+                              field={field} 
+                              initialPosts={posts} 
+                              onPostsChange={onPostsChange} 
+                          />
+                           <FormDescription>
+                            Even for group exams, a post must be associated for context. It can be a private post.
+                           </FormDescription>
+                          <FormMessage />
+                      </FormItem>
+                    )} 
                 />
 
                 {assignmentType === 'GROUP' && (
@@ -480,7 +476,7 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
                                     {exam.post ? (
                                         <div className='flex items-center gap-2'>
                                             <FileText className="h-4 w-4" />
-                                            <span>{exam.post.title}</span>
+                                            <span>{exam.post.title === '__internal_group_exams_placeholder__' ? 'Group Only' : exam.post.title}</span>
                                         </div>
                                     ) : exam.group ? (
                                          <div className='flex items-center gap-2'>
