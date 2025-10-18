@@ -227,7 +227,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
                 </div>
             ) : (
                 <Link href="/" onClick={(e) => {e.preventDefault(); handleNavigation('/');}} className="flex items-center space-x-2">
-                    <Image src="/logo.png" alt="CineVerse Logo" width={120} height={40} className="object-contain" />
+                    <Image src="/logo.png" alt="Logo" width={52} height={52} className="object-contain" />
                 </Link>
             )}
           </div>
