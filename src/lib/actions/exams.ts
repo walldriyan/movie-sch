@@ -29,14 +29,32 @@ const questionSchema = z.object({
 const examSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   description: z.string().optional(),
-  postId: z.string().min(1, 'A post must be selected.'),
+  assignmentType: z.enum(['POST', 'GROUP']).default('POST'),
+  postId: z.string().optional(),
+  groupId: z.string().optional(),
   status: z.enum(['DRAFT', 'ACTIVE', 'INACTIVE']).default('DRAFT'),
   durationMinutes: z.coerce.number().optional().nullable(),
   attemptsAllowed: z.coerce.number().min(0, 'Attempts must be 0 or more. 0 for unlimited.').default(1),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
+}).superRefine((data, ctx) => {
+    if (data.assignmentType === 'POST' && !data.postId) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['postId'],
+            message: 'A post must be selected when assigning to a post.',
+        });
+    }
+    if (data.assignmentType === 'GROUP' && !data.groupId) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['groupId'],
+            message: 'A group must be selected when assigning to a group.',
+        });
+    }
 });
+
 
 type ExamFormData = z.infer<typeof examSchema>;
 
@@ -47,20 +65,22 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     if (!user) {
         throw new Error('Not authenticated');
     }
-
-    const post = await prisma.post.findUnique({
-        where: { id: parseInt(data.postId, 10) },
-    });
-
-    if (!post) {
-        throw new Error('Associated post not found.');
-    }
     
-    const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
-    const isAuthor = post.authorId === user.id;
-
-    if (!isSuperAdmin && !isAuthor) {
-        throw new Error('Not authorized to create or edit an exam for this post.');
+    // Authorization check
+    if (user.role !== ROLES.SUPER_ADMIN) {
+        if (data.postId) {
+            const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) }});
+            if (!post || post.authorId !== user.id) {
+                throw new Error('Not authorized to create or edit an exam for this post.');
+            }
+        } else if (data.groupId) {
+            const group = await prisma.group.findUnique({ where: { id: data.groupId }});
+            if (!group || group.createdById !== user.id) {
+                 throw new Error('Not authorized to create or edit an exam for this group.');
+            }
+        } else {
+             throw new Error('An association to a post or group is required.');
+        }
     }
     
     const examData = {
@@ -71,7 +91,8 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         attemptsAllowed: data.attemptsAllowed,
         startDate: data.startDate,
         endDate: data.endDate,
-        postId: post.id,
+        postId: data.postId ? parseInt(data.postId, 10) : null,
+        groupId: data.groupId || null,
     };
     
     const questionsToCreate = data.questions.filter(q => !q.id);
@@ -146,7 +167,9 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     }
 
     revalidatePath(`/admin/exams`);
-    revalidatePath(`/movies/${post.id}`);
+    if (data.postId) {
+        revalidatePath(`/movies/${data.postId}`);
+    }
 }
 
 
@@ -160,30 +183,18 @@ export async function getExamsForAdmin() {
         orderBy: { createdAt: 'desc' },
         include: {
             post: { select: { title: true, groupId: true }},
+            group: { select: { name: true }},
             _count: { select: { questions: true, submissions: true } }
         }
     });
 
-    const examsWithPendingCounts = await Promise.all(exams.map(async (exam) => {
-        let pendingRequestsCount = 0;
-        if (exam.post.groupId) {
-            pendingRequestsCount = await prisma.groupMember.count({
-                where: {
-                    groupId: exam.post.groupId,
-                    status: 'PENDING',
-                },
-            });
-        }
-        return {
-            ...exam,
-            _count: {
-                ...exam._count,
-                pendingRequests: pendingRequestsCount,
-            }
+    return exams.map(exam => ({
+        ...exam,
+        _count: {
+            ...exam._count,
+            pendingRequests: 0, // Placeholder
         }
     }));
-
-    return examsWithPendingCounts;
 }
 
 
@@ -203,7 +214,8 @@ export async function getExamForEdit(examId: number) {
                 },
                 orderBy: { id: 'asc' },
             },
-             post: true
+             post: true,
+             group: true
         },
     });
 
@@ -239,7 +251,9 @@ export async function deleteExam(examId: number) {
 
 
     revalidatePath('/admin/exams');
-    revalidatePath(`/movies/${exam.postId}`);
+    if (exam.postId) {
+        revalidatePath(`/movies/${exam.postId}`);
+    }
 }
 
 
@@ -255,6 +269,7 @@ export async function getExamForTaker(examId: number) {
     where: { id: examId, status: 'ACTIVE' },
     include: {
       post: true,
+      group: true,
       questions: {
         include: {
           options: {
@@ -287,18 +302,30 @@ export async function getExamForTaker(examId: number) {
         throw new Error(`You have reached the maximum number of attempts (${attemptsAllowed}).`);
     }
 
-  if (exam.post.visibility === 'GROUP_ONLY') {
-      if (!exam.post.groupId) {
-          throw new Error('This exam is part of a group, but the group is not specified.');
+  let hasAccess = false;
+  if (exam.postId && exam.post) {
+      if (exam.post.visibility === 'PUBLIC') {
+          hasAccess = true;
+      } else if (exam.post.groupId) {
+          const membership = await prisma.groupMember.findFirst({
+              where: { groupId: exam.post.groupId, userId: user.id, status: 'ACTIVE' }
+          });
+          if (membership) {
+              hasAccess = true;
+          }
       }
+  } else if (exam.groupId) {
       const membership = await prisma.groupMember.findFirst({
-          where: { groupId: exam.post.groupId, userId: user.id, status: 'ACTIVE' }
+          where: { groupId: exam.groupId, userId: user.id, status: 'ACTIVE' }
       });
-      if (!membership) {
-          throw new Error('You must be a member of the associated group to take this exam.');
+      if (membership) {
+          hasAccess = true;
       }
   }
 
+  if (!hasAccess) {
+       throw new Error('You do not have permission to access this exam.');
+  }
 
   return exam;
 }
@@ -407,7 +434,7 @@ export async function submitExam(
 
   // Check if exam is passed and unlock next post
   const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
-  if (percentage >= 50 && exam.post.seriesId && exam.post.orderInSeries) {
+  if (percentage >= 50 && exam.post?.seriesId && exam.post.orderInSeries) {
     const nextPostInSeries = await prisma.post.findFirst({
       where: {
         seriesId: exam.post.seriesId,
@@ -555,16 +582,19 @@ export async function getExamsForUser(userId: string) {
         where: {
             status: 'ACTIVE',
             OR: [
-                {
+                { // Exams associated with posts the user can see
                     post: {
-                        visibility: 'PUBLIC'
+                        OR: [
+                            { visibility: 'PUBLIC' },
+                            {
+                                visibility: 'GROUP_ONLY',
+                                groupId: { in: userGroupIds }
+                            }
+                        ]
                     }
                 },
-                {
-                    post: {
-                        visibility: 'GROUP_ONLY',
-                        groupId: { in: userGroupIds }
-                    }
+                { // Exams associated directly with groups the user is in
+                   groupId: { in: userGroupIds }
                 }
             ]
         },
@@ -596,3 +626,4 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
+

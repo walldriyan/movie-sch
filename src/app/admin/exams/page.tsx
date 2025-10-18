@@ -34,14 +34,14 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload, FileQuestion, ArrowLeft, ArrowRight } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload, FileQuestion, ArrowLeft, ArrowRight, Folder } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { getPostsForAdmin, searchPostsForExam } from '@/lib/actions';
-import type { Post } from '@prisma/client';
+import { getPostsForAdmin, searchPostsForExam, getGroupsForForm } from '@/lib/actions';
+import type { Post, Group } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { createOrUpdateExam, getExamsForAdmin, getExamForEdit, deleteExam } from '@/lib/actions/exams';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -52,6 +52,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -73,14 +74,32 @@ const questionSchema = z.object({
 const examSchema = z.object({
   title: z.string().min(3, 'Title must be at least 3 characters.'),
   description: z.string().optional(),
-  postId: z.string().min(1, 'A post must be selected.'),
+  assignmentType: z.enum(['POST', 'GROUP']).default('POST'),
+  postId: z.string().optional(),
+  groupId: z.string().optional(),
   status: z.enum(['DRAFT', 'ACTIVE', 'INACTIVE']).default('DRAFT'),
   durationMinutes: z.coerce.number().optional().nullable(),
   attemptsAllowed: z.coerce.number().min(0, 'Attempts must be 0 or more. 0 for unlimited.').default(1),
   startDate: z.date().optional().nullable(),
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
+}).superRefine((data, ctx) => {
+    if (data.assignmentType === 'POST' && !data.postId) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['postId'],
+            message: 'A post must be selected when assigning to a post.',
+        });
+    }
+    if (data.assignmentType === 'GROUP' && !data.groupId) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['groupId'],
+            message: 'A group must be selected when assigning to a group.',
+        });
+    }
 });
+
 
 type ExamFormValues = z.infer<typeof examSchema>;
 type PostWithGroup = Post & { group: { name: string } | null };
@@ -272,8 +291,9 @@ const PostCombobox = ({
     );
 }
 
-const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange, currentStep, onNextStep, onPrevStep }: {
+const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange, currentStep, onNextStep, onPrevStep }: {
   posts: PostWithGroup[],
+  groups: Group[],
   selectedPost: PostWithGroup | undefined,
   form: any,
   questions: any[],
@@ -288,6 +308,19 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
   onNextStep: () => void,
   onPrevStep: () => void,
 }) => {
+
+  const assignmentType = form.watch('assignmentType');
+
+  useEffect(() => {
+    if (assignmentType === 'POST') {
+      form.setValue('groupId', undefined);
+    }
+    if (assignmentType === 'GROUP') {
+      form.setValue('postId', undefined);
+    }
+  }, [assignmentType, form]);
+
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -300,30 +333,91 @@ const CreateExamForm = ({ posts, selectedPost, form, questions, appendQuestion, 
               <CardContent className="space-y-4">
                   <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
                   <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief description of what this exam covers." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
-                  <FormField 
-                    control={form.control} 
-                    name="postId" 
+                  
+                  <FormField
+                    control={form.control}
+                    name="assignmentType"
                     render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Associated Post</FormLabel>
-                          <PostCombobox 
-                              field={field} 
-                              initialPosts={posts} 
-                              onPostsChange={onPostsChange} 
-                          />
-                          <FormMessage />
+                      <FormItem className="space-y-3">
+                        <FormLabel>Assign To</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="flex flex-col space-y-1"
+                          >
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="POST" />
+                              </FormControl>
+                              <FormLabel className="font-normal">A Specific Post</FormLabel>
+                            </FormItem>
+                            <FormItem className="flex items-center space-x-3 space-y-0">
+                              <FormControl>
+                                <RadioGroupItem value="GROUP" />
+                              </FormControl>
+                              <FormLabel className="font-normal">A User Group</FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
                       </FormItem>
-                    )} 
+                    )}
                   />
+
+                  {assignmentType === 'POST' && (
+                    <FormField 
+                      control={form.control} 
+                      name="postId" 
+                      render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Associated Post</FormLabel>
+                            <PostCombobox 
+                                field={field} 
+                                initialPosts={posts} 
+                                onPostsChange={onPostsChange} 
+                            />
+                            <FormMessage />
+                        </FormItem>
+                      )} 
+                    />
+                  )}
+
+                  {assignmentType === 'GROUP' && (
+                     <FormField
+                      control={form.control}
+                      name="groupId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Associated Group</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select a group" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              {groups.map(group => (
+                                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
               </CardContent>
           </Card>
         </div>
 
         <div className={cn("space-y-8", currentStep !== 2 && "hidden")}>
            <Card>
-              <CardHeader><CardTitle>Exam Access</CardTitle><CardDescription>Who can take this exam is determined by the associated post's visibility.</CardDescription></CardHeader>
+              <CardHeader><CardTitle>Exam Access</CardTitle><CardDescription>Who can take this exam is determined by the associated post or group visibility.</CardDescription></CardHeader>
               <CardContent>
-                  {selectedPost ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2">{selectedPost.visibility === 'PUBLIC' ? (<><Eye className="h-4 w-4" /> Public</>) : (<><Users className="h-4 w-4" /> Group</>)}</AlertTitle><AlertDescription>This exam will be available to {selectedPost.visibility === 'PUBLIC' ? 'all users.' : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}</AlertDescription></Alert>) : (<Alert variant="destructive"><ChevronsUpDown className="h-4 w-4" /><AlertTitle>No Post Selected</AlertTitle><AlertDescription>Please select a post to see access settings.</AlertDescription></Alert>)}
+                  {assignmentType === 'POST' && selectedPost ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2">{selectedPost.visibility === 'PUBLIC' ? (<><Eye className="h-4 w-4" /> Public</>) : (<><Users className="h-4 w-4" /> Group</>)}</AlertTitle><AlertDescription>This exam will be available to {selectedPost.visibility === 'PUBLIC' ? 'all users.' : `members of the "${selectedPost.group?.name || 'Unknown'}" group.`}</AlertDescription></Alert>)
+                   : assignmentType === 'GROUP' ? (<Alert><Info className="h-4 w-4" /><AlertTitle className="flex items-center gap-2"><Users className="h-4 w-4"/> Group Access</AlertTitle><AlertDescription>This exam will be available to all members of the selected group.</AlertDescription></Alert>)
+                  : (<Alert variant="destructive"><ChevronsUpDown className="h-4 w-4" /><AlertTitle>No Association Selected</AlertTitle><AlertDescription>Please select a post or group to see access settings.</AlertDescription></Alert>)}
               </CardContent>
           </Card>
            <Card>
@@ -398,7 +492,7 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
                     <TableHeader>
                         <TableRow>
                             <TableHead>Title</TableHead>
-                            <TableHead>Post</TableHead>
+                            <TableHead>Associated With</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Questions</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
@@ -414,7 +508,19 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
                         ) : exams.length > 0 ? exams.map(exam => (
                             <TableRow key={exam.id}>
                                 <TableCell className="font-medium">{exam.title}</TableCell>
-                                <TableCell className="text-muted-foreground">{exam.post.title}</TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {exam.post ? (
+                                        <div className='flex items-center gap-2'>
+                                            <FileText className="h-4 w-4" />
+                                            <span>{exam.post.title}</span>
+                                        </div>
+                                    ) : exam.group ? (
+                                         <div className='flex items-center gap-2'>
+                                            <Folder className="h-4 w-4" />
+                                            <span>{exam.group.name}</span>
+                                        </div>
+                                    ) : 'N/A'}
+                                </TableCell>
                                 <TableCell><Badge variant={exam.status === 'ACTIVE' ? 'default' : 'secondary'}>{exam.status}</Badge></TableCell>
                                 <TableCell>{exam._count.questions}</TableCell>
                                 <TableCell className="text-right">
@@ -450,7 +556,7 @@ const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDelet
 }
 
 const steps = [
-    { id: 1, name: 'Basic Details', icon: Info, fields: ['title', 'description', 'postId'] },
+    { id: 1, name: 'Basic Details', icon: Info, fields: ['title', 'description', 'assignmentType', 'postId', 'groupId'] },
     { id: 2, name: 'Configuration', icon: Settings, fields: ['status', 'durationMinutes', 'attemptsAllowed', 'startDate', 'endDate'] },
     { id: 3, name: 'Questions', icon: FileQuestion, fields: ['questions'] },
 ];
@@ -459,6 +565,7 @@ export default function CreateExamPage() {
   const [activeTab, setActiveTab] = useState('manage');
   const [isSubmitting, startTransition] = useTransition();
   const [posts, setPosts] = React.useState<PostWithGroup[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [exams, setExams] = useState<ExamForListing[]>([]);
   const [editingExamId, setEditingExamId] = useState<number | null>(null);
   const [isLoadingExams, setIsLoadingExams] = useState(true);
@@ -469,7 +576,7 @@ export default function CreateExamPage() {
   const form = useForm<ExamFormValues>({
     resolver: zodResolver(examSchema),
     defaultValues: {
-      title: '', description: '', postId: '', status: 'DRAFT',
+      title: '', description: '', assignmentType: 'POST', postId: '', groupId: '', status: 'DRAFT',
       durationMinutes: 30, attemptsAllowed: 1, questions: [],
     },
   });
@@ -482,12 +589,16 @@ export default function CreateExamPage() {
   const watchedPostId = form.watch('postId');
   const selectedPost = React.useMemo(() => posts.find(p => String(p.id) === watchedPostId), [posts, watchedPostId]);
   
-  const fetchPosts = async () => {
+  const fetchInitialData = async () => {
       try {
-          const { posts: fetchedPosts } = await getPostsForAdmin({ page: 1, limit: 10, userId: 'dummy-id', userRole: 'SUPER_ADMIN', sortBy: 'createdAt-desc' });
+          const [{ posts: fetchedPosts }, fetchedGroups] = await Promise.all([
+            getPostsForAdmin({ page: 1, limit: 10, userId: 'dummy-id', userRole: 'SUPER_ADMIN', sortBy: 'createdAt-desc' }),
+            getGroupsForForm(),
+          ]);
           setPosts(fetchedPosts as PostWithGroup[]);
+          setGroups(fetchedGroups);
       } catch(error) {
-          toast({ variant: 'destructive', title: 'Failed to load posts', description: 'Could not fetch posts list.'})
+          toast({ variant: 'destructive', title: 'Failed to load data', description: 'Could not fetch posts and groups list.'})
       }
   }
 
@@ -504,7 +615,7 @@ export default function CreateExamPage() {
   }
 
   useEffect(() => {
-    fetchPosts();
+    fetchInitialData();
     fetchExams();
   }, []);
 
@@ -519,7 +630,7 @@ export default function CreateExamPage() {
 
   const handlePrevStep = () => {
      if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   }
 
@@ -528,14 +639,20 @@ export default function CreateExamPage() {
         const examToEdit = await getExamForEdit(examId);
         if (examToEdit) {
             setEditingExamId(examId);
-            const postInList = posts.find(p => p.id === examToEdit.postId);
-            if (!postInList && examToEdit.post) {
-                setPosts(prev => [examToEdit.post as PostWithGroup, ...prev]);
+            
+            if (examToEdit.postId) {
+              const postInList = posts.find(p => p.id === examToEdit.postId);
+              if (!postInList && examToEdit.post) {
+                  setPosts(prev => [examToEdit.post as PostWithGroup, ...prev]);
+              }
             }
+            
             form.reset({
                 title: examToEdit.title,
                 description: examToEdit.description || '',
-                postId: String(examToEdit.postId),
+                assignmentType: examToEdit.groupId ? 'GROUP' : 'POST',
+                postId: examToEdit.postId ? String(examToEdit.postId) : undefined,
+                groupId: examToEdit.groupId ? String(examToEdit.groupId) : undefined,
                 status: examToEdit.status,
                 durationMinutes: examToEdit.durationMinutes,
                 attemptsAllowed: examToEdit.attemptsAllowed,
@@ -678,7 +795,7 @@ export default function CreateExamPage() {
 
   const handleNewExamClick = () => {
     form.reset({
-        title: '', description: '', postId: '', status: 'DRAFT',
+        title: '', description: '', assignmentType: 'POST', postId: '', groupId: '', status: 'DRAFT',
         durationMinutes: 30, attemptsAllowed: 1, questions: [{ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] }],
     });
     setEditingExamId(null);
@@ -742,6 +859,7 @@ export default function CreateExamPage() {
           <div className="mt-6">
             <CreateExamForm 
               posts={posts}
+              groups={groups}
               selectedPost={selectedPost}
               form={form}
               questions={questions}
@@ -762,7 +880,3 @@ export default function CreateExamPage() {
     </div>
   );
 }
-
-    
-
-    
