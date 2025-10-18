@@ -11,7 +11,7 @@ export default async function GroupProfilePage({ params }: { params: { id: strin
   }
   
   const session = await auth();
-  console.log("Server [/groups/[id]/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
+  // console.log("Server [/groups/[id]/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
 
   const groupData = await getGroupForProfile(params.id);
 

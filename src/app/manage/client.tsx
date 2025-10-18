@@ -200,7 +200,7 @@ export default function ManagePostsClient({
   };
 
   const handleBackFromForm = () => {
-    console.log('--- [ManagePostsClient] handleBackFromForm: Returning to list view ---');
+    // console.log('--- [ManagePostsClient] handleBackFromForm: Returning to list view ---');
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');

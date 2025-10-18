@@ -64,12 +64,12 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             timeTakenSeconds: timeTaken,
         };
         
-        console.log('--- [Client] Submitting Payload ---', payload);
+        // console.log('--- [Client] Submitting Payload ---', payload);
         
         try {
             const newSubmission = await submitExam(exam.id, payload);
             if (newSubmission) {
-                console.log('--- [Client] Received submission result from server ---', newSubmission);
+                // console.log('--- [Client] Received submission result from server ---', newSubmission);
                 router.push(`/exams/${exam.id}/results?submissionId=${newSubmission.id}`);
             } else {
                 throw new Error("Submission failed to return a result.");
