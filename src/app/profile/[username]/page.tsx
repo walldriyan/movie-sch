@@ -2,13 +2,14 @@
 
 import type { User as PrismaUser } from '@prisma/client';
 import type { Post } from '@/lib/types';
-import { getPosts, getUsers, getFavoritePostsByUserId, getSeriesByAuthorId } from '@/lib/actions';
+import { getPosts, getUsers, getFavoritePostsByUserId, getSeriesByAuthorId, getExamsForUser } from '@/lib/actions';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import ProfileHeader from '@/components/profile/profile-header';
 import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
+import ProfileExamList from '@/components/profile/profile-exam-list';
 
 export default async function ProfilePage({
   params,
@@ -39,6 +40,7 @@ export default async function ProfilePage({
 
   let displayPosts: any[] = [];
   let displaySeries: any[] = [];
+  let displayExams: any[] = [];
   let totalSeriesCount = 0;
 
   if (currentFilter === 'posts') {
@@ -56,6 +58,11 @@ export default async function ProfilePage({
     );
     displaySeries = series || [];
     totalSeriesCount = totalSeries;
+  } else if (currentFilter === 'exams') {
+    // Only fetch exams if it's the user's own profile
+    if (isOwnProfile) {
+        displayExams = await getExamsForUser(profileUser.id);
+    }
   }
   
   return (
@@ -73,6 +80,11 @@ export default async function ProfilePage({
                     totalSeries={totalSeriesCount}
                     showAll={showAllSeries}
                   />
+              ) : currentFilter === 'exams' ? (
+                <ProfileExamList 
+                  exams={displayExams}
+                  isOwnProfile={isOwnProfile}
+                />
               ) : (
                 <ProfilePostList
                   posts={displayPosts}

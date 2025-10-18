@@ -535,3 +535,55 @@ export async function updateSubmissionAttempts(submissionId: number, userId: str
     
     revalidatePath(`/admin/exams/[id]/results`);
 }
+
+
+export async function getExamsForUser(userId: string) {
+    const session = await auth();
+    const user = session?.user;
+
+    // A user can only view their own exams list unless they are a super admin
+    if (!user || (user.id !== userId && user.role !== ROLES.SUPER_ADMIN)) {
+        throw new Error("Not authorized");
+    }
+
+    const userGroupIds = await prisma.groupMember.findMany({
+        where: { userId: userId, status: 'ACTIVE' },
+        select: { groupId: true },
+    }).then(members => members.map(m => m.groupId));
+
+    const exams = await prisma.exam.findMany({
+        where: {
+            status: 'ACTIVE',
+            OR: [
+                {
+                    post: {
+                        visibility: 'PUBLIC'
+                    }
+                },
+                {
+                    post: {
+                        visibility: 'GROUP_ONLY',
+                        groupId: { in: userGroupIds }
+                    }
+                }
+            ]
+        },
+        include: {
+            post: {
+                select: {
+                    title: true
+                }
+            },
+            _count: {
+                select: {
+                    questions: true
+                }
+            }
+        },
+        orderBy: {
+            createdAt: 'desc'
+        }
+    });
+
+    return exams;
+}
