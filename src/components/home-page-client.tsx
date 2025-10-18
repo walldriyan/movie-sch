@@ -11,7 +11,6 @@ import type { User, Post, GroupWithCount } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import MovieGrid from '@/components/movie-grid';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
@@ -33,6 +32,7 @@ import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
 import MovieCard from './movie-card';
+import { ROLES } from '@/lib/permissions';
 
 
 interface HomePageClientProps {
@@ -112,7 +112,7 @@ export default function HomePageClient({
     (img) => img.id === 'avatar-4'
   );
   
-  const buildQueryString = (params: Record<string, string | number | undefined>) => {
+  const buildQueryString = (params: Record<string, string | number | undefined | null>) => {
     const searchParams = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
       if (value) {
@@ -156,9 +156,8 @@ export default function HomePageClient({
   }
 
   const renderFallbackContent = () => {
-    if (!posts || posts.length === 0) return null;
-    // Take the first 3 posts or as many as available if less than 3
-    const fallbackPosts = posts.slice(0, 3);
+    if (!initialPosts || initialPosts.length === 0) return null;
+    const fallbackPosts = initialPosts.slice(0, 3);
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
@@ -169,16 +168,20 @@ export default function HomePageClient({
     )
   }
 
+  const isPrivilegedUser = session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
+  const allButtonLockStatus = isPrivilegedUser ? null : 'unlocked';
+
+
   return (
     <TooltipProvider>
         <div className="w-full bg-background text-foreground">
              <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 flex items-center justify-between">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <Button asChild variant={'outline'} className={cn(
-                    "rounded-full hover:bg-gray-800 flex-shrink-0",
-                    (!lockStatus || lockStatus === 'unlocked') && !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                        "rounded-full hover:bg-gray-800 flex-shrink-0",
+                        !lockStatus && !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
-                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'unlocked' })} className="flex items-center gap-2">
+                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: allButtonLockStatus })} className="flex items-center gap-2">
                         <Film className="w-4 h-4" />
                         <span>All</span>
                     </Link>
