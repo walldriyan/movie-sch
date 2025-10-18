@@ -12,6 +12,7 @@ import {
   ListVideo,
   ArrowLeft,
   Home,
+  FileText,
 } from 'lucide-react';
 import { Tabs } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -130,11 +131,8 @@ export default function MovieDetailClient({
                 onClick={() => setActiveTab('about')}
                 className={cn(tabButtonStyle, activeTab === 'about' ? activeTabButtonStyle : inactiveTabButtonStyle)}
               >
-                <Image src="/imdb.png" alt="IMDb" width={40} height={20} />
-                <div className="flex items-center gap-1">
-                  <Star className="w-5 h-5 text-yellow-400" />
-                  <span className="text-foreground">{post.imdbRating?.toFixed(1)}</span>
-                </div>
+                <FileText className="w-5 h-5" />
+                <span className="text-foreground">Post</span>
               </button>
               <button
                 onClick={() => setActiveTab('reviews')}
@@ -152,7 +150,7 @@ export default function MovieDetailClient({
               </button>
             </div>
             
-            <MovieInteractionButtons post={post} onPostUpdate={onPostUpdate} session={session} sessionStatus={sessionStatus} />
+            <MovieInteractionButtons post={post} onPostUpdate={onPostUpdate} session={session} />
 
           </div>
         </div>
