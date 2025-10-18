@@ -66,12 +66,12 @@ export default async function RootLayout({
           </div>
           
           <Header session={session} />
-          <div className="absolute z-50 bg-red-600 bottom-3 right-2 w-[300px] h-[170px]"> mesage component</div>
           <main className="pt-16">
          
             {children}
           </main>
           
+          <div className="fixed z-50 bg-red-600 bottom-3 right-2 w-[300px] h-[170px]"> mesage component</div>
           <Toaster />
         </SessionProvider>
       </body>
