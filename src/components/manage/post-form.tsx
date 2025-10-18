@@ -27,9 +27,10 @@ import {
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
+import { Switch } from '@/components/ui/switch';
 
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users, Lock, Unlock } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
@@ -60,6 +61,8 @@ const postSchema = z.object({
   orderInSeries: z.coerce.number().optional(),
   visibility: z.enum(['PUBLIC', 'GROUP_ONLY']).default('PUBLIC'),
   groupId: z.string().nullable().optional(),
+  isLockedByDefault: z.boolean().default(false),
+  requiresExamToUnlock: z.boolean().default(false),
 }).superRefine((data, ctx) => {
   if (data.visibility === 'GROUP_ONLY' && !data.groupId) {
     ctx.addIssue({
@@ -220,6 +223,8 @@ export default function PostForm({
           orderInSeries: editingPost.orderInSeries || undefined,
           visibility: editingPost.visibility as 'PUBLIC' | 'GROUP_ONLY',
           groupId: editingPost.groupId || undefined,
+          isLockedByDefault: editingPost.isLockedByDefault || false,
+          requiresExamToUnlock: editingPost.requiresExamToUnlock || false,
         }
       : {
           title: '',
@@ -239,6 +244,8 @@ export default function PostForm({
           orderInSeries: undefined,
           visibility: 'PUBLIC',
           groupId: undefined,
+          isLockedByDefault: false,
+          requiresExamToUnlock: false,
         },
   });
   
@@ -274,6 +281,8 @@ export default function PostForm({
           orderInSeries: values.orderInSeries,
           visibility: values.visibility,
           groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
+          isLockedByDefault: values.isLockedByDefault,
+          requiresExamToUnlock: values.requiresExamToUnlock,
         };
         await onFormSubmit(postData, editingPost?.id);
     });
@@ -651,15 +660,11 @@ export default function PostForm({
                           </FormControl>
                           <SelectContent>
                           <SelectItem value="PUBLIC">
-  <div className="flex items-center gap-2">
-    <Eye className="h-4 w-4" /> Public
-  </div>
-</SelectItem>
-<SelectItem value="GROUP_ONLY">
-  <div className="flex items-center gap-2">
-    <Users className="h-4 w-4" /> Group Only
-  </div>
-</SelectItem>
+                              <div className="flex items-center gap-2"><Eye className="h-4 w-4" /> Public</div>
+                          </SelectItem>
+                          <SelectItem value="GROUP_ONLY">
+                              <div className="flex items-center gap-2"><Users className="h-4 w-4" /> Group Only</div>
+                          </SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -696,6 +701,42 @@ export default function PostForm({
                     />
                   )}
               </div>
+                <FormField
+                  control={form.control}
+                  name="isLockedByDefault"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel className="flex items-center gap-2"><Lock className="h-4 w-4"/> Lock Post by Default</FormLabel>
+                        <FormDescription>If on, this post will be locked until explicitly unlocked (e.g., by a previous exam).</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="requiresExamToUnlock"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                      <div className="space-y-0.5">
+                        <FormLabel className="flex items-center gap-2"><Unlock className="h-4 w-4"/> Exam Unlocks Next Post</FormLabel>
+                        <FormDescription>If on, passing this post's exam will unlock the next post in the series.</FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
            </div>
 
           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">

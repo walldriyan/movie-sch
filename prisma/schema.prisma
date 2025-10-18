@@ -4,6 +4,7 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
+    binaryTargets = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x"]
 }
 
 datasource db {
@@ -118,6 +119,12 @@ model Post {
   visibility            PostVisibility   @default(PUBLIC)
   type                  PostType         @default(MOVIE)
   orderInSeries         Int?
+
+
+
+  isLockedByDefault   Boolean  @default(false)
+  requiresExamToUnlock Boolean @default(false)
+  
 
   authorId              String
   author                User             @relation(fields: [authorId], references: [id], onDelete: Cascade)

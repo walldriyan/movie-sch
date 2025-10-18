@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -335,13 +336,30 @@ export default function MoviePageContent({
                       </h3>
                     </div>
                   )}
-                  <div
-                    className="prose prose-invert max-w-none text-foreground/80"
-                    dangerouslySetInnerHTML={{ __html: post.description }}
-                  />
-                  <TrailerSection post={post} />
-                  <ImageGallerySection post={post} />
-                  <ExamSection exam={post.exam} />
+
+                  {post.isContentLocked ? (
+                      <div className="min-h-[200px] flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                          <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+                          <h3 className="text-lg font-semibold">Content Locked</h3>
+                          <p className="text-muted-foreground mt-2 max-w-sm">
+                              This content is currently locked. You may need to join a group or complete a previous step in a series to view it.
+                          </p>
+                      </div>
+                  ) : (
+                      <div
+                          className="prose prose-invert max-w-none text-foreground/80"
+                          dangerouslySetInnerHTML={{ __html: post.description }}
+                      />
+                  )}
+
+                  {!post.isContentLocked && (
+                    <>
+                      <TrailerSection post={post} />
+                      <ImageGallerySection post={post} />
+                      <ExamSection exam={post.exam} />
+                    </>
+                  )}
+
                   <Separator className="my-12" />
                   <SponsoredAdCard />
                   <Separator className="my-12" />

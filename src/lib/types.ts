@@ -43,6 +43,7 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres' | 'subtitles'> & {
     likedBy: number;
     reviews: number;
   };
+  isContentLocked?: boolean;
 };
 
 export type Series = Omit<PrismaSeries, 'posts'> & {
@@ -52,7 +53,7 @@ export type Series = Omit<PrismaSeries, 'posts'> & {
   }
 }
 
-export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series' | '_count' | 'exam'> & {
+export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series' | '_count' | 'exam' | 'isContentLocked'> & {
   mediaLinks?: Omit<MediaLink, 'id'>[];
   genres?: string[];
   seriesId?: number | null;

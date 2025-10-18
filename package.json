@@ -11,7 +11,7 @@
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
     "prisma:generate": "prisma generate",
-    "postinstall": "prisma generate && prisma db push"
+    "postinstall": "prisma generate && prisma db push &"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.4.1",
