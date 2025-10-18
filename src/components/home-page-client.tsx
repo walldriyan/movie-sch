@@ -31,9 +31,8 @@ import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
-import MovieCard from './movie-card';
-import { ROLES } from '@/lib/permissions';
 import MovieGrid from './movie-grid';
+import { ROLES } from '@/lib/permissions';
 
 
 interface HomePageClientProps {
@@ -203,7 +202,7 @@ export default function HomePageClient({
                       "rounded-full hover:bg-gray-800 flex-shrink-0",
                       lockStatus === 'locked' ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
-                      <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type, lockStatus: 'locked' })} className="flex items-center gap-2">
+                      <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: typeFilter, lockStatus: 'locked' })} className="flex items-center gap-2">
                         <Lock className="w-4 h-4" />
                         <span>Locked</span>
                       </Link>
