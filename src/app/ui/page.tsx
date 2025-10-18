@@ -122,42 +122,42 @@ export default function MetaSpotlight({
         }}
       >
         <div className="relative w-full h-full">
-            <img
-              src={card.image}
-              alt={card.brand}
-              className='w-full h-full object-cover'
-            />
-             {!isHero && (
-              <>
-                 <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
-                   {card.authorImage ? (
-                     <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
-                   ) : (
-                     card.brand.charAt(0)
-                   )}
-                 </div>
-                 <div className="absolute bottom-2 left-2 right-2 p-1.5 rounded-lg bg-black/20 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                     {card.brand}
-                 </div>
-              </>
-            )}
-
-            {card.type === 'grid' && (
-              <div className="grid grid-cols-3 gap-2 p-2 md:p-3 bg-white">
-                {card.gridColors.map((color: string, idx: number) => (
-                  <div key={idx} className={`${color} h-12 md:h-14 rounded`}></div>
-                ))}
+          <img
+            src={card.image}
+            alt={card.brand}
+            className='w-full h-full object-cover'
+          />
+          {!isHero && (
+            <>
+              <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
+                {card.authorImage ? (
+                  <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
+                ) : (
+                  card.brand.charAt(0)
+                )}
               </div>
-            )}
-
-            {card.type === 'dots' && (
-              <div className="flex justify-center gap-1 p-2 bg-white">
-                <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-                <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div className="absolute bottom-2 left-2 right-2 p-1.5 rounded-lg bg-black/20 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                {card.brand}
               </div>
-            )}
+            </>
+          )}
+
+          {card.type === 'grid' && (
+            <div className="grid grid-cols-3 gap-2 p-2 md:p-3 bg-white">
+              {card.gridColors.map((color: string, idx: number) => (
+                <div key={idx} className={`${color} h-12 md:h-14 rounded`}></div>
+              ))}
+            </div>
+          )}
+
+          {card.type === 'dots' && (
+            <div className="flex justify-center gap-1 p-2 bg-white">
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -171,15 +171,30 @@ export default function MetaSpotlight({
 
       {/* Text Overlay */}
       <div className="absolute bottom-0 pb-5 left-0 right-0 text-center z-20 px-4">
-        <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
+
+        {/* <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
          Share Your Ideas <br />here.<br />
         </h1>
         <h4 className="text-[20px]  text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
         Walldriyan.inc
-        </h4>
-        
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
-      </div>
+        </h4> */}
+        <div className='flex flex-col items-center justify-center'>
+          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-[0_6px_40px_rgba(0,0,0,0.9)]">
+            Freedom of Knowledge <br />
+            <span className="text-white">Share Your Ideas Here</span>
+          </h1>
+          <p className="text-lg w-[500px] text-center md:text-xl text-gray-200 leading-relaxed drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+            Empower minds by sharing your thoughts and insights freely.
+            {/* Join <span className="text-teal-900 font-semibold">Walldriyan.inc</span> —   */}
+            a space where every idea inspires change and builds the future of education.
+          </p>
+          <h4 className="mt-6 text-white/90 text-lg font-medium tracking-wide">
+            Walldriyan.inc
+          </h4>
+
+          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
+        </div>
+        </div>
 
       {/* Cards Container */}
       <div className="flex flex-row gap-3  p-3 w-full justify-center">
