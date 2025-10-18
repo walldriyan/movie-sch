@@ -63,22 +63,19 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     // --- START Role-Based Access Control Logic ---
 
     if (userRole === ROLES.SUPER_ADMIN) {
-        // Super Admins can see almost everything, except what's explicitly filtered.
         whereClause.status = { not: MovieStatus.PENDING_DELETION };
     } else if (userRole === ROLES.USER_ADMIN) {
-        // User Admins see their own posts OR public, published posts.
         const publicCriteria: Prisma.PostWhereInput = {
             status: MovieStatus.PUBLISHED,
             visibility: 'PUBLIC',
         };
         whereClause = {
             OR: [
-                { authorId: user.id }, // Their own posts
+                { authorId: user.id },
                 publicCriteria
             ],
         };
     } else {
-        // Guests and regular Users see the same set of public, published, unlocked content.
         let publicCriteria: Prisma.PostWhereInput = {
             status: MovieStatus.PUBLISHED,
             visibility: 'PUBLIC',
@@ -92,8 +89,8 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 
             whereClause = {
                  OR: [
-                    publicCriteria, // The public criteria from above
-                    { // Or posts from their groups
+                    publicCriteria,
+                    {
                         status: MovieStatus.PUBLISHED,
                         visibility: 'GROUP_ONLY',
                         groupId: { in: userGroupIds },
@@ -166,15 +163,19 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
     }
 
-    // This handles the locked/unlocked filter buttons for non-super-admins
-    if (userRole !== ROLES.SUPER_ADMIN) {
-      if (lockStatus === 'locked') {
-          whereClause.isLockedByDefault = true;
-      } else {
-          // Default to showing only unlocked posts for non-admins
-          whereClause.isLockedByDefault = false;
+    if (lockStatus === 'locked') {
+      whereClause.isLockedByDefault = true;
+    } else if (lockStatus === 'unlocked') {
+      whereClause.isLockedByDefault = false;
+    } else {
+      // Default behavior if lockStatus is not provided
+      if (userRole !== ROLES.SUPER_ADMIN) {
+        // For non-super-admins, default to showing only unlocked posts.
+        whereClause.isLockedByDefault = false;
       }
+      // For super-admins, if no lockStatus is given, we don't add a clause, showing both.
     }
+
 
     const posts = await prisma.post.findMany({
         where: whereClause,
@@ -715,4 +716,3 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
-
