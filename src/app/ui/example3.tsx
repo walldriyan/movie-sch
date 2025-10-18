@@ -220,7 +220,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
       </div> */}
 
-      <div className="relative w-full flex items-center p-2 justify-center">
+      <div className="relative w-[500px] flex items-center p-2 justify-center">
         <Button
           variant="ghost"
           size="icon"
@@ -229,7 +229,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="max-w-[600px] w-[300px] h-[200px] overflow-y-hidden overflow-x-auto">
+        <div ref={scrollContainerRef} className="max-w-[600px] w-[480px] h-[200px] overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
             className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
