@@ -51,8 +51,7 @@ import {
   ChevronDown, 
   ChevronUp,
   BookCheck,
-  PlayCircle,
-  FileText
+  PlayCircle
 } from 'lucide-react';
 import Image from 'next/image';
 import AdminActions from '@/components/admin-actions';
@@ -62,6 +61,7 @@ import SponsoredAdCard from '@/components/sponsored-ad-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import PostViewsAndLikes from '@/components/post-views-and-likes';
 
 const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) => (
   <div className="flex items-start gap-4">
@@ -173,46 +173,7 @@ const ExamSection = ({ exam }: { exam: { id: number; title: string; description:
   );
 };
 
-const PostViewsAndLikes = ({ post }: { post: Post }) => {
-  const likers = post.likedBy || [];
-  if (likers.length === 0) return null;
 
-  const displayLikers = likers.slice(0, 5);
-  const remainingLikersCount = likers.length > 5 ? likers.length - 5 : 0;
-
-  return (
-    <div className="relative flex flex-col items-center justify-center rounded-lg bg-muted/20 border border-dashed p-8 mt-12">
-        <div className="flex -space-x-4">
-          {displayLikers.map(liker => (
-            <Avatar key={liker.id} className="h-12 w-12 border-2 border-background">
-              <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
-              <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-          ))}
-          {remainingLikersCount > 0 && (
-            <Avatar className="h-12 w-12 border-2 border-background">
-              <AvatarFallback>+{remainingLikersCount}</AvatarFallback>
-            </Avatar>
-          )}
-        </div>
-        <p className="text-sm text-muted-foreground mt-4">
-            Recent viewers of this post.
-        </p>
-
-        <div className="absolute bottom-4 right-4 flex items-center gap-4 bg-black/30 text-white backdrop-blur-sm px-4 py-2 rounded-full border border-white/20">
-            <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                <span className="font-bold text-sm">{post.viewCount.toLocaleString()}</span>
-            </div>
-            <Separator orientation="vertical" className="h-4 bg-white/30" />
-            <div className="flex items-center gap-2">
-                <ThumbsUp className="w-4 h-4" />
-                <span className="font-bold text-sm">{post._count?.likedBy || 0}</span>
-            </div>
-        </div>
-    </div>
-  );
-};
 
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
@@ -403,8 +364,9 @@ export default function MoviePageContent({
                   )}
 
                   <Separator className="my-12" />
-                  <SponsoredAdCard />
                   <PostViewsAndLikes post={post} />
+                  <Separator className="my-12" />
+                  <SponsoredAdCard />
                   <Separator className="my-12" />
                   <section id="recommendations">
                     <h2 className="font-serif text-3xl font-bold mb-8">
