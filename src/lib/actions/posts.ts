@@ -81,13 +81,18 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     } else {
       // Guests can only see public posts and they must not be locked by default.
       whereClause.visibility = 'PUBLIC';
-      whereClause.isLockedByDefault = false;
     }
     
     let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
 
-    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type } = filters;
+    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
     
+     if (lockStatus === 'locked') {
+      whereClause.isLockedByDefault = true;
+    } else if (lockStatus === 'unlocked') {
+      whereClause.isLockedByDefault = false;
+    }
+
     if (authorId) {
       whereClause.authorId = authorId;
       if (!includePrivate) {
@@ -674,4 +679,3 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
-

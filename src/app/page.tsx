@@ -24,6 +24,7 @@ export default async function HomePage({
   const sortBy = (params.sortBy as string) || 'updatedAt-desc';
   const typeFilter = params.type as string | undefined;
   const currentPage = Number(params.page) || 1;
+  const lockStatus = params.lockStatus as string | undefined;
 
   const session = await auth();
   // console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
@@ -31,7 +32,7 @@ export default async function HomePage({
   const { posts, totalPages } = await getPosts({
     page: currentPage,
     limit: 10,
-    filters: { timeFilter, sortBy, type: typeFilter },
+    filters: { timeFilter, sortBy, type: typeFilter, lockStatus },
   });
   const users = await getUsers();
   const groups = await getPublicGroups();
@@ -50,7 +51,7 @@ export default async function HomePage({
         initialGroups={groups}
         totalPages={totalPages}
         currentPage={currentPage}
-        searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter }}
+        searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter, lockStatus }}
         initialNotifications={notifications}
         session={session}
       />
