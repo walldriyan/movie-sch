@@ -76,6 +76,11 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             const group = await prisma.group.findUnique({ where: { id: data.groupId } });
             if (group?.createdById === user.id) isAuthorized = true;
         }
+        if (!isAuthorized && data.postId) { // Check if authorized via postId even if group is selected
+             const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) } });
+             if (post?.authorId === user.id) isAuthorized = true;
+        }
+        
         if (!isAuthorized) {
             throw new Error('Not authorized to create or edit an exam for this item.');
         }
@@ -96,26 +101,22 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
     if (examId) { // Update an existing exam
         await prisma.$transaction(async (tx) => {
-            const relationData: any = {};
-            if (data.assignmentType === 'POST' && data.postId) {
-                relationData.post = { connect: { id: parseInt(data.postId, 10) } };
-                relationData.group = { disconnect: true };
-            } else if (data.assignmentType === 'GROUP' && data.groupId) {
-                // IMPORTANT FIX: We can't disconnect the post if it's required.
-                // We assume if a group is selected, the post relation might not change,
-                // or the logic implies it should be nullable (which isn't the case here).
-                // The safest approach is to only connect the group, and assume the post link remains.
-                relationData.group = { connect: { id: data.groupId } };
-                // We remove the line that attempts to disconnect the post.
-                // relationData.post = { disconnect: true }; // THIS LINE IS REMOVED
-            }
+            const updateData: Prisma.ExamUpdateInput = {
+                ...baseExamData,
+            };
 
+            if (data.assignmentType === 'POST' && data.postId) {
+                updateData.post = { connect: { id: parseInt(data.postId, 10) } };
+                updateData.group = { disconnect: true }; 
+            } else if (data.assignmentType === 'GROUP' && data.groupId) {
+                updateData.group = { connect: { id: data.groupId } };
+                // We do not disconnect the post, as it's a required relation.
+                // We assume if a group is assigned, the post relation is still valid or managed elsewhere.
+            }
+            
             await tx.exam.update({
               where: { id: examId },
-              data: {
-                ...baseExamData,
-                ...relationData,
-              },
+              data: updateData,
             });
 
             // Logic to update questions and options remains the same...
@@ -168,9 +169,13 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             }
         });
     } else { // Create a new exam
+        if (!data.postId) {
+            throw new Error("A post must be selected to create an exam.");
+        }
+
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
-            post: { connect: { id: parseInt(data.postId!, 10) } }, // postId is required by schema on create
+            post: { connect: { id: parseInt(data.postId, 10) } },
             group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
             questions: {
                 create: data.questions.map(q => ({
@@ -645,5 +650,6 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
+
 
 
