@@ -6,6 +6,8 @@ import type { Post, Subtitle, User } from '@/lib/types';
 import MoviePageContent from './movie-page-content';
 import { auth } from '@/auth';
 import type { Session } from 'next-auth';
+import prisma from '@/lib/prisma';
+import { ROLES } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,13 +67,40 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     notFound();
   }
 
+  const session = await auth();
   const postData = await getPost(postId);
   
   if (!postData) {
     notFound();
   }
 
-  const session = await auth();
+  // --- Start Server-Side Lock Logic ---
+  let isContentLocked = false;
+  const user = session?.user;
+
+  if (user && (user.role === ROLES.SUPER_ADMIN || user.id === postData.authorId)) {
+    isContentLocked = false;
+  } else if (postData.visibility === 'GROUP_ONLY') {
+      if (!user) {
+        isContentLocked = true; // Not logged in, so lock group content
+      } else {
+        const membership = await prisma.groupMember.findFirst({
+            where: {
+                groupId: postData.groupId,
+                userId: user.id,
+                status: 'ACTIVE'
+            }
+        });
+        if (!membership) {
+            isContentLocked = true; // Logged in but not a member, so lock
+        }
+      }
+  } else if (postData.isLockedByDefault) {
+    isContentLocked = true;
+    // In a future step, we could add exam pass checking logic here for logged-in users.
+    // For now, if it's locked by default and the user is not an admin/author, it's locked.
+  }
+  // --- End Server-Side Lock Logic ---
   
   // Serialize subtitles with permissions
   const subtitlesWithPermissions: any[] = await Promise.all(
@@ -113,6 +142,9 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     createdAt: serializeDate(postData.createdAt),
     updatedAt: serializeDate(postData.updatedAt),
     publishedAt: serializeDate(postData.publishedAt),
+    isLockedByDefault: postData.isLockedByDefault, // pass this through
+    requiresExamToUnlock: postData.requiresExamToUnlock, // pass this through
+    isContentLocked: isContentLocked, // Add the calculated lock status
     
     // Serialize nested objects
     author: serializeUser(postData.author),
