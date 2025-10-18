@@ -6,12 +6,14 @@ import type { User, GroupWithCount } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
-export default function GroupsUsersSpotlight({ users, groups }: {
+export default function GroupsUsersSpotlight({ users, groups, loading }: {
   users: User[];
   groups: (GroupWithCount & { posts: { posterUrl: string | null }[] })[]
+  loading: boolean;
 }) {
   const [mousePos, setMousePos] = React.useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = React.useState(false);
@@ -81,14 +83,14 @@ export default function GroupsUsersSpotlight({ users, groups }: {
     const rotateAdjust = mousePos.x * 8;
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.05)`;
   };
+  
+  const positionClasses = [
+      'top-1/4 left-1/4', 'top-1/2 right-1/4', 'bottom-1/4 left-1/2', 'top-1/3 right-1/3',
+      'bottom-1/3 left-1/4', 'top-1/2 left-1/3', 'bottom-1/4 right-1/2', 'top-1/4 right-1/4',
+      'bottom-1/2 left-1/2'
+  ];
 
   const renderItem = (item: any, index: number) => {
-    const positionClasses = [
-        'top-1/4 left-1/4', 'top-1/2 right-1/4', 'bottom-1/4 left-1/2', 'top-1/3 right-1/3',
-        'bottom-1/3 left-1/4', 'top-1/2 left-1/3', 'bottom-1/4 right-1/2', 'top-1/4 right-1/4',
-        'bottom-1/2 left-1/2'
-    ];
-
     if (item.type === 'user') {
       return (
         <div
@@ -126,6 +128,39 @@ export default function GroupsUsersSpotlight({ users, groups }: {
 
     return null;
   };
+  
+  const renderSkeletons = () => {
+    return Array.from({ length: 9 }).map((_, index) => {
+        const isUser = index % 2 === 0;
+        const rotation = getRandomValue(-25, 25);
+        if (isUser) {
+           return (
+                <div
+                key={`skeleton-user-${index}`}
+                className={`absolute ${positionClasses[index % positionClasses.length]} -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out`}
+                style={{ transform: `rotate(${rotation}deg)` }}
+                >
+                    <Skeleton className="w-20 h-20 md:w-24 md:h-24 rounded-full" />
+                </div>
+            )
+        } else {
+             return (
+                <div
+                key={`skeleton-group-${index}`}
+                className={`absolute ${positionClasses[index % positionClasses.length]} bg-muted rounded-lg shadow-xl overflow-hidden transition-all duration-500 ease-out w-40 md:w-48 -translate-x-1/2 -translate-y-1/2`}
+                style={{
+                    transform: `rotate(${rotation}deg)`,
+                    height: '200px',
+                    aspectRatio: '11/17',
+                }}
+                >
+                    <Skeleton className="w-full h-full" />
+                </div>
+            )
+        }
+    });
+  }
+
   // bg-gradient-to-r from-zinc-950 via-stone-900 to-zinc-950
   return (
     <div
@@ -133,7 +168,7 @@ export default function GroupsUsersSpotlight({ users, groups }: {
       className="relative bg-gradient-to-r from-zinc-950/80 via-stone-900 to-zinc-950/50  rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center"
       style={{ perspective: '1000px' }}
     >
-      {items.map((item, index) => renderItem(item, index))}
+      {loading ? renderSkeletons() : items.map((item, index) => renderItem(item, index))}
     </div>
   );
 }

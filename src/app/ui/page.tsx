@@ -28,7 +28,7 @@ export default function MetaSpotlight({
   React.useEffect(() => {
     // Simulate loading
     const timer = setTimeout(() => {
-      let postsToDisplay: Post[] = initialPosts.slice(0, 10);
+      let postsToDisplay = initialPosts.sort((a, b) => (b._count?.likedBy ?? 0) - (a._count?.likedBy ?? 0)).slice(0, 10);
       
       const generatedCards = postsToDisplay.map((post, index) => {
         const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
@@ -195,7 +195,7 @@ export default function MetaSpotlight({
         )}
       </div>
 
-      <GroupsUsersSpotlight users={users} groups={groups} />
+      <GroupsUsersSpotlight users={users} groups={groups} loading={loading} />
      
       </div>
 
