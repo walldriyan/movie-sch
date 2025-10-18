@@ -33,10 +33,10 @@ export default function OnlineUsersWidget() {
         {isOpen && (
           <motion.div
             key="widget-card"
-            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 50, scale: 0.9 }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
+            exit={{ opacity: 0, y: 30, scale: 0.9, transition: { duration: 0.2 } }}
+            transition={{ type: "spring", stiffness: 300, damping: 25 }}
           >
             <Card className="w-[300px] max-h-[500px] flex flex-col bg-background/80 backdrop-blur-lg border-primary/20 shadow-lg shadow-primary/10">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -68,24 +68,15 @@ export default function OnlineUsersWidget() {
           </motion.div>
         )}
       </AnimatePresence>
-      <AnimatePresence>
-        {!isOpen && (
-           <motion.div
-            key="widget-button"
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            exit={{ scale: 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <Button
-              className="rounded-full w-14 h-14 bg-primary/80 backdrop-blur-lg shadow-lg"
-              onClick={() => setIsOpen(true)}
-            >
-              <MessageSquare className="h-6 w-6" />
-            </Button>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      
+      {!isOpen && (
+        <Button
+          className="rounded-full w-14 h-14 bg-primary/80 backdrop-blur-lg shadow-lg"
+          onClick={() => setIsOpen(true)}
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
+      )}
     </div>
   );
 }
