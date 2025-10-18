@@ -10,6 +10,7 @@ import MetaSpotlight from './ui/page';
 import MetaSpotlight3 from './ui/example3';
 import { Post } from '@/lib/types';
 import MetaSpotlightPostGrid from './ui/postGrid';
+import { Drag_Transform } from './ui/dragComponent';
 
 export default async function HomePage({
   searchParams,
@@ -43,9 +44,9 @@ export default async function HomePage({
 
       {/* <MetaSpotlight1 /> */}
 
-
+  
       <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
-      <MetaSpotlight3 posts={posts as Post[]} />
+    <MetaSpotlight3 posts={posts as Post[]} />
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
