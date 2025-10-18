@@ -29,18 +29,18 @@ export default function MetaSpotlight({
     // Simulate loading
     const timer = setTimeout(() => {
       let postsToDisplay = initialPosts.sort((a, b) => (b._count?.likedBy ?? 0) - (a._count?.likedBy ?? 0)).slice(0, 10);
-      
+
       const generatedCards = postsToDisplay.map((post, index) => {
         const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
         const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
         const isHeroIndex = postsToDisplay.length > 2 ? Math.floor(postsToDisplay.length / 2) : 0;
         const cardType = index === isHeroIndex ? 'hero' : (index % 3 === 1 ? 'dots' : 'single');
-        
+
         const cardPositions = [
           'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8',
           'left-20 top-32', 'right-20 top-32', 'left-24 bottom-24', 'right-24 bottom-24', 'left-10 bottom-40'
         ];
-        
+
         return {
           id: `post-${post.id}-${index}`, // Unique key
           image: post.posterUrl || defaultImage,
@@ -101,14 +101,14 @@ export default function MetaSpotlight({
     const moveX = mousePos.x * 30 * distanceMultiplier;
     const moveY = mousePos.y * 30 * distanceMultiplier;
     const rotateAdjust = mousePos.x * 5;
-    
+
     if (isHeroCard) {
       return `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px)) scale(1.02)`;
     }
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg)`;
   };
-  
-    const renderCard = (card: any) => {
+
+  const renderCard = (card: any) => {
     const isHero = card.type === 'hero';
     const cardWidth = isHero ? 'w-48 md:w-56' : 'w-32 md:w-36';
 
@@ -124,7 +124,7 @@ export default function MetaSpotlight({
         {!isHero && (
           <div className="relative">
             <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
-               {card.authorImage ? (
+              {card.authorImage ? (
                 <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
               ) : (
                 card.brand.charAt(0)
@@ -162,7 +162,10 @@ export default function MetaSpotlight({
 
 
   return (
-    <div className="h-[520px] p-3  bg-gradient-to-r from-zinc-950 via-stone-900/20  to-zinc-950 flex flex-col items-center justify-center mb-1 overflow-hidden relative">
+    <div className="h-[520px] p-3  bg-gradient-to-r from-zinc-950 via-cyan-950/5 to-zinc-950 drop-shadow-lg flex flex-col items-center justify-center mb-1 overflow-hidden relative">
+
+
+
       {/* Text Overlay */}
       <div className="absolute bottom-0 pb-5 left-0 right-0 text-center z-20 px-4">
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
@@ -173,30 +176,30 @@ export default function MetaSpotlight({
 
       {/* Cards Container */}
       <div className="flex flex-row gap-3  p-3 w-full justify-center">
-      <div 
-        ref={containerRef}
-        className="relative  bg-gradient-to-r from-zinc-950/10 via-stone-900/5 to-zinc-950/5 backdrop-blur-lg rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
-        style={{ perspective: '1000px' }}
-      >
-        {loading ? (
+        <div
+          ref={containerRef}
+          className="relative rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
+          style={{ perspective: '1000px' }}
+        >
+          {loading ? (
             // Render skeletons while loading
             Array.from({ length: 5 }).map((_, i) => {
-                const isHero = i === 2;
-                const cardWidth = isHero ? 'w-48 md:w-56' : 'w-32 md:w-36';
-                 const cardPositions = [
-                    'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8'
-                ];
-                return (
-                     <Skeleton key={i} className={`absolute ${cardPositions[i]} ${cardWidth} aspect-[11/17] rounded-2xl ${isHero ? 'z-10' : ''}`} />
-                )
+              const isHero = i === 2;
+              const cardWidth = isHero ? 'w-48 md:w-56' : 'w-32 md:w-36';
+              const cardPositions = [
+                'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8'
+              ];
+              return (
+                <Skeleton key={i} className={`absolute ${cardPositions[i]} ${cardWidth} aspect-[11/17] rounded-2xl ${isHero ? 'z-10' : ''}`} />
+              )
             })
-        ) : (
+          ) : (
             cards.map(card => renderCard(card))
-        )}
-      </div>
+          )}
+        </div>
 
-      <GroupsUsersSpotlight users={users} groups={groups} loading={loading} />
-     
+        <GroupsUsersSpotlight users={users} groups={groups} loading={loading} />
+
       </div>
 
       {/* Meta Logo */}
