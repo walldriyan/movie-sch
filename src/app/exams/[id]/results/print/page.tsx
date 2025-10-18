@@ -26,13 +26,13 @@ const PrintLayout = ({ children, title }: { children: React.ReactNode, title: st
         <head>
             <title>{title}</title>
             <style>{`
-                body { 
-                    -webkit-print-color-adjust: exact !important;
-                    print-color-adjust: exact !important;
-                }
                 @page {
                     size: A4;
                     margin: 0;
+                }
+                body { 
+                    -webkit-print-color-adjust: exact !important;
+                    print-color-adjust: exact !important;
                 }
                  @media print {
                     .no-print-in-layout { display: none !important; }
