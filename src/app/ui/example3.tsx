@@ -19,35 +19,15 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   const [cards, setCards] = useState<any[]>([]);
 
   useEffect(() => {
-    // Sort posts by like count in descending order
-    const sortedPosts = [...initialPosts].sort((a, b) => (b._count?.likedBy ?? 0) - (a._count?.likedBy ?? 0));
-
-    let postsToDisplay: Post[] = [];
-    const numPosts = sortedPosts.length;
-
-    if (numPosts === 0) {
-      setCards([]);
-      return;
-    }
-
-    if (numPosts >= 10) {
-      postsToDisplay = sortedPosts.slice(0, 10);
-    } else if (numPosts >= 5) {
-      postsToDisplay = sortedPosts;
-    } else { // numPosts < 5
-      postsToDisplay = [...sortedPosts];
-      // Duplicate posts to reach the minimum of 5
-      let i = 0;
-      while (postsToDisplay.length < 5) {
-        postsToDisplay.push(sortedPosts[i % numPosts]);
-        i++;
-      }
-    }
+    // Sort posts by like count in descending order and take the top 10
+    const sortedPosts = [...initialPosts]
+      .sort((a, b) => (b._count?.likedBy ?? 0) - (a._count?.likedBy ?? 0))
+      .slice(0, 10);
     
-    const generatedCards = postsToDisplay.map((post, index) => {
+    const generatedCards = sortedPosts.map((post, index) => {
       const isSeriesPost = post.series && post.series.posts && post.series.posts.length > 0;
       // Ensure the hero card is still somewhat centered if possible
-      const isHeroIndex = postsToDisplay.length > 2 ? Math.floor(postsToDisplay.length / 2) : 0;
+      const isHeroIndex = sortedPosts.length > 2 ? Math.floor(sortedPosts.length / 2) : 0;
       const cardType = index === isHeroIndex ? 'hero' : (isSeriesPost ? 'series' : (index % 3 === 1 ? 'dots' : 'single'));
 
       return {

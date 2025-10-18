@@ -5,6 +5,7 @@ import React from 'react';
 import type { Post, User, GroupWithCount } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import GroupsUsersSpotlight from './groups-users-spotlight';
+import { Skeleton } from '@/components/ui/skeleton';
 
 // Helper function to get a random value in a range
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
@@ -22,54 +23,42 @@ export default function MetaSpotlight({
   const [isHovering, setIsHovering] = React.useState(false);
   const containerRef = React.useRef(null);
   const [cards, setCards] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
 
   React.useEffect(() => {
-    let postsToDisplay: Post[] = [];
-    const numPosts = initialPosts.length;
-
-    if (numPosts === 0) {
-      setCards([]);
-      return;
-    }
-    
-    if (numPosts >= 10) {
-      postsToDisplay = initialPosts.slice(0, 10);
-    } else if (numPosts >= 5) {
-      postsToDisplay = initialPosts;
-    } else { // numPosts < 5
-      postsToDisplay = [...initialPosts];
-      let i = 0;
-      while (postsToDisplay.length < 5) {
-        postsToDisplay.push(initialPosts[i % numPosts]);
-        i++;
-      }
-    }
-
-    const generatedCards = postsToDisplay.map((post, index) => {
-      const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
-      const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
-      const cardType = index === 2 ? 'hero' : (index % 3 === 1 ? 'dots' : 'single');
+    // Simulate loading
+    const timer = setTimeout(() => {
+      let postsToDisplay: Post[] = initialPosts.slice(0, 10);
       
-      const cardPositions = [
-        'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8',
-        'left-20 top-32', 'right-20 top-32', 'left-24 bottom-24', 'right-24 bottom-24', 'left-10 bottom-40'
-      ];
-      
-      return {
-        id: `post-${post.id}-${index}`, // Unique key
-        image: post.posterUrl || defaultImage,
-        brand: post.author?.name || 'CineVerse',
-        authorImage: post.author?.image || authorImageDefault,
-        type: cardType,
-        gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'],
-        position: cardPositions[index % cardPositions.length],
-        rotation: getRandomValue(-15, 15),
-        distance: getRandomValue(0.6, 0.9),
-      };
-    });
+      const generatedCards = postsToDisplay.map((post, index) => {
+        const defaultImage = PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
+        const authorImageDefault = PlaceHolderImages.find(p => p.id === 'avatar-1')?.imageUrl;
+        const isHeroIndex = postsToDisplay.length > 2 ? Math.floor(postsToDisplay.length / 2) : 0;
+        const cardType = index === isHeroIndex ? 'hero' : (index % 3 === 1 ? 'dots' : 'single');
+        
+        const cardPositions = [
+          'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8',
+          'left-20 top-32', 'right-20 top-32', 'left-24 bottom-24', 'right-24 bottom-24', 'left-10 bottom-40'
+        ];
+        
+        return {
+          id: `post-${post.id}-${index}`, // Unique key
+          image: post.posterUrl || defaultImage,
+          brand: post.author?.name || 'CineVerse',
+          authorImage: post.author?.image || authorImageDefault,
+          type: cardType,
+          gridColors: ['bg-blue-400', 'bg-purple-400', 'bg-orange-500'],
+          position: cardPositions[index % cardPositions.length],
+          rotation: index === isHeroIndex ? 0 : getRandomValue(-15, 15),
+          distance: index === isHeroIndex ? 0.5 : getRandomValue(0.6, 0.9),
+        };
+      });
 
-    setCards(generatedCards);
+      setCards(generatedCards);
+      setLoading(false);
+    }, 1000); // 1 second delay to show skeletons
 
+    return () => clearTimeout(timer);
   }, [initialPosts]);
 
 
@@ -121,13 +110,13 @@ export default function MetaSpotlight({
   
     const renderCard = (card: any) => {
     const isHero = card.type === 'hero';
-    const cardWidth = isHero ? 'w-64 md:w-72' : 'w-32 md:w-36';
-    const cardHeight = isHero ? 'h-[400px] md:h-[420px]' : 'h-44 md:h-52';
+    const cardWidth = isHero ? 'w-48 md:w-56' : 'w-32 md:w-36';
+    const cardHeight = 'h-[85%] md:h-[95%] aspect-[11/17]';
 
     return (
       <div
         key={card.id}
-        className={`absolute ${card.position} bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out ${isHero ? 'z-10' : ''} ${cardWidth}`}
+        className={`absolute ${card.position} bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out ${isHero ? 'z-10' : ''} ${cardWidth} ${cardHeight}`}
         style={{
           transform: getCardTransform(card.rotation, card.distance, isHero),
           transformOrigin: 'center center'
@@ -149,7 +138,7 @@ export default function MetaSpotlight({
         <img
           src={card.image}
           alt={card.brand}
-          className={`w-full object-cover ${cardHeight}`}
+          className={`w-full object-cover ${isHero ? 'h-full' : 'h-[60%]'}`}
         />
 
         {card.type === 'grid' && (
@@ -190,7 +179,22 @@ export default function MetaSpotlight({
         className="relative  bg-gradient-to-r from-zinc-950 via-stone-900  to-zinc-950 rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center "
         style={{ perspective: '1000px' }}
       >
-        {cards.map(card => renderCard(card))}
+        {loading ? (
+            // Render skeletons while loading
+            Array.from({ length: 5 }).map((_, i) => {
+                const isHero = i === 2;
+                const cardWidth = isHero ? 'w-48 md:w-56' : 'w-32 md:w-36';
+                const cardHeight = 'h-[85%] md:h-[95%]';
+                 const cardPositions = [
+                    'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8'
+                ];
+                return (
+                     <Skeleton key={i} className={`absolute ${cardPositions[i]} ${cardWidth} ${cardHeight} rounded-2xl ${isHero ? 'z-10' : ''}`} />
+                )
+            })
+        ) : (
+            cards.map(card => renderCard(card))
+        )}
       </div>
 
       <GroupsUsersSpotlight users={users} groups={groups} />
