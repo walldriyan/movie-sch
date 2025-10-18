@@ -85,6 +85,7 @@ function PostCard({ post, isOwnProfile, currentFilter, profileUser }: { post: Po
                           src={postImageUrl}
                           alt={post.title}
                           fill
+                          sizes="(max-width: 768px) 90vw, 800px"
                           className="object-cover"
                       />
                        {isOwnProfile && currentFilter === 'posts' && (
@@ -180,7 +181,7 @@ export default function ProfilePostList({ posts, isOwnProfile, currentFilter, pr
       <ul>
         {posts.map((post: any) => (
             <PostCard 
-                key={post.id} 
+                key={`${currentFilter}-${post.id}`} 
                 post={post}
                 isOwnProfile={isOwnProfile}
                 currentFilter={currentFilter}

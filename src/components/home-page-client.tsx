@@ -154,16 +154,13 @@ export default function HomePageClient({
 
   const renderFallbackContent = () => {
     if (!posts || posts.length === 0) return null;
-    const fallbackPosts = posts.slice(0, 3).map(post => ({
-      id: post.id,
-      title: post.title,
-      posterUrlId: 'movie-poster-placeholder'
-    }));
+    // Take the first 3 posts or as many as available if less than 3
+    const fallbackPosts = posts.slice(0, 3);
 
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
         {fallbackPosts.map(p => (
-            <MovieCard key={`fallback-${p.id}`} id={p.id} title={p.title} description="" posterUrlId={p.posterUrlId} />
+            <MovieCard key={`fallback-${p.id}`} id={p.id} title={p.title} description="" posterUrlId="movie-poster-placeholder" />
         ))}
       </div>
     )
