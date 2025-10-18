@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -58,16 +59,10 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         throw new Error('Not authenticated');
     }
 
-    if (user.role !== ROLES.SUPER_ADMIN) {
-        let isAuthorized = true; 
-         if (data.postId) {
-            const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) } });
-            if (post?.authorId !== user.id) {
-                isAuthorized = false;
-            }
-        }
-        if (!isAuthorized) {
-           throw new Error('Not authorized to create or edit an exam for this item.');
+    if (user.role !== ROLES.SUPER_ADMIN && data.postId) {
+        const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) } });
+        if (post?.authorId !== user.id) {
+            throw new Error('Not authorized to create or edit an exam for this post.');
         }
     }
     
@@ -606,6 +601,11 @@ export async function getExamsForUser(userId: string) {
                     title: true
                 }
             },
+            group: {
+                select: {
+                    name: true
+                }
+            },
             _count: {
                 select: {
                     questions: true
@@ -628,4 +628,5 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
+
 

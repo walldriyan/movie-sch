@@ -5,7 +5,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { BookCheck, Clapperboard, FileQuestion, PlayCircle, VideoOff, Award, Clock, Repeat } from 'lucide-react';
+import { BookCheck, Clapperboard, FileQuestion, PlayCircle, VideoOff, Award, Clock, Repeat, Users } from 'lucide-react';
 import type { ExamWithSubmissions } from '@/lib/types';
 import { Separator } from '../ui/separator';
 
@@ -67,8 +67,17 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
             <CardHeader>
               <CardTitle>{exam.title}</CardTitle>
               <CardDescription className="flex items-center gap-2 pt-2">
-                  <Clapperboard className="h-4 w-4" />
-                  From: {exam.post.title}
+                  {exam.post ? (
+                    <>
+                      <Clapperboard className="h-4 w-4" />
+                      From: {exam.post.title}
+                    </>
+                  ) : exam.group ? (
+                     <>
+                      <Users className="h-4 w-4" />
+                      Group: {exam.group.name}
+                    </>
+                  ) : null}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-grow space-y-3">

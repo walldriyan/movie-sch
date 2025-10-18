@@ -97,7 +97,8 @@ export type ExamResultSubmission = PrismaSubmission & {
 };
 
 export type ExamWithSubmissions = PrismaExam & {
-    post: { title: string };
+    post: { title: string } | null;
+    group: { name: string } | null;
     _count: { questions: number };
     questions: { points: number }[];
     submissions: PrismaSubmission[];
