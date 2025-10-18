@@ -27,6 +27,19 @@ const onlineUsers = [
 export default function OnlineUsersWidget() {
   const [isOpen, setIsOpen] = useState(true);
 
+  if (!isOpen) {
+    return (
+       <div className="fixed bottom-4 right-4 z-50">
+          <Button
+            className="rounded-full w-14 h-14 bg-primary/80 backdrop-blur-lg shadow-lg"
+            onClick={() => setIsOpen(true)}
+          >
+            <MessageSquare className="h-6 w-6" />
+          </Button>
+       </div>
+    )
+  }
+
   return (
     <div className="fixed bottom-4 right-4 z-50">
       <AnimatePresence>
@@ -36,7 +49,7 @@ export default function OnlineUsersWidget() {
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.9, transition: { duration: 0.2 } }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            transition={{ type: "spring", stiffness: 500, damping: 30 }}
           >
             <Card className="w-[300px] max-h-[500px] flex flex-col bg-background/80 backdrop-blur-lg border-primary/20 shadow-lg shadow-primary/10">
               <CardHeader className="flex flex-row items-center justify-between">
@@ -68,15 +81,6 @@ export default function OnlineUsersWidget() {
           </motion.div>
         )}
       </AnimatePresence>
-      
-      {!isOpen && (
-        <Button
-          className="rounded-full w-14 h-14 bg-primary/80 backdrop-blur-lg shadow-lg"
-          onClick={() => setIsOpen(true)}
-        >
-          <MessageSquare className="h-6 w-6" />
-        </Button>
-      )}
     </div>
   );
 }
