@@ -115,47 +115,50 @@ export default function MetaSpotlight({
     return (
       <div
         key={card.id}
-        className={`absolute ${card.position} bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out ${isHero ? 'z-10' : ''} ${cardWidth} aspect-[11/17]`}
+        className={`group absolute ${card.position} bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out ${isHero ? 'z-10' : ''} ${cardWidth} aspect-[11/17]`}
         style={{
           transform: getCardTransform(card.rotation, card.distance, isHero),
           transformOrigin: 'center center'
         }}
       >
-        {!isHero && (
-          <div className="relative">
-            <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
-              {card.authorImage ? (
-                <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
-              ) : (
-                card.brand.charAt(0)
-              )}
-            </div>
-            <div className="text-xs font-semibold p-2 md:p-3 pt-2 truncate">{card.brand}</div>
-          </div>
-        )}
+        <div className="relative w-full h-full">
+            <img
+              src={card.image}
+              alt={card.brand}
+              className='w-full h-full object-cover'
+            />
+             {!isHero && (
+              <>
+                <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
+                  {card.authorImage ? (
+                    <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
+                  ) : (
+                    card.brand.charAt(0)
+                  )}
+                </div>
+                <div className="absolute bottom-2 left-2 right-2 p-1.5 rounded-lg bg-black/20 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {card.brand}
+                </div>
+              </>
+            )}
 
-        <img
-          src={card.image}
-          alt={card.brand}
-          className={`w-full object-cover ${isHero ? 'h-full' : 'h-[60%]'}`}
-        />
+            {card.type === 'grid' && (
+              <div className="grid grid-cols-3 gap-2 p-2 md:p-3 bg-white">
+                {card.gridColors.map((color: string, idx: number) => (
+                  <div key={idx} className={`${color} h-12 md:h-14 rounded`}></div>
+                ))}
+              </div>
+            )}
 
-        {card.type === 'grid' && (
-          <div className="grid grid-cols-3 gap-2 p-2 md:p-3 bg-white">
-            {card.gridColors.map((color: string, idx: number) => (
-              <div key={idx} className={`${color} h-12 md:h-14 rounded`}></div>
-            ))}
-          </div>
-        )}
-
-        {card.type === 'dots' && (
-          <div className="flex justify-center gap-1 p-2 bg-white">
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          </div>
-        )}
+            {card.type === 'dots' && (
+              <div className="flex justify-center gap-1 p-2 bg-white">
+                <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+                <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
+              </div>
+            )}
+        </div>
       </div>
     );
   };
