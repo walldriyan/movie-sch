@@ -120,7 +120,7 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
                 <AvatarImage src={item.image} alt={item.name || 'User'} />
                 <AvatarFallback>{item.name?.charAt(0) || 'U'}</AvatarFallback>
               </Avatar>
-              <div className="absolute bottom-1 left-1/4 -translate-x-1/2 px-3 py-1 rounded-full bg-black/20 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate">
+              <div className="absolute bottom-1 left-1/4 -translate-x-1/2 px-3 py-1 rounded-full bg-sky-950/90 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate">
                 {item.name}
               </div>
            </div>
