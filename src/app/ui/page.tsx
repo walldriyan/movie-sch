@@ -129,16 +129,16 @@ export default function MetaSpotlight({
             />
              {!isHero && (
               <>
-                <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
-                  {card.authorImage ? (
-                    <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
-                  ) : (
-                    card.brand.charAt(0)
-                  )}
-                </div>
-                <div className="absolute bottom-2 left-2 right-2 p-1.5 rounded-lg bg-black/20 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {card.brand}
-                </div>
+                 <div className="absolute top-2 md:top-3 left-2 md:left-3 bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden">
+                   {card.authorImage ? (
+                     <img src={card.authorImage} alt={card.brand} className="w-full h-full object-cover" />
+                   ) : (
+                     card.brand.charAt(0)
+                   )}
+                 </div>
+                 <div className="absolute bottom-2 left-2 right-2 p-1.5 rounded-lg bg-black/20 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                     {card.brand}
+                 </div>
               </>
             )}
 
