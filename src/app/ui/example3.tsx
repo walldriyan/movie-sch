@@ -210,7 +210,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
   return (
-    <div className="h-[580px] p-8 bg-gradient-to-b  from-zinc-950/70  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
+    <div className=" bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 flex flex-col items-center  justify-center overflow-hidden relative">
       
       {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
@@ -220,7 +220,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
       </div> */}
 
-      <div className="relative w-[500px] flex items-center p-2 justify-center">
+      <div className="relative  w-[260px] flex items-center p-2 justify-center">
         <Button
           variant="ghost"
           size="icon"
@@ -229,7 +229,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="max-w-[600px] w-[480px] h-[200px] overflow-y-hidden overflow-x-auto">
+        <div ref={scrollContainerRef} className="max-w-[600px] w-[580px] h-[200px] overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
             className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
