@@ -87,9 +87,10 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
     
-     if (lockStatus === 'locked') {
+    // Default to unlocked posts if no lockStatus is specified
+    if (lockStatus === 'locked') {
       whereClause.isLockedByDefault = true;
-    } else if (lockStatus === 'unlocked') {
+    } else if (lockStatus === 'unlocked' || lockStatus === undefined) {
       whereClause.isLockedByDefault = false;
     }
 
