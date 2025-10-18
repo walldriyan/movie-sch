@@ -619,16 +619,9 @@ export default function CreateExamPage() {
     fetchExams();
   }, []);
 
-  const handleNextStep = async () => {
-    const fields = steps[currentStep - 1].fields;
-    const output = await form.trigger(fields as any, { shouldFocus: true });
-
-    if (!output) {
-      return;
-    }
-
+  const handleNextStep = () => {
     if (currentStep < 3) {
-      setCurrentStep((prev) => prev + 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
