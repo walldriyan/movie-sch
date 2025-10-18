@@ -365,16 +365,20 @@ export default function HomePageClient({
                     <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Globe /> Popular Groups</h2>
                      {loading ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)}
+                           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-lg" />)}
                         </div>
                     ) : groups.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {groups.map((group) => (
-                            <GroupCard key={group.id} group={group} />
+                              <GroupCard key={group.id} group={group} />
                             ))}
                         </div>
                     ) : (
-                         renderFallbackContent()
+                         <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Groups Yet</h3>
+                            <p className="text-muted-foreground mt-2 text-sm">There are no public groups available at the moment. Check back later!</p>
+                        </div>
                     )}
                 </section>
             </main>
