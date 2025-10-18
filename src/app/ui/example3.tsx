@@ -220,7 +220,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
       </div> */}
 
-      <div className="relative  w-[260px] flex items-center p-2 justify-center">
+      <div className="relative  w-[420px] flex items-center p-2 justify-center">
         <Button
           variant="ghost"
           size="icon"
