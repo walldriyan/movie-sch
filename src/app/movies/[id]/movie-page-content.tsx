@@ -52,7 +52,8 @@ import {
   ChevronDown, 
   ChevronUp,
   BookCheck,
-  PlayCircle
+  PlayCircle,
+  FileText
 } from 'lucide-react';
 import Image from 'next/image';
 import AdminActions from '@/components/admin-actions';
