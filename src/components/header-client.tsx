@@ -17,6 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
@@ -222,15 +223,11 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
         <div className="flex items-center gap-4">
             {isPending ? (
                  <div className="flex items-center space-x-2">
-                    <Skeleton className="h-7 w-7 rounded-md" />
-                    <Skeleton className="h-6 w-20" />
+                    <Skeleton className="h-10 w-24" />
                 </div>
             ) : (
                 <Link href="/" onClick={(e) => {e.preventDefault(); handleNavigation('/');}} className="flex items-center space-x-2">
-                    <Film className="h-7 w-7 text-primary" />
-                    <span className="inline-block font-bold font-serif text-2xl">
-                        WALL
-                    </span>
+                    <Image src="/logo.png" alt="CineVerse Logo" width={120} height={40} className="object-contain" />
                 </Link>
             )}
           </div>
