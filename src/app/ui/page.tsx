@@ -172,8 +172,12 @@ export default function MetaSpotlight({
       {/* Text Overlay */}
       <div className="absolute bottom-0 pb-5 left-0 right-0 text-center z-20 px-4">
         <h1 className="text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
-          Put your business in<br />the spotlight.
+         Share Your Ideas <br />here.<br />
         </h1>
+        <h4 className="text-[20px]  text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]">
+        Walldriyan.inc
+        </h4>
+        
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
       </div>
 
@@ -206,12 +210,12 @@ export default function MetaSpotlight({
       </div>
 
       {/* Meta Logo */}
-      <div className="absolute bottom-[150px] left-0 right-0 flex justify-center z-20">
+      {/* <div className="absolute bottom-[150px] left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-3">
           <div className="text-white text-5xl font-bold">∞</div>
           <div className="text-white text-3xl font-bold tracking-wide">Walldriyan.inc</div>
         </div>
-      </div>
+      </div> */}
     </div>
   );
 }
