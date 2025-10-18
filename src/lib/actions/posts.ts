@@ -60,23 +60,18 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
     
-    // --- START Role-Based Access Control Logic ---
-
+    // --- Role-Based Access Control Logic ---
     if (userRole === ROLES.SUPER_ADMIN) {
         whereClause.status = { not: MovieStatus.PENDING_DELETION };
     } else if (userRole === ROLES.USER_ADMIN) {
-        const publicCriteria: Prisma.PostWhereInput = {
-            status: MovieStatus.PUBLISHED,
-            visibility: 'PUBLIC',
-        };
         whereClause = {
             OR: [
                 { authorId: user.id, status: { not: MovieStatus.PENDING_DELETION } },
-                publicCriteria
+                { status: MovieStatus.PUBLISHED, visibility: 'PUBLIC' }
             ],
         };
     } else { // Regular user or guest
-        let publicCriteria: Prisma.PostWhereInput = {
+        const publicCriteria: Prisma.PostWhereInput = {
             status: MovieStatus.PUBLISHED,
             visibility: 'PUBLIC',
         };
@@ -102,22 +97,16 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         }
     }
     
-    // --- END Role-Based Access Control Logic ---
-
+    // --- Lock Status Filter Logic ---
     if (lockStatus === 'locked') {
-        whereClause.isLockedByDefault = true;
-    } else if (lockStatus === 'unlocked') {
-        whereClause.isLockedByDefault = false;
-    } else {
-        // If no lock status, default behavior depends on role
-        if (userRole !== ROLES.SUPER_ADMIN && userRole !== ROLES.USER_ADMIN) {
-            whereClause.isLockedByDefault = false; // Regular users/guests only see unlocked by default
-        }
-        // Admins see both by default (no clause added)
+      whereClause.isLockedByDefault = true;
+    } else if (lockStatus === 'unlocked' || (lockStatus === undefined && userRole !== ROLES.SUPER_ADMIN)) {
+      // Default for non-admins is to show only unlocked posts unless 'locked' is specified
+      whereClause.isLockedByDefault = false;
     }
+    // If lockStatus is undefined for a SUPER_ADMIN, no isLockedByDefault clause is added, showing both.
 
-
-    // Apply additional filters on top of the base access control
+    // Apply additional filters
     let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
 
     if (authorId) {

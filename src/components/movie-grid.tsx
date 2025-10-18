@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -6,7 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Play, Clapperboard, Tv, Folder, List } from 'lucide-react';
+import { Play, Clapperboard, Tv, Folder, List, Lock } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import type { Post as Movie, Series } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -93,6 +94,15 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
         <div className="absolute bottom-0 left-0 right-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
         
         {isFirst && <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />}
+        
+        {movie.isLockedByDefault && (
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-10">
+                <Button variant="secondary" className="pointer-events-none">
+                    <Lock className="mr-2 h-4 w-4" />
+                    Locked
+                </Button>
+            </div>
+        )}
 
         {mounted && <CategoryIcon type={movie.type} />}
 

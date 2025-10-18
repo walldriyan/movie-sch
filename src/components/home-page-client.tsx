@@ -154,20 +154,7 @@ export default function HomePageClient({
       </div>
     );
   }
-
-  const renderFallbackContent = () => {
-    if (!initialPosts || initialPosts.length === 0) return null;
-    const fallbackPosts = initialPosts.slice(0, 3);
-
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
-        {fallbackPosts.map(p => (
-            <MovieCard key={`fallback-${p.id}`} id={p.id} title={p.title} description="" posterUrlId="movie-poster-placeholder" />
-        ))}
-      </div>
-    )
-  }
-
+  
   const isPrivilegedUser = session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
   const allButtonLockStatus = isPrivilegedUser ? null : 'unlocked';
 
@@ -179,7 +166,7 @@ export default function HomePageClient({
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <Button asChild variant={'outline'} className={cn(
                         "rounded-full hover:bg-gray-800 flex-shrink-0",
-                        !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                        !typeFilter && (!lockStatus || lockStatus === 'unlocked') ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
                     <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: allButtonLockStatus })} className="flex items-center gap-2">
                         <Film className="w-4 h-4" />
@@ -197,7 +184,6 @@ export default function HomePageClient({
                         </Link>
                         </Button>
                     ))}
-                     {isPrivilegedUser && (
                       <Button asChild variant={'outline'} className={cn(
                       "rounded-full hover:bg-gray-800 flex-shrink-0",
                       lockStatus === 'locked' ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
@@ -207,7 +193,6 @@ export default function HomePageClient({
                         <span>Locked</span>
                       </Link>
                     </Button>
-                    )}
                 </div>
                 
                 <DropdownMenu>
@@ -372,7 +357,11 @@ export default function HomePageClient({
                             })}
                         </div>
                     ) : (
-                        renderFallbackContent()
+                         <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Users Yet</h3>
+                            <p className="text-muted-foreground mt-2 text-sm">There are no users in the system yet.</p>
+                        </div>
                     )}
                 </section>
                 
