@@ -9,6 +9,11 @@ import {
   Users,
   Bookmark,
   PlusCircle,
+  FilePlus,
+  Users2,
+  UserPlus,
+  BookCheck,
+  BellPlus,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -29,6 +34,7 @@ import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
 import type { Session } from 'next-auth';
+import AuthGuard from './auth/auth-guard';
 
 export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
   // We receive the session from the server component as a prop to avoid hydration issues in the header.
@@ -60,12 +66,52 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     }
 
     return (
-      <Button asChild variant="outline">
-        <Link href="/manage?create=true">
-          <PlusCircle className="mr-2 h-5 w-5" />
-          <span>Create</span>
-        </Link>
-      </Button>
+      <AuthGuard requiredRole={ROLES.USER_ADMIN}>
+         <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    <span>Create</span>
+                </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Create New</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
+                    <Link href="/manage?create=true">
+                        <FilePlus className="mr-2 h-4 w-4" />
+                        <span>Post</span>
+                    </Link>
+                </DropdownMenuItem>
+                <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+                    <DropdownMenuItem asChild>
+                        <Link href="/admin/groups">
+                            <Users2 className="mr-2 h-4 w-4" />
+                            <span>Group</span>
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                        <Link href="/admin/users">
+                            <UserPlus className="mr-2 h-4 w-4" />
+                            <span>User</span>
+                        </Link>
+                    </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                        <Link href="/admin/exams">
+                            <BookCheck className="mr-2 h-4 w-4" />
+                            <span>Exam</span>
+                        </Link>
+                    </DropdownMenuItem>
+                     <DropdownMenuItem asChild>
+                        <Link href="/admin/notifications">
+                            <BellPlus className="mr-2 h-4 w-4" />
+                            <span>Notification</span>
+                        </Link>
+                    </DropdownMenuItem>
+                </AuthGuard>
+            </DropdownMenuContent>
+        </DropdownMenu>
+      </AuthGuard>
     );
   };
 
