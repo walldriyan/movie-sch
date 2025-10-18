@@ -229,7 +229,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
+        <div ref={scrollContainerRef} className="w-full h-full py-8 overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
             className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
