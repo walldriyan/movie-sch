@@ -66,52 +66,50 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     }
 
     return (
-      <AuthGuard requiredRole={ROLES.USER_ADMIN}>
-         <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                    <PlusCircle className="mr-2 h-5 w-5" />
-                    <span>Create</span>
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>Create New</DropdownMenuLabel>
-                <DropdownMenuSeparator />
+        <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="outline">
+                <PlusCircle className="mr-2 h-5 w-5" />
+                <span>Create</span>
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel>Create New</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+                <Link href="/manage?create=true">
+                    <FilePlus className="mr-2 h-4 w-4" />
+                    <span>Post</span>
+                </Link>
+            </DropdownMenuItem>
+            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
                 <DropdownMenuItem asChild>
-                    <Link href="/manage?create=true">
-                        <FilePlus className="mr-2 h-4 w-4" />
-                        <span>Post</span>
+                    <Link href="/admin/groups">
+                        <Users2 className="mr-2 h-4 w-4" />
+                        <span>Group</span>
                     </Link>
                 </DropdownMenuItem>
-                <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-                    <DropdownMenuItem asChild>
-                        <Link href="/admin/groups">
-                            <Users2 className="mr-2 h-4 w-4" />
-                            <span>Group</span>
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <Link href="/admin/users">
-                            <UserPlus className="mr-2 h-4 w-4" />
-                            <span>User</span>
-                        </Link>
-                    </DropdownMenuItem>
-                     <DropdownMenuItem asChild>
-                        <Link href="/admin/exams">
-                            <BookCheck className="mr-2 h-4 w-4" />
-                            <span>Exam</span>
-                        </Link>
-                    </DropdownMenuItem>
-                     <DropdownMenuItem asChild>
-                        <Link href="/admin/notifications">
-                            <BellPlus className="mr-2 h-4 w-4" />
-                            <span>Notification</span>
-                        </Link>
-                    </DropdownMenuItem>
-                </AuthGuard>
-            </DropdownMenuContent>
-        </DropdownMenu>
-      </AuthGuard>
+                <DropdownMenuItem asChild>
+                    <Link href="/admin/users">
+                        <UserPlus className="mr-2 h-4 w-4" />
+                        <span>User</span>
+                    </Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                    <Link href="/admin/exams">
+                        <BookCheck className="mr-2 h-4 w-4" />
+                        <span>Exam</span>
+                    </Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                    <Link href="/admin/notifications">
+                        <BellPlus className="mr-2 h-4 w-4" />
+                        <span>Notification</span>
+                    </Link>
+                </DropdownMenuItem>
+            </AuthGuard>
+        </DropdownMenuContent>
+    </DropdownMenu>
     );
   };
 
