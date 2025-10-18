@@ -71,7 +71,7 @@ export default async function RootLayout({
             {children}
           </main>
           
-          <div className="fixed z-50 bg-red-600 bottom-3 right-2 w-[300px] h-[170px]"> mesage component</div>
+          <div className="fixed flex items-center justify-center rounded-3xl z-50 bg-red-600 bottom-3 left-2 w-[300px] h-[110px]"> mesage component</div>
           <Toaster />
         </SessionProvider>
       </body>
