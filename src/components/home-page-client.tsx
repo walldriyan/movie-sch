@@ -33,6 +33,7 @@ import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
 import MovieCard from './movie-card';
 import { ROLES } from '@/lib/permissions';
+import MovieGrid from './movie-grid';
 
 
 interface HomePageClientProps {
@@ -179,7 +180,7 @@ export default function HomePageClient({
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <Button asChild variant={'outline'} className={cn(
                         "rounded-full hover:bg-gray-800 flex-shrink-0",
-                        !lockStatus && !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                        !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
                     <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: allButtonLockStatus })} className="flex items-center gap-2">
                         <Film className="w-4 h-4" />
@@ -191,21 +192,23 @@ export default function HomePageClient({
                         "rounded-full hover:bg-gray-800 flex-shrink-0",
                         typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                         )}>
-                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })} className="flex items-center gap-2">
+                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus })} className="flex items-center gap-2">
                             {filter.icon}
                             <span>{filter.label}</span>
                         </Link>
                         </Button>
                     ))}
+                     {isPrivilegedUser && (
                       <Button asChild variant={'outline'} className={cn(
                       "rounded-full hover:bg-gray-800 flex-shrink-0",
                       lockStatus === 'locked' ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
-                      <Link href={buildQueryString({ sortBy, timeFilter, page: 1, lockStatus: 'locked' })} className="flex items-center gap-2">
+                      <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type, lockStatus: 'locked' })} className="flex items-center gap-2">
                         <Lock className="w-4 h-4" />
                         <span>Locked</span>
                       </Link>
                     </Button>
+                    )}
                 </div>
                 
                 <DropdownMenu>
@@ -261,22 +264,22 @@ export default function HomePageClient({
                 </DropdownMenu>
 
             </div>
-            {posts.length === 0 ? (
-            <main className="container mx-auto flex min-h-[calc(100vh-16rem)] items-center justify-center px-4 py-8 text-center">
-                <div className="max-w-md">
-                <h1 className="font-serif text-4xl font-bold">
-                    No Posts Found
-                </h1>
-                <p className="mt-4 text-lg text-muted-foreground">
-                    No posts match the current filters. Try a different filter.
-                </p>
-                <Button asChild className="mt-8">
-                    <Link href="/">Clear Filters</Link>
-                </Button>
-                </div>
-            </main>
-            ) : (
+            
             <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
+                {posts.length === 0 ? (
+                    <div className="text-center py-16">
+                        <h1 className="font-serif text-4xl font-bold">
+                            No Posts Found
+                        </h1>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            No posts match the current filters. Try a different filter.
+                        </p>
+                        <Button asChild className="mt-8">
+                            <Link href="/">Clear Filters</Link>
+                        </Button>
+                    </div>
+                ) : (
+                <>
                 {session && unreadCount > 0 && (
                   <Card className="mb-8">
                     <CardContent className="p-4">
@@ -396,8 +399,9 @@ export default function HomePageClient({
                         </div>
                     )}
                 </section>
-            </main>
+                </>
             )}
+            </main>
         </div>
     </TooltipProvider>
   );
