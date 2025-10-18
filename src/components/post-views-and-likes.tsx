@@ -16,33 +16,33 @@ export default function PostViewsAndLikes({ post }: { post: Post }) {
   return (
     <div className="relative flex items-center h-12">
         <div className="flex -space-x-4">
-           {/* Like Count Avatar */}
-           <div className="relative z-20 flex h-12 w-12 items-center justify-center rounded-full border-2 border-background bg-muted">
-                <div className="flex flex-col items-center gap-0.5 text-xs font-bold text-muted-foreground">
-                    <ThumbsUp className="h-4 w-4" />
-                    <span className="text-[10px]">{post._count?.likedBy || 0}</span>
-                </div>
-            </div>
+          {displayLikers.map((liker, index) => (
+            <Avatar key={liker.id} className="h-12 w-12 border-2 border-background" style={{ zIndex: displayLikers.length - index }}>
+              <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
+              <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+          ))}
+          {remainingLikersCount > 0 && (
+            <Avatar className="h-12 w-12 border-2 border-background" style={{ zIndex: 0 }}>
+              <AvatarFallback>+{remainingLikersCount}</AvatarFallback>
+            </Avatar>
+          )}
 
-            {/* View Count Avatar */}
-            <div className="relative z-10 flex h-12 w-12 items-center justify-center rounded-full border-2 border-background bg-muted">
+           {/* View Count Avatar - now rendered after user avatars */}
+            <div className="relative z-[-1] flex h-12 w-12 items-center justify-center rounded-full border-2 border-background bg-muted">
                  <div className="flex flex-col items-center gap-0.5 text-xs font-bold text-muted-foreground">
                     <Eye className="h-4 w-4" />
                     <span className="text-[10px]">{post.viewCount.toLocaleString()}</span>
                 </div>
             </div>
 
-          {displayLikers.map((liker, index) => (
-            <Avatar key={liker.id} className="h-12 w-12 border-2 border-background" style={{ zIndex: -index }}>
-              <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
-              <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-          ))}
-          {remainingLikersCount > 0 && (
-            <Avatar className="h-12 w-12 border-2 border-background" style={{ zIndex: -displayLikers.length }}>
-              <AvatarFallback>+{remainingLikersCount}</AvatarFallback>
-            </Avatar>
-          )}
+            {/* Like Count Avatar - now rendered last to be at the bottom of the stack */}
+           <div className="relative z-[-2] flex h-12 w-12 items-center justify-center rounded-full border-2 border-background bg-muted">
+                <div className="flex flex-col items-center gap-0.5 text-xs font-bold text-muted-foreground">
+                    <ThumbsUp className="h-4 w-4" />
+                    <span className="text-[10px]">{post._count?.likedBy || 0}</span>
+                </div>
+            </div>
         </div>
     </div>
   );
