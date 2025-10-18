@@ -1,13 +1,13 @@
 
-
 "use client"
 
 import React, { useState, useEffect, useRef } from 'react';
 import type { Post } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ThumbsUp } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ThumbsUp, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -37,6 +37,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         authorImage: post.author?.image,
         series: post.series,
         likeCount: post._count?.likedBy ?? 0,
+        viewCount: post.viewCount ?? 0,
         type: cardType,
         rotation: index === isHeroIndex ? 0 : getRandomValue(-12, 12),
         distance: index === isHeroIndex ? 0.5 : getRandomValue(0.6, 0.8)
@@ -156,7 +157,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       <div
         key={card.id}
         className={cn(
-          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out w-auto h-full flex flex-col"
+          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out flex flex-col h-full"
         )}
         style={{
           transform: getCardTransform(card.rotation, card.distance),
@@ -185,10 +186,17 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
                 objectFit="cover"
             />
             {/* Like count display */}
-            <div className="absolute inset-0 flex items-center justify-center">
-                <div className="flex items-center gap-2 bg-black/20 text-white backdrop-blur-sm px-4 py-2 rounded-full transition-all duration-300">
-                <ThumbsUp className="w-4 h-4" />
-                <span className="font-bold text-sm">{card.likeCount}</span>
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <div className="flex items-center gap-4 bg-black/40 text-white backdrop-blur-sm px-4 py-2 rounded-full">
+                    <div className="flex items-center gap-2">
+                        <ThumbsUp className="w-4 h-4" />
+                        <span className="font-bold text-sm">{card.likeCount}</span>
+                    </div>
+                    <Separator orientation="vertical" className="h-4 bg-white/30" />
+                    <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4" />
+                        <span className="font-bold text-sm">{card.viewCount}</span>
+                    </div>
                 </div>
             </div>
         </div>
@@ -210,7 +218,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
   return (
-    <div className="p-[25px] bg-gradient-to-b px-2 from-zinc-950/70  to-stone-900/5 flex flex-col items-center  justify-center overflow-hidden relative">
+    <div className="h-[580px] p-8 bg-gradient-to-b px-2 from-zinc-950/70  to-stone-900/5 flex flex-col items-center  justify-center overflow-hidden relative">
       
       {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
@@ -220,7 +228,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
       </div> */}
 
-      <div className="relative px-2  w-[420px] rounded-full flex items-center p-2 justify-center">
+      <div className="relative w-full flex items-center justify-center">
         <Button
           variant="ghost"
           size="icon"
@@ -229,7 +237,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="max-w-[600px] w-[580px] h-[200px] overflow-y-hidden overflow-x-auto">
+        <div ref={scrollContainerRef} className="w-full h-[420px] overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
             className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
