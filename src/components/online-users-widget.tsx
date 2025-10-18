@@ -49,9 +49,9 @@ export default function OnlineUsersWidget() {
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 30, scale: 0.9, transition: { duration: 0.2 } }}
-            transition={{ type: "spring", stiffness: 500, damping: 30 }}
+            transition={{ type: "spring", stiffness: 800, damping: 30 }}
           >
-            <Card className="w-[300px] max-h-[500px] flex flex-col bg-background/80 backdrop-blur-lg border-primary/20 shadow-lg shadow-primary/10">
+            <Card className="w-[300px] max-h-[500px] flex flex-col bg-background/80 backdrop-blur-lg  shadow-lg shadow-stone-950/10">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>Online Now</CardTitle>
@@ -69,7 +69,7 @@ export default function OnlineUsersWidget() {
                         <Avatar className="relative h-9 w-9">
                           <AvatarImage src={user.image || ''} alt={user.name || ''} />
                           <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
-                          <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500 stroke-green-500 border-2 border-background" />
+                          <Circle className="absolute bottom-0 right-0 h-3 w-3 fill-green-500  border-2 border-background" />
                         </Avatar>
                         <p className="font-medium text-sm">{user.name}</p>
                       </div>
