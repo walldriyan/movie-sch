@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useRouter, useSearchParams, usePathname, useParams, redirect } from 'next/navigation';
@@ -95,8 +96,8 @@ export default function SeriesPageClient({
   useEffect(() => {
     setCurrentPost(initialPost);
     setReviews(initialPost.reviews);
-    setIsLockedByDefault(initialPost.isLockedByDefault);
-    setRequiresExamToUnlock(initialPost.requiresExamToUnlock);
+    setIsLockedByDefault(initialPost.isLockedByDefault || false);
+    setRequiresExamToUnlock(initialPost.requiresExamToUnlock || false);
   }, [initialPost]);
 
   const heroImage =
@@ -326,216 +327,231 @@ export default function SeriesPageClient({
               </div>
 
               <h2 className="text-4xl font-bold font-serif mb-4">{currentPost.title}</h2>
-              <div
-                className="prose prose-lg prose-invert max-w-none text-foreground/80"
-                dangerouslySetInnerHTML={{ __html: currentPost.description }}
-              />
-
-              <Separator className="my-12" />
-
-              <section id="stats" className="flex items-center justify-between text-muted-foreground mb-12">
-                <div className="flex items-center gap-6">
-                  <div className="flex items-center gap-2" title="Total views">
-                    <Eye className="w-5 h-5" />
-                    <span className="text-sm font-medium">{currentPost.viewCount.toLocaleString()}</span>
+              
+              {currentPost.isLocked ? (
+                  <div className="min-h-[200px] flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                      <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold">Content Locked</h3>
+                      <p className="text-muted-foreground mt-2 max-w-sm">
+                          This part of the series is currently locked. You may need to complete a previous step to unlock it.
+                      </p>
                   </div>
-                  <div className="flex items-center gap-2" title="Total likes">
-                    <ThumbsUp className="w-5 h-5" />
-                    <span className="text-sm font-medium">{currentPost.likedBy?.length || 0}</span>
-                  </div>
-                  <div className="flex items-center gap-2" title="Total dislikes">
-                    <ThumbsDown className="w-5 h-5" />
-                    <span className="text-sm font-medium">{currentPost.dislikedBy?.length || 0}</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-                  <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
-                    <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
-                  </Button>
-
-                  <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={likeTransition} title={isDisliked ? 'Remove dislike' : 'Dislike'}>
-                    <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
-                  </Button>
-
-                  <Separator orientation="vertical" className="h-6 mx-2" />
-
-                  <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
-                    <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
-                  </Button>
-                </div>
-              </section>
-
-             {canManage && (
-                 <>
-                    <Separator className="my-12" />
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Lock Settings</CardTitle>
-                            <CardDescription>Manage access control for this post within the series.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                <div className="space-y-0.5">
-                                    <Label className="text-base">Lock Post by Default</Label>
-                                    <p className="text-sm text-muted-foreground">If on, this post will be locked until a previous requirement is met.</p>
-                                </div>
-                                <Switch
-                                    checked={isLockedByDefault}
-                                    onCheckedChange={setIsLockedByDefault}
-                                    aria-label="Lock post by default"
-                                />
-                            </div>
-                            <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                 <div className="space-y-0.5">
-                                    <Label className="text-base">Exam Unlocks Next Post</Label>
-                                    <p className="text-sm text-muted-foreground">If on, passing this post's exam will unlock the next one in the series.</p>
-                                </div>
-                                <Switch
-                                    checked={requiresExamToUnlock}
-                                    onCheckedChange={setRequiresExamToUnlock}
-                                    aria-label="Exam unlocks next post"
-                                />
-                            </div>
-                             <Button onClick={handleLockSettingsChange} disabled={lockSettingsTransition}>
-                                {lockSettingsTransition ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</> : 'Save Lock Settings'}
-                            </Button>
-                        </CardContent>
-                    </Card>
-                 </>
-             )}
-
-
-              <ExamSection exam={currentPost.exam} />
-
-              <SponsoredAdCard />
-
-              <div className="block md:hidden">
-                <Separator className="my-12" />
-                <aside>
-                  <div className="flex flex-col items-start gap-4 mb-4">
-                    <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-                      <List className="h-6 w-6 text-primary" />
-                      <span>{series.title}</span>
-                    </h1>
-                    {author && (
-                      <div className="flex flex-col items-start gap-3 mt-3 w-full">
-                        <div className='flex items-center gap-2'>
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src={author.image || ''} alt={author.name || ''} />
-                            <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
-                          </Avatar>
-                          <span className="text-sm font-medium">{author.name}</span>
-                        </div>
-                        <Button variant="outline" size="sm">
-                          <UserPlus className="mr-2 h-4 w-4" />
-                          Follow
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                  <SeriesTracker
-                    seriesId={series.id}
-                    posts={postsInSeries}
-                    currentPostId={currentPost.id}
-                    passedExamIds={passedExamIds}
-                    session={session}
+              ) : (
+                  <div
+                      className="prose prose-lg prose-invert max-w-none text-foreground/80"
+                      dangerouslySetInnerHTML={{ __html: currentPost.description }}
                   />
-                </aside>
-              </div>
-
-              {currentPost.subtitles && currentPost.subtitles.length > 0 && (
-                <>
-                  <Separator className="my-12" />
-                  <section id="downloads">
-                    <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
-                      <Download className="w-8 h-8 text-primary" />
-                      Downloads
-                    </h2>
-                    <div className="space-y-4">
-                      {currentPost.subtitles.map((subtitle) => (
-                        <div
-                          key={subtitle.id}
-                          className="flex items-center justify-between rounded-lg border p-4"
-                        >
-                          <div>
-                            <p className="font-semibold">
-                              {subtitle.language}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              by {subtitle.uploaderName}
-                            </p>
-                          </div>
-                          <div className="flex items-center space-x-4">
-                            {currentUser ? (
-                              <Button variant="ghost" size="icon" asChild>
-                                <a href={subtitle.url} download>
-                                  <Download className="h-5 w-5" />
-                                </a>
-                              </Button>
-                            ) : (
-                              <Lock className="h-5 w-5 text-muted-foreground" title="Login to download" />
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </section>
-                </>
               )}
 
+              {!currentPost.isLocked && (
+                <>
+                    <Separator className="my-12" />
 
-              <section id="reviews" className="my-12">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
-                    <MessageCircle className="w-8 h-8 text-primary" />
-                    Responses ({reviews.length})
-                  </h2>
-                  <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
-                    {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
-                  </Button>
-                </div>
-                {showReviews && (
-                  <>
-                    <ReviewForm
-                      postId={currentPost.id}
-                      isSubmitting={isSubmittingReview}
-                      onSubmitReview={handleReviewSubmit}
-                      session={session}
-                    />
-                    <Separator className="my-8" />
-                    <div className="space-y-8">
-                      {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
-                        <div className="flex items-start gap-4">
-                          <Skeleton className="h-8 w-8 rounded-full" />
-                          <div className="w-full space-y-2">
-                            <Skeleton className="h-4 w-1/4" />
-                            <Skeleton className="h-4 w-full" />
-                            <Skeleton className="h-4 w-2/3" />
-                          </div>
+                    <section id="stats" className="flex items-center justify-between text-muted-foreground mb-12">
+                      <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2" title="Total views">
+                          <Eye className="w-5 h-5" />
+                          <span className="text-sm font-medium">{currentPost.viewCount.toLocaleString()}</span>
                         </div>
-                      )}
-                      {reviews.length > 0 ? (
-                        reviews.map((review: Review) => (
-                          <ReviewCard
-                            key={review.id}
-                            review={review}
-                            onReviewSubmit={handleReviewSubmit}
-                            onReviewDelete={handleReviewDelete}
+                        <div className="flex items-center gap-2" title="Total likes">
+                          <ThumbsUp className="w-5 h-5" />
+                          <span className="text-sm font-medium">{currentPost.likedBy?.length || 0}</span>
+                        </div>
+                        <div className="flex items-center gap-2" title="Total dislikes">
+                          <ThumbsDown className="w-5 h-5" />
+                          <span className="text-sm font-medium">{currentPost.dislikedBy?.length || 0}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pl-4 flex-shrink-0">
+                        <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
+                          <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
+                        </Button>
+
+                        <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={likeTransition} title={isDisliked ? 'Remove dislike' : 'Dislike'}>
+                          <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
+                        </Button>
+
+                        <Separator orientation="vertical" className="h-6 mx-2" />
+
+                        <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
+                          <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
+                        </Button>
+                      </div>
+                    </section>
+
+                    {canManage && (
+                        <>
+                            <Separator className="my-12" />
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Lock Settings</CardTitle>
+                                    <CardDescription>Manage access control for this post within the series.</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-base">Lock Post by Default</Label>
+                                            <p className="text-sm text-muted-foreground">If on, this post will be locked until a previous requirement is met.</p>
+                                        </div>
+                                        <Switch
+                                            checked={isLockedByDefault}
+                                            onCheckedChange={setIsLockedByDefault}
+                                            aria-label="Lock post by default"
+                                        />
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                                        <div className="space-y-0.5">
+                                            <Label className="text-base">Exam Unlocks Next Post</Label>
+                                            <p className="text-sm text-muted-foreground">If on, passing this post's exam will unlock the next one in the series.</p>
+                                        </div>
+                                        <Switch
+                                            checked={requiresExamToUnlock}
+                                            onCheckedChange={setRequiresExamToUnlock}
+                                            aria-label="Exam unlocks next post"
+                                        />
+                                    </div>
+                                    <Button onClick={handleLockSettingsChange} disabled={lockSettingsTransition}>
+                                        {lockSettingsTransition ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</> : 'Save Lock Settings'}
+                                    </Button>
+                                </CardContent>
+                            </Card>
+                        </>
+                    )}
+
+
+                    <ExamSection exam={currentPost.exam} />
+
+                    <SponsoredAdCard />
+
+                    <div className="block md:hidden">
+                      <Separator className="my-12" />
+                      <aside>
+                        <div className="flex flex-col items-start gap-4 mb-4">
+                          <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                            <List className="h-6 w-6 text-primary" />
+                            <span>{series.title}</span>
+                          </h1>
+                          {author && (
+                            <div className="flex flex-col items-start gap-3 mt-3 w-full">
+                              <div className='flex items-center gap-2'>
+                                <Avatar className="h-6 w-6">
+                                  <AvatarImage src={author.image || ''} alt={author.name || ''} />
+                                  <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
+                                </Avatar>
+                                <span className="text-sm font-medium">{author.name}</span>
+                              </div>
+                              <Button variant="outline" size="sm">
+                                <UserPlus className="mr-2 h-4 w-4" />
+                                Follow
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <SeriesTracker
+                          seriesId={series.id}
+                          posts={postsInSeries}
+                          currentPostId={currentPost.id}
+                          passedExamIds={passedExamIds}
+                          session={session}
+                        />
+                      </aside>
+                    </div>
+
+                    {currentPost.subtitles && currentPost.subtitles.length > 0 && (
+                      <>
+                        <Separator className="my-12" />
+                        <section id="downloads">
+                          <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
+                            <Download className="w-8 h-8 text-primary" />
+                            Downloads
+                          </h2>
+                          <div className="space-y-4">
+                            {currentPost.subtitles.map((subtitle) => (
+                              <div
+                                key={subtitle.id}
+                                className="flex items-center justify-between rounded-lg border p-4"
+                              >
+                                <div>
+                                  <p className="font-semibold">
+                                    {subtitle.language}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    by {subtitle.uploaderName}
+                                  </p>
+                                </div>
+                                <div className="flex items-center space-x-4">
+                                  {currentUser ? (
+                                    <Button variant="ghost" size="icon" asChild>
+                                      <a href={subtitle.url} download>
+                                        <Download className="h-5 w-5" />
+                                      </a>
+                                    </Button>
+                                  ) : (
+                                    <Lock className="h-5 w-5 text-muted-foreground" title="Login to download" />
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      </>
+                    )}
+
+
+                    <section id="reviews" className="my-12">
+                      <div className="flex justify-between items-center mb-6">
+                        <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
+                          <MessageCircle className="w-8 h-8 text-primary" />
+                          Responses ({reviews.length})
+                        </h2>
+                        <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
+                          {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                        </Button>
+                      </div>
+                      {showReviews && (
+                        <>
+                          <ReviewForm
+                            postId={currentPost.id}
+                            isSubmitting={isSubmittingReview}
+                            onSubmitReview={handleReviewSubmit}
                             session={session}
                           />
-                        ))
-                      ) : (
-                        !isSubmittingReview && (
-                          <p className="text-muted-foreground">
-                            Be the first to share your thoughts!
-                          </p>
-                        )
+                          <Separator className="my-8" />
+                          <div className="space-y-8">
+                            {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
+                              <div className="flex items-start gap-4">
+                                <Skeleton className="h-8 w-8 rounded-full" />
+                                <div className="w-full space-y-2">
+                                  <Skeleton className="h-4 w-1/4" />
+                                  <Skeleton className="h-4 w-full" />
+                                  <Skeleton className="h-4 w-2/3" />
+                                </div>
+                              </div>
+                            )}
+                            {reviews.length > 0 ? (
+                              reviews.map((review: Review) => (
+                                <ReviewCard
+                                  key={review.id}
+                                  review={review}
+                                  onReviewSubmit={handleReviewSubmit}
+                                  onReviewDelete={handleReviewDelete}
+                                  session={session}
+                                />
+                              ))
+                            ) : (
+                              !isSubmittingReview && (
+                                <p className="text-muted-foreground">
+                                  Be the first to share your thoughts!
+                                </p>
+                              )
+                            )}
+                          </div>
+                        </>
                       )}
-                    </div>
-                  </>
-                )}
-              </section>
+                    </section>
+                </>
+              )}
 
             </article>
           </div>

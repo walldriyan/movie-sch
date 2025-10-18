@@ -53,7 +53,7 @@ export default async function SeriesPage({
     notFound();
   }
 
-  const currentPostData = (await getPost(currentPostId)) as Post | null;
+  let currentPostData = (await getPost(currentPostId)) as Post | null;
   if (!currentPostData) {
     notFound();
   }
@@ -78,6 +78,7 @@ export default async function SeriesPage({
   
   const passedExamIds = new Set<number>();
   userSubmissions.forEach(sub => {
+    if (!sub.exam) return;
     const totalPoints = sub.exam.questions.reduce((sum, q) => sum + q.points, 0);
     const percentage = totalPoints > 0 ? (sub.score / totalPoints) * 100 : 0;
     if (percentage >= 50) {
@@ -85,38 +86,43 @@ export default async function SeriesPage({
     }
   });
 
-  // Server-side calculation of lock status for each post
+  // Server-side calculation of lock status for each post in the tracker list
   const postsData = postsDataRaw.map((post, index) => {
-    let isLocked = post.isLockedByDefault;
-
-    // Condition 1: Admins and authors can always see their posts.
-    if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
-      isLocked = false;
-    }
-    // Condition 2: For other users (including public), check lock logic.
-    else {
-      if (index === 0) {
-        // The first post is locked only if it's set to be locked by default.
-        isLocked = post.isLockedByDefault;
+    let isLocked = false; // Default to unlocked
+    if (post.isLockedByDefault) {
+      // If locked by default, check for unlock conditions
+      if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
+        isLocked = false;
       } else {
-        // For subsequent posts, check the predecessor.
-        const previousPost = postsDataRaw[index - 1];
-        // It's locked if the current post is locked by default AND the previous post's unlock conditions are not met.
-        isLocked = post.isLockedByDefault && (
-          previousPost.requiresExamToUnlock && 
-          (!previousPost.exam || !passedExamIds.has(previousPost.exam.id))
-        );
+        if (index === 0) {
+          isLocked = true;
+        } else {
+          const previousPost = postsDataRaw[index - 1];
+          if (previousPost.requiresExamToUnlock) {
+             if (!previousPost.exam || !passedExamIds.has(previousPost.exam.id)) {
+               isLocked = true;
+             }
+          } else {
+            // if previous post doesn't require an exam, it might depend on another logic in the future.
+            // For now, if it's locked by default and not the first post, and prev doesn't require exam, it remains locked based on its own default.
+            isLocked = true;
+          }
+        }
       }
     }
-    
     return {
       ...post,
       isLocked,
     };
   });
   
-  // This log will show the final array sent to the client, with correct isLocked status
-  console.log('--- [Server] Final postsData with lock status ---', postsData);
+  // Find the specific lock status for the initial post being displayed
+  const initialPostWithLockStatus = postsData.find(p => p.id === currentPostData?.id);
+  if (initialPostWithLockStatus) {
+    currentPostData.isLocked = initialPostWithLockStatus.isLocked;
+  }
+
+  // console.log('--- [Server] Final postsData with lock status ---', postsData);
 
 
   return (
