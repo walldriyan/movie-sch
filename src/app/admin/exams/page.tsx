@@ -769,6 +769,16 @@ export default function CreateExamPage() {
     setActiveTab('manage');
   }
 
+  const handleTabChange = (newTab: string) => {
+    if (newTab === 'create' && editingExamId === null) {
+        handleNewExamClick();
+    } else if (newTab === 'manage') {
+        handleBack();
+    } else {
+        setActiveTab(newTab);
+    }
+  }
+
 
   return (
     <div className="space-y-6">
@@ -787,7 +797,7 @@ export default function CreateExamPage() {
         </div>
       </div>
 
-       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="manage">Manage Exams</TabsTrigger>
           <TabsTrigger value="create">{editingExamId ? 'Edit Exam' : 'Create Exam'}</TabsTrigger>
