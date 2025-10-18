@@ -96,16 +96,21 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
     if (examId) { // Update an existing exam
         await prisma.$transaction(async (tx) => {
-            const updateData: Prisma.ExamUpdateInput = {
-                ...baseExamData,
-                // Handle relation change by updating foreign keys
-                postId: data.assignmentType === 'POST' && data.postId ? parseInt(data.postId, 10) : null,
-                groupId: data.assignmentType === 'GROUP' && data.groupId ? data.groupId : null,
-            };
+            const relationData: any = {};
+            if (data.assignmentType === 'POST' && data.postId) {
+                relationData.post = { connect: { id: parseInt(data.postId, 10) } };
+                relationData.group = { disconnect: true };
+            } else if (data.assignmentType === 'GROUP' && data.groupId) {
+                relationData.group = { connect: { id: data.groupId } };
+                relationData.post = { disconnect: true };
+            }
 
             await tx.exam.update({
               where: { id: examId },
-              data: updateData,
+              data: {
+                ...baseExamData,
+                ...relationData,
+              },
             });
 
             // Logic to update questions and options remains the same...
