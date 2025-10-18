@@ -14,6 +14,7 @@ import {
   UserPlus,
   BookCheck,
   BellPlus,
+  Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -26,7 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import React from 'react';
+import React, { useTransition } from 'react';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
@@ -35,11 +36,14 @@ import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
 import type { Session } from 'next-auth';
 import AuthGuard from './auth/auth-guard';
+import { useRouter } from 'next/navigation';
 
 export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
   // We receive the session from the server component as a prop to avoid hydration issues in the header.
   const session = serverSession;
   const sessionStatus = session ? 'authenticated' : 'unauthenticated';
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const user = session?.user;
 
@@ -60,6 +64,12 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     }
   };
 
+  const handleNavigation = (href: string) => {
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   const renderCreateButton = () => {
     if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
       return null;
@@ -68,44 +78,38 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     return (
         <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="outline">
-                <PlusCircle className="mr-2 h-5 w-5" />
+            <Button variant="outline" disabled={isPending}>
+                {isPending ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                )}
                 <span>Create</span>
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Create New</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-                <Link href="/manage?create=true">
-                    <FilePlus className="mr-2 h-4 w-4" />
-                    <span>Post</span>
-                </Link>
+            <DropdownMenuItem onSelect={() => handleNavigation('/manage?create=true')}>
+                <FilePlus className="mr-2 h-4 w-4" />
+                <span>Post</span>
             </DropdownMenuItem>
             <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-                <DropdownMenuItem asChild>
-                    <Link href="/admin/groups">
-                        <Users2 className="mr-2 h-4 w-4" />
-                        <span>Group</span>
-                    </Link>
+                <DropdownMenuItem onSelect={() => handleNavigation('/admin/groups')}>
+                    <Users2 className="mr-2 h-4 w-4" />
+                    <span>Group</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                    <Link href="/admin/users">
-                        <UserPlus className="mr-2 h-4 w-4" />
-                        <span>User</span>
-                    </Link>
+                <DropdownMenuItem onSelect={() => handleNavigation('/admin/users')}>
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    <span>User</span>
                 </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                    <Link href="/admin/exams">
-                        <BookCheck className="mr-2 h-4 w-4" />
-                        <span>Exam</span>
-                    </Link>
+                 <DropdownMenuItem onSelect={() => handleNavigation('/admin/exams')}>
+                    <BookCheck className="mr-2 h-4 w-4" />
+                    <span>Exam</span>
                 </DropdownMenuItem>
-                 <DropdownMenuItem asChild>
-                    <Link href="/admin/notifications">
-                        <BellPlus className="mr-2 h-4 w-4" />
-                        <span>Notification</span>
-                    </Link>
+                 <DropdownMenuItem onSelect={() => handleNavigation('/admin/notifications')}>
+                    <BellPlus className="mr-2 h-4 w-4" />
+                    <span>Notification</span>
                 </DropdownMenuItem>
             </AuthGuard>
         </DropdownMenuContent>
