@@ -156,13 +156,12 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       <div
         key={card.id}
         className={cn(
-          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
+          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out h-full"
         )}
         style={{
           transform: getCardTransform(card.rotation, card.distance),
           transformOrigin: 'center center',
           aspectRatio: '11 / 17',
-          height: '82%',
         }}
       >
         {!isHero && (

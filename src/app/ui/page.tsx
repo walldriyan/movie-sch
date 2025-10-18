@@ -111,12 +111,11 @@ export default function MetaSpotlight({
     const renderCard = (card: any) => {
     const isHero = card.type === 'hero';
     const cardWidth = isHero ? 'w-48 md:w-56' : 'w-32 md:w-36';
-    const cardHeight = 'h-[85%] md:h-[95%] aspect-[11/17]';
 
     return (
       <div
         key={card.id}
-        className={`absolute ${card.position} bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out ${isHero ? 'z-10' : ''} ${cardWidth} ${cardHeight}`}
+        className={`absolute ${card.position} bg-white rounded-2xl ${isHero ? 'rounded-3xl' : ''} shadow-2xl overflow-hidden transition-all duration-500 ease-out ${isHero ? 'z-10' : ''} ${cardWidth} aspect-[11/17]`}
         style={{
           transform: getCardTransform(card.rotation, card.distance, isHero),
           transformOrigin: 'center center'
@@ -184,12 +183,11 @@ export default function MetaSpotlight({
             Array.from({ length: 5 }).map((_, i) => {
                 const isHero = i === 2;
                 const cardWidth = isHero ? 'w-48 md:w-56' : 'w-32 md:w-36';
-                const cardHeight = 'h-[85%] md:h-[95%]';
                  const cardPositions = [
                     'left-0 top-8', 'left-2 bottom-8', 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2', 'right-0 top-8', 'right-2 bottom-8'
                 ];
                 return (
-                     <Skeleton key={i} className={`absolute ${cardPositions[i]} ${cardWidth} ${cardHeight} rounded-2xl ${isHero ? 'z-10' : ''}`} />
+                     <Skeleton key={i} className={`absolute ${cardPositions[i]} ${cardWidth} aspect-[11/17] rounded-2xl ${isHero ? 'z-10' : ''}`} />
                 )
             })
         ) : (
