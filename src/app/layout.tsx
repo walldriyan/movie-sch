@@ -8,6 +8,7 @@ import Header from '@/components/header';
 import React from 'react';
 import SessionProvider from '@/components/auth/session-provider';
 import { auth } from '@/auth';
+import OnlineUsersWidget from '@/components/online-users-widget';
 
 export const metadata: Metadata = {
   title: 'CineVerse Captions',
@@ -71,7 +72,7 @@ export default async function RootLayout({
             {children}
           </main>
           
-          <div className="fixed flex items-center justify-center rounded-3xl z-50 bg-red-600 bottom-3 left-2 w-[300px] h-[110px]"> mesage component</div>
+          <OnlineUsersWidget />
           <Toaster />
         </SessionProvider>
       </body>
