@@ -37,6 +37,7 @@ import HeaderApprovals from './header-approvals';
 import type { Session } from 'next-auth';
 import AuthGuard from './auth/auth-guard';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from './ui/skeleton';
 
 export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
   // We receive the session from the server component as a prop to avoid hydration issues in the header.
@@ -94,7 +95,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
             <FilePlus className="mr-2 h-4 w-4" />
             <span>Post</span>
           </DropdownMenuItem>
-          <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+           <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
             <>
               <DropdownMenuItem onSelect={() => handleNavigation('/admin/groups')}>
                 <Users2 className="mr-2 h-4 w-4" />
@@ -219,12 +220,19 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
         <div className="flex items-center gap-4">
-            <Link href="/" className="flex items-center space-x-2">
-              <Film className="h-7 w-7 text-primary" />
-              <span className="inline-block font-bold font-serif text-2xl">
-                WALL
-              </span>
-            </Link>
+            {isPending ? (
+                 <div className="flex items-center space-x-2">
+                    <Skeleton className="h-7 w-7 rounded-md" />
+                    <Skeleton className="h-6 w-20" />
+                </div>
+            ) : (
+                <Link href="/" onClick={(e) => {e.preventDefault(); handleNavigation('/');}} className="flex items-center space-x-2">
+                    <Film className="h-7 w-7 text-primary" />
+                    <span className="inline-block font-bold font-serif text-2xl">
+                        WALL
+                    </span>
+                </Link>
+            )}
           </div>
         <div className="flex items-center justify-end space-x-2">
           {renderCreateButton()}
