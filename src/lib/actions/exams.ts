@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -39,11 +38,11 @@ const examSchema = z.object({
   endDate: z.date().optional().nullable(),
   questions: z.array(questionSchema).min(1, 'At least one question is required.'),
 }).superRefine((data, ctx) => {
-    if (data.assignmentType === 'GROUP' && !data.groupId) {
+    if (data.assignmentType === 'POST' && !data.postId) {
         ctx.addIssue({
             code: 'custom',
-            path: ['groupId'],
-            message: 'A group must be selected when assigning to a group.',
+            path: ['postId'],
+            message: 'A post must be selected when assigning to a post.',
         });
     }
 });
@@ -60,9 +59,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     }
 
     if (user.role !== ROLES.SUPER_ADMIN) {
-        // More granular authorization can be added here if USER_ADMINs can create exams
-        // For now, only SUPER_ADMIN can create/update.
-        let isAuthorized = true; // Let's assume USER_ADMIN is authorized for their own content
+        let isAuthorized = true; 
          if (data.postId) {
             const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) } });
             if (post?.authorId !== user.id) {
@@ -89,19 +86,10 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
     if (examId) { // Update an existing exam
         await prisma.$transaction(async (tx) => {
-            const relationData: any = {};
-            
-            if (data.postId) {
-                relationData.post = { connect: { id: parseInt(data.postId, 10) } };
-            } else {
-                relationData.post = { disconnect: true };
-            }
-
-            if (data.assignmentType === 'GROUP' && data.groupId) {
-                relationData.group = { connect: { id: data.groupId } };
-            } else {
-                relationData.group = { disconnect: true };
-            }
+             const relationData: any = {
+                post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true },
+                group: data.groupId ? { connect: { id: data.groupId } } : { disconnect: true }
+            };
 
             await tx.exam.update({
               where: { id: examId },
@@ -161,9 +149,26 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             }
         });
     } else { // Create a new exam
+        let finalPostId: number | undefined = data.postId ? parseInt(data.postId, 10) : undefined;
+        
+        if (!finalPostId) {
+             const placeholderPost = await prisma.post.upsert({
+                where: { title: '__internal_group_exams_placeholder__' },
+                update: {},
+                create: {
+                    title: '__internal_group_exams_placeholder__',
+                    description: 'This is an internal post used as a placeholder for exams that are not associated with a specific public post.',
+                    authorId: user.id,
+                    status: 'PRIVATE',
+                    type: 'OTHER',
+                }
+            });
+            finalPostId = placeholderPost.id;
+        }
+
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
-            post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
+            post: { connect: { id: finalPostId } },
             group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
             questions: {
                 create: data.questions.map(q => ({
@@ -635,81 +640,4 @@ export async function getExamsForUser(userId: string) {
     });
 
     return exams;
-}
-
-
-export async function getExamForTaker(examId: number) {
-  const session = await auth();
-  const user = session?.user;
-
-  if (!user) {
-    throw new Error('You must be logged in to take an exam.');
-  }
-
-  const exam = await prisma.exam.findUnique({
-    where: { id: examId, status: 'ACTIVE' },
-    include: {
-      post: true,
-      group: true,
-      questions: {
-        include: {
-          options: {
-            select: { id: true, text: true }, // Don't send isCorrect to client
-          },
-        },
-      },
-    },
-  });
-
-  if (!exam) {
-    return null;
-  }
-  
-  if (exam.startDate && new Date() < exam.startDate) {
-      throw new Error("This exam has not started yet.");
-  }
-  if (exam.endDate && new Date() > exam.endDate) {
-      throw new Error("This exam has already ended.");
-  }
-  
-    const submission = await prisma.examSubmission.findFirst({
-        where: { examId: exam.id, userId: user.id }
-    });
-
-    const attemptsAllowed = exam.attemptsAllowed;
-    const submissionCount = submission?.attemptCount ?? 0;
-
-    if (attemptsAllowed > 0 && submissionCount >= attemptsAllowed) {
-        throw new Error(`You have reached the maximum number of attempts (${attemptsAllowed}).`);
-    }
-
-  let hasAccess = false;
-  // If the exam is tied to the internal post, access is determined by group membership
-  if (exam.post?.title === "__internal_group_exams_placeholder__") {
-      if (exam.groupId) {
-          const membership = await prisma.groupMember.findFirst({
-              where: { groupId: exam.groupId, userId: user.id, status: 'ACTIVE' }
-          });
-          if (membership) {
-              hasAccess = true;
-          }
-      }
-  } else if (exam.postId && exam.post) { // Regular post-based access
-      if (exam.post.visibility === 'PUBLIC') {
-          hasAccess = true;
-      } else if (exam.post.groupId) {
-          const membership = await prisma.groupMember.findFirst({
-              where: { groupId: exam.post.groupId, userId: user.id, status: 'ACTIVE' }
-          });
-          if (membership) {
-              hasAccess = true;
-          }
-      }
-  }
-
-  if (!hasAccess) {
-       throw new Error('You do not have permission to access this exam.');
-  }
-
-  return exam;
 }
