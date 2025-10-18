@@ -156,7 +156,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       <div
         key={card.id}
         className={cn(
-          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out h-full"
+          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out w-auto h-full"
         )}
         style={{
           transform: getCardTransform(card.rotation, card.distance),
@@ -178,7 +178,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           </div>
         )}
 
-        <div className="relative w-full h-[65%]">
+        <div className="relative w-full h-full">
           <Image
             src={card.image}
             alt={card.brand}
@@ -210,7 +210,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
   };
 // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
   return (
-    <div className="h-[240px] p-2 bg-gradient-to-b  from-zinc-950/70  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
+    <div className="h-auto min-h-[280px] p-2 bg-gradient-to-b  from-zinc-950/70  to-stone-900/5  flex flex-col items-center  justify-center overflow-hidden relative">
       
       {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
@@ -220,7 +220,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
       </div> */}
 
-      <div className="relative max-w-[80%] flex items-center p-2 justify-center">
+      <div className="relative w-full flex items-center p-2 justify-center">
         <Button
           variant="ghost"
           size="icon"
@@ -232,7 +232,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         <div ref={scrollContainerRef} className="w-full py-8 overflow-y-hidden overflow-x-auto">
           <div
             ref={containerRef}
-            className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-[240px]"
+            className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
             style={{
               perspective: '1000px',
               paddingLeft: 'calc(50% - 8rem)',
