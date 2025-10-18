@@ -29,25 +29,8 @@ export default function OnlineUsersWidget() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50">
-       <AnimatePresence>
-        {!isOpen && (
-            <motion.div
-              key="button"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
-            >
-              <Button
-                className="rounded-full w-14 h-14 bg-primary/80 backdrop-blur-lg shadow-lg"
-                onClick={() => setIsOpen(true)}
-              >
-                <MessageSquare className="h-6 w-6" />
-              </Button>
-            </motion.div>
-        )}
-      </AnimatePresence>
-      <AnimatePresence>
-        {isOpen && (
+       <AnimatePresence mode="wait">
+        {isOpen ? (
           <motion.div
             key="widget-card"
             initial={{ opacity: 0, y: 50, scale: 0.8 }}
@@ -83,6 +66,20 @@ export default function OnlineUsersWidget() {
               </CardContent>
             </Card>
           </motion.div>
+        ) : (
+            <motion.div
+              key="widget-button"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2 } }}
+            >
+              <Button
+                className="rounded-full w-14 h-14 bg-primary/80 backdrop-blur-lg shadow-lg"
+                onClick={() => setIsOpen(true)}
+              >
+                <MessageSquare className="h-6 w-6" />
+              </Button>
+            </motion.div>
         )}
       </AnimatePresence>
     </div>
