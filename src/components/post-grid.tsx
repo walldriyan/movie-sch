@@ -6,25 +6,49 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Star, MessageCircle, MoreHorizontal, ThumbsUp, Heart } from 'lucide-react';
+import { Play, Clapperboard, Tv, Folder, List, Star, ThumbsUp, MessageCircle, Heart } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
-import type { Post } from '@/lib/types';
+import type { Post as Movie, Series } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import ClientRelativeDate from './client-relative-date';
+import { Button } from './ui/button';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import ClientRelativeDate from './client-relative-date';
 
 interface PostGridProps {
-  posts: Post[];
+  movies: Movie[];
 }
 
-function PostCard({ post }: { post: Post }) {
-  const [imageLoaded, setImageLoaded] = useState(false);
+function CategoryIcon({ type }: { type: Movie['type'] }) {
+  const getCategory = () => {
+    switch (type) {
+      case 'MOVIE':
+        return { icon: <Clapperboard className="w-4 h-4" />, label: 'Movie', color: 'bg-blue-900/50' };
+      case 'TV_SERIES':
+        return { icon: <Tv className="w-4 h-4" />, label: 'TV Series', color: 'bg-green-900/50' };
+      default:
+        return { icon: <Folder className="w-4 h-4" />, label: 'Other', color: 'bg-gray-900/50' };
+    }
+  };
 
+  const { icon, label, color } = getCategory();
+
+  return (
+    <div className={cn(
+      "absolute top-2 right-2 z-20 flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold text-white backdrop-blur-sm",
+      color
+    )}>
+      {icon}
+      <span className='hidden sm:inline'>{label}</span>
+    </div>
+  );
+}
+
+function PostCard({ post }: { post: Movie }) {
   const postImageUrl =
     post.posterUrl ||
     PlaceHolderImages.find(
@@ -73,7 +97,7 @@ function PostCard({ post }: { post: Post }) {
         
         {/* Content Card */}
         <div className="pl-12 flex-grow space-y-3">
-             <div className="rounded-lg border bg-card text-card-foreground shadow-sm">
+             <div className="rounded-lg border bg-card text-card-foreground shadow-sm group">
                 {postImageUrl && (
                   <div className="aspect-[16/9] relative overflow-hidden rounded-t-lg shadow-md max-h-[310px] ">
                       <Image
@@ -85,9 +109,9 @@ function PostCard({ post }: { post: Post }) {
                       />
                   </div>
                 )}
-                 <div className="p-2">
-                    <Link href={`/movies/${post.id}`} className="group block">
-                        <h2 className="font-serif text-lg font-bold leading-snug group-hover:text-primary transition-colors">
+                 <div className="p-3">
+                    <Link href={`/movies/${post.id}`} className="group/link block">
+                        <h2 className="font-serif text-lg font-bold leading-snug group-hover/link:text-primary transition-colors">
                             {post.title}
                         </h2>
                     </Link>
@@ -152,7 +176,7 @@ export default function PostGrid({ posts }: PostGridProps) {
           return (
             <PostCard
               key={post.id}
-              post={post as Post}
+              post={post as Movie}
             />
           );
         })}

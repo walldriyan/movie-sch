@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info } from 'lucide-react';
 import Link from 'next/link';
@@ -30,6 +30,8 @@ import type { Notification as NotificationType } from '@prisma/client';
 import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
+import { Skeleton } from './ui/skeleton';
+import MovieCard from './movie-card';
 
 
 interface HomePageClientProps {
@@ -64,12 +66,17 @@ export default function HomePageClient({
     initialNotifications,
     session
 }: HomePageClientProps) {
-
-//   console.log("Client [/components/home-page-client.tsx] Received session prop:", JSON.stringify(session, null, 2));
   
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading for better UX with skeletons
+    const timer = setTimeout(() => setLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleMarkAsRead = (id: string) => {
     startTransition(async () => {
@@ -92,7 +99,7 @@ export default function HomePageClient({
   const unreadCount = notifications.filter(n => n.status !== 'READ').length;
   
   const posts = initialPosts;
-  const users = initialUsers.slice(0, 10);
+  const users = initialUsers;
   const groups = initialGroups;
   const timeFilter = searchParams?.timeFilter;
   const sortBy = searchParams?.sortBy;
@@ -143,6 +150,23 @@ export default function HomePageClient({
         ))}
       </div>
     );
+  }
+
+  const renderFallbackContent = () => {
+    if (!posts || posts.length === 0) return null;
+    const fallbackPosts = posts.slice(0, 3).map(post => ({
+      id: post.id,
+      title: post.title,
+      posterUrlId: 'movie-poster-placeholder'
+    }));
+
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
+        {fallbackPosts.map(p => (
+            <MovieCard key={`fallback-${p.id}`} id={p.id} title={p.title} description="" posterUrlId={p.posterUrlId} />
+        ))}
+      </div>
+    )
   }
 
   return (
@@ -303,36 +327,58 @@ export default function HomePageClient({
 
                 <section>
                     <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
-                    <div className="flex flex-wrap items-start justify-center gap-x-8 gap-y-4">
-                    {users.map(user => {
-                        const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
-                        return (
-                        <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group">
-                            <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
-                            {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
-                            <AvatarFallback>
-                                {user.name?.charAt(0).toUpperCase() || 'U'}
-                            </AvatarFallback>
-                            </Avatar>
-                            <div className='text-center mt-2'>
-                            <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
-                            <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
-                            </div>
-                        </Link>
-                        )
-                    })}
-                    </div>
+                     {loading ? (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-4">
+                            {[...Array(5)].map((_, i) => (
+                                <div key={i} className="flex flex-col items-center">
+                                    <Skeleton className="w-24 h-24 rounded-full" />
+                                    <Skeleton className="h-4 w-20 mt-2" />
+                                    <Skeleton className="h-3 w-16 mt-1" />
+                                </div>
+                            ))}
+                        </div>
+                    ) : users.length > 0 ? (
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 justify-center gap-x-8 gap-y-4">
+                            {users.map(user => {
+                                const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
+                                return (
+                                <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group">
+                                    <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
+                                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
+                                    <AvatarFallback>
+                                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                                    </AvatarFallback>
+                                    </Avatar>
+                                    <div className='text-center mt-2'>
+                                    <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
+                                    <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
+                                    </div>
+                                </Link>
+                                )
+                            })}
+                        </div>
+                    ) : (
+                        renderFallbackContent()
+                    )}
                 </section>
                 
                 <Separator className="my-12 bg-gray-800" />
 
                 <section>
                     <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Globe /> Popular Groups</h2>
-                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                        {groups.map((group) => (
-                           <GroupCard key={group.id} group={group} />
-                        ))}
-                    </div>
+                     {loading ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)}
+                        </div>
+                    ) : groups.length > 0 ? (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                            {groups.map((group) => (
+                            <GroupCard key={group.id} group={group} />
+                            ))}
+                        </div>
+                    ) : (
+                         renderFallbackContent()
+                    )}
                 </section>
             </main>
             )}
