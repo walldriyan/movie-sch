@@ -162,7 +162,7 @@ export default function MetaSpotlight({
 
 
   return (
-    <div className="h-[520px] p-3  bg-gradient-to-r from-zinc-950 via-cyan-950/5 to-zinc-950 drop-shadow-lg flex flex-col items-center justify-center mb-1 overflow-hidden relative">
+    <div className="h-[520px] p-3  bg-gradient-to-r from-zinc-950 via-cyan-950/10 to-zinc-950 drop-shadow-lg flex flex-col items-center justify-center mb-1 overflow-hidden relative">
 
 
 
