@@ -66,19 +66,18 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         throw new Error('Not authenticated');
     }
     
+    // Authorization logic
     if (user.role !== ROLES.SUPER_ADMIN) {
-        if (data.postId) {
-            const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) }});
-            if (!post || post.authorId !== user.id) {
-                throw new Error('Not authorized to create or edit an exam for this post.');
-            }
-        } else if (data.groupId) {
-            const group = await prisma.group.findUnique({ where: { id: data.groupId }});
-            if (!group || group.createdById !== user.id) {
-                 throw new Error('Not authorized to create or edit an exam for this group.');
-            }
-        } else {
-             throw new Error('An association to a post or group is required.');
+        let isAuthorized = false;
+        if (data.assignmentType === 'POST' && data.postId) {
+            const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) } });
+            if (post?.authorId === user.id) isAuthorized = true;
+        } else if (data.assignmentType === 'GROUP' && data.groupId) {
+            const group = await prisma.group.findUnique({ where: { id: data.groupId } });
+            if (group?.createdById === user.id) isAuthorized = true;
+        }
+        if (!isAuthorized) {
+            throw new Error('Not authorized to create or edit an exam for this item.');
         }
     }
     
@@ -95,25 +94,21 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     const questionsToCreate = data.questions.filter(q => !q.id);
     const questionsToUpdate = data.questions.filter(q => q.id);
 
-    if (examId) { // This is a clear update case for an existing exam
+    if (examId) { // Update an existing exam
         await prisma.$transaction(async (tx) => {
-            const relationData: any = {};
-            if (data.postId) {
-                relationData.post = { connect: { id: parseInt(data.postId, 10) } };
-                relationData.group = { disconnect: true };
-            } else if (data.groupId) {
-                relationData.group = { connect: { id: data.groupId } };
-                relationData.post = { disconnect: true };
-            }
+            const updateData: Prisma.ExamUpdateInput = {
+                ...baseExamData,
+                // Handle relation change by updating foreign keys
+                postId: data.assignmentType === 'POST' && data.postId ? parseInt(data.postId, 10) : null,
+                groupId: data.assignmentType === 'GROUP' && data.groupId ? data.groupId : null,
+            };
 
             await tx.exam.update({
               where: { id: examId },
-              data: {
-                ...baseExamData,
-                ...relationData
-              },
+              data: updateData,
             });
 
+            // Logic to update questions and options remains the same...
             const existingQuestionIds = (await tx.question.findMany({ where: { examId }, select: { id: true }})).map(q => q.id);
             const questionsToUpdateIds = questionsToUpdate.map(q => q.id).filter(Boolean) as number[];
             const questionsToDeleteIds = existingQuestionIds.filter(id => !questionsToUpdateIds.includes(id));
@@ -162,26 +157,22 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 }
             }
         });
-    } else { // This is a create case.
-        const createData = {
+    } else { // Create a new exam
+        const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
-            postId: data.postId ? parseInt(data.postId, 10) : null,
-            groupId: data.groupId || null,
+            post: data.assignmentType === 'POST' && data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
+            group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
+            questions: {
+                create: data.questions.map(q => ({
+                    text: q.text,
+                    points: q.points,
+                    isMultipleChoice: q.isMultipleChoice,
+                    options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
+                })),
+            },
         };
 
-        await prisma.exam.create({
-            data: {
-                ...createData,
-                questions: {
-                    create: data.questions.map(q => ({
-                        text: q.text,
-                        points: q.points,
-                        isMultipleChoice: q.isMultipleChoice,
-                        options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
-                    })),
-                },
-            },
-        });
+        await prisma.exam.create({ data: createData });
     }
 
     revalidatePath(`/admin/exams`);
