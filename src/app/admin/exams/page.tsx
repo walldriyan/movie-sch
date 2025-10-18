@@ -622,6 +622,7 @@ export default function CreateExamPage() {
   const handleNextStep = async () => {
     const fields = steps[currentStep - 1].fields;
     const output = await form.trigger(fields as any, { shouldFocus: true });
+    
     if (!output) return;
     
     if (currentStep < 3) {
@@ -742,7 +743,6 @@ export default function CreateExamPage() {
             }
             const importedData = JSON.parse(content);
             
-            // Basic validation for questions structure
             const questionsValidation = z.array(questionSchema).safeParse(importedData.questions);
 
             if (!questionsValidation.success) {
@@ -758,7 +758,6 @@ export default function CreateExamPage() {
                 durationMinutes: importedData.durationMinutes,
                 attemptsAllowed: importedData.attemptsAllowed || 1,
                 questions: questionsValidation.data || [],
-                // Reset fields not in JSON to avoid carrying over old data
                 postId: undefined,
                 groupId: undefined,
                 assignmentType: 'POST',
@@ -774,7 +773,6 @@ export default function CreateExamPage() {
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Import Failed', description: error.message });
         } finally {
-            // Reset file input
             if (importFileInputRef.current) {
                 importFileInputRef.current.value = "";
             }
