@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -62,7 +61,7 @@ import { ROLES } from '@/lib/permissions';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) => (
   <div className="flex items-start gap-4">
