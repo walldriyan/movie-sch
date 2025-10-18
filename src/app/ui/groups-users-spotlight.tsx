@@ -180,7 +180,7 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
   return (
     <div
       ref={containerRef}
-      className="relative bg-gradient-to-r from-zinc-950/80 via-stone-900 to-zinc-950/50  rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center"
+      className="relative bg-gradient-to-r from-zinc-950/10 via-stone-900/5 to-zinc-950/5 backdrop-blur-lg   rounded-2xl w-full max-w-[700px] h-[700px] flex items-center justify-center"
       style={{ perspective: '1000px' }}
     >
       {loading ? renderSkeletons() : items.map((item, index) => renderItem(item, index))}

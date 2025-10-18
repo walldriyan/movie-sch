@@ -54,40 +54,61 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     const skip = (page - 1) * limit;
     const session = await auth();
     const user = session?.user;
+    const userRole = user?.role;
 
-    let whereClause: Prisma.PostWhereInput = {
-      status: MovieStatus.PUBLISHED,
-    };
+    let whereClause: Prisma.PostWhereInput = {};
     
-    if (user) {
-      // Logged-in users can see public posts and posts from groups they are in.
-      const userGroupIds = await prisma.groupMember.findMany({
-        where: { userId: user.id, status: 'ACTIVE' },
-        select: { groupId: true },
-      }).then(members => members.map(m => m.groupId));
+    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
+    
+    // --- Role-Based Access Control Logic ---
+    if (userRole === ROLES.SUPER_ADMIN) {
+        whereClause.status = { not: MovieStatus.PENDING_DELETION };
+    } else if (userRole === ROLES.USER_ADMIN) {
+        whereClause = {
+            OR: [
+                { authorId: user.id, status: { not: MovieStatus.PENDING_DELETION } },
+                { status: MovieStatus.PUBLISHED, visibility: 'PUBLIC' }
+            ],
+        };
+    } else { // Regular user or guest
+        const publicCriteria: Prisma.PostWhereInput = {
+            status: MovieStatus.PUBLISHED,
+            visibility: 'PUBLIC',
+        };
 
-      whereClause.OR = [
-        { visibility: 'PUBLIC' },
-        { 
-          visibility: 'GROUP_ONLY',
-          groupId: { in: userGroupIds }
+        if (user) { // Logged-in regular user
+            const userGroupIds = await prisma.groupMember.findMany({
+                where: { userId: user.id, status: 'ACTIVE' },
+                select: { groupId: true },
+            }).then(members => members.map(m => m.groupId));
+
+            whereClause = {
+                 OR: [
+                    publicCriteria,
+                    {
+                        status: MovieStatus.PUBLISHED,
+                        visibility: 'GROUP_ONLY',
+                        groupId: { in: userGroupIds },
+                    }
+                ]
+            }
+        } else { // Guest
+            whereClause = publicCriteria;
         }
-      ];
-      // Super admins can see posts with any status except PENDING_DELETION
-      if (user.role === ROLES.SUPER_ADMIN) {
-        whereClause.status = { not: 'PENDING_DELETION' };
-      }
-
-    } else {
-      // Guests can only see public posts and they must not be locked by default.
-      whereClause.visibility = 'PUBLIC';
-      whereClause.isLockedByDefault = false;
     }
     
+    // --- Lock Status Filter Logic ---
+    if (lockStatus === 'locked') {
+      whereClause.isLockedByDefault = true;
+    } else if (lockStatus === 'unlocked' || (lockStatus === undefined && userRole !== ROLES.SUPER_ADMIN)) {
+      // Default for non-admins is to show only unlocked posts unless 'locked' is specified
+      whereClause.isLockedByDefault = false;
+    }
+    // If lockStatus is undefined for a SUPER_ADMIN, no isLockedByDefault clause is added, showing both.
+
+    // Apply additional filters
     let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
 
-    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type } = filters;
-    
     if (authorId) {
       whereClause.authorId = authorId;
       if (!includePrivate) {
@@ -160,6 +181,14 @@ export async function getPosts(options: { page?: number; limit?: number, filters
                   select: { posts: true }
                 }
               }
+            },
+            likedBy: {
+              select: {
+                  id: true,
+                  name: true,
+                  image: true,
+              },
+              take: 5,
             },
             _count: {
               select: {
@@ -674,4 +703,3 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
-

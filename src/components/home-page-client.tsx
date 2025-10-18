@@ -1,16 +1,16 @@
 
+
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
-import MovieGrid from '@/components/movie-grid';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
   DropdownMenu,
@@ -31,7 +31,8 @@ import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
-import MovieCard from './movie-card';
+import MovieGrid from './movie-grid';
+import { ROLES } from '@/lib/permissions';
 
 
 interface HomePageClientProps {
@@ -40,7 +41,7 @@ interface HomePageClientProps {
     initialGroups: (GroupWithCount & { posts: { posterUrl: string | null }[] })[];
     totalPages: number;
     currentPage: number;
-    searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string };
+    searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
     initialNotifications: NotificationType[];
     session: Session | null;
 }
@@ -104,12 +105,14 @@ export default function HomePageClient({
   const timeFilter = searchParams?.timeFilter;
   const sortBy = searchParams?.sortBy;
   const typeFilter = searchParams?.type;
+  const lockStatus = searchParams?.lockStatus;
+
 
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
   );
   
-  const buildQueryString = (params: Record<string, string | number | undefined>) => {
+  const buildQueryString = (params: Record<string, string | number | undefined | null>) => {
     const searchParams = new URLSearchParams();
     for (const [key, value] of Object.entries(params)) {
       if (value) {
@@ -151,40 +154,116 @@ export default function HomePageClient({
       </div>
     );
   }
+  
+  const isPrivilegedUser = session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
+  const allButtonLockStatus = isPrivilegedUser ? null : 'unlocked';
 
-  const renderFallbackContent = () => {
-    if (!posts || posts.length === 0) return null;
-    // Take the first 3 posts or as many as available if less than 3
-    const fallbackPosts = posts.slice(0, 3);
-
-    return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mt-8">
-        {fallbackPosts.map(p => (
-            <MovieCard key={`fallback-${p.id}`} id={p.id} title={p.title} description="" posterUrlId="movie-poster-placeholder" />
-        ))}
-      </div>
-    )
-  }
 
   return (
     <TooltipProvider>
         <div className="w-full bg-background text-foreground">
-            {posts.length === 0 ? (
-            <main className="container mx-auto flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-8 text-center mt-16">
-                <div className="max-w-md">
-                <h1 className="font-serif text-4xl font-bold">
-                    No Posts Found
-                </h1>
-                <p className="mt-4 text-lg text-muted-foreground">
-                    No posts match the current filters. Try a different filter.
-                </p>
-                <Button asChild className="mt-8">
-                    <Link href="/">Clear Filters</Link>
-                </Button>
+             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 flex items-center justify-between">
+                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                    <Button asChild variant={'outline'} className={cn(
+                        "rounded-full hover:bg-gray-800 flex-shrink-0",
+                        !typeFilter && (!lockStatus || lockStatus === 'unlocked') ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                    )}>
+                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: allButtonLockStatus })} className="flex items-center gap-2">
+                        <Film className="w-4 h-4" />
+                        <span>All</span>
+                    </Link>
+                    </Button>
+                    {typeFilters.map(filter => (
+                        <Button key={filter.value} asChild variant={'outline'} className={cn(
+                        "rounded-full hover:bg-gray-800 flex-shrink-0",
+                        typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                        )}>
+                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus })} className="flex items-center gap-2">
+                            {filter.icon}
+                            <span>{filter.label}</span>
+                        </Link>
+                        </Button>
+                    ))}
+                      <Button asChild variant={'outline'} className={cn(
+                      "rounded-full hover:bg-gray-800 flex-shrink-0",
+                      lockStatus === 'locked' ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                    )}>
+                      <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: typeFilter, lockStatus: 'locked' })} className="flex items-center gap-2">
+                        <Lock className="w-4 h-4" />
+                        <span>Locked</span>
+                      </Link>
+                    </Button>
                 </div>
-            </main>
-            ) : (
-            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+                
+                <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800 ml-2 flex-shrink-0">
+                    <ListFilter className="mr-2 h-4 w-4" />
+                    Filter
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56" align="end">
+                    <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })}>
+                        <DropdownMenuRadioItem value="newest" checked={sortBy === 'updatedAt-desc' || !sortBy}>
+                        <Clock className="mr-2 h-4 w-4" /> Newest
+                        </DropdownMenuRadioItem>
+                    </Link>
+                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })}>
+                        <DropdownMenuRadioItem value="oldest" checked={sortBy === 'updatedAt-asc'}>
+                        <Clock className="mr-2 h-4 w-4" /> Oldest
+                        </DropdownMenuRadioItem>
+                    </Link>
+                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })}>
+                        <DropdownMenuRadioItem value="imdb" checked={sortBy === 'imdbRating-desc'}>
+                        <Star className="mr-2 h-4 w-4" /> IMDb Rating
+                        </DropdownMenuRadioItem>
+                    </Link>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })}>
+                        <DropdownMenuRadioItem value="today" checked={timeFilter === 'today'}>
+                        <Calendar className="mr-2 h-4 w-4" /> Today
+                        </DropdownMenuRadioItem>
+                    </Link>
+                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })}>
+                        <DropdownMenuRadioItem value="this_week" checked={timeFilter === 'this_week'}>
+                        <Calendar className="mr-2 h-4 w-4" /> This Week
+                        </DropdownMenuRadioItem>
+                    </Link>
+                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter, lockStatus })}>
+                        <DropdownMenuRadioItem value="this_month" checked={timeFilter === 'this_month'}>
+                        <Calendar className="mr-2 h-4 w-4" /> This Month
+                        </DropdownMenuRadioItem>
+                    </Link>
+                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })}>
+                        <DropdownMenuRadioItem value="all" checked={timeFilter === 'all' || !timeFilter}>
+                        <Calendar className="mr-2 h-4 w-4" /> All Time
+                        </DropdownMenuRadioItem>
+                    </Link>
+                </DropdownMenuContent>
+                </DropdownMenu>
+
+            </div>
+            
+            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
+                {posts.length === 0 ? (
+                    <div className="text-center py-16">
+                        <h1 className="font-serif text-4xl font-bold">
+                            No Posts Found
+                        </h1>
+                        <p className="mt-4 text-lg text-muted-foreground">
+                            No posts match the current filters. Try a different filter.
+                        </p>
+                        <Button asChild className="mt-8">
+                            <Link href="/">Clear Filters</Link>
+                        </Button>
+                    </div>
+                ) : (
+                <>
                 {session && unreadCount > 0 && (
                   <Card className="mb-8">
                     <CardContent className="p-4">
@@ -205,83 +284,6 @@ export default function HomePageClient({
                     </CardContent>
                   </Card>
                 )}
-                <div className="flex items-center justify-between mb-8">
-                    <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                        <Button asChild variant={'outline'} className={cn(
-                        "rounded-full hover:bg-gray-800 flex-shrink-0",
-                        !typeFilter ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
-                        )}>
-                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined })} className="flex items-center gap-2">
-                            <Film className="w-4 h-4" />
-                            <span>All</span>
-                        </Link>
-                        </Button>
-                        {typeFilters.map(filter => (
-                            <Button key={filter.value} asChild variant={'outline'} className={cn(
-                            "rounded-full hover:bg-gray-800 flex-shrink-0",
-                            typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
-                            )}>
-                            <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value })} className="flex items-center gap-2">
-                                {filter.icon}
-                                <span>{filter.label}</span>
-                            </Link>
-                            </Button>
-                        ))}
-                    </div>
-                    
-                    <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800 ml-2 flex-shrink-0">
-                        <ListFilter className="mr-2 h-4 w-4" />
-                        Filter
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56" align="end">
-                        <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter })}>
-                            <DropdownMenuRadioItem value="newest" checked={sortBy === 'updatedAt-desc' || !sortBy}>
-                            <Clock className="mr-2 h-4 w-4" /> Newest
-                            </DropdownMenuRadioItem>
-                        </Link>
-                        <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter })}>
-                            <DropdownMenuRadioItem value="oldest" checked={sortBy === 'updatedAt-asc'}>
-                            <Clock className="mr-2 h-4 w-4" /> Oldest
-                            </DropdownMenuRadioItem>
-                        </Link>
-                        <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter })}>
-                            <DropdownMenuRadioItem value="imdb" checked={sortBy === 'imdbRating-desc'}>
-                            <Star className="mr-2 h-4 w-4" /> IMDb Rating
-                            </DropdownMenuRadioItem>
-                        </Link>
-
-                        <DropdownMenuSeparator />
-                        <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter })}>
-                            <DropdownMenuRadioItem value="today" checked={timeFilter === 'today'}>
-                            <Calendar className="mr-2 h-4 w-4" /> Today
-                            </DropdownMenuRadioItem>
-                        </Link>
-                        <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter })}>
-                            <DropdownMenuRadioItem value="this_week" checked={timeFilter === 'this_week'}>
-                            <Calendar className="mr-2 h-4 w-4" /> This Week
-                            </DropdownMenuRadioItem>
-                        </Link>
-                        <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter })}>
-                            <DropdownMenuRadioItem value="this_month" checked={timeFilter === 'this_month'}>
-                            <Calendar className="mr-2 h-4 w-4" /> This Month
-                            </DropdownMenuRadioItem>
-                        </Link>
-                        <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter })}>
-                            <DropdownMenuRadioItem value="all" checked={timeFilter === 'all' || !timeFilter}>
-                            <Calendar className="mr-2 h-4 w-4" /> All Time
-                            </DropdownMenuRadioItem>
-                        </Link>
-                    </DropdownMenuContent>
-                    </DropdownMenu>
-
-                </div>
                 
                 <MovieGrid movies={posts} />
 
@@ -290,7 +292,7 @@ export default function HomePageClient({
                         <PaginationContent>
                         <PaginationItem>
                             <PaginationPrevious 
-                            href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter })}
+                            href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter, lockStatus })}
                             className={cn(
                                 "dark bg-gray-800 hover:bg-gray-700",
                                 currentPage <= 1 && "pointer-events-none opacity-50"
@@ -307,7 +309,7 @@ export default function HomePageClient({
                         
                         <PaginationItem>
                             <PaginationNext
-                            href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter })}
+                            href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter, lockStatus })}
                             className={cn(
                                 "dark bg-gray-800 hover:bg-gray-700",
                                 currentPage >= totalPages && "pointer-events-none opacity-50"
@@ -355,7 +357,11 @@ export default function HomePageClient({
                             })}
                         </div>
                     ) : (
-                        renderFallbackContent()
+                         <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Users Yet</h3>
+                            <p className="text-muted-foreground mt-2 text-sm">There are no users in the system yet.</p>
+                        </div>
                     )}
                 </section>
                 
@@ -365,20 +371,25 @@ export default function HomePageClient({
                     <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Globe /> Popular Groups</h2>
                      {loading ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full" />)}
+                           {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-lg" />)}
                         </div>
                     ) : groups.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                             {groups.map((group) => (
-                            <GroupCard key={group.id} group={group} />
+                              <GroupCard key={group.id} group={group} />
                             ))}
                         </div>
                     ) : (
-                         renderFallbackContent()
+                         <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                            <Users className="h-12 w-12 text-muted-foreground mb-4" />
+                            <h3 className="text-lg font-semibold">No Groups Yet</h3>
+                            <p className="text-muted-foreground mt-2 text-sm">There are no public groups available at the moment. Check back later!</p>
+                        </div>
                     )}
                 </section>
-            </main>
+                </>
             )}
+            </main>
         </div>
     </TooltipProvider>
   );

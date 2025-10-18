@@ -18,12 +18,13 @@ export default async function HomePage({
 }) {
   // 👇 මෙතන await කරන්න ඕනේ!
   const params = await searchParams;
-  
+
   // දැන් params use කරන්න
   const timeFilter = (params.timeFilter as string) || 'updatedAt-desc';
   const sortBy = (params.sortBy as string) || 'updatedAt-desc';
   const typeFilter = params.type as string | undefined;
   const currentPage = Number(params.page) || 1;
+  const lockStatus = params.lockStatus as string | undefined;
 
   const session = await auth();
   // console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
@@ -31,30 +32,31 @@ export default async function HomePage({
   const { posts, totalPages } = await getPosts({
     page: currentPage,
     limit: 10,
-    filters: { timeFilter, sortBy, type: typeFilter },
+    filters: { timeFilter, sortBy, type: typeFilter, lockStatus },
   });
   const users = await getUsers();
   const groups = await getPublicGroups();
   const notifications = await getNotifications();
-  
+
   return (
     <>
-     
+
       {/* <MetaSpotlight1 /> */}
-     
-     <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
- <MetaSpotlight3 posts={posts as Post[]} />
+
+
+      <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
+      <MetaSpotlight3 posts={posts as Post[]} />
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
         initialGroups={groups}
         totalPages={totalPages}
         currentPage={currentPage}
-        searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter }}
+        searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter, lockStatus }}
         initialNotifications={notifications}
         session={session}
       />
-        <MetaSpotlightPostGrid />
+      <MetaSpotlightPostGrid />
     </>
   );
 }
