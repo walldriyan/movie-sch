@@ -40,6 +40,8 @@ import { getSeries, createSeries, getGroupsForForm } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
+const MAX_FILE_SIZE = 1024 * 1024; // 1MB
+
 const postSchema = z.object({
   title: z.string().min(1, 'Title is required'),
   posterUrl: z.string().optional(),
@@ -186,6 +188,7 @@ export default function PostForm({
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const [isSubmitting, startTransition] = React.useTransition();
+  const { toast } = useToast();
 
 
   useEffect(() => {
@@ -293,6 +296,15 @@ export default function PostForm({
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        variant: 'destructive',
+        title: 'File too large',
+        description: 'Image size must be less than 1MB.',
+      });
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (e) => {
