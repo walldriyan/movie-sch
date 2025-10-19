@@ -96,7 +96,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
             <FilePlus className="mr-2 h-4 w-4" />
             <span>Post</span>
           </DropdownMenuItem>
-           <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+          <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
             <>
               <DropdownMenuItem onSelect={() => handleNavigation('/admin/groups')}>
                 <Users2 className="mr-2 h-4 w-4" />
@@ -123,7 +123,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
 
   const renderUserMenu = () => {
     if (sessionStatus === 'loading') {
-        return <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />;
+      return <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />;
     }
 
     if (!user) {
@@ -136,7 +136,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
         </Button>
       );
     }
-  
+
     const canManage = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(
       user.role
     );
@@ -221,21 +221,21 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
         <div className="flex items-center gap-4">
-            {isPending ? (
-                 <div className="flex items-center space-x-2">
-                    <Skeleton className="h-10 w-24" />
-                </div>
-            ) : (
-                <Link href="/" onClick={(e) => {e.preventDefault(); handleNavigation('/');}} className="flex items-center space-x-2">
-                    <Image src="/logo.png" alt="Logo" width={38} height={38}  
-  style={{ objectFit: 'cover' }} />
-                </Link>
-            )}
-          </div>
+          {isPending ? (
+            <div className="flex items-center space-x-2">
+              <Skeleton className="h-10 w-24" />
+            </div>
+          ) : (
+            <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2">
+              <Image src="/logo.png" alt="Logo" width={38} height={38}
+                style={{ objectFit: 'cover' }} />
+            </Link>
+          )}
+        </div>
         <div className="flex items-center justify-end space-x-2">
           {renderCreateButton()}
-          {user &&  <HeaderApprovals />  }
-         
+          {user && <HeaderApprovals />}
+
           {renderUserMenu()}
         </div>
       </div>
