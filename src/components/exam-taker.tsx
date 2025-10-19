@@ -171,13 +171,13 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
             {exam.durationMinutes && (
-                <div className={`fixed top-4 right-4 z-50 text-2xl font-mono font-semibold p-2 rounded-lg flex items-center gap-2 ${showWarning ? 'bg-destructive/20 text-destructive' : 'bg-muted'}`}>
+                <div className={`fixed bottom-4 left-4 z-50 text-2xl font-mono font-semibold p-2 rounded-lg flex items-center gap-2 ${showWarning ? 'bg-destructive/20 text-destructive' : 'bg-muted'}`}>
                     <Clock className="h-6 w-6" />
                     <span>{formatTime(timeLeft)}</span>
                 </div>
             )}
             <div className="max-w-4xl mx-auto">
-                <Card className="mt-20">
+                <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
                              <div>
