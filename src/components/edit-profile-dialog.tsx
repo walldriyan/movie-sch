@@ -173,7 +173,8 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
                   <FormLabel>Cover Image</FormLabel>
                    <div className="relative aspect-[3/1] w-full bg-muted rounded-md overflow-hidden group">
                       {previewCoverImage ? (
-                          <Image src={previewCoverImage} alt="Cover preview" fill className="object-cover" />
+                          <Image src={previewCoverImage} alt="Cover preview"  fill
+                          style={{ objectFit: 'cover' }} />
                       ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                               <p>No cover image</p>

@@ -162,7 +162,8 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
                   <FormLabel>Cover Photo</FormLabel>
                    <div className="relative group aspect-[3/1] w-full bg-muted rounded-md overflow-hidden">
                       {previewCover ? (
-                          <Image src={previewCover} alt="Cover preview" fill className="object-cover" />
+                          <Image src={previewCover} alt="Cover preview"  fill
+                          style={{ objectFit: 'cover' }} />
                       ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                               <p>No cover photo</p>

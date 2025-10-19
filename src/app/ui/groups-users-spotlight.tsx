@@ -140,7 +140,8 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
           }}
         >
           <div className="relative w-full h-full">
-            <Image src={item.image} alt={item.name} layout="fill" objectFit="cover" />
+            <Image src={item.image} alt={item.name}  fill
+  style={{ objectFit: 'cover' }} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
             <p className="absolute bottom-2 left-2 text-white font-bold text-sm truncate">{item.name}</p>
           </div>

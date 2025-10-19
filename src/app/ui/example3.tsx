@@ -23,7 +23,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     const sortedPosts = [...initialPosts]
       .sort((a, b) => (b.viewCount ?? 0) - (a.viewCount ?? 0))
       .slice(0, 10);
-    
+
     const generatedCards = sortedPosts.map((post, index) => {
       const isSeriesPost = post.series && post.series.posts && post.series.posts.length > 0;
       // Ensure the hero card is still somewhat centered if possible
@@ -132,7 +132,15 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             return (
               <div key={idx} className="aspect-square rounded bg-muted overflow-hidden relative">
                 {post && post.posterUrl && (
-                  <Image src={post.posterUrl} alt="series post" layout="fill" objectFit="cover" />
+                  // <Image src={post.posterUrl} alt="series post"  fill
+                  // style={{ objectFit: 'cover' }} />
+                  <Image
+                    src={post.posterUrl}
+                    alt="series post"
+                    fill
+                    sizes="(max-width: 768px) 33vw, 20vw"
+                    style={{ objectFit: 'cover' }}
+                  />
                 )}
               </div>
             );
@@ -166,40 +174,48 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         }}
       >
         <div className="relative flex-grow">
-            {!isHero && (
+          {!isHero && (
             <div className="absolute top-2 md:top-3 left-2 md:left-3 z-10 flex items-center gap-2">
-                <div className="bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden relative">
+              <div className="bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden relative">
                 {card.authorImage ? (
-                    <Image src={card.authorImage} alt={card.brand} layout="fill" objectFit="cover" />
+                  // <Image src={card.authorImage} alt={card.brand}  fill
+                  // style={{ objectFit: 'cover' }} />
+                  <Image
+                    src={card.authorImage}
+                    alt={card.brand}
+                    fill
+                    sizes="28px"
+                    style={{ objectFit: 'cover' }}
+                  />
                 ) : (
-                    card.brand.charAt(0)
+                  card.brand.charAt(0)
                 )}
-                </div>
-                <div className="text-xs font-semibold p-1 bg-white/50 backdrop-blur-sm rounded-md truncate">{card.brand}</div>
+              </div>
+              <div className="text-xs font-semibold p-1 bg-white/50 backdrop-blur-sm rounded-md truncate">{card.brand}</div>
             </div>
-            )}
+          )}
 
-            <Image
-                src={card.image}
-                alt={card.brand}
-                layout="fill"
-                objectFit="cover"
-                className="w-full h-full"
-            />
-            {/* Like count display */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <div className="flex items-center gap-4 bg-black/40 text-white backdrop-blur-sm px-4 py-2 rounded-full">
-                    <div className="flex items-center gap-2">
-                        <ThumbsUp className="w-4 h-4" />
-                        <span className="font-bold text-sm">{card.likeCount}</span>
-                    </div>
-                    <Separator orientation="vertical" className="h-4 bg-white/30" />
-                    <div className="flex items-center gap-2">
-                        <Eye className="w-4 h-4" />
-                        <span className="font-bold text-sm">{card.viewCount}</span>
-                    </div>
-                </div>
+          <Image
+            src={card.image}
+            alt={card.brand}
+            fill
+            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 40vw, 30vw"
+            className="w-full h-full object-cover"
+          />
+          {/* Like count display */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+            <div className="flex items-center gap-4 bg-black/40 text-white backdrop-blur-sm px-4 py-2 rounded-full">
+              <div className="flex items-center gap-2">
+                <ThumbsUp className="w-4 h-4" />
+                <span className="font-bold text-sm">{card.likeCount}</span>
+              </div>
+              <Separator orientation="vertical" className="h-4 bg-white/30" />
+              <div className="flex items-center gap-2">
+                <Eye className="w-4 h-4" />
+                <span className="font-bold text-sm">{card.viewCount}</span>
+              </div>
             </div>
+          </div>
         </div>
 
         <div className="flex-shrink-0">
@@ -217,10 +233,10 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       </div>
     );
   };
-// bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
+  // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
   return (
     <div className="h-[260px] p-8 bg-gradient-to-b from-zinc-950/70  to-stone-900/5 flex flex-col items-center  justify-center overflow-hidden relative">
-      
+
       {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
         <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
           style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
