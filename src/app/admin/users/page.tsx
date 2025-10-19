@@ -142,7 +142,7 @@ export default function ManageUsersPage() {
               {users.length > 0 ? (
                 users.map((user) => (
                   <TableRow key={user.id}>
-                    <TableCell className="font-medium">
+                    <TableCell className="font-medium max-w-xs">
                       <div className="flex items-center gap-2">
                         <span>{user.name}</span>
                         {user.permissionRequestStatus === 'PENDING' && (
@@ -153,7 +153,7 @@ export default function ManageUsersPage() {
                         )}
                       </div>
                        {user.permissionRequestMessage && (
-                        <p className="text-xs text-muted-foreground mt-1 italic">
+                        <p className="text-xs text-muted-foreground mt-1 italic truncate">
                           &quot;{user.permissionRequestMessage}&quot;
                         </p>
                       )}

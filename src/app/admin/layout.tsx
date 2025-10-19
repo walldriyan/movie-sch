@@ -14,6 +14,9 @@ export default async function AdminLayout({
   const session = await auth();
   const user = session?.user;
 
+
+  console.log("Server  User from auth() on server:", JSON.stringify(user, null, 2));
+
   if (!user || user.role !== ROLES.SUPER_ADMIN) {
     // Instead of notFound(), redirect to a more appropriate page like the homepage
     // or a custom "access-denied" page.
