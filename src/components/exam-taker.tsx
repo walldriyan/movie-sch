@@ -170,20 +170,20 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
 
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
+            {exam.durationMinutes && (
+                <div className={`fixed top-4 right-4 z-50 text-2xl font-mono font-semibold p-2 rounded-lg flex items-center gap-2 ${showWarning ? 'bg-destructive/20 text-destructive' : 'bg-muted'}`}>
+                    <Clock className="h-6 w-6" />
+                    <span>{formatTime(timeLeft)}</span>
+                </div>
+            )}
             <div className="max-w-4xl mx-auto">
-                <Card>
+                <Card className="mt-20">
                     <CardHeader>
                         <div className="flex justify-between items-center">
                              <div>
                                 <CardTitle className="text-3xl font-bold font-serif">{exam.title}</CardTitle>
                                 <CardDescription className="pt-2">{exam.questions.length} questions</CardDescription>
                              </div>
-                             {exam.durationMinutes && (
-                                <div className={`text-2xl font-mono font-semibold p-2 rounded-lg flex items-center gap-2 ${showWarning ? 'bg-destructive/20 text-destructive' : 'bg-muted'}`}>
-                                    <Clock className="h-6 w-6" />
-                                    <span>{formatTime(timeLeft)}</span>
-                                </div>
-                             )}
                         </div>
                     </CardHeader>
                     <form onSubmit={handleFormSubmit}>
