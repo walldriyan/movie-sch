@@ -43,6 +43,12 @@ export default function ManageLayout({ user, children }: ManageLayoutProps) {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
+
+
+  console.log("Server  User from auth() on server:", JSON.stringify(user, null, 2));
+
+
+  
   return (
     <SidebarProvider className="bg-transperent">
       <Sidebar className="bg-transperent" variant="inset" collapsible="icon">
