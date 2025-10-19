@@ -179,21 +179,26 @@ export default function MetaSpotlight({
         Walldriyan.inc
         </h4> */}
         <div className='flex flex-col items-center justify-center'>
-          <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-[0_6px_40px_rgba(0,0,0,0.9)]">
-            Freedom of Knowledge <br />
-            <span className="text-white">Share Your Ideas Here</span>
-          </h1>
-          <p className="text-lg w-[500px] text-center md:text-xl text-gray-200 leading-relaxed drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
-            Empower minds by sharing your thoughts and insights freely.
-            {/* Join <span className="text-teal-900 font-semibold">Walldriyan.inc</span> —   */}
-            a space where every idea inspires change and builds the future of education.
-          </p>
-          <h4 className="mt-6 text-white/90 text-lg font-medium tracking-wide">
-            Walldriyan.inc
-          </h4>
+        <h1 className="text-5xl md:text-6xl font-bold text-white mb-6 tracking-tight drop-shadow-[0_6px_40px_rgba(0,0,0,0.9)]">
+  Freedom of Knowledge <br />
+  <span className="text-white">Where Ideas Find Their Voice</span>
+</h1>
+
+<p className="text-lg w-[500px] text-center md:text-xl text-gray-200 leading-relaxed drop-shadow-[0_4px_24px_rgba(0,0,0,0.8)]">
+  Empower curious minds through the power of shared wisdom.  
+  Every thought, story, and experience you share sparks new learning,  
+  shaping a brighter future for education and creativity.
+</p>
+
+<h4 className="mt-6 text-white/90 text-lg font-medium tracking-wide">
+  Walldriyan.inc
+</h4>
 
           <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
         </div>
+
+
+
         </div>
 
       {/* Cards Container */}
