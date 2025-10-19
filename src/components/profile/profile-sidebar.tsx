@@ -76,7 +76,6 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
                 <h2 className="text-xl font-bold">{profileUser.name}</h2>
                 <p className="text-sm text-muted-foreground">{profileUser.email}</p>
              </div>
-             {isOwnProfile && <EditProfileDialog user={profileUser} />}
            </div>
 
           {profileUser.bio && (
