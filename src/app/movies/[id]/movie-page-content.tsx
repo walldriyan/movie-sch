@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
@@ -201,7 +200,7 @@ export default function MoviePageContent({
   useEffect(() => {
     // Optimistically update the view count on the client-side when the component mounts.
     // This provides immediate feedback to the user.
-    setPost((prevPost: any) => ({
+     setPost((prevPost: any) => ({
       ...prevPost,
       viewCount: (prevPost.viewCount || 0) + 1,
     }));
@@ -577,3 +576,5 @@ export default function MoviePageContent({
     </div>
   );
 }
+
+    
