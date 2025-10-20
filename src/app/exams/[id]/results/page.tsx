@@ -468,9 +468,11 @@ export default function ExamResultsPage() {
                         </div>
 
                          <div className="mt-12 flex justify-center gap-4">
-                            <Button asChild>
-                                <Link href={`/movies/${submission.exam.postId}`}>Return to Post</Link>
-                            </Button>
+                            {submission.exam.postId && (
+                                <Button asChild>
+                                    <Link href={`/profile/${results.user.id}`}>Go to Profile</Link>
+                                </Button>
+                            )}
                             {canRetry && (
                                 <Button asChild variant="outline">
                                     <Link href={`/exams/${submission.exam.id}`}>
