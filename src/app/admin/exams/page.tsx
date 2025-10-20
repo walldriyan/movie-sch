@@ -179,7 +179,7 @@ const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number, iInde
                     name={`questions.${qIndex}.images.${iIndex}.url`} 
                     render={({ field }) => (
                       <FormItem>
-                          <FormControl><Input placeholder={`Paste URL or upload`} {...field} disabled={isUploading}/></FormControl>
+                          <FormControl><Input placeholder={'Paste URL or upload'} {...field} disabled={isUploading}/></FormControl>
                           <FormMessage />
                       </FormItem>
                     )} 
@@ -760,7 +760,7 @@ export default function CreateExamPage() {
      try {
         const examToExport = await getExamForEdit(examId);
         if (examToExport) {
-            // Remove IDs and other DB-specific fields
+            // Remove IDs and other DB-specific fields for a clean export
             const cleanExam = {
                 title: examToExport.title,
                 description: examToExport.description,
@@ -770,11 +770,13 @@ export default function CreateExamPage() {
                 questions: examToExport.questions.map(q => ({
                     text: q.text,
                     points: q.points,
+                    type: q.type,
                     isMultipleChoice: q.isMultipleChoice,
                     options: q.options.map(o => ({
                         text: o.text,
                         isCorrect: o.isCorrect,
                     })),
+                    images: q.images.map(img => ({ url: img.url })),
                 })),
             };
 
@@ -809,7 +811,17 @@ export default function CreateExamPage() {
             }
             const importedData = JSON.parse(content);
             
-            const questionsValidation = z.array(questionSchema).safeParse(importedData.questions);
+            // Normalize imported questions data before validation
+            const normalizedQuestions = importedData.questions.map((q: any) => ({
+                text: q.text || '',
+                points: q.points || 10,
+                type: q.type || 'MCQ',
+                isMultipleChoice: q.isMultipleChoice || false,
+                options: q.options || [],
+                images: q.images || [],
+            }));
+
+            const questionsValidation = z.array(questionSchema).safeParse(normalizedQuestions);
 
             if (!questionsValidation.success) {
                 console.error("Questions validation failed:", questionsValidation.error);
