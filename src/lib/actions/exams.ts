@@ -99,6 +99,7 @@ const examSchema = z.object({
 type ExamFormData = z.infer<typeof examSchema>;
 
 export async function createOrUpdateExam(data: ExamFormData, examId?: number | null) {
+    console.log('Submitting data:', data);
     const session = await auth();
     const user = session?.user;
 
@@ -339,6 +340,7 @@ export async function getExamForTaker(examId: number) {
           options: {
             select: { id: true, text: true }, // Don't send isCorrect to client
           },
+          images: true,
         },
       },
     },

@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import {
   Card,
   CardContent,
@@ -20,6 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { submitExam } from '@/lib/actions';
 import type { getExamForTaker } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
+import { Textarea } from './ui/textarea';
 
 type Exam = NonNullable<Awaited<ReturnType<typeof getExamForTaker>>>;
 
@@ -64,12 +66,9 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             timeTakenSeconds: timeTaken,
         };
         
-        // console.log('--- [Client] Submitting Payload ---', payload);
-        
         try {
             const newSubmission = await submitExam(exam.id, payload);
             if (newSubmission) {
-                // console.log('--- [Client] Received submission result from server ---', newSubmission);
                 router.push(`/exams/${exam.id}/results?submissionId=${newSubmission.id}`);
             } else {
                 throw new Error("Submission failed to return a result.");
@@ -194,28 +193,46 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                     <div className="font-semibold text-lg">{qIndex + 1}. {question.text}</div>
                                     <p className="text-sm text-muted-foreground mb-4">{question.points} points</p>
                                     
-                                    {question.isMultipleChoice ? (
-                                        <div className="space-y-2">
-                                            {question.options.map(option => (
-                                                <div key={option.id} className="flex items-center space-x-2 p-3 rounded-lg border border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                                                    <Checkbox
-                                                        id={`option-${option.id}`}
-                                                        name={`question-${question.id}`}
-                                                        value={String(option.id)}
-                                                    />
-                                                    <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer">{option.text}</Label>
+                                     {question.type === 'IMAGE_BASED_ANSWER' && question.images && (
+                                        <div className="mb-4 grid grid-cols-2 gap-4">
+                                            {question.images.map(image => (
+                                                <div key={image.id} className="relative aspect-video">
+                                                    <Image src={image.url} alt={`Question ${qIndex + 1} image`} layout="fill" className="object-contain rounded-md" />
                                                 </div>
                                             ))}
                                         </div>
+                                    )}
+
+                                    {question.type === 'MCQ' ? (
+                                        question.isMultipleChoice ? (
+                                            <div className="space-y-2">
+                                                {question.options.map(option => (
+                                                    <div key={option.id} className="flex items-center space-x-2 p-3 rounded-lg border border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                                                        <Checkbox
+                                                            id={`option-${option.id}`}
+                                                            name={`question-${question.id}`}
+                                                            value={String(option.id)}
+                                                        />
+                                                        <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer">{option.text}</Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        ) : (
+                                            <RadioGroup name={`question-${question.id}`} required className="space-y-2">
+                                                {question.options.map(option => (
+                                                    <div key={option.id} className="flex items-center space-x-2 p-3 rounded-lg border border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary/10">
+                                                        <RadioGroupItem value={String(option.id)} id={`option-${option.id}`} />
+                                                        <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer">{option.text}</Label>
+                                                    </div>
+                                                ))}
+                                            </RadioGroup>
+                                        )
                                     ) : (
-                                        <RadioGroup name={`question-${question.id}`} required className="space-y-2">
-                                            {question.options.map(option => (
-                                                <div key={option.id} className="flex items-center space-x-2 p-3 rounded-lg border border-transparent has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                                                    <RadioGroupItem value={String(option.id)} id={`option-${option.id}`} />
-                                                    <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer">{option.text}</Label>
-                                                </div>
-                                            ))}
-                                        </RadioGroup>
+                                        <Textarea
+                                            name={`question-${question.id}`}
+                                            placeholder="Type your answer here..."
+                                            rows={5}
+                                        />
                                     )}
                                 </div>
                             ))}
