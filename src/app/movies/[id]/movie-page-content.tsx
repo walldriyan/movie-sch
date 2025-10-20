@@ -3,8 +3,8 @@
 
 import { useEffect, useState, useTransition } from 'react';
 import type { Session } from 'next-auth';
-import { createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
-import type { Post, Review, Subtitle, User } from '@/lib/types';
+import { createReview, deleteReview, deleteSubtitle, incrementViewCount } from '@/lib/actions';
+import type { Post, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
@@ -194,16 +194,35 @@ export default function MoviePageContent({
   const [subtitleToDelete, setSubtitleToDelete] = useState<Subtitle | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSubmittingReview, startReviewTransition] = useTransition();
+  const [isUpdatingViewCount, startViewCountTransition] = useTransition();
   const [showReviews, setShowReviews] = useState(false);
   const currentUser = session?.user;
 
   useEffect(() => {
-    // Optimistically update the view count on the client-side when the component mounts.
-    // This provides immediate feedback to the user.
-     setPost((prevPost: any) => ({
-      ...prevPost,
-      viewCount: (prevPost.viewCount || 0) + 1,
+    const originalViewCount = post.viewCount;
+    // Optimistic UI update
+    setPost((prevPost: any) => ({
+        ...prevPost,
+        viewCount: (prevPost.viewCount || 0) + 1,
     }));
+
+    startViewCountTransition(async () => {
+        try {
+            await incrementViewCount(post.id);
+        } catch (error) {
+            console.error("Failed to update view count:", error);
+            // Revert optimistic update on error
+            setPost((prevPost: any) => ({
+                ...prevPost,
+                viewCount: originalViewCount,
+            }));
+            toast({
+                variant: "destructive",
+                title: "දැනුම්දීම",
+                description: "දැනට database එක read-only බැවින් view count එක update කළ නොහැක.",
+            });
+        }
+    });
   }, [initialPost.id]);
 
 

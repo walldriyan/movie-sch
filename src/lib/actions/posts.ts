@@ -283,6 +283,25 @@ export async function getPost(postId: number) {
   };
 }
 
+
+export async function incrementViewCount(postId: number) {
+    try {
+        const updatedPost = await prisma.post.update({
+            where: { id: postId },
+            data: {
+                viewCount: {
+                    increment: 1
+                }
+            }
+        });
+        return updatedPost.viewCount;
+    } catch (error) {
+        console.error(`Failed to increment view count for post ${postId}:`, error);
+        // We re-throw the error so the client-side catch block can handle it.
+        throw error;
+    }
+}
+
 export async function savePost(postData: PostFormData, id?: number) {
   const session = await auth();
   if (!session?.user?.id) {
