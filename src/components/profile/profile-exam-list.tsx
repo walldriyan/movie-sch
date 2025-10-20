@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -165,8 +166,11 @@ function ExamResultsDialog({ submissionId }: { submissionId: number }) {
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    if (open && !results) {
+    if (open && !results) { // Fetch only if opening and no results yet
       fetchResults();
+    } else if (!open) { // Reset state when closing
+        setResults(null);
+        setIsLoading(false);
     }
   };
   

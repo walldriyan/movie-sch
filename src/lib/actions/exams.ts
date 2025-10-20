@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -786,10 +787,13 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
                 }
             }
             processedMcqQuestions.add(answer.questionId);
-        } else if (answer.question.type === 'IMAGE_BASED_ANSWER' && answer.id === submissionAnswer.id) {
-            newTotalScore += marksAwarded;
-        } else if (answer.question.type === 'IMAGE_BASED_ANSWER' && answer.marksAwarded !== null) {
-            newTotalScore += answer.marksAwarded;
+        } else if (answer.question.type === 'IMAGE_BASED_ANSWER') {
+            // Use the newly awarded marks if this is the question being graded
+            if (answer.questionId === questionId) {
+                newTotalScore += marksAwarded;
+            } else if (answer.marksAwarded !== null) { // Use previously awarded marks for other custom questions
+                newTotalScore += answer.marksAwarded;
+            }
         }
     }
     
@@ -799,6 +803,7 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
     });
 
     revalidatePath(`/admin/exams/${submission.examId}/results`);
+    revalidatePath(`/profile/${submission.userId}`);
 
     return { success: true, newTotalScore };
 }
