@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import React, { useTransition } from 'react';
+import React, { useTransition, useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
@@ -42,13 +42,19 @@ import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
 
 export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
-  // We receive the session from the server component as a prop to avoid hydration issues in the header.
-  const session = serverSession;
-  const sessionStatus = session ? 'authenticated' : 'unauthenticated';
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isNavigating, startNavigationTransition] = useTransition();
+  
+  // Optimistic session state for instant UI feedback
+  const [optimisticSession, setOptimisticSession] = useState(serverSession);
 
-  const user = session?.user;
+  // Sync state if server session changes (e.g., after full page reload)
+  useEffect(() => {
+    setOptimisticSession(serverSession);
+  }, [serverSession]);
+
+  const user = optimisticSession?.user;
+  const sessionStatus = optimisticSession ? 'authenticated' : 'unauthenticated';
 
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
@@ -68,9 +74,13 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
   };
 
   const handleNavigation = (href: string) => {
-    startTransition(() => {
+    startNavigationTransition(() => {
       router.push(href);
     });
+  };
+
+  const handleOptimisticLogout = () => {
+    setOptimisticSession(null);
   };
   
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
@@ -83,8 +93,8 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" disabled={isPending}>
-            {isPending ? (
+          <Button variant="outline" disabled={isNavigating}>
+            {isNavigating ? (
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
             ) : (
               <PlusCircle className="mr-2 h-5 w-5" />
@@ -125,10 +135,6 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
   };
 
   const renderUserMenu = () => {
-    if (sessionStatus === 'loading') {
-      return <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />;
-    }
-
     if (!user) {
       return (
         <Button asChild variant="ghost">
@@ -210,7 +216,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator />
-          <LogoutButton />
+          <LogoutButton onClick={handleOptimisticLogout} />
         </DropdownMenuContent>
       </DropdownMenu>
     );
@@ -220,7 +226,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
         <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
-          {isPending ? (
+          {isNavigating ? (
             <div className="flex items-center space-x-2 flex-shrink-0">
               <Skeleton className="h-10 w-24" />
             </div>
