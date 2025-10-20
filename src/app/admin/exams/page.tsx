@@ -34,14 +34,14 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Separator } from '@/components/ui/separator';
-import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload, FileQuestion, ArrowLeft, ArrowRight, Folder } from 'lucide-react';
+import { BookCheck, PlusCircle, Trash2, Calendar as CalendarIconLucide, Save, Settings, ChevronsUpDown, Loader2, Info, Eye, Users, List, Edit, MoreHorizontal, FileText, BarChart2, Check, Download, Upload, FileQuestion, ArrowLeft, ArrowRight, Folder, Image as ImageIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar as CalendarIcon } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { getPostsForAdmin, searchPostsForExam, getGroupsForForm } from '@/lib/actions';
-import type { Post, Group } from '@prisma/client';
+import type { Post, Group, QuestionImage } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { createOrUpdateExam, getExamsForAdmin, getExamForEdit, deleteExam } from '@/lib/actions/exams';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
@@ -60,15 +60,43 @@ const optionSchema = z.object({
   isCorrect: z.boolean().default(false),
 });
 
+const imageUrlSchema = z.object({
+  url: z.string().url("Must be a valid URL."),
+});
+
 const questionSchema = z.object({
   id: z.number().optional(),
   text: z.string().min(1, 'Question text cannot be empty.'),
   points: z.coerce.number().min(1, 'Points must be at least 1.'),
+  type: z.enum(['MCQ', 'IMAGE_BASED_ANSWER']).default('MCQ'),
   isMultipleChoice: z.boolean().default(false),
-  options: z.array(optionSchema).min(2, 'At least two options are required.')
-    .refine(options => options.some(opt => opt.isCorrect), {
-        message: 'At least one option must be marked as correct.'
-    }),
+  options: z.array(optionSchema),
+  images: z.array(imageUrlSchema),
+}).superRefine((data, ctx) => {
+    if (data.type === 'MCQ') {
+        if (data.options.length < 2) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['options'],
+                message: 'At least two options are required for an MCQ question.'
+            });
+        }
+        if (!data.options.some(opt => opt.isCorrect)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['options'],
+                message: 'At least one option must be marked as correct for an MCQ question.'
+            });
+        }
+    } else if (data.type === 'IMAGE_BASED_ANSWER') {
+        if (data.images.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['images'],
+                message: 'At least one image URL is required for an image-based question.'
+            });
+        }
+    }
 });
 
 const examSchema = z.object({
@@ -100,11 +128,10 @@ type ExamForListing = Awaited<ReturnType<typeof getExamsForAdmin>>[0];
 
 // New component for a single question
 const QuestionItem = ({ control, qIndex, removeQuestion, form }: { control: any, qIndex: number, removeQuestion: (index: number) => void, form: any }) => {
-    const { fields: options, append: appendOption, remove: removeOption } = useFieldArray({
-        control,
-        name: `questions.${qIndex}.options`,
-    });
+    const { fields: options, append: appendOption, remove: removeOption } = useFieldArray({ control, name: `questions.${qIndex}.options` });
+    const { fields: images, append: appendImage, remove: removeImage } = useFieldArray({ control, name: `questions.${qIndex}.images` });
 
+    const questionType = form.watch(`questions.${qIndex}.type`);
     const isMultipleChoice = form.watch(`questions.${qIndex}.isMultipleChoice`);
 
     return (
@@ -115,78 +142,109 @@ const QuestionItem = ({ control, qIndex, removeQuestion, form }: { control: any,
             </CardHeader>
             <CardContent className="space-y-4">
                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                     <div className="md:col-span-3">
+                     <div className="md:col-span-2">
                          <FormField control={control} name={`questions.${qIndex}.text`} render={({ field }) => (<FormItem><FormLabel>Question Text</FormLabel><FormControl><Textarea placeholder="e.g., What was the spinning top's purpose?" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
-                    <div>
+                    <div className="md:col-span-1">
+                         <FormField control={control} name={`questions.${qIndex}.type`} render={({ field }) => (
+                            <FormItem><FormLabel>Question Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger></FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="MCQ">Multiple Choice</SelectItem>
+                                        <SelectItem value="IMAGE_BASED_ANSWER">Image-Based Answer</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            <FormMessage /></FormItem>
+                         )} />
+                    </div>
+                    <div className="md:col-span-1">
                          <FormField control={control} name={`questions.${qIndex}.points`} render={({ field }) => (<FormItem><FormLabel>Points</FormLabel><FormControl><Input type="number" placeholder="10" {...field} /></FormControl><FormMessage /></FormItem>)} />
                     </div>
                </div>
-                <FormField
-                    control={control}
-                    name={`questions.${qIndex}.isMultipleChoice`}
-                    render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-3 space-y-0 mt-4">
-                            <FormControl>
-                                <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={(checked) => {
-                                        field.onChange(checked);
-                                        // If switching from multiple to single, uncheck all but the first correct answer
-                                        if (!checked) {
-                                            let foundFirst = false;
-                                            form.getValues(`questions.${qIndex}.options`).forEach((opt: any, oIndex: number) => {
-                                                if (opt.isCorrect) {
-                                                    if (foundFirst) {
-                                                        form.setValue(`questions.${qIndex}.options.${oIndex}.isCorrect`, false);
-                                                    }
-                                                    foundFirst = true;
-                                                }
-                                            });
-                                        }
-                                    }}
-                                />
-                            </FormControl>
-                            <FormLabel className="text-sm font-normal">Allow multiple correct answers</FormLabel>
-                        </FormItem>
-                    )}
-                />
                <Separator className="my-4"/>
-               <h4 className="font-semibold text-sm">Options</h4>
-               <div className="space-y-3">
-                   {options.map((option, oIndex) => (
-                       <div key={option.id} className="flex items-center gap-2">
-                           <FormField 
-                                control={control} 
-                                name={`questions.${qIndex}.options.${oIndex}.isCorrect`} 
-                                render={({ field }) => (
-                                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                        <FormControl>
-                                            <Checkbox 
-                                                checked={field.value} 
-                                                onCheckedChange={(checked) => {
-                                                    if (!isMultipleChoice) {
-                                                        // Uncheck all other options
-                                                        form.getValues(`questions.${qIndex}.options`).forEach((opt: any, idx: number) => {
-                                                            if (idx !== oIndex) {
-                                                                form.setValue(`questions.${qIndex}.options.${idx}.isCorrect`, false);
-                                                            }
-                                                        });
+
+               {questionType === 'MCQ' ? (
+                <>
+                    <FormField
+                        control={control}
+                        name={`questions.${qIndex}.isMultipleChoice`}
+                        render={({ field }) => (
+                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 mt-4">
+                                <FormControl>
+                                    <Checkbox
+                                        checked={field.value}
+                                        onCheckedChange={(checked) => {
+                                            field.onChange(checked);
+                                            // If switching from multiple to single, uncheck all but the first correct answer
+                                            if (!checked) {
+                                                let foundFirst = false;
+                                                form.getValues(`questions.${qIndex}.options`).forEach((opt: any, oIndex: number) => {
+                                                    if (opt.isCorrect) {
+                                                        if (foundFirst) {
+                                                            form.setValue(`questions.${qIndex}.options.${oIndex}.isCorrect`, false);
+                                                        }
+                                                        foundFirst = true;
                                                     }
-                                                    field.onChange(checked);
-                                                }}
-                                            />
-                                        </FormControl>
-                                        <FormLabel className="text-sm font-normal pt-1">Correct</FormLabel>
-                                    </FormItem>
-                                )} 
-                            />
-                           <FormField control={control} name={`questions.${qIndex}.options.${oIndex}.text`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder={`Option ${oIndex + 1}`} {...field} /></FormControl></FormItem>)} />
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(oIndex)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
-                       </div>
-                   ))}
-               </div>
-                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendOption({ text: '', isCorrect: false })}><PlusCircle className="mr-2 h-4 w-4" />Add Option</Button>
+                                                });
+                                            }
+                                        }}
+                                    />
+                                </FormControl>
+                                <FormLabel className="text-sm font-normal">Allow multiple correct answers</FormLabel>
+                            </FormItem>
+                        )}
+                    />
+                    <h4 className="font-semibold text-sm mt-4">Options</h4>
+                    <div className="space-y-3">
+                    {options.map((option, oIndex) => (
+                        <div key={option.id} className="flex items-center gap-2">
+                            <FormField 
+                                    control={control} 
+                                    name={`questions.${qIndex}.options.${oIndex}.isCorrect`} 
+                                    render={({ field }) => (
+                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                            <FormControl>
+                                                <Checkbox 
+                                                    checked={field.value} 
+                                                    onCheckedChange={(checked) => {
+                                                        if (!isMultipleChoice) {
+                                                            // Uncheck all other options
+                                                            form.getValues(`questions.${qIndex}.options`).forEach((opt: any, idx: number) => {
+                                                                if (idx !== oIndex) {
+                                                                    form.setValue(`questions.${qIndex}.options.${idx}.isCorrect`, false);
+                                                                }
+                                                            });
+                                                        }
+                                                        field.onChange(checked);
+                                                    }}
+                                                />
+                                            </FormControl>
+                                            <FormLabel className="text-sm font-normal pt-1">Correct</FormLabel>
+                                        </FormItem>
+                                    )} 
+                                />
+                            <FormField control={control} name={`questions.${qIndex}.options.${oIndex}.text`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder={`Option ${oIndex + 1}`} {...field} /></FormControl></FormItem>)} />
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(oIndex)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
+                        </div>
+                    ))}
+                    </div>
+                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendOption({ text: '', isCorrect: false })}><PlusCircle className="mr-2 h-4 w-4" />Add Option</Button>
+                </>
+               ) : (
+                <>
+                    <h4 className="font-semibold text-sm">Image URLs</h4>
+                     <div className="space-y-3">
+                        {images.map((image, iIndex) => (
+                             <div key={image.id} className="flex items-center gap-2">
+                                <FormField control={control} name={`questions.${qIndex}.images.${iIndex}.url`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder={`Image URL ${iIndex + 1}`} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <Button type="button" variant="ghost" size="icon" onClick={() => removeImage(iIndex)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
+                             </div>
+                        ))}
+                    </div>
+                     <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendImage({ url: '' })}><ImageIcon className="mr-2 h-4 w-4" />Add Image</Button>
+                </>
+               )}
             </CardContent>
         </Card>
     );
@@ -410,7 +468,7 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
           <CardHeader><CardTitle>Exam Questions</CardTitle><CardDescription>Add questions and options for the exam.</CardDescription></CardHeader>
           <CardContent>
             {questions.map((question, qIndex) => (<QuestionItem key={question.id} control={form.control} qIndex={qIndex} removeQuestion={removeQuestion} form={form}/>))}
-            <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
+            <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, type: 'MCQ', isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }], images: [] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
           </CardContent>
         </Card>
 
@@ -597,8 +655,10 @@ export default function CreateExamPage() {
                   id: q.id,
                   text: q.text,
                   points: q.points,
+                  type: q.type,
                   isMultipleChoice: q.isMultipleChoice,
-                  options: q.options.map(o => ({ id: o.id, text: o.text, isCorrect: o.isCorrect }))
+                  options: q.options.map(o => ({ id: o.id, text: o.text, isCorrect: o.isCorrect })),
+                  images: q.images.map(img => ({ url: img.url }))
                 }))
             });
             setActiveTab('create');
@@ -732,7 +792,7 @@ export default function CreateExamPage() {
   const handleNewExamClick = () => {
     form.reset({
         title: '', description: '', assignmentType: 'POST', postId: '', groupId: '', status: 'DRAFT',
-        durationMinutes: 30, attemptsAllowed: 1, questions: [{ text: '', points: 10, isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }] }],
+        durationMinutes: 30, attemptsAllowed: 1, questions: [{ text: '', points: 10, type: 'MCQ', isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }], images: [] }],
     });
     setEditingExamId(null);
     setActiveTab('create');

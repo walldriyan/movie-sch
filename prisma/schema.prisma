@@ -388,17 +388,47 @@ model Exam {
   questions       Question[]
   submissions     ExamSubmission[]
 }
+enum QuestionType {
+  MCQ                  // Multiple Choice Question (පවතින ක්‍රමය)
+  IMAGE_BASED_ANSWER   // New image-based custom answer question
+}
+
+model QuestionImage {
+  id         Int      @id @default(autoincrement())
+  url        String   // No @db.Text needed for SQLite
+  questionId Int
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+model SubmissionAnswer {
+  id               Int              @id @default(autoincrement())
+  submissionId     Int
+  submission       ExamSubmission   @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+  questionId       Int
+  question         Question         @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOptionId Int?
+  selectedOption   QuestionOption?  @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  // Fields for custom answers and manual grading
+  customAnswer   String?          // No @db.Text needed for SQLite
+  marksAwarded   Int?
+  feedback       String?          // No @db.Text needed for SQLite
+}
 
 model Question {
-  id            Int             @id @default(autoincrement())
-  text          String
-  points        Int             @default(10)
- isMultipleChoice  Boolean      @default(false) 
-  examId        Int
-  exam          Exam            @relation(fields: [examId], references: [id], onDelete: Cascade)
+  id               Int                @id @default(autoincrement())
+  text             String
+  points           Int
+  isMultipleChoice Boolean            @default(false)
+  examId           Int
+  exam             Exam               @relation(fields: [examId], references: [id], onDelete: Cascade)
+  options          QuestionOption[]
+  answers          SubmissionAnswer[]
 
-  options       QuestionOption[]
-  submissionAnswers SubmissionAnswer[]
+  // Relation to the new QuestionImage model
+  images           QuestionImage[]
+
+  // Type of the question (MCQ or Image-based)
+  type             QuestionType       @default(MCQ)
 }
 
 model QuestionOption {
@@ -429,18 +459,6 @@ model ExamSubmission {
   @@unique([userId, examId])
 }
 
-model SubmissionAnswer {
-  id              Int @id @default(autoincrement())
-  
-  submissionId    Int
-  submission      ExamSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
-
-  questionId      Int
-  question        Question       @relation(fields: [questionId], references: [id], onDelete: NoAction)
-
-  selectedOptionId Int
-  selectedOption  QuestionOption @relation(fields: [selectedOptionId], references: [id], onDelete: NoAction)
-}
 
 
 // --- ENUMS ---

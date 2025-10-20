@@ -15,15 +15,43 @@ const optionSchema = z.object({
   isCorrect: z.boolean().default(false),
 });
 
+const imageUrlSchema = z.object({
+  url: z.string().url("Must be a valid URL."),
+});
+
 const questionSchema = z.object({
   id: z.number().optional(),
   text: z.string().min(1, 'Question text cannot be empty.'),
   points: z.coerce.number().min(1, 'Points must be at least 1.'),
+  type: z.enum(['MCQ', 'IMAGE_BASED_ANSWER']).default('MCQ'),
   isMultipleChoice: z.boolean().default(false),
-  options: z.array(optionSchema).min(2, 'At least two options are required.')
-    .refine(options => options.some(opt => opt.isCorrect), {
-        message: 'At least one option must be marked as correct.'
-    }),
+  options: z.array(optionSchema),
+  images: z.array(imageUrlSchema),
+}).superRefine((data, ctx) => {
+    if (data.type === 'MCQ') {
+        if (data.options.length < 2) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['options'],
+                message: 'At least two options are required for an MCQ question.'
+            });
+        }
+        if (!data.options.some(opt => opt.isCorrect)) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['options'],
+                message: 'At least one option must be marked as correct for an MCQ question.'
+            });
+        }
+    } else if (data.type === 'IMAGE_BASED_ANSWER') {
+        if (data.images.length === 0) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['images'],
+                message: 'At least one image URL is required for an image-based question.'
+            });
+        }
+    }
 });
 
 const examSchema = z.object({
@@ -101,6 +129,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             
             if (questionsToDeleteIds.length > 0) {
                  await tx.submissionAnswer.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
+                 await tx.questionImage.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
                  await tx.questionOption.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
                  await tx.question.deleteMany({ where: { id: { in: questionsToDeleteIds } } });
             }
@@ -109,22 +138,36 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 if (!q.id) continue;
                 await tx.question.update({
                     where: { id: q.id },
-                    data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice }
+                    data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice, type: q.type }
                 });
-                const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
-                const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
-                const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
+                
+                // Update options for MCQ
+                if (q.type === 'MCQ') {
+                  const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
+                  const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
+                  const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
 
-                if (optionsToDeleteIds.length > 0) {
-                    await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDeleteIds } } });
-                    await tx.questionOption.deleteMany({ where: { id: { in: optionsToDeleteIds }}});
+                  if (optionsToDeleteIds.length > 0) {
+                      await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDeleteIds } } });
+                      await tx.questionOption.deleteMany({ where: { id: { in: optionsToDeleteIds }}});
+                  }
+
+                  for (const opt of q.options) {
+                      if (opt.id) {
+                          await tx.questionOption.update({ where: { id: opt.id }, data: { text: opt.text, isCorrect: opt.isCorrect }});
+                      } else {
+                          await tx.questionOption.create({ data: { questionId: q.id, text: opt.text, isCorrect: opt.isCorrect }});
+                      }
+                  }
                 }
 
-                for (const opt of q.options) {
-                    if (opt.id) {
-                        await tx.questionOption.update({ where: { id: opt.id }, data: { text: opt.text, isCorrect: opt.isCorrect }});
-                    } else {
-                        await tx.questionOption.create({ data: { questionId: q.id, text: opt.text, isCorrect: opt.isCorrect }});
+                // Update images for IMAGE_BASED_ANSWER
+                if (q.type === 'IMAGE_BASED_ANSWER') {
+                    await tx.questionImage.deleteMany({ where: { questionId: q.id } });
+                    if (q.images && q.images.length > 0) {
+                        await tx.questionImage.createMany({
+                            data: q.images.map(img => ({ questionId: q.id!, url: img.url }))
+                        });
                     }
                 }
             }
@@ -137,7 +180,9 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                             text: q.text,
                             points: q.points,
                             isMultipleChoice: q.isMultipleChoice,
-                            options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) }
+                            type: q.type,
+                            options: q.type === 'MCQ' ? { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) } : undefined,
+                            images: q.type === 'IMAGE_BASED_ANSWER' ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
                         }
                     });
                 }
@@ -153,7 +198,9 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     text: q.text,
                     points: q.points,
                     isMultipleChoice: q.isMultipleChoice,
-                    options: { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) },
+                    type: q.type,
+                    options: q.type === 'MCQ' ? { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) } : undefined,
+                    images: q.type === 'IMAGE_BASED_ANSWER' ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
                 })),
             },
         };
@@ -206,6 +253,7 @@ export async function getExamForEdit(examId: number) {
             questions: {
                 include: {
                     options: true,
+                    images: true
                 },
                 orderBy: { id: 'asc' },
             },
@@ -238,6 +286,7 @@ export async function deleteExam(examId: number) {
         const questions = await tx.question.findMany({ where: { examId } });
         for (const question of questions) {
             await tx.questionOption.deleteMany({ where: { questionId: question.id } });
+            await tx.questionImage.deleteMany({ where: { questionId: question.id } });
         }
         await tx.question.deleteMany({ where: { examId } });
 
@@ -358,43 +407,52 @@ export async function submitExam(
 
   let totalPoints = 0;
   let score = 0;
-  const answersToCreate: { questionId: number, selectedOptionId: number }[] = [];
+  const answersToCreate: Prisma.SubmissionAnswerCreateManySubmissionInput[] = [];
+
 
   for (const question of exam.questions) {
-    totalPoints += question.points;
-    const userAnswers = answers[`question-${question.id}`];
-    const correctOptions = question.options.filter(opt => opt.isCorrect);
-    const correctOptionIds = correctOptions.map(opt => opt.id);
+    if (question.type === 'MCQ') {
+      totalPoints += question.points;
+      const userAnswers = answers[`question-${question.id}`];
+      const correctOptions = question.options.filter(opt => opt.isCorrect);
+      const correctOptionIds = correctOptions.map(opt => opt.id);
 
-    if (question.isMultipleChoice) {
-        const selectedOptionIds = (Array.isArray(userAnswers) ? userAnswers : [userAnswers]).filter(Boolean).map(id => parseInt(id, 10));
-        
-        let questionScore = 0;
-        const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-        
-        const incorrectSelected = selectedOptionIds.some(id => !correctOptionIds.includes(id));
-        
-        if (incorrectSelected) {
-            questionScore = 0; // If any incorrect answer is selected, score for the question is 0
-        } else {
-            questionScore = selectedOptionIds.length * pointsPerCorrectAnswer;
-        }
-        
-        score += Math.max(0, Math.round(questionScore));
+      if (question.isMultipleChoice) {
+          const selectedOptionIds = (Array.isArray(userAnswers) ? userAnswers : [userAnswers]).filter(Boolean).map(id => parseInt(id, 10));
+          
+          let questionScore = 0;
+          const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+          
+          const incorrectSelected = selectedOptionIds.some(id => !correctOptionIds.includes(id));
+          
+          if (incorrectSelected) {
+              questionScore = 0; // If any incorrect answer is selected, score for the question is 0
+          } else {
+              questionScore = selectedOptionIds.length * pointsPerCorrectAnswer;
+          }
+          
+          score += Math.max(0, Math.round(questionScore));
 
-        selectedOptionIds.forEach(id => {
-            answersToCreate.push({ questionId: question.id, selectedOptionId: id });
-        });
+          selectedOptionIds.forEach(id => {
+              answersToCreate.push({ questionId: question.id, selectedOptionId: id });
+          });
 
-    } else { // Single choice
-        const selectedOptionId = userAnswers ? parseInt(userAnswers as string, 10) : null;
+      } else { // Single choice
+          const selectedOptionId = userAnswers ? parseInt(userAnswers as string, 10) : null;
 
-        if (selectedOptionId && correctOptionIds.includes(selectedOptionId)) {
-            score += question.points;
-        }
-        if (selectedOptionId) {
-            answersToCreate.push({ questionId: question.id, selectedOptionId: selectedOptionId });
-        }
+          if (selectedOptionId && correctOptionIds.includes(selectedOptionId)) {
+              score += question.points;
+          }
+          if (selectedOptionId) {
+              answersToCreate.push({ questionId: question.id, selectedOptionId: selectedOptionId });
+          }
+      }
+    } else if (question.type === 'IMAGE_BASED_ANSWER') {
+      const customAnswer = answers[`question-${question.id}`] as string;
+      if (customAnswer) {
+        answersToCreate.push({ questionId: question.id, customAnswer: customAnswer });
+      }
+      // Note: Score for this type is not calculated here. It will be graded manually.
     }
   }
 
