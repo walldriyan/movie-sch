@@ -22,6 +22,7 @@ import { cn } from '@/lib/utils';
 import Link from 'next/link';
 import { Film } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
 
