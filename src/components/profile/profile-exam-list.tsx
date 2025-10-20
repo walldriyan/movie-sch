@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,13 +7,15 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookCheck, Clapperboard, FileQuestion, PlayCircle, VideoOff, Award, Clock, Repeat, Users, Download, Eye, Loader2, Target, Check, X, CircleDot, Pencil, Calendar, User, Hash } from 'lucide-react';
-import type { ExamWithSubmissions } from '@/lib/types';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { BookCheck, Clapperboard, FileQuestion, PlayCircle, VideoOff, Award, Clock, Repeat, Users, Download, Eye, Loader2, Target, Check, X, CircleDot, Pencil, Calendar, User, Hash, MoreHorizontal } from 'lucide-react';
+import type { ExamWithSubmissions, ExamResultSubmission } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { getExamResults } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Film } from 'lucide-react';
+import ClientSideDate from '../manage/client-side-date';
 
 type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
 
@@ -157,7 +158,7 @@ const SubmissionResultView = ({ results }: { results: ExamResults }) => {
 };
 
 
-function ExamResultsDialog({ submissionId }: { submissionId: number }) {
+function ExamResultsDialog({ submissionId, children }: { submissionId: number, children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [results, setResults] = useState<ExamResults | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -220,15 +221,13 @@ function ExamResultsDialog({ submissionId }: { submissionId: number }) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm" className="w-full">
-            <Eye className="mr-2 h-4 w-4" /> View Results
-        </Button>
+        {children}
       </DialogTrigger>
       <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col no-print">
         <DialogHeader>
           <DialogTitle>Exam Results</DialogTitle>
           <DialogDescription>
-            Your results for the last attempt.
+            Your results for this attempt.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-grow overflow-hidden">
@@ -362,7 +361,28 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
                   </Link>
                 </Button>
                 {lastSubmission && (
-                  <ExamResultsDialog submissionId={lastSubmission.id} />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                       <Button variant="secondary" className="w-full">
+                          <Eye className="mr-2 h-4 w-4" /> View Results
+                          <MoreHorizontal className="ml-auto h-4 w-4" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-[--radix-dropdown-menu-trigger-width]">
+                      <DropdownMenuLabel>Previous Attempts</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                       {exam.submissions.map((sub, index) => (
+                          <ExamResultsDialog key={sub.id} submissionId={sub.id}>
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                              Attempt {exam.submissions.length - index}: {sub.score}/{totalPoints}
+                              <span className="ml-auto text-xs text-muted-foreground">
+                                <ClientSideDate date={sub.submittedAt} formatString="PPp" />
+                              </span>
+                            </DropdownMenuItem>
+                          </ExamResultsDialog>
+                       ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 )}
             </CardFooter>
           </Card>
@@ -371,3 +391,4 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
     </div>
   );
 }
+
