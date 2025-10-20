@@ -151,12 +151,12 @@ function ManualGradeForm({ submissionId, question, answer, onGradeSaved }: { sub
                     max={question.points}
                     min="0"
                     className="w-24 bg-background/50"
-                    disabled={isSaving || answer?.marksAwarded !== null}
+                    disabled={isSaving}
                 />
                 <span className="text-sm font-semibold text-muted-foreground">/ {question.points}</span>
-                <Button size="sm" onClick={handleSave} disabled={isSaving || answer?.marksAwarded !== null} className="ml-auto">
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (answer?.marksAwarded !== null ? <Check className="mr-2 h-4 w-4"/> : <Save className="mr-2 h-4 w-4" />)}
-                    {answer?.marksAwarded !== null ? 'Graded' : 'Save Marks'}
+                <Button size="sm" onClick={handleSave} disabled={isSaving} className="ml-auto">
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (answer?.marksAwarded !== null ? <Save className="mr-2 h-4 w-4"/> : <Save className="mr-2 h-4 w-4" />)}
+                    {answer?.marksAwarded !== null ? 'Update Marks' : 'Save Marks'}
                 </Button>
             </div>
         </div>
@@ -202,7 +202,7 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                     <DialogDescription className="pt-1">
                         Reviewing answers for {results?.user.name} on &quot;{exam.title}&quot;.
                     </DialogDescription>
-                    {results && <div className="font-bold text-foreground pt-1">Total Score: {results.submission.score}</div>}
+                     {results && <div className="font-bold text-foreground pt-1">Total Score: {results.submission.score}</div>}
                 </DialogHeader>
                 <div className="flex-grow overflow-hidden">
                     <ScrollArea className="h-full pr-6 -mr-6">
