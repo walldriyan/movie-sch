@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, ThumbsUp, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
@@ -32,6 +33,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
       return {
         id: `${post.id}-${index}`, // Create a unique key
+        postId: post.id,
         image: post.posterUrl || `https://picsum.photos/seed/${post.id}/600/800`,
         brand: post.author?.name || 'CineVerse',
         authorImage: post.author?.image,
@@ -162,75 +164,74 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     const isHero = card.type === 'hero';
 
     return (
-      <div
-        key={card.id}
-        className={cn(
-          "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out flex flex-col h-full",
-        )}
-        style={{
-          transform: getCardTransform(card.rotation, card.distance),
-          transformOrigin: 'center center',
-          aspectRatio: '11 / 17',
-        }}
-      >
-        <div className="relative flex-grow">
-          {!isHero && (
-            <div className="absolute top-2 md:top-3 left-2 md:left-3 z-10 flex items-center gap-2">
-              <div className="bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden relative">
-                {card.authorImage ? (
-                  // <Image src={card.authorImage} alt={card.brand}  fill
-                  // style={{ objectFit: 'cover' }} />
-                  <Image
-                    src={card.authorImage}
-                    alt={card.brand}
-                    fill
-                    sizes="28px"
-                    style={{ objectFit: 'cover' }}
-                  />
-                ) : (
-                  card.brand.charAt(0)
-                )}
-              </div>
-              <div className="text-xs font-semibold p-1 bg-white/50 backdrop-blur-sm rounded-md truncate">{card.brand}</div>
-            </div>
+      <Link href={`/movies/${card.postId}`} key={card.id} className="block">
+        <div
+          className={cn(
+            "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out flex flex-col h-full",
           )}
-
-          <Image
-            src={card.image}
-            alt={card.brand}
-            fill
-            sizes="(max-width: 640px) 50vw, (max-width: 1024px) 40vw, 30vw"
-            className="w-full h-full object-cover"
-          />
-          {/* Like count display */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-            <div className="flex items-center gap-4 bg-black/40 text-white backdrop-blur-sm px-4 py-2 rounded-full">
-              <div className="flex items-center gap-2">
-                <ThumbsUp className="w-4 h-4" />
-                <span className="font-bold text-sm">{card.likeCount}</span>
+          style={{
+            transform: getCardTransform(card.rotation, card.distance),
+            transformOrigin: 'center center',
+            aspectRatio: '11 / 17',
+          }}
+        >
+          <div className="relative flex-grow">
+            {!isHero && (
+              <div className="absolute top-2 md:top-3 left-2 md:left-3 z-10 flex items-center gap-2">
+                <div className="bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden relative">
+                  {card.authorImage ? (
+                    <Image
+                      src={card.authorImage}
+                      alt={card.brand}
+                      fill
+                      sizes="28px"
+                      style={{ objectFit: 'cover' }}
+                    />
+                  ) : (
+                    card.brand.charAt(0)
+                  )}
+                </div>
+                <div className="text-xs font-semibold p-1 bg-white/50 backdrop-blur-sm rounded-md truncate">{card.brand}</div>
               </div>
-              <Separator orientation="vertical" className="h-4 bg-white/30" />
-              <div className="flex items-center gap-2">
-                <Eye className="w-4 h-4" />
-                <span className="font-bold text-sm">{card.viewCount}</span>
+            )}
+
+            <Image
+              src={card.image}
+              alt={card.brand}
+              fill
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 40vw, 30vw"
+              className="w-full h-full object-cover"
+            />
+            {/* Like count display */}
+            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+              <div className="flex items-center gap-4 bg-black/40 text-white backdrop-blur-sm px-4 py-2 rounded-full">
+                <div className="flex items-center gap-2">
+                  <ThumbsUp className="w-4 h-4" />
+                  <span className="font-bold text-sm">{card.likeCount}</span>
+                </div>
+                <Separator orientation="vertical" className="h-4 bg-white/30" />
+                <div className="flex items-center gap-2">
+                  <Eye className="w-4 h-4" />
+                  <span className="font-bold text-sm">{card.viewCount}</span>
+                </div>
               </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex-shrink-0">
-          {card.type === 'series' && renderSeriesGrid(card.series)}
+          <div className="flex-shrink-0">
+            {card.type === 'series' && renderSeriesGrid(card.series)}
 
-          {card.type === 'dots' && (
-            <div className="flex justify-center gap-1 p-2 bg-white">
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-400 rounded-full"></div>
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
-              <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
-            </div>
-          )}
+            {card.type === 'dots' && (
+              <div className="flex justify-center gap-1 p-2 bg-white">
+                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
+                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-400 rounded-full"></div>
+                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
+                <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-gray-300 rounded-full"></div>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </Link>
     );
   };
   // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
