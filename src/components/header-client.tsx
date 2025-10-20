@@ -15,6 +15,7 @@ import {
   BookCheck,
   BellPlus,
   Loader2,
+  Home,
 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -231,6 +232,19 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
                 style={{ objectFit: 'cover' }} />
             </Link>
           )}
+           <div className="flex items-center gap-1">
+              <Button variant="ghost" size="icon" asChild>
+                <Link href="/"><Home /></Link>
+              </Button>
+              <AuthGuard>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href={`/profile/${user?.id}`}><User /></Link>
+                </Button>
+                <Button variant="ghost" size="icon" asChild>
+                  <Link href="/manage"><LayoutGrid /></Link>
+                </Button>
+              </AuthGuard>
+           </div>
         </div>
         <div className="flex items-center justify-end space-x-2">
           {renderCreateButton()}
