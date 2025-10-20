@@ -221,18 +221,18 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
   return (
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
           {isPending ? (
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               <Skeleton className="h-10 w-24" />
             </div>
           ) : (
-            <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2">
+            <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
               <Image src="/logo.png" alt="Logo" width={38} height={38}
                 style={{ objectFit: 'cover' }} />
             </Link>
           )}
-           <div className="flex items-center gap-1">
+           <div className="flex items-center gap-1 ml-6 flex-shrink-0">
               <Button variant="ghost" size="icon" asChild>
                 <Link href="/"><Home /></Link>
               </Button>
@@ -246,7 +246,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
               </AuthGuard>
            </div>
         </div>
-        <div className="flex items-center justify-end space-x-2">
+        <div className="flex items-center justify-end space-x-2 flex-shrink-0">
           {renderCreateButton()}
           {user && <HeaderApprovals />}
 
