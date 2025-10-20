@@ -135,6 +135,10 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
   };
 
   const renderUserMenu = () => {
+    if (sessionStatus === 'loading') {
+       return <Skeleton className="h-10 w-24 rounded-full" />;
+    }
+
     if (!user) {
       return (
         <Button asChild variant="ghost">
@@ -225,10 +229,10 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
   return (
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
-        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-4 overflow-hidden">
           {isNavigating ? (
             <div className="flex items-center space-x-2 flex-shrink-0">
-              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-10 rounded-full" />
             </div>
           ) : (
             <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
@@ -236,26 +240,27 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
                 style={{ objectFit: 'cover' }} />
             </Link>
           )}
-           <div className="flex items-center gap-1 ml-6 flex-shrink-0">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/"><Home /></Link>
-              </Button>
-              <AuthGuard>
+          <div className="overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-1 ml-6 flex-shrink-0">
                 <Button variant="ghost" size="icon" asChild>
-                  <Link href={`/profile/${user?.id}`}><User /></Link>
+                  <Link href="/"><Home /></Link>
                 </Button>
-                {canManage && (
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href="/manage"><LayoutGrid /></Link>
-                    </Button>
-                )}
-              </AuthGuard>
-           </div>
+                <AuthGuard>
+                  <Button variant="ghost" size="icon" asChild>
+                    <Link href={`/profile/${user?.id}`}><User /></Link>
+                  </Button>
+                  {canManage && (
+                      <Button variant="ghost" size="icon" asChild>
+                          <Link href="/manage"><LayoutGrid /></Link>
+                      </Button>
+                  )}
+                </AuthGuard>
+            </div>
+          </div>
         </div>
         <div className="flex items-center justify-end space-x-2 flex-shrink-0">
           {renderCreateButton()}
           {user && <HeaderApprovals />}
-
           {renderUserMenu()}
         </div>
       </div>
