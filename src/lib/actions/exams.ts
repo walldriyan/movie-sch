@@ -439,8 +439,8 @@ export async function submitExam(
   const existingSubmission = await prisma.examSubmission.findUnique({
     where: { userId_examId: { userId: user.id, examId: examId } },
   });
-
-  const currentAttemptCount = existingSubmission?.attemptCount ?? 0;
+  
+  let currentAttemptCount = existingSubmission?.attemptCount ?? 0;
 
   if (exam.attemptsAllowed > 0 && currentAttemptCount >= exam.attemptsAllowed) {
       throw new Error('You have reached the maximum number of attempts.');
@@ -485,51 +485,40 @@ export async function submitExam(
       }
   }
 
-    const newAttempt = {
-      score,
-      timeTakenSeconds,
-      submittedAt: new Date().toISOString(),
-      answers: answersForDb, // Store answers for this attempt in history
-    };
+  let newSubmission;
 
-    let newSubmission;
+  if (existingSubmission) {
+      // Since we are overwriting, first delete old answers for this submission
+      await prisma.submissionAnswer.deleteMany({
+          where: { submissionId: existingSubmission.id }
+      });
 
-    if (existingSubmission) {
-        await prisma.submissionAnswer.deleteMany({
-            where: { submissionId: existingSubmission.id }
-        });
-
-        const updatedHistory = (existingSubmission.attemptHistory as Prisma.JsonArray || []).concat(newAttempt);
-
-        newSubmission = await prisma.examSubmission.update({
-            where: { id: existingSubmission.id },
-            data: {
-                score,
-                timeTakenSeconds,
-                submittedAt: new Date(),
-                attemptCount: { increment: 1 },
-                attemptHistory: updatedHistory,
-                answers: {
-                    create: answersForDb,
-                },
-            },
-        });
-    } else {
-        newSubmission = await prisma.examSubmission.create({
-            data: {
-                userId: user.id,
-                examId,
-                score,
-                timeTakenSeconds,
-                attemptCount: 1,
-                attemptHistory: [newAttempt],
-                answers: {
-                    create: answersForDb,
-                },
-            },
-        });
-    }
-
+      newSubmission = await prisma.examSubmission.update({
+          where: { id: existingSubmission.id },
+          data: {
+              score,
+              timeTakenSeconds,
+              submittedAt: new Date(),
+              attemptCount: { increment: 1 },
+              answers: {
+                  create: answersForDb,
+              },
+          },
+      });
+  } else {
+      newSubmission = await prisma.examSubmission.create({
+          data: {
+              userId: user.id,
+              examId,
+              score,
+              timeTakenSeconds,
+              attemptCount: 1,
+              answers: {
+                  create: answersForDb,
+              },
+          },
+      });
+  }
 
   const totalPoints = exam.questions.reduce((sum, q) => sum + q.points, 0);
   const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
@@ -589,7 +578,18 @@ export async function getExamResults(submissionId: number) {
         throw new Error("You are not authorized to view these results.");
     }
     
-    return { submission, submissionCount: submission.attemptCount, user: submission.user };
+    // We don't have attemptHistory anymore, so we fetch all submissions for this exam/user
+    const allSubmissionsForExam = await prisma.examSubmission.findMany({
+        where: {
+            userId: submission.userId,
+            examId: submission.examId,
+        },
+        orderBy: {
+            submittedAt: 'desc'
+        }
+    });
+    
+    return { submission, allSubmissions: allSubmissionsForExam, submissionCount: allSubmissionsForExam.length, user: submission.user };
 }
 
 
@@ -629,7 +629,8 @@ export async function getExamResultsForAdmin(examId: number) {
                     email: true,
                     image: true,
                 }
-            }
+            },
+            answers: true
         },
         orderBy: {
             score: 'desc'
