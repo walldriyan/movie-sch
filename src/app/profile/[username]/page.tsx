@@ -11,6 +11,8 @@ import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
 
+export const dynamic = 'force-dynamic';
+
 export default async function ProfilePage({
   params,
   searchParams,
@@ -78,7 +80,7 @@ export default async function ProfilePage({
                     isOwnProfile={isOwnProfile}
                     profileUser={profileUser}
                     totalSeries={totalSeriesCount}
-                    showAll={showAllSeries}
+                    showAll={showAll}
                   />
               ) : currentFilter === 'exams' ? (
                 <ProfileExamList 
