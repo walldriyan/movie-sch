@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useTransition, useEffect } from 'react';
+import React, { useState, useTransition, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import type { Exam, User, ExamSubmission as PrismaSubmission } from '@prisma/client';
 import {
@@ -305,10 +305,25 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
     const { toast } = useToast();
     const [submissions, setSubmissions] = useState(initialSubmissions);
     const [isRefreshing, startRefreshTransition] = useTransition();
-    
+
     useEffect(() => {
         setSubmissions(initialSubmissions);
     }, [initialSubmissions]);
+    
+    const groupedSubmissions = useMemo(() => {
+      return submissions.reduce((acc, sub) => {
+        const userId = sub.user.id;
+        if (!acc[userId]) {
+            acc[userId] = {
+                user: sub.user,
+                submissions: []
+            };
+        }
+        acc[userId].submissions.push(sub);
+        return acc;
+      }, {} as Record<string, { user: ExamResultSubmission['user'], submissions: ExamResultSubmission[] }>);
+    }, [submissions]);
+
 
     const totalPoints = exam.questions.reduce((sum: number, q: any) => sum + q.points, 0);
 
@@ -346,66 +361,72 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
                 <CardHeader>
                     <CardTitle>Submissions</CardTitle>
                     <CardDescription>
-                        A list of all submissions for this exam.
+                        A list of all submissions for this exam, grouped by student.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Student</TableHead>
+                                <TableHead className="w-[35%]">Student</TableHead>
                                 <TableHead>Score</TableHead>
                                 <TableHead>Percentage</TableHead>
                                 <TableHead>Time Taken</TableHead>
-                                <TableHead>Attempts</TableHead>
                                 <TableHead>Date</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {submissions.length > 0 ? submissions.map(sub => {
-                                const percentage = totalPoints > 0 ? (sub.score / totalPoints) * 100 : 0;
-                                const timeTaken = sub.timeTakenSeconds ? `${Math.floor(sub.timeTakenSeconds / 60)}m ${sub.timeTakenSeconds % 60}s` : 'N/A';
-                                const attemptsAllowed = exam.attemptsAllowed;
-                                
-                                return (
-                                <TableRow key={sub.id}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <Avatar className="h-9 w-9">
-                                                <AvatarImage src={sub.user.image || ''} />
-                                                <AvatarFallback>{sub.user.name?.charAt(0)}</AvatarFallback>
-                                            </Avatar>
-                                            <div>
-                                                <p className="font-medium">{sub.user.name}</p>
-                                                <p className="text-xs text-muted-foreground">{sub.user.email}</p>
+                             {Object.keys(groupedSubmissions).length > 0 ? Object.values(groupedSubmissions).map(({ user, submissions: userSubmissions }) => (
+                                <React.Fragment key={user.id}>
+                                    <TableRow className="bg-muted/50">
+                                        <TableCell colSpan={6} className="font-medium">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="h-9 w-9">
+                                                    <AvatarImage src={user.image || ''} />
+                                                    <AvatarFallback>{user.name?.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                    <p className="font-medium">{user.name}</p>
+                                                    <p className="text-xs text-muted-foreground">{user.email}</p>
+                                                </div>
                                             </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>{sub.score} / {totalPoints}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={percentage >= 50 ? 'default' : 'secondary'}>{percentage.toFixed(0)}%</Badge>
-                                    </TableCell>
-                                    <TableCell>{timeTaken}</TableCell>
-                                    <TableCell>{sub.attemptCount} / {attemptsAllowed === 0 ? '∞' : attemptsAllowed}</TableCell>
-                                    <TableCell><ClientSideDate date={sub.submittedAt} formatString='MM/dd/yyyy' /></TableCell>
-                                    <TableCell className="text-right">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent>
-                                                <ViewSubmissionDialog submissionId={sub.id} exam={exam} />
-                                                <ManageAttemptsDialog submission={sub} onUpdate={refreshResults}/>
-                                                <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Submission</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                                )
-                            }) : (
+                                        </TableCell>
+                                    </TableRow>
+                                    {userSubmissions.map(sub => {
+                                      const percentage = totalPoints > 0 ? (sub.score / totalPoints) * 100 : 0;
+                                      const timeTaken = sub.timeTakenSeconds ? `${Math.floor(sub.timeTakenSeconds / 60)}m ${sub.timeTakenSeconds % 60}s` : 'N/A';
+                                      
+                                      return (
+                                        <TableRow key={sub.id}>
+                                            <TableCell className="pl-12 text-sm text-muted-foreground">
+                                                Attempt {sub.attemptCount}
+                                            </TableCell>
+                                            <TableCell>{sub.score} / {totalPoints}</TableCell>
+                                            <TableCell>
+                                                <Badge variant={percentage >= 50 ? 'default' : 'secondary'}>{percentage.toFixed(0)}%</Badge>
+                                            </TableCell>
+                                            <TableCell>{timeTaken}</TableCell>
+                                            <TableCell><ClientSideDate date={sub.submittedAt} formatString='MM/dd/yyyy HH:mm' /></TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4"/></Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent>
+                                                        <ViewSubmissionDialog submissionId={sub.id} exam={exam} />
+                                                        <ManageAttemptsDialog submission={sub} onUpdate={refreshResults}/>
+                                                        <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete Submission</DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                      );
+                                    })}
+                                </React.Fragment>
+                            )) : (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="h-24 text-center">
+                                    <TableCell colSpan={6} className="h-24 text-center">
                                         No submissions yet.
                                     </TableCell>
                                 </TableRow>
