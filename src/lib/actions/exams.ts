@@ -476,45 +476,22 @@ export async function submitExam(
       }
   }
 
-  const newSubmission = await prisma.$transaction(async (tx) => {
-    const existingSubmission = await tx.examSubmission.findUnique({
-      where: { userId_examId: { userId, examId } },
-    });
+  const previousSubmissions = await prisma.examSubmission.count({
+    where: { userId, examId },
+  });
+  const currentAttempt = previousSubmissions + 1;
 
-    if (existingSubmission) {
-      // Delete old answers before creating new ones
-      await tx.submissionAnswer.deleteMany({
-        where: { submissionId: existingSubmission.id },
-      });
-
-      return await tx.examSubmission.update({
-        where: { userId_examId: { userId, examId } },
-        data: {
-          score,
-          timeTakenSeconds,
-          submittedAt: new Date(),
-          attemptCount: {
-            increment: 1,
-          },
-          answers: {
-            create: answersForDb,
-          },
-        },
-      });
-    } else {
-      return await tx.examSubmission.create({
-        data: {
-          userId,
-          examId,
-          score,
-          timeTakenSeconds,
-          attemptCount: 1,
-          answers: {
-            create: answersForDb,
-          },
-        },
-      });
-    }
+  const newSubmission = await prisma.examSubmission.create({
+    data: {
+      userId,
+      examId,
+      score,
+      timeTakenSeconds,
+      attemptCount: currentAttempt,
+      answers: {
+        create: answersForDb,
+      },
+    },
   });
 
   const totalPoints = exam.questions.reduce((sum, q) => sum + q.points, 0);
