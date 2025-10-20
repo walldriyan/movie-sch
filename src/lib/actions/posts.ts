@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -223,31 +222,6 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         totalPosts,
     };
 }
-
-export async function incrementViewCount(postId: number) {
-    try {
-        const updatedPost = await prisma.post.update({
-            where: { id: postId },
-            data: {
-                viewCount: {
-                    increment: 1,
-                },
-            },
-            select: { viewCount: true } 
-        });
-        return updatedPost.viewCount;
-    } catch (error) {
-        if (error instanceof Prisma.PrismaClientKnownRequestError) {
-             if (error.code === 'P2025' ) { // Record to update not found
-                console.warn(`Attempted to increment view count for non-existent post ID: ${postId}`);
-                return null;
-            }
-        }
-        // Re-throw other errors to be handled by the caller
-        throw error;
-    }
-}
-
 
 export async function getPost(postId: number) {
   const session = await auth();
@@ -726,4 +700,3 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
-
