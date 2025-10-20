@@ -310,7 +310,7 @@ const QuestionItem = ({ control, qIndex, removeQuestion, form }: { control: any,
                     <h4 className="font-semibold text-sm">Images for Question</h4>
                      <div className="space-y-3">
                         {images.map((image, iIndex) => (
-                             <div key={image.id} className="flex items-center gap-2">
+                             <div key={iIndex} className="flex items-center gap-2">
                                 <QuestionImageUploader qIndex={qIndex} iIndex={iIndex} form={form} />
                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeImage(iIndex)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
                              </div>
@@ -541,7 +541,7 @@ const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQu
         <Card>
           <CardHeader><CardTitle>Exam Questions</CardTitle><CardDescription>Add questions and options for the exam.</CardDescription></CardHeader>
           <CardContent>
-            {questions.map((question, qIndex) => (<QuestionItem key={question.id} control={form.control} qIndex={qIndex} removeQuestion={removeQuestion} form={form}/>))}
+            {questions.map((question, qIndex) => (<QuestionItem key={question.id || qIndex} control={form.control} qIndex={qIndex} removeQuestion={removeQuestion} form={form}/>))}
             <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, type: 'MCQ', isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }], images: [] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
           </CardContent>
         </Card>
@@ -847,14 +847,20 @@ export default function CreateExamPage() {
   }
   
   function onSubmit(data: ExamFormValues) {
+    console.log('Submitting data:', data);
     startTransition(async () => {
-      await createOrUpdateExam(data, editingExamId);
-      toast({ title: 'Exam Saved!', description: `The exam "${data.title}" has been saved.` });
-      form.reset();
-      setEditingExamId(null);
-      replaceQuestions([]);
-      setActiveTab('manage');
-      await fetchExams();
+      try {
+        await createOrUpdateExam(data, editingExamId);
+        toast({ title: 'Exam Saved!', description: `The exam "${data.title}" has been saved.` });
+        form.reset();
+        setEditingExamId(null);
+        replaceQuestions([]);
+        setActiveTab('manage');
+        await fetchExams();
+      } catch (error: any) {
+        console.error('Submission Error:', error);
+        toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
+      }
     });
   }
 
