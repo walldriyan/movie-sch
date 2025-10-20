@@ -205,7 +205,7 @@ function ExamResultsDialog({ submissionId }: { submissionId: number }) {
   return (
     <Dialog open={isOpen} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="secondary" size="sm">
+        <Button variant="secondary" size="sm" className="w-full">
             <Eye className="mr-2 h-4 w-4" /> View Results
         </Button>
       </DialogTrigger>
@@ -339,7 +339,7 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
                     value={`${attemptsMade} made, ${attemptsLeft} left`} 
                 />
             </CardContent>
-            <CardFooter className="flex-col sm:flex-row gap-2">
+            <CardFooter className="flex flex-col sm:flex-row items-stretch gap-2">
                 <Button asChild className="w-full" disabled={exam.attemptsAllowed > 0 && attemptsMade >= exam.attemptsAllowed}>
                   <Link href={`/exams/${exam.id}`}>
                     <PlayCircle className="mr-2 h-4 w-4" />
