@@ -72,9 +72,11 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
       router.push(href);
     });
   };
+  
+  const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
   const renderCreateButton = () => {
-    if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
+    if (!canManage) {
       return null;
     }
 
@@ -137,11 +139,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
         </Button>
       );
     }
-
-    const canManage = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(
-      user.role
-    );
-
+    
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -199,7 +197,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
             <DropdownMenuItem asChild>
               <Link href="/manage">
                 <LayoutGrid className="mr-2 h-4 w-4" />
-                <span>Manage Movies</span>
+                <span>Manage Posts</span>
               </Link>
             </DropdownMenuItem>
           )}
@@ -240,9 +238,11 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
                 <Button variant="ghost" size="icon" asChild>
                   <Link href={`/profile/${user?.id}`}><User /></Link>
                 </Button>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href="/manage"><LayoutGrid /></Link>
-                </Button>
+                {canManage && (
+                    <Button variant="ghost" size="icon" asChild>
+                        <Link href="/manage"><LayoutGrid /></Link>
+                    </Button>
+                )}
               </AuthGuard>
            </div>
         </div>
