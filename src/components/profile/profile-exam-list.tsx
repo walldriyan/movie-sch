@@ -119,15 +119,26 @@ const SubmissionResultView = ({ results }: { results: ExamResults }) => {
                                                 );
                                             })}
                                         </div>
-                                    ) : (
+                                     ) : (
                                         <div className="mt-3 space-y-3">
                                             <div className="p-3 rounded-md bg-gray-50 border">
                                                 <p className="text-xs font-semibold text-gray-600 mb-1">Your Answer:</p>
                                                 <p className="text-sm text-gray-800 whitespace-pre-wrap">{userAnswers[0]?.customAnswer || 'No answer provided.'}</p>
                                             </div>
-                                             <div className="mt-2 p-2 bg-blue-50 border-blue-200 rounded-lg text-sm border">
-                                                <p className="font-semibold text-blue-800 flex items-center gap-2"><Pencil className="h-4 w-4" />Answer Pending Review</p>
-                                            </div>
+                                            {userAnswers[0]?.marksAwarded !== null && userAnswers[0]?.marksAwarded !== undefined ? (
+                                                <div className="mt-2 p-2 bg-green-50 border-green-200 rounded-lg text-sm border">
+                                                    <p className="font-semibold text-green-800 flex items-center gap-2">
+                                                        <Check className="h-4 w-4" />
+                                                        Graded: {userAnswers[0].marksAwarded} / {question.points} points
+                                                    </p>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-2 p-2 bg-blue-50 border-blue-200 rounded-lg text-sm border">
+                                                    <p className="font-semibold text-blue-800 flex items-center gap-2">
+                                                        <Pencil className="h-4 w-4" />Answer Pending Review
+                                                    </p>
+                                                </div>
+                                            )}
                                         </div>
                                     )}
                                 </div>
