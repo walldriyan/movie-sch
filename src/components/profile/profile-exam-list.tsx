@@ -7,7 +7,7 @@ import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { BookCheck, Clapperboard, FileQuestion, PlayCircle, VideoOff, Award, Clock, Repeat, Users, Download, Eye, Loader2, Target, Check, X, CircleDot, Pencil } from 'lucide-react';
+import { BookCheck, Clapperboard, FileQuestion, PlayCircle, VideoOff, Award, Clock, Repeat, Users, Download, Eye, Loader2, Target, Check, X, CircleDot, Pencil, Calendar, User, Hash } from 'lucide-react';
 import type { ExamWithSubmissions } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { getExamResults } from '@/lib/actions';
@@ -339,7 +339,7 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
                     value={`${attemptsMade} made, ${attemptsLeft} left`} 
                 />
             </CardContent>
-            <CardFooter className="flex flex-col sm:flex-row items-stretch gap-2">
+            <CardFooter className="flex flex-col items-stretch gap-2">
                 <Button asChild className="w-full" disabled={exam.attemptsAllowed > 0 && attemptsMade >= exam.attemptsAllowed}>
                   <Link href={`/exams/${exam.id}`}>
                     <PlayCircle className="mr-2 h-4 w-4" />
