@@ -536,7 +536,8 @@ export async function submitExam(
     }
   }
 
-    return submission;
+  revalidatePath('/profile/' + user.id);
+  return submission;
 }
 
 
@@ -722,7 +723,8 @@ export async function getExamsForUser(userId: string) {
 
 export async function gradeCustomAnswer(submissionId: number, questionId: number, marksAwarded: number) {
     const session = await auth();
-    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    const user = session?.user;
+    if (!user || user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
     }
     
@@ -803,7 +805,9 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
     });
 
     revalidatePath(`/admin/exams/${submission.examId}/results`);
-    revalidatePath(`/profile/${submission.userId}`);
+    if (user) {
+      revalidatePath(`/profile/${user.id}`);
+    }
 
     return { success: true, newTotalScore };
 }
