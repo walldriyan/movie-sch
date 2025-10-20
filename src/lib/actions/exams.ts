@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -710,7 +709,5 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
-
-
 
     
