@@ -421,6 +421,7 @@ export async function submitExam(
   if (!user) {
     throw new Error('Not authenticated');
   }
+  const userId = user.id;
 
   const { answers, timeTakenSeconds } = payload;
   
@@ -434,16 +435,6 @@ export async function submitExam(
 
   if (!exam) {
     throw new Error('Exam not found');
-  }
-
-  const previousSubmissions = await prisma.examSubmission.findMany({
-    where: { userId: user.id, examId: examId },
-  });
-  
-  const currentAttempt = previousSubmissions.length + 1;
-
-  if (exam.attemptsAllowed > 0 && previousSubmissions.length >= exam.attemptsAllowed) {
-      throw new Error('You have reached the maximum number of attempts.');
   }
 
   let score = 0;
@@ -485,17 +476,45 @@ export async function submitExam(
       }
   }
 
-  const newSubmission = await prisma.examSubmission.create({
-    data: {
-      userId: user.id,
-      examId,
-      score,
-      timeTakenSeconds,
-      attemptCount: currentAttempt,
-      answers: {
-        create: answersForDb,
-      },
-    },
+  const newSubmission = await prisma.$transaction(async (tx) => {
+    const existingSubmission = await tx.examSubmission.findUnique({
+      where: { userId_examId: { userId, examId } },
+    });
+
+    if (existingSubmission) {
+      // Delete old answers before creating new ones
+      await tx.submissionAnswer.deleteMany({
+        where: { submissionId: existingSubmission.id },
+      });
+
+      return await tx.examSubmission.update({
+        where: { userId_examId: { userId, examId } },
+        data: {
+          score,
+          timeTakenSeconds,
+          submittedAt: new Date(),
+          attemptCount: {
+            increment: 1,
+          },
+          answers: {
+            create: answersForDb,
+          },
+        },
+      });
+    } else {
+      return await tx.examSubmission.create({
+        data: {
+          userId,
+          examId,
+          score,
+          timeTakenSeconds,
+          attemptCount: 1,
+          answers: {
+            create: answersForDb,
+          },
+        },
+      });
+    }
   });
 
   const totalPoints = exam.questions.reduce((sum, q) => sum + q.points, 0);
