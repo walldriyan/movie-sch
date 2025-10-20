@@ -228,16 +228,6 @@ export async function getPost(postId: number) {
   const session = await auth();
   const userId = session?.user?.id;
 
-  // Atomically increment the view count
-  await prisma.post.update({
-    where: { id: postId },
-    data: {
-      viewCount: {
-        increment: 1,
-      },
-    },
-  });
-
   const post = await prisma.post.findUnique({
     where: { id: postId },
     include: {
@@ -711,4 +701,3 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
-
