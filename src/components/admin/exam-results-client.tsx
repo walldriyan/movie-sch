@@ -114,7 +114,7 @@ const numberToSinhala = (num: number) => {
 }
 
 function ManualGradeForm({ submissionId, question, answer, onGradeSaved }: { submissionId: number, question: any, answer: any, onGradeSaved: () => void }) {
-    const [marks, setMarks] = useState(answer?.marksAwarded ?? '');
+    const [marks, setMarks] = useState(answer?.marksAwarded?.toString() ?? '');
     const [isSaving, startSaving] = useTransition();
     const { toast } = useToast();
 
@@ -189,39 +189,6 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
         }
     };
     
-    const calculateQuestionScore = (question: any, submissionData: any) => {
-        if (question.type !== 'MCQ') {
-            const answer = submissionData.answers.find((a: any) => a.questionId === question.id);
-            return answer?.marksAwarded ?? 0;
-        }
-
-        const userAnswersForQuestion = submissionData.answers
-            .filter((a: any) => a.questionId === question.id)
-            .map((a: any) => a.selectedOptionId);
-
-        if (userAnswersForQuestion.length === 0) return 0;
-
-        const correctOptionIds = question.options.filter((o: any) => o.isCorrect).map((o: any) => o.id);
-        
-        let score = 0;
-        if (question.isMultipleChoice) {
-            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-            const incorrectSelected = userAnswersForQuestion.some((id: number) => !correctOptionIds.includes(id));
-          
-            if (incorrectSelected) {
-                score = 0;
-            } else {
-                score = userAnswersForQuestion.length * pointsPerCorrectAnswer;
-            }
-        } else {
-            const selectedOptionId = userAnswersForQuestion[0];
-            if (correctOptionIds.includes(selectedOptionId)) {
-                score = question.points;
-            }
-        }
-        return Math.max(0, Math.round(score));
-    };
-
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
@@ -307,7 +274,9 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                                 className="mt-2 bg-background/50 text-base"
                                                             />
                                                         </div>
-                                                         <ManualGradeForm submissionId={submissionId} question={question} answer={userAnswer} onGradeSaved={fetchResults} />
+                                                        {userAnswer?.customAnswer && (
+                                                          <ManualGradeForm submissionId={submissionId} question={question} answer={userAnswer} onGradeSaved={fetchResults} />
+                                                        )}
                                                     </div>
                                                 )}
                                             </CardContent>
@@ -444,3 +413,5 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
         </div>
     )
 }
+
+    
