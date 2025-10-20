@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useEffect, useState, useTransition } from 'react';
 import type { Session } from 'next-auth';
-import { createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
+import { createReview, deleteReview, deleteSubtitle, incrementViewCount } from '@/lib/actions';
 import type { Post, Review, Subtitle, User } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -195,7 +196,35 @@ export default function MoviePageContent({
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSubmittingReview, startReviewTransition] = useTransition();
   const [showReviews, setShowReviews] = useState(false);
+  const [isUpdatingViewCount, startViewCountTransition] = useTransition();
   const currentUser = session?.user;
+
+  useEffect(() => {
+    // Optimistically update the view count on the client
+    setPost((prevPost: any) => ({
+        ...prevPost,
+        viewCount: prevPost.viewCount + 1
+    }));
+    
+    // Then, trigger the server action to update the database in the background.
+    startViewCountTransition(async () => {
+        try {
+            await incrementViewCount(initialPost.id);
+        } catch (error) {
+            console.error("Failed to increment view count:", error);
+            // Optionally revert the optimistic update if the DB call fails
+             setPost((prevPost: any) => ({
+                ...prevPost,
+                viewCount: prevPost.viewCount - 1
+            }));
+             toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Could not update view count."
+            });
+        }
+    });
+  }, [initialPost.id]);
 
   useEffect(() => {
     if (post) {
