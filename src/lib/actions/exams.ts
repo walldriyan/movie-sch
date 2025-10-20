@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -104,9 +105,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     if (!user) {
         throw new Error('Not authenticated');
     }
-    console.log('--- Server Action: createOrUpdateExam ---');
-    console.log('Received data:', JSON.stringify(data, null, 2));
-
+    
     if (user.role !== ROLES.SUPER_ADMIN && data.postId) {
         const post = await prisma.post.findUnique({ where: { id: parseInt(data.postId, 10) } });
         if (post?.authorId !== user.id) {
@@ -128,7 +127,6 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     const questionsToUpdate = data.questions.filter(q => q.id);
 
     if (examId) { // Update an existing exam
-        console.log(`Updating exam with ID: ${examId}`);
         await prisma.$transaction(async (tx) => {
              const relationData: any = {
                 post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true },
@@ -147,7 +145,6 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             const existingQuestionIds = (await tx.question.findMany({ where: { examId }, select: { id: true }})).map(q => q.id);
             const questionsToUpdateIds = questionsToUpdate.map(q => q.id).filter(Boolean) as number[];
             const questionsToDeleteIds = existingQuestionIds.filter(id => !questionsToUpdateIds.includes(id));
-            console.log('Questions to delete IDs:', questionsToDeleteIds);
             
             if (questionsToDeleteIds.length > 0) {
                  await tx.submissionAnswer.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
@@ -158,18 +155,16 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
             for (const q of questionsToUpdate) {
                 if (!q.id) continue;
-                console.log(`Updating question ID: ${q.id} of type ${q.type}`);
+
                 await tx.question.update({
                     where: { id: q.id },
                     data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice, type: q.type }
                 });
                 
-                // Update options for MCQ
                 if (q.type === 'MCQ') {
                   const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
                   const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
                   const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
-                  console.log(`For question ${q.id}, options to delete:`, optionsToDeleteIds);
 
                   if (optionsToDeleteIds.length > 0) {
                       await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDeleteIds } } });
@@ -183,8 +178,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                           await tx.questionOption.create({ data: { questionId: q.id, text: opt.text, isCorrect: opt.isCorrect }});
                       }
                   }
-                } else if (q.type === 'IMAGE_BASED_ANSWER') { // Update images for IMAGE_BASED_ANSWER
-                    console.log(`Updating images for question ${q.id}`);
+                } else if (q.type === 'IMAGE_BASED_ANSWER') {
                     await tx.questionImage.deleteMany({ where: { questionId: q.id } });
                     if (q.images && q.images.length > 0) {
                         await tx.questionImage.createMany({
@@ -193,7 +187,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     }
                 }
             }
-            console.log('Questions to create:', questionsToCreate.length);
+
             if (questionsToCreate.length > 0) {
                 for (const q of questionsToCreate) {
                      await tx.question.create({
@@ -211,7 +205,6 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
             }
         });
     } else { // Create a new exam
-        console.log('Creating new exam');
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
             post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
