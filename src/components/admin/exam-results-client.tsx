@@ -274,8 +274,12 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                                 className="mt-2 bg-background/50 text-base"
                                                             />
                                                         </div>
-                                                        {userAnswer?.customAnswer && (
+                                                        {userAnswer?.customAnswer ? (
                                                           <ManualGradeForm submissionId={submissionId} question={question} answer={userAnswer} onGradeSaved={fetchResults} />
+                                                        ) : (
+                                                            <div className="mt-4 p-3 bg-yellow-500/10 rounded-lg text-sm border border-yellow-500/20">
+                                                                <p className="font-semibold text-yellow-300">No answer was submitted for this question.</p>
+                                                            </div>
                                                         )}
                                                     </div>
                                                 )}
@@ -413,5 +417,3 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
         </div>
     )
 }
-
-    
