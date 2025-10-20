@@ -7,6 +7,9 @@ npx prisma db push --force-reset
 
 
 
+# Folder එකටත් permissions දෙන්න
+chmod 755 ./path/to/database/folder/
+
 
 npx prisma generate
 npx prisma db push

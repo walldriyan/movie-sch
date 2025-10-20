@@ -31,6 +31,7 @@ import { toggleLikePost, toggleFavoritePost, deletePost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
 import { Skeleton } from '@/components/ui/skeleton';
+import AuthGuard from '../auth/auth-guard';
 
 
 interface MovieInteractionButtonsProps {
@@ -217,27 +218,27 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
                 <Share2 className="w-5 h-5 text-muted-foreground" />
             </Button>
             
-            {canManage && (
+            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
                 <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                    <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
-                    </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                    <DropdownMenuItem asChild>
-                    <Link href={`/manage?edit=${post.id}`}>
-                        <Edit className="mr-2 h-4 w-4" />
-                        <span>Edit</span>
-                    </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleDelete} disabled={isDeleting} className="text-destructive">
-                    {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                    <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
+                    <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent>
+                        <DropdownMenuItem asChild>
+                            <Link href={`/manage?edit=${post.id}`}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Edit</span>
+                            </Link>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleDelete} disabled={isDeleting} className="text-destructive">
+                            {isDeleting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                            <span>{isDeleting ? 'Deleting...' : 'Delete'}</span>
+                        </DropdownMenuItem>
+                    </DropdownMenuContent>
                 </DropdownMenu>
-            )}
+            </AuthGuard>
         </div>
     );
 }
