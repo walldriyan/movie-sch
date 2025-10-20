@@ -370,12 +370,12 @@ export async function getExamForTaker(examId: number) {
       throw new Error("This exam has already ended.");
   }
   
-    const submission = await prisma.examSubmission.findUnique({
-        where: { userId_examId: { userId: user.id, examId: exam.id } }
+    const submissions = await prisma.examSubmission.findMany({
+        where: { userId: user.id, examId: exam.id }
     });
 
     const attemptsAllowed = exam.attemptsAllowed;
-    const submissionCount = submission?.attemptCount ?? 0;
+    const submissionCount = submissions.length;
 
     if (attemptsAllowed > 0 && submissionCount >= attemptsAllowed) {
         throw new Error(`You have reached the maximum number of attempts (${attemptsAllowed}).`);
@@ -436,13 +436,13 @@ export async function submitExam(
     throw new Error('Exam not found');
   }
 
-  const existingSubmission = await prisma.examSubmission.findUnique({
-    where: { userId_examId: { userId: user.id, examId: examId } },
+  const previousSubmissions = await prisma.examSubmission.findMany({
+    where: { userId: user.id, examId: examId },
   });
   
-  let currentAttemptCount = existingSubmission?.attemptCount ?? 0;
+  const currentAttempt = previousSubmissions.length + 1;
 
-  if (exam.attemptsAllowed > 0 && currentAttemptCount >= exam.attemptsAllowed) {
+  if (exam.attemptsAllowed > 0 && previousSubmissions.length >= exam.attemptsAllowed) {
       throw new Error('You have reached the maximum number of attempts.');
   }
 
@@ -485,40 +485,18 @@ export async function submitExam(
       }
   }
 
-  let newSubmission;
-
-  if (existingSubmission) {
-      // Since we are overwriting, first delete old answers for this submission
-      await prisma.submissionAnswer.deleteMany({
-          where: { submissionId: existingSubmission.id }
-      });
-
-      newSubmission = await prisma.examSubmission.update({
-          where: { id: existingSubmission.id },
-          data: {
-              score,
-              timeTakenSeconds,
-              submittedAt: new Date(),
-              attemptCount: { increment: 1 },
-              answers: {
-                  create: answersForDb,
-              },
-          },
-      });
-  } else {
-      newSubmission = await prisma.examSubmission.create({
-          data: {
-              userId: user.id,
-              examId,
-              score,
-              timeTakenSeconds,
-              attemptCount: 1,
-              answers: {
-                  create: answersForDb,
-              },
-          },
-      });
-  }
+  const newSubmission = await prisma.examSubmission.create({
+    data: {
+      userId: user.id,
+      examId,
+      score,
+      timeTakenSeconds,
+      attemptCount: currentAttempt,
+      answers: {
+        create: answersForDb,
+      },
+    },
+  });
 
   const totalPoints = exam.questions.reduce((sum, q) => sum + q.points, 0);
   const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;

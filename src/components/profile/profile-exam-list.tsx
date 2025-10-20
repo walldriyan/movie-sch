@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import { Film } from 'lucide-react';
 import ClientSideDate from '../manage/client-side-date';
+import { Badge } from '../ui/badge';
 
 type ExamResults = Awaited<ReturnType<typeof getExamResults>>;
 
@@ -195,7 +196,7 @@ function ExamResultsDialog({ submissionId, children }: { submissionId: number, c
             <html>
                 <head>
                     <title>Print Results</title>
-                    <script src="https://cdn.tailwindcss.com"></script>
+                    <script src="https://cdn.tailwindcss.com/"></script>
                     <style>
                         @media print {
                             body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
@@ -350,7 +351,12 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
                <DetailItem 
                     icon={<Repeat className="h-4 w-4" />} 
                     label="Attempts" 
-                    value={`${attemptsMade} made, ${attemptsLeft} left`} 
+                    value={
+                        <div className="flex items-center gap-2">
+                            <span>{attemptsMade} made, {attemptsLeft} left</span>
+                            <Badge variant="info">{attemptsMade}</Badge>
+                        </div>
+                    } 
                 />
             </CardContent>
             <CardFooter className="flex flex-col items-stretch gap-2">
@@ -360,7 +366,7 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
                     {attemptsMade > 0 ? 'Retake Exam' : 'Start Exam'}
                   </Link>
                 </Button>
-                {lastSubmission && (
+                {exam.submissions.length > 0 && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                        <Button variant="secondary" className="w-full">
@@ -374,7 +380,7 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
                        {exam.submissions.map((sub, index) => (
                           <ExamResultsDialog key={sub.id} submissionId={sub.id}>
                             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                              Attempt {exam.submissions.length - index}: {sub.score}/{totalPoints}
+                              Attempt {sub.attemptCount}: {sub.score}/{totalPoints}
                               <span className="ml-auto text-xs text-muted-foreground">
                                 <ClientSideDate date={sub.submittedAt} formatString="PPp" />
                               </span>
@@ -391,4 +397,3 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
     </div>
   );
 }
-
