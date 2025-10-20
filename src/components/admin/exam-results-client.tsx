@@ -2,6 +2,7 @@
 'use client';
 
 import React, { useState, useTransition, useEffect } from 'react';
+import Image from 'next/image';
 import type { Exam, User, ExamSubmission as PrismaSubmission } from '@prisma/client';
 import {
   Table,
@@ -22,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, MoreHorizontal, Eye, Edit, Trash2, Loader2, Check, X, Target, FileQuestion, CircleDot } from 'lucide-react';
+import { ArrowLeft, RefreshCw, MoreHorizontal, Eye, Edit, Trash2, Loader2, Check, X, Target, FileQuestion, CircleDot, Pencil } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +48,7 @@ import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '../ui/scroll-area';
 import ClientSideDate from '@/components/manage/client-side-date';
+import { Textarea } from '../ui/textarea';
 
 type ExamResultsType = Awaited<ReturnType<typeof getExamResults>>;
 
@@ -138,6 +140,7 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
     }
     
     const calculateQuestionScore = (question: any, submissionData: any) => {
+        if (question.type !== 'MCQ') return 0;
         const userAnswersForQuestion = submissionData.answers
             .filter((a: any) => a.questionId === question.id)
             .map((a: any) => a.selectedOptionId);
@@ -193,20 +196,8 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                         {results && (
                              <div className="space-y-4 py-4">
                                 {results.submission.exam.questions.map((question, index) => {
-                                    const userAnswersIds = results.submission.answers
-                                        .filter(a => a.questionId === question.id)
-                                        .map(a => a.selectedOptionId);
-                                        
-                                    const correctOptionIds = question.options
-                                        .filter(o => o.isCorrect)
-                                        .map(o => o.id);
+                                    const userAnswer = results.submission.answers.find(a => a.questionId === question.id);
                                     
-                                    const awardedPoints = calculateQuestionScore(question, results.submission);
-                                    
-                                    const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-                                    const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-
-
                                     return (
                                         <React.Fragment key={question.id}>
                                         <Card className="bg-card/30 border-dashed p-6">
@@ -215,53 +206,68 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                 <CardTitle className="text-lg">{question.text} <span className="text-sm font-normal text-muted-foreground">({question.points} points)</span></CardTitle>
                                             </CardHeader>
                                             <CardContent className="p-0">
-                                                <div className="space-y-2">
-                                                    {question.options.map(option => {
-                                                        const isUserChoice = userAnswersIds.includes(option.id);
-                                                        const isTheCorrectAnswer = correctOptionIds.includes(option.id);
-                                                        
-                                                        return (
-                                                            <div 
-                                                                key={option.id}
-                                                                className={cn(
-                                                                    "flex items-start gap-3 p-3 rounded-lg border text-sm",
-                                                                    isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30", // Correct & Selected
-                                                                    !isUserChoice && isTheCorrectAnswer && "border-green-500/50 border-dotted", // Correct & Not Selected
-                                                                    isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30" // Incorrect & Selected
-                                                                )}
-                                                            >
-                                                                <div className="mt-0.5">
-                                                                    {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
-                                                                    {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
-                                                                    {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
-                                                                    {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
-                                                                </div>
-                                                                <div className="flex-grow">
-                                                                    <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                                    
-                                                                    {isUserChoice && isTheCorrectAnswer && (
-                                                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">
-                                                                            නිවැරදි පිළිතුර (ඔබ තේරූ)
-                                                                            <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span>
-                                                                        </p>
-                                                                    )}
-                                                                    {isUserChoice && !isTheCorrectAnswer && (
-                                                                        <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">
-                                                                            වැරදි පිළිතුර (ඔබ තේරූ)
-                                                                            <span className="font-bold ml-2 text-red-500">(-{pointsToDeductPerWrong.toFixed(1)} ලකුණු)</span>
-                                                                        </p>
-                                                                    )}
-                                                                    {!isUserChoice && isTheCorrectAnswer && (
-                                                                        <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>
-                                                                    )}
-                                                                </div>
+                                                {question.type === 'MCQ' ? (
+                                                     <>
+                                                        <div className="space-y-2">
+                                                            {question.options.map(option => {
+                                                                const isUserChoice = results.submission.answers.some(a => a.questionId === question.id && a.selectedOptionId === option.id);
+                                                                const isTheCorrectAnswer = option.isCorrect;
+                                                                const pointsPerCorrectAnswer = question.options.filter(o => o.isCorrect).length > 0 ? question.points / question.options.filter(o => o.isCorrect).length : 0;
+                                                                
+                                                                return (
+                                                                    <div 
+                                                                        key={option.id}
+                                                                        className={cn(
+                                                                            "flex items-start gap-3 p-3 rounded-lg border text-sm",
+                                                                            isUserChoice && isTheCorrectAnswer && "bg-green-500/10 border-green-500/30",
+                                                                            !isUserChoice && isTheCorrectAnswer && "border-green-500/50 border-dotted",
+                                                                            isUserChoice && !isTheCorrectAnswer && "bg-red-500/10 border-red-500/30"
+                                                                        )}
+                                                                    >
+                                                                        <div className="mt-0.5">
+                                                                            {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
+                                                                            {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
+                                                                            {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
+                                                                            {!isUserChoice && !isTheCorrectAnswer && (question.isMultipleChoice ? <CircleDot className="h-5 w-5 text-muted-foreground" /> : <FileQuestion className="h-5 w-5 text-muted-foreground" />)}
+                                                                        </div>
+                                                                        <div className="flex-grow">
+                                                                            <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
+                                                                            {isUserChoice && isTheCorrectAnswer && <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ තේරූ) <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span></p>}
+                                                                            {isUserChoice && !isTheCorrectAnswer && <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">වැරදි පිළිතුර (ඔබ තේරූ) <span className="font-bold ml-2 text-red-500">(-{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span></p>}
+                                                                            {!isUserChoice && isTheCorrectAnswer && <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>}
+                                                                        </div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
+                                                            <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{calculateQuestionScore(question, results.submission)}</span> / {question.points}</p>
+                                                        </div>
+                                                    </>
+                                                ) : (
+                                                    <div className="space-y-4">
+                                                        {question.images && question.images.length > 0 && (
+                                                            <div className="grid grid-cols-2 gap-4">
+                                                                {question.images.map(image => (
+                                                                    <div key={image.id} className="relative aspect-video">
+                                                                        <Image src={image.url} alt={`Question image`} layout="fill" className="object-contain rounded-md" />
+                                                                    </div>
+                                                                ))}
                                                             </div>
-                                                        );
-                                                    })}
-                                                </div>
-                                                <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
-                                                    <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{awardedPoints}</span> / {question.points}</p>
-                                                </div>
+                                                        )}
+                                                        <div className="p-4 bg-muted/50 rounded-lg">
+                                                            <Label className="text-sm font-semibold text-muted-foreground">Submitted Answer:</Label>
+                                                            <Textarea 
+                                                                readOnly 
+                                                                value={userAnswer?.customAnswer || "No answer provided."}
+                                                                className="mt-2 bg-background/50 text-base"
+                                                            />
+                                                        </div>
+                                                        <div className="mt-4 p-3 bg-blue-500/10 rounded-lg text-sm border border-blue-500/20">
+                                                            <p className="font-semibold text-blue-300 flex items-center gap-2"><Pencil className="h-4 w-4" />Manual Grading Required</p>
+                                                        </div>
+                                                    </div>
+                                                )}
                                             </CardContent>
                                         </Card>
                                         {index < results.submission.exam.questions.length - 1 && <Separator className="my-8" />}
@@ -392,5 +398,3 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
         </div>
     )
 }
-
-    

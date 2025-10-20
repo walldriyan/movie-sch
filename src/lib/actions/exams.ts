@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -128,84 +127,97 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     const questionsToUpdate = data.questions.filter(q => q.id);
 
     if (examId) { // Update an existing exam
-        await prisma.$transaction(async (tx) => {
-             const relationData: any = {
-                post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true },
-                group: data.groupId ? { connect: { id: data.groupId } } : { disconnect: true }
-            };
+        try {
+            await prisma.$transaction(async (tx) => {
+                console.log(`Updating exam ID: ${examId}`);
+                const relationData: any = {
+                    post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true },
+                    group: data.groupId ? { connect: { id: data.groupId } } : { disconnect: true }
+                };
 
-            await tx.exam.update({
-              where: { id: examId },
-              data: {
-                ...baseExamData,
-                ...relationData
-              },
-            });
-
-            // Logic to update questions and options
-            const existingQuestionIds = (await tx.question.findMany({ where: { examId }, select: { id: true }})).map(q => q.id);
-            const questionsToUpdateIds = questionsToUpdate.map(q => q.id).filter(Boolean) as number[];
-            const questionsToDeleteIds = existingQuestionIds.filter(id => !questionsToUpdateIds.includes(id));
-            
-            if (questionsToDeleteIds.length > 0) {
-                 await tx.submissionAnswer.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
-                 await tx.questionImage.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
-                 await tx.questionOption.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
-                 await tx.question.deleteMany({ where: { id: { in: questionsToDeleteIds } } });
-            }
-
-            for (const q of questionsToUpdate) {
-                if (!q.id) continue;
-
-                await tx.question.update({
-                    where: { id: q.id },
-                    data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice, type: q.type }
+                await tx.exam.update({
+                  where: { id: examId },
+                  data: {
+                    ...baseExamData,
+                    ...relationData
+                  },
                 });
+
+                const existingQuestionIds = (await tx.question.findMany({ where: { examId }, select: { id: true }})).map(q => q.id);
+                const questionsToUpdateIds = questionsToUpdate.map(q => q.id).filter(Boolean) as number[];
+                const questionsToDeleteIds = existingQuestionIds.filter(id => !questionsToUpdateIds.includes(id));
                 
-                if (q.type === 'MCQ') {
-                  const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
-                  const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
-                  const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
+                console.log('Questions to Delete IDs:', questionsToDeleteIds);
+                if (questionsToDeleteIds.length > 0) {
+                     await tx.submissionAnswer.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
+                     await tx.questionImage.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
+                     await tx.questionOption.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
+                     await tx.question.deleteMany({ where: { id: { in: questionsToDeleteIds } } });
+                }
 
-                  if (optionsToDeleteIds.length > 0) {
-                      await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDeleteIds } } });
-                      await tx.questionOption.deleteMany({ where: { id: { in: optionsToDeleteIds }}});
-                  }
+                console.log('Questions to Update:', questionsToUpdate);
+                for (const q of questionsToUpdate) {
+                    if (!q.id) continue;
+                    console.log(`Updating question ID: ${q.id}`);
 
-                  for (const opt of q.options) {
-                      if (opt.id) {
-                          await tx.questionOption.update({ where: { id: opt.id }, data: { text: opt.text, isCorrect: opt.isCorrect }});
-                      } else {
-                          await tx.questionOption.create({ data: { questionId: q.id, text: opt.text, isCorrect: opt.isCorrect }});
+                    await tx.question.update({
+                        where: { id: q.id },
+                        data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice, type: q.type }
+                    });
+                    
+                    if (q.type === 'MCQ') {
+                      console.log(`Processing MCQ options for question ${q.id}`);
+                      const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
+                      const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
+                      const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
+
+                      if (optionsToDeleteIds.length > 0) {
+                          await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDeleteIds } } });
+                          await tx.questionOption.deleteMany({ where: { id: { in: optionsToDeleteIds }}});
                       }
-                  }
-                } else if (q.type === 'IMAGE_BASED_ANSWER') {
-                    await tx.questionImage.deleteMany({ where: { questionId: q.id } });
-                    if (q.images && q.images.length > 0) {
-                        await tx.questionImage.createMany({
-                            data: q.images.map(img => ({ questionId: q.id!, url: img.url }))
+
+                      for (const opt of q.options) {
+                          if (opt.id) {
+                              await tx.questionOption.update({ where: { id: opt.id }, data: { text: opt.text, isCorrect: opt.isCorrect }});
+                          } else {
+                              await tx.questionOption.create({ data: { questionId: q.id, text: opt.text, isCorrect: opt.isCorrect }});
+                          }
+                      }
+                    } else if (q.type === 'IMAGE_BASED_ANSWER') {
+                        console.log(`Processing Image-Based Answer images for question ${q.id}`);
+                        await tx.questionImage.deleteMany({ where: { questionId: q.id } });
+                        if (q.images && q.images.length > 0) {
+                            await tx.questionImage.createMany({
+                                data: q.images.map(img => ({ questionId: q.id!, url: img.url }))
+                            });
+                        }
+                    }
+                }
+
+                console.log('Questions to Create:', questionsToCreate);
+                if (questionsToCreate.length > 0) {
+                    for (const q of questionsToCreate) {
+                         console.log('Creating new question:', q.text);
+                         await tx.question.create({
+                            data: {
+                                examId: examId,
+                                text: q.text,
+                                points: q.points,
+                                isMultipleChoice: q.isMultipleChoice,
+                                type: q.type,
+                                options: q.type === 'MCQ' ? { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) } : undefined,
+                                images: q.type === 'IMAGE_BASED_ANSWER' && q.images ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
+                            }
                         });
                     }
                 }
-            }
-
-            if (questionsToCreate.length > 0) {
-                for (const q of questionsToCreate) {
-                     await tx.question.create({
-                        data: {
-                            examId: examId,
-                            text: q.text,
-                            points: q.points,
-                            isMultipleChoice: q.isMultipleChoice,
-                            type: q.type,
-                            options: q.type === 'MCQ' ? { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) } : undefined,
-                            images: q.type === 'IMAGE_BASED_ANSWER' && q.images ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
-                        }
-                    });
-                }
-            }
-        });
+            });
+        } catch (e: any) {
+            console.error("Transaction failed:", e);
+            throw e;
+        }
     } else { // Create a new exam
+        console.log("Creating new exam");
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
             post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
@@ -543,7 +555,8 @@ export async function getExamResults(submissionId: number) {
                 include: {
                     questions: {
                         include: {
-                            options: true // Get all option details for review
+                            options: true, // Get all option details for review
+                            images: true, // Get images for image-based questions
                         }
                     }
                 }
@@ -552,6 +565,7 @@ export async function getExamResults(submissionId: number) {
                 select: {
                     questionId: true,
                     selectedOptionId: true,
+                    customAnswer: true, // Fetch the custom answer
                 }
             },
             user: true, // Also include user who made the submission
@@ -704,5 +718,3 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
-
-    
