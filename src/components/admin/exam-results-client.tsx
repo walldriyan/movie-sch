@@ -23,7 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft, RefreshCw, MoreHorizontal, Eye, Edit, Trash2, Loader2, Check, X, Target, FileQuestion, CircleDot, Pencil } from 'lucide-react';
+import { ArrowLeft, RefreshCw, MoreHorizontal, Eye, Edit, Trash2, Loader2, Check, X, Target, FileQuestion, CircleDot, Pencil, Save } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -42,7 +42,7 @@ import {
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { getExamResultsForAdmin, updateSubmissionAttempts, getExamResults } from '@/lib/actions';
+import { getExamResultsForAdmin, updateSubmissionAttempts, getExamResults, gradeCustomAnswer } from '@/lib/actions';
 import type { ExamResultSubmission } from '@/lib/types';
 import { Separator } from '../ui/separator';
 import { cn } from '@/lib/utils';
@@ -113,18 +113,61 @@ const numberToSinhala = (num: number) => {
     return `${num} වන`;
 }
 
+function ManualGradeForm({ submissionId, question, answer, onGradeSaved }: { submissionId: number, question: any, answer: any, onGradeSaved: () => void }) {
+    const [marks, setMarks] = useState(answer?.marksAwarded ?? '');
+    const [isSaving, startSaving] = useTransition();
+    const { toast } = useToast();
+
+    const handleSave = () => {
+        const marksNum = parseInt(marks, 10);
+        if (isNaN(marksNum) || marksNum < 0 || marksNum > question.points) {
+            toast({ variant: 'destructive', title: 'Invalid Marks', description: `Marks must be between 0 and ${question.points}` });
+            return;
+        }
+
+        startSaving(async () => {
+            try {
+                await gradeCustomAnswer(submissionId, question.id, marksNum);
+                toast({ title: 'Marks Saved', description: `Question graded successfully.` });
+                onGradeSaved();
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Error', description: error.message });
+            }
+        });
+    }
+
+    return (
+        <div className="mt-4 p-4 bg-blue-500/10 rounded-lg border border-blue-500/20 space-y-2">
+            <Label htmlFor={`marks-${question.id}`} className="font-semibold text-blue-300 flex items-center gap-2">
+                <Pencil className="h-4 w-4" />Manual Grading
+            </Label>
+            <div className="flex items-center gap-2">
+                <Input
+                    id={`marks-${question.id}`}
+                    type="number"
+                    value={marks}
+                    onChange={(e) => setMarks(e.target.value)}
+                    placeholder="Marks"
+                    max={question.points}
+                    min="0"
+                    className="w-24 bg-background/50"
+                    disabled={isSaving || answer?.marksAwarded !== null}
+                />
+                <span className="text-sm font-semibold text-muted-foreground">/ {question.points}</span>
+                <Button size="sm" onClick={handleSave} disabled={isSaving || answer?.marksAwarded !== null} className="ml-auto">
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : (answer?.marksAwarded !== null ? <Check className="mr-2 h-4 w-4"/> : <Save className="mr-2 h-4 w-4" />)}
+                    {answer?.marksAwarded !== null ? 'Graded' : 'Save Marks'}
+                </Button>
+            </div>
+        </div>
+    );
+}
+
 function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, exam: any }) {
     const [open, setOpen] = useState(false);
     const [results, setResults] = useState<ExamResultsType | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
-
-    const handleOpenChange = (isOpen: boolean) => {
-        setOpen(isOpen);
-        if (isOpen && !results) {
-            fetchResults();
-        }
-    };
 
     const fetchResults = async () => {
         setIsLoading(true);
@@ -137,10 +180,21 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
         } finally {
             setIsLoading(false);
         }
-    }
+    };
+
+    const handleOpenChange = (isOpen: boolean) => {
+        setOpen(isOpen);
+        if (isOpen && !results) {
+            fetchResults();
+        }
+    };
     
     const calculateQuestionScore = (question: any, submissionData: any) => {
-        if (question.type !== 'MCQ') return 0;
+        if (question.type !== 'MCQ') {
+            const answer = submissionData.answers.find((a: any) => a.questionId === question.id);
+            return answer?.marksAwarded ?? 0;
+        }
+
         const userAnswersForQuestion = submissionData.answers
             .filter((a: any) => a.questionId === question.id)
             .map((a: any) => a.selectedOptionId);
@@ -148,25 +202,21 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
         if (userAnswersForQuestion.length === 0) return 0;
 
         const correctOptionIds = question.options.filter((o: any) => o.isCorrect).map((o: any) => o.id);
-        const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
-        const pointsToDeductPerWrong = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0; 
         
         let score = 0;
         if (question.isMultipleChoice) {
-            userAnswersForQuestion.forEach((id: number) => {
-                if (correctOptionIds.includes(id)) {
-                    score += pointsPerCorrectAnswer;
-                } else {
-                    score -= pointsToDeductPerWrong; 
-                }
-            });
+            const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? question.points / correctOptionIds.length : 0;
+            const incorrectSelected = userAnswersForQuestion.some((id: number) => !correctOptionIds.includes(id));
+          
+            if (incorrectSelected) {
+                score = 0;
+            } else {
+                score = userAnswersForQuestion.length * pointsPerCorrectAnswer;
+            }
         } else {
-            // Single choice
             const selectedOptionId = userAnswersForQuestion[0];
             if (correctOptionIds.includes(selectedOptionId)) {
                 score = question.points;
-            } else {
-                 score = -question.points;
             }
         }
         return Math.max(0, Math.round(score));
@@ -181,9 +231,10 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
             </DialogTrigger>
             <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col">
                 <DialogHeader>
-                    <DialogTitle>Submission Details</DialogTitle>
+                    <DialogTitle>Submission Review</DialogTitle>
                     <DialogDescription>
-                        Reviewing answers for {results?.user.name} on the exam &quot;{exam.title}&quot;.
+                        Reviewing answers for {results?.user.name} on &quot;{exam.title}&quot;.
+                         {results && <p className="font-bold text-foreground">Total Score: {results.submission.score}</p>}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow overflow-hidden">
@@ -212,7 +263,6 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                             {question.options.map(option => {
                                                                 const isUserChoice = results.submission.answers.some(a => a.questionId === question.id && a.selectedOptionId === option.id);
                                                                 const isTheCorrectAnswer = option.isCorrect;
-                                                                const pointsPerCorrectAnswer = question.options.filter(o => o.isCorrect).length > 0 ? question.points / question.options.filter(o => o.isCorrect).length : 0;
                                                                 
                                                                 return (
                                                                     <div 
@@ -232,16 +282,10 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                                         </div>
                                                                         <div className="flex-grow">
                                                                             <p className={cn(isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                                            {isUserChoice && isTheCorrectAnswer && <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ තේරූ) <span className="font-bold ml-2 text-green-500">(+{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span></p>}
-                                                                            {isUserChoice && !isTheCorrectAnswer && <p className="text-xs text-red-600 dark:text-red-400 mt-1 font-semibold">වැරදි පිළිතුර (ඔබ තේරූ) <span className="font-bold ml-2 text-red-500">(-{pointsPerCorrectAnswer.toFixed(1)} ලකුණු)</span></p>}
-                                                                            {!isUserChoice && isTheCorrectAnswer && <p className="text-xs text-green-600 dark:text-green-400 mt-1 font-semibold">නිවැරදි පිළිතුර (ඔබ නොතේරූ)</p>}
                                                                         </div>
                                                                     </div>
                                                                 );
                                                             })}
-                                                        </div>
-                                                        <div className="mt-4 p-3 bg-muted/50 rounded-lg text-sm">
-                                                            <p className="font-semibold">ලකුණු: <span className="font-bold text-primary">{calculateQuestionScore(question, results.submission)}</span> / {question.points}</p>
                                                         </div>
                                                     </>
                                                 ) : (
@@ -263,9 +307,7 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                                                                 className="mt-2 bg-background/50 text-base"
                                                             />
                                                         </div>
-                                                        <div className="mt-4 p-3 bg-blue-500/10 rounded-lg text-sm border border-blue-500/20">
-                                                            <p className="font-semibold text-blue-300 flex items-center gap-2"><Pencil className="h-4 w-4" />Manual Grading Required</p>
-                                                        </div>
+                                                         <ManualGradeForm submissionId={submissionId} question={question} answer={userAnswer} onGradeSaved={fetchResults} />
                                                     </div>
                                                 )}
                                             </CardContent>
@@ -291,6 +333,10 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
     const [submissions, setSubmissions] = useState(initialSubmissions);
     const [isRefreshing, startRefreshTransition] = useTransition();
     
+    useEffect(() => {
+        setSubmissions(initialSubmissions);
+    }, [initialSubmissions]);
+
     const totalPoints = exam.questions.reduce((sum: number, q: any) => sum + q.points, 0);
 
     const refreshResults = async () => {

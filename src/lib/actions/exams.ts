@@ -162,7 +162,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
                     await tx.question.update({
                         where: { id: q.id },
-                        data: { text: q.text, points: q.points, isMultipleChoice: q.isMultipleChoice, type: q.type }
+                        data: { text: q.text, points: q.points, type: q.type, isMultipleChoice: q.isMultipleChoice }
                     });
                     
                     if (q.type === 'MCQ') {
@@ -203,8 +203,8 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                                 examId: examId,
                                 text: q.text,
                                 points: q.points,
-                                isMultipleChoice: q.isMultipleChoice,
                                 type: q.type,
+                                isMultipleChoice: q.isMultipleChoice,
                                 options: q.type === 'MCQ' ? { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) } : undefined,
                                 images: q.type === 'IMAGE_BASED_ANSWER' && q.images ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
                             }
@@ -435,14 +435,12 @@ export async function submitExam(
     throw new Error('Exam not found');
   }
 
-  let totalPoints = 0;
   let score = 0;
   const answersToCreate: Prisma.SubmissionAnswerCreateManySubmissionInput[] = [];
 
 
   for (const question of exam.questions) {
     if (question.type === 'MCQ') {
-      totalPoints += question.points;
       const userAnswers = answers[`question-${question.id}`];
       const correctOptions = question.options.filter(opt => opt.isCorrect);
       const correctOptionIds = correctOptions.map(opt => opt.id);
@@ -518,6 +516,7 @@ export async function submitExam(
     });
 
   // Check if exam is passed and unlock next post
+  const totalPoints = exam.questions.reduce((sum, q) => sum + q.points, 0);
   const percentage = totalPoints > 0 ? (score / totalPoints) * 100 : 0;
   if (percentage >= 50 && exam.post?.seriesId && exam.post.orderInSeries) {
     const nextPostInSeries = await prisma.post.findFirst({
@@ -566,6 +565,7 @@ export async function getExamResults(submissionId: number) {
                     questionId: true,
                     selectedOptionId: true,
                     customAnswer: true, // Fetch the custom answer
+                    marksAwarded: true,
                 }
             },
             user: true, // Also include user who made the submission
@@ -717,4 +717,83 @@ export async function getExamsForUser(userId: string) {
     });
 
     return exams;
+}
+
+export async function gradeCustomAnswer(submissionId: number, questionId: number, marksAwarded: number) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+    
+    const submissionAnswer = await prisma.submissionAnswer.findFirst({
+        where: { submissionId, questionId },
+        include: { question: true }
+    });
+
+    if (!submissionAnswer) {
+        throw new Error("Answer not found.");
+    }
+    
+    if (marksAwarded < 0 || marksAwarded > submissionAnswer.question.points) {
+        throw new Error(`Marks must be between 0 and ${submissionAnswer.question.points}.`);
+    }
+    
+    await prisma.submissionAnswer.update({
+        where: { id: submissionAnswer.id },
+        data: { marksAwarded },
+    });
+    
+    // Recalculate total score
+    const submission = await prisma.examSubmission.findUnique({
+        where: { id: submissionId },
+        include: {
+            answers: {
+                include: {
+                    question: { include: { options: true } },
+                },
+            },
+        },
+    });
+
+    if (!submission) {
+        throw new Error("Submission not found during score recalculation.");
+    }
+    
+    let newTotalScore = 0;
+    for (const answer of submission.answers) {
+        if (answer.question.type === 'MCQ') {
+            const correctOptionIds = answer.question.options.filter(o => o.isCorrect).map(o => o.id);
+            if (answer.question.isMultipleChoice) {
+                 const userAnswersForQuestion = submission.answers
+                    .filter(a => a.questionId === answer.questionId)
+                    .map(a => a.selectedOptionId);
+
+                const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? answer.question.points / correctOptionIds.length : 0;
+                let questionScore = 0;
+                const incorrectSelected = userAnswersForQuestion.some(id => id && !correctOptionIds.includes(id));
+
+                if (!incorrectSelected) {
+                    const correctSelectedCount = userAnswersForQuestion.filter(id => id && correctOptionIds.includes(id)).length;
+                    questionScore = correctSelectedCount * pointsPerCorrectAnswer;
+                }
+                newTotalScore += Math.max(0, Math.round(questionScore));
+
+            } else {
+                if (answer.selectedOptionId && correctOptionIds.includes(answer.selectedOptionId)) {
+                    newTotalScore += answer.question.points;
+                }
+            }
+        } else if (answer.question.type === 'IMAGE_BASED_ANSWER' && answer.marksAwarded !== null) {
+            newTotalScore += answer.marksAwarded;
+        }
+    }
+    
+    await prisma.examSubmission.update({
+        where: { id: submissionId },
+        data: { score: newTotalScore },
+    });
+
+    revalidatePath(`/admin/exams/${submission.examId}/results`);
+
+    return { success: true, newTotalScore };
 }
