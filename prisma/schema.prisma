@@ -456,7 +456,7 @@ model ExamSubmission {
 
   answers     SubmissionAnswer[]
   
-  @@unique([userId, examId])
+
 }
 
 
