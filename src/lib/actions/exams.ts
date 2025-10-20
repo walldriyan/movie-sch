@@ -760,18 +760,20 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
     }
     
     let newTotalScore = 0;
-    for (const answer of submission.answers) {
-        if (answer.question.type === 'MCQ') {
-            const correctOptionIds = answer.question.options.filter(o => o.isCorrect).map(o => o.id);
-            if (answer.question.isMultipleChoice) {
-                 const userAnswersForQuestion = submission.answers
-                    .filter(a => a.questionId === answer.questionId)
-                    .map(a => a.selectedOptionId);
+    const processedMcqQuestions = new Set<number>();
 
+    for (const answer of submission.answers) {
+        if (answer.question.type === 'MCQ' && !processedMcqQuestions.has(answer.questionId)) {
+            const correctOptionIds = answer.question.options.filter(o => o.isCorrect).map(o => o.id);
+            const userAnswersForQuestion = submission.answers
+                .filter(a => a.questionId === answer.questionId)
+                .map(a => a.selectedOptionId);
+
+            if (answer.question.isMultipleChoice) {
                 const pointsPerCorrectAnswer = correctOptionIds.length > 0 ? answer.question.points / correctOptionIds.length : 0;
                 let questionScore = 0;
                 const incorrectSelected = userAnswersForQuestion.some(id => id && !correctOptionIds.includes(id));
-
+                
                 if (!incorrectSelected) {
                     const correctSelectedCount = userAnswersForQuestion.filter(id => id && correctOptionIds.includes(id)).length;
                     questionScore = correctSelectedCount * pointsPerCorrectAnswer;
@@ -779,10 +781,13 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
                 newTotalScore += Math.max(0, Math.round(questionScore));
 
             } else {
-                if (answer.selectedOptionId && correctOptionIds.includes(answer.selectedOptionId)) {
+                if (userAnswersForQuestion[0] && correctOptionIds.includes(userAnswersForQuestion[0])) {
                     newTotalScore += answer.question.points;
                 }
             }
+            processedMcqQuestions.add(answer.questionId);
+        } else if (answer.question.type === 'IMAGE_BASED_ANSWER' && answer.id === submissionAnswer.id) {
+            newTotalScore += marksAwarded;
         } else if (answer.question.type === 'IMAGE_BASED_ANSWER' && answer.marksAwarded !== null) {
             newTotalScore += answer.marksAwarded;
         }
