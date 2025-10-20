@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { User, Series } from '@/lib/types';
@@ -7,16 +8,19 @@ import { Button } from '@/components/ui/button';
 import { Clapperboard } from 'lucide-react';
 import SeriesStepper from './series-stepper';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 
 interface ProfileSeriesListProps {
   series: Series[];
   isOwnProfile: boolean;
   profileUser: User;
   totalSeries: number;
-  showAll: boolean;
 }
 
-export default function ProfileSeriesList({ series, isOwnProfile, profileUser, totalSeries, showAll }: ProfileSeriesListProps) {
+export default function ProfileSeriesList({ series, isOwnProfile, profileUser, totalSeries }: ProfileSeriesListProps) {
+  const searchParams = useSearchParams();
+  const showAll = searchParams.get('show-all-series') === 'true';
+  
   if (series.length === 0) {
     return (
       <Card className="text-center border-dashed">

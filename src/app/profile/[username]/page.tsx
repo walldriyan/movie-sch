@@ -80,7 +80,6 @@ export default async function ProfilePage({
                     isOwnProfile={isOwnProfile}
                     profileUser={profileUser}
                     totalSeries={totalSeriesCount}
-                    showAll={showAllSeries}
                   />
               ) : currentFilter === 'exams' ? (
                 <ProfileExamList 
@@ -107,3 +106,4 @@ export default async function ProfilePage({
     </>
   );
 }
+
