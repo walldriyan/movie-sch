@@ -199,13 +199,14 @@ export default function MoviePageContent({
   const currentUser = session?.user;
 
   useEffect(() => {
-    // This effect runs only once on mount to perform an optimistic UI update.
-    // The actual database update is removed to prevent write errors on a read-only DB.
+    // Optimistically update the view count on the client-side when the component mounts.
+    // This provides immediate feedback to the user.
     setPost((prevPost: any) => ({
-        ...prevPost,
-        viewCount: (prevPost.viewCount || 0) + 1
+      ...prevPost,
+      viewCount: (prevPost.viewCount || 0) + 1,
     }));
   }, [initialPost.id]);
+
 
   useEffect(() => {
     if (post) {
