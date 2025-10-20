@@ -848,18 +848,13 @@ export default function CreateExamPage() {
   
   function onSubmit(data: ExamFormValues) {
     startTransition(async () => {
-        try {
-            await createOrUpdateExam(data, editingExamId);
-            toast({ title: 'Exam Saved!', description: `The exam "${data.title}" has been saved.` });
-            form.reset();
-            setEditingExamId(null);
-            replaceQuestions([]); // Clear questions field array
-            setActiveTab('manage');
-            await fetchExams();
-        } catch (error: any) {
-            console.error('--- Exam Save Error ---', error);
-            toast({ variant: 'destructive', title: 'Failed to Save Exam', description: error.message || 'An unexpected error occurred.' });
-        }
+      await createOrUpdateExam(data, editingExamId);
+      toast({ title: 'Exam Saved!', description: `The exam "${data.title}" has been saved.` });
+      form.reset();
+      setEditingExamId(null);
+      replaceQuestions([]);
+      setActiveTab('manage');
+      await fetchExams();
     });
   }
 
