@@ -201,7 +201,7 @@ function ViewSubmissionDialog({ submissionId, exam }: { submissionId: number, ex
                     <DialogTitle>Submission Review</DialogTitle>
                     <DialogDescription>
                         Reviewing answers for {results?.user.name} on &quot;{exam.title}&quot;.
-                         {results && <p className="font-bold text-foreground">Total Score: {results.submission.score}</p>}
+                         {results && <div className="font-bold text-foreground">Total Score: {results.submission.score}</div>}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="flex-grow overflow-hidden">
@@ -417,3 +417,5 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
         </div>
     )
 }
+
+    
