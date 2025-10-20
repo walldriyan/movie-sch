@@ -1,6 +1,6 @@
 
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam as PrismaExam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam as PrismaExam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption, JsonValue } from "@prisma/client";
 
 export enum PostType {
   MOVIE = 'MOVIE',
@@ -94,6 +94,8 @@ export type GroupForEditing = Pick<PrismaGroup, 'id' | 'name' | 'description' | 
 // Exam Types
 export type ExamResultSubmission = PrismaSubmission & {
   user: Pick<User, 'id' | 'name' | 'email' | 'image'>;
+  answers: JsonValue[];
+  attemptHistory: JsonValue[];
 };
 
 export type ExamWithSubmissions = PrismaExam & {
