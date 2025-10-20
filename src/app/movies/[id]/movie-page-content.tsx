@@ -393,8 +393,7 @@ export default function MoviePageContent({
                             <h4 className="font-semibold pt-2">Ratings</h4>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Image src="/imdb.png" alt="IMDb" width={32} height={16}  fill
-  style={{ objectFit: 'cover' }}/>
+                                <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
                                 <span className="font-bold">{post.imdbRating?.toFixed(1) || 'N/A'}</span>
                               </div>
                               <div className="flex items-center gap-2 text-sm">

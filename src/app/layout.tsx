@@ -72,7 +72,7 @@ export default async function RootLayout({
             {children}
           </main>
           
-          <OnlineUsersWidget />
+          {/* <OnlineUsersWidget /> */}
           <Toaster />
         </SessionProvider>
       </body>
