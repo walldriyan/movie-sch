@@ -43,7 +43,7 @@ import { format } from 'date-fns';
 import { getPostsForAdmin, searchPostsForExam, getGroupsForForm } from '@/lib/actions';
 import type { Post, Group, QuestionImage } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { createOrUpdateExam, getExamsForAdmin, getExamForEdit, deleteExam } from '@/lib/actions/exams';
+import { createOrUpdateExam, getExamsForAdmin, getExamForEdit, deleteExam, uploadExamImage } from '@/lib/actions/exams';
 import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -53,6 +53,8 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import Image from 'next/image';
+
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -61,8 +63,9 @@ const optionSchema = z.object({
 });
 
 const imageUrlSchema = z.object({
-  url: z.string().url("Must be a valid URL."),
+  url: z.string().min(1, "Image URL is required."),
 });
+
 
 const questionSchema = z.object({
   id: z.number().optional(),
@@ -125,6 +128,77 @@ const examSchema = z.object({
 type ExamFormValues = z.infer<typeof examSchema>;
 type PostWithGroup = Post & { group: { name: string } | null };
 type ExamForListing = Awaited<ReturnType<typeof getExamsForAdmin>>[0];
+
+const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number, iIndex: number, form: any }) => {
+    const { toast } = useToast();
+    const [isUploading, startUploading] = useTransition();
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const imageUrl = form.watch(`questions.${qIndex}.images.${iIndex}.url`);
+
+    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        
+        if (file.size > 2 * 1024 * 1024) { // 2MB limit
+            toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 2MB.'});
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('image', file);
+
+        startUploading(async () => {
+            try {
+                const uploadedUrl = await uploadExamImage(formData);
+                if (uploadedUrl) {
+                    form.setValue(`questions.${qIndex}.images.${iIndex}.url`, uploadedUrl, { shouldValidate: true, shouldDirty: true });
+                    toast({ title: 'Image Uploaded' });
+                } else {
+                    throw new Error('Upload failed to return a URL.');
+                }
+            } catch (err: any) {
+                toast({ variant: 'destructive', title: 'Upload Failed', description: err.message });
+            }
+        });
+    }
+    
+    return (
+        <div className="flex items-center gap-2">
+            <div className="relative w-20 h-20 bg-muted rounded-md flex items-center justify-center overflow-hidden">
+                {isUploading ? (
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                ) : imageUrl ? (
+                    <Image src={imageUrl} alt={`Image ${iIndex+1}`} fill className="object-cover" />
+                ) : (
+                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
+                )}
+            </div>
+            <div className="flex-grow">
+                 <FormField 
+                    control={form.control} 
+                    name={`questions.${qIndex}.images.${iIndex}.url`} 
+                    render={({ field }) => (
+                      <FormItem>
+                          <FormControl><Input placeholder={`Paste URL or upload`} {...field} disabled={isUploading}/></FormControl>
+                          <FormMessage />
+                      </FormItem>
+                    )} 
+                />
+                 <Button type="button" variant="outline" size="sm" className="mt-2 w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
+                    <Upload className="mr-2 h-4 w-4" /> Upload
+                </Button>
+                <input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                />
+            </div>
+        </div>
+    );
+};
+
 
 // New component for a single question
 const QuestionItem = ({ control, qIndex, removeQuestion, form }: { control: any, qIndex: number, removeQuestion: (index: number) => void, form: any }) => {
@@ -233,11 +307,11 @@ const QuestionItem = ({ control, qIndex, removeQuestion, form }: { control: any,
                 </>
                ) : (
                 <>
-                    <h4 className="font-semibold text-sm">Image URLs</h4>
+                    <h4 className="font-semibold text-sm">Images for Question</h4>
                      <div className="space-y-3">
                         {images.map((image, iIndex) => (
                              <div key={image.id} className="flex items-center gap-2">
-                                <FormField control={control} name={`questions.${qIndex}.images.${iIndex}.url`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder={`Image URL ${iIndex + 1}`} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <QuestionImageUploader qIndex={qIndex} iIndex={iIndex} form={form} />
                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeImage(iIndex)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
                              </div>
                         ))}

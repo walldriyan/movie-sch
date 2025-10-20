@@ -8,6 +8,25 @@ import { auth } from '@/auth';
 import { ROLES, MovieStatus } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { z } from 'zod';
+import { saveImageFromDataUrl } from './posts';
+
+
+export async function uploadExamImage(formData: FormData): Promise<string | null> {
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('Not authenticated');
+    }
+    const file = formData.get('image') as File;
+    if (!file || file.size === 0) {
+      return null;
+    }
+    const dataUrl = await file.arrayBuffer().then(buffer => 
+        `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
+    );
+    // Save to a specific folder for exam images
+    return saveImageFromDataUrl(dataUrl, 'exams');
+}
+
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -16,7 +35,7 @@ const optionSchema = z.object({
 });
 
 const imageUrlSchema = z.object({
-  url: z.string().url("Must be a valid URL."),
+  url: z.string().min(1, "Image URL is required."),
 });
 
 const questionSchema = z.object({
@@ -182,7 +201,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                             isMultipleChoice: q.isMultipleChoice,
                             type: q.type,
                             options: q.type === 'MCQ' ? { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) } : undefined,
-                            images: q.type === 'IMAGE_BASED_ANSWER' ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
+                            images: q.type === 'IMAGE_BASED_ANSWER' && q.images ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
                         }
                     });
                 }
@@ -200,7 +219,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     isMultipleChoice: q.isMultipleChoice,
                     type: q.type,
                     options: q.type === 'MCQ' ? { create: q.options.map(opt => ({ text: opt.text, isCorrect: opt.isCorrect })) } : undefined,
-                    images: q.type === 'IMAGE_BASED_ANSWER' ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
+                    images: q.type === 'IMAGE_BASED_ANSWER' && q.images ? { create: q.images.map(img => ({ url: img.url })) } : undefined,
                 })),
             },
         };
@@ -686,5 +705,4 @@ export async function getExamsForUser(userId: string) {
 
     return exams;
 }
-
 
