@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState, useFormStatus } from 'react-dom';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -29,8 +29,8 @@ function LoginButton() {
 
 
 export default function LoginPage() {
-  // useActionState is used to handle form state and responses from Server Actions
-  const [errorMessage, formAction] = useActionState(doSignIn, undefined);
+  // useFormState is used to handle form state and responses from Server Actions
+  const [errorMessage, formAction] = useFormState(doSignIn, undefined);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-8 overflow-hidden relative">
