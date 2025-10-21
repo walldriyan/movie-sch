@@ -1,10 +1,27 @@
 import NextAuth from 'next-auth';
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, User as PrismaUser } from '@prisma/client';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { permissions, ROLES } from '@/lib/permissions';
 import type { NextAuthConfig } from 'next-auth';
+
+// Extend the built-in types for session and user
+declare module "next-auth" {
+  interface Session {
+    user: {
+      id: string;
+      role: string;
+      permissions: string[];
+    } & PrismaUser;
+  }
+
+  interface User {
+      role: string;
+      permissions: string[];
+  }
+}
+
 export const dynamic = 'force-dynamic';
 const prisma = new PrismaClient();
 
@@ -34,7 +51,13 @@ export const authConfig = {
           return null;
         }
         
-        return user;
+        // Add permissions to the user object that will be passed to the JWT callback
+        const userWithPermissions = {
+            ...user,
+            permissions: permissions[user.role] || [],
+        };
+        
+        return userWithPermissions;
       },
     }),
   ],
@@ -46,9 +69,8 @@ export const authConfig = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        const userRole = (user as any).role || ROLES.USER;
-        token.role = userRole;
-        token.permissions = permissions[userRole] || [];
+        token.role = user.role;
+        token.permissions = user.permissions;
       }
       return token;
     },

@@ -1,8 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,9 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Film, AlertCircle, Loader2 } from 'lucide-react';
-import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-
+import { doSignIn } from '@/lib/actions';
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -32,39 +29,8 @@ function LoginButton() {
 
 
 export default function LoginPage() {
-  const [error, setError] = useState<string | null>(null);
-  const [isPending, setIsPending] = useState(false);
-  const router = useRouter();
-  
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setError(null);
-    setIsPending(true);
-
-    const formData = new FormData(event.currentTarget);
-    const email = formData.get('email') as string;
-    const password = formData.get('password') as string;
-
-    try {
-      const result = await signIn('credentials', {
-        redirect: false,
-        email,
-        password,
-      });
-
-      if (result?.error) {
-        setError('Invalid email or password.');
-      } else if (result?.ok) {
-        router.push('/');
-        router.refresh(); // Force a refresh to ensure all server components are updated
-      }
-    } catch (e) {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setIsPending(false);
-    }
-  };
-
+  // useFormState is used to handle form state and responses from Server Actions
+  const [errorMessage, formAction] = useFormState(doSignIn, undefined);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-8 overflow-hidden relative">
@@ -79,7 +45,7 @@ export default function LoginPage() {
              <p className="mt-2 text-muted-foreground">Welcome back! Please sign in to your account.</p>
         </div>
         <Card>
-          <form onSubmit={handleSubmit}>
+          <form action={formAction}>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl">Login</CardTitle>
               <CardDescription>
@@ -111,19 +77,16 @@ export default function LoginPage() {
                 aria-live="polite"
                 aria-atomic="true"
               >
-                {error && (
+                {errorMessage && (
                   <>
                     <AlertCircle className="h-5 w-5 text-destructive" />
-                    <p className="text-sm text-destructive">{error}</p>
+                    <p className="text-sm text-destructive">{errorMessage}</p>
                   </>
                 )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-               <Button className="w-full" type="submit" disabled={isPending}>
-                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isPending ? 'Signing in...' : 'Login'}
-                </Button>
+               <LoginButton />
                 <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <Link href="/register" className="font-semibold text-primary hover:underline">

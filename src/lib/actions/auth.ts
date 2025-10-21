@@ -10,6 +10,30 @@ import { revalidatePath } from 'next/cache';
 import { signIn, signOut } from '@/auth';
 
 
+export async function doSignIn(
+  prevState: string | undefined,
+  formData: FormData
+) {
+  try {
+    await signIn('credentials', formData);
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return 'Invalid credentials.';
+        default:
+          return 'Something went wrong.';
+      }
+    }
+    throw error;
+  }
+}
+
+export async function doSignOut() {
+  await signOut({ redirectTo: '/' });
+}
+
+
 export async function registerUser(
   prevState: { message: string | null; input?: any },
   formData: FormData

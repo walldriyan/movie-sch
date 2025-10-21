@@ -10,5 +10,7 @@ export default function Providers({
 }: {
   children: React.ReactNode;
 }) {
+  // SessionProvider without a session prop will automatically fetch the session
+  // on the client side and keep it in sync.
   return <SessionProvider>{children}</SessionProvider>;
 }
