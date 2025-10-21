@@ -7,11 +7,22 @@ import bcrypt from 'bcryptjs';
 import prisma from '@/lib/prisma';
 import { Prisma, Role } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
+import { signIn, signOut } from '@/auth';
 
-
-// NOTE: The `authenticate` and `doSignOut` server actions have been removed.
-// `signIn` and `signOut` are now called directly from client components
-// to ensure the client-side session is updated correctly and immediately.
+export async function doSignOut(prevState: any, formData: FormData) {
+  try {
+    await signOut({ redirect: false });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      console.error("SignOut Error:", error.type, error.message);
+      return { message: 'Sign out failed.' };
+    }
+    // Re-throw other errors
+    throw error;
+  }
+  revalidatePath('/'); // Revalidate all paths after sign-out
+  redirect('/'); // Redirect to homepage
+}
 
 export async function registerUser(
   prevState: { message: string | null; input?: any },
