@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -37,7 +36,7 @@ export default function Navbar() {
     if (status === 'loading') {
       return (
         <div className="flex items-center gap-2">
-          <Skeleton className="h-8 w-16 hidden md:block" />
+          <Skeleton className="h-8 w-24 hidden md:block" />
           <Skeleton className="h-10 w-10 rounded-full" />
         </div>
       );
@@ -54,7 +53,7 @@ export default function Navbar() {
     }
 
     return (
-      <Button asChild variant="ghost">
+      <Button asChild>
         <Link href="/login">
           <LogIn className="h-5 w-5" />
           <span className="hidden sm:inline ml-2">Login</span>
@@ -77,7 +76,7 @@ export default function Navbar() {
                     <span className="text-xs">Home</span>
                 </Link>
               </Button>
-              {user && (
+              {user && status === 'authenticated' && (
                 <>
                   <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
                     <Link href={`/profile/${user.id}`}>

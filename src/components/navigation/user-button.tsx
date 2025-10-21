@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -32,7 +31,7 @@ function LogoutButton() {
   const { pending } = useFormStatus();
 
   return (
-    <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={pending}>
+     <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={pending}>
        <form action={doSignOut} className="w-full">
          <button type="submit" disabled={pending} className="flex w-full items-center">
             {pending ? (
