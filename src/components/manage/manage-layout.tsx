@@ -45,7 +45,7 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   
   const canManagePosts = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
-  const isSuperAdmin = user && user.role === ROLES.SUPER_ADMIN;
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
 
   const renderAdminLinks = () => {
     if (status === 'loading') {
