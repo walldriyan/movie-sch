@@ -5,13 +5,13 @@ import { SessionProvider as NextAuthSessionProvider } from 'next-auth/react';
 import type { Session } from 'next-auth';
 import React from 'react';
 
+// This component is now responsible for providing the client-side session.
+// No longer passing initial session from server to allow dynamic updates.
 export default function SessionProvider({
   children,
-  session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
+  session?: Session | null; // Make session optional
 }) {
-  // console.log('[SessionProvider] Rendering NextAuthSessionProvider on client with session:', JSON.stringify(session, null, 2));
-  return <NextAuthSessionProvider session={session}>{children}</NextAuthSessionProvider>;
+  return <NextAuthSessionProvider>{children}</NextAuthSessionProvider>;
 }

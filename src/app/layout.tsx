@@ -1,21 +1,15 @@
 
-import type { Metadata } from 'next';
+'use client'; // Convert to Client Component
+
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Header from '@/components/header';
 import React from 'react';
-import SessionProvider from '@/components/auth/session-provider';
-import { auth } from '@/auth';
-import OnlineUsersWidget from '@/components/online-users-widget';
+import { SessionProvider } from 'next-auth/react'; // Import SessionProvider directly
 import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
-
-export const metadata: Metadata = {
-  title: 'CineVerse Captions',
-  description: 'The universe of movies and subtitles at your fingertips.',
-};
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -41,15 +35,18 @@ export function reportWebVitals(metric: any) {
   // console.log('[Performance Metric]', metric);
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
 
   return (
     <html lang="en" className="dark overflow-x-hidden">
+      <head>
+        <title>CineVerse Captions</title>
+        <meta name="description" content="The universe of movies and subtitles at your fingertips." />
+      </head>
       <body
         className={cn(
           'min-h-screen bg-gradient-to-r from-zinc-950/60 via-stone-900/10 to-zinc-950/50  font-sans antialiased relative ',
@@ -58,7 +55,8 @@ export default async function RootLayout({
           fontSinhala.variable
         )}
       >
-        <SessionProvider session={session}>
+        {/* Let SessionProvider manage the session on the client */}
+        <SessionProvider>
           <LoadingProvider>
             <GlobalLoadingBar />
             <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
