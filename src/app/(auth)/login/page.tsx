@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useActionState } from 'react';
+import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,7 +16,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Film, AlertCircle, Loader2 } from 'lucide-react';
-import { doSignIn } from '@/lib/actions';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -30,7 +32,39 @@ function LoginButton() {
 
 
 export default function LoginPage() {
-  const [state, formAction] = useActionState(doSignIn, undefined);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, setIsPending] = useState(false);
+  const router = useRouter();
+  
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsPending(true);
+
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (result?.error) {
+        setError('Invalid email or password.');
+      } else if (result?.ok) {
+        router.push('/');
+        router.refresh(); // Force a refresh to ensure all server components are updated
+      }
+    } catch (e) {
+      setError('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsPending(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-8 overflow-hidden relative">
@@ -45,7 +79,7 @@ export default function LoginPage() {
              <p className="mt-2 text-muted-foreground">Welcome back! Please sign in to your account.</p>
         </div>
         <Card>
-          <form action={formAction}>
+          <form onSubmit={handleSubmit}>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl">Login</CardTitle>
               <CardDescription>
@@ -77,16 +111,19 @@ export default function LoginPage() {
                 aria-live="polite"
                 aria-atomic="true"
               >
-                {state?.message && (
+                {error && (
                   <>
                     <AlertCircle className="h-5 w-5 text-destructive" />
-                    <p className="text-sm text-destructive">{state.message}</p>
+                    <p className="text-sm text-destructive">{error}</p>
                   </>
                 )}
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-               <LoginButton />
+               <Button className="w-full" type="submit" disabled={isPending}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isPending ? 'Signing in...' : 'Login'}
+                </Button>
                 <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <Link href="/register" className="font-semibold text-primary hover:underline">
