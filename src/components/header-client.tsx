@@ -124,10 +124,15 @@ export default function HeaderClient() {
 
   const renderUserMenu = () => {
     if (sessionStatus === 'loading') {
-      return <Skeleton className="h-10 w-24 rounded-md" />;
+      return (
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-10 w-24 rounded-md" />
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+      );
     }
 
-    if (!user) {
+    if (sessionStatus === 'unauthenticated' || !user) {
       return (
         <Button asChild variant="ghost">
           <Link href="/login" className="flex items-center gap-2">
