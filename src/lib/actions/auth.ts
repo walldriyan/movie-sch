@@ -9,19 +9,28 @@ import { Prisma, Role } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { signIn, signOut } from '@/auth';
 
-export async function doSignOut(prevState: any, formData: FormData) {
+export async function doSignIn(
+  prevState: { message: string | null } | undefined,
+  formData: FormData
+) {
   try {
-    await signOut({ redirect: false });
+    await signIn('credentials', formData);
   } catch (error) {
     if (error instanceof AuthError) {
-      console.error("SignOut Error:", error.type, error.message);
-      return { message: 'Sign out failed.' };
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return { message: 'Invalid credentials.' };
+        default:
+          return { message: 'Something went wrong.' };
+      }
     }
-    // Re-throw other errors
     throw error;
   }
-  revalidatePath('/'); // Revalidate all paths after sign-out
-  redirect('/'); // Redirect to homepage
+}
+
+
+export async function doSignOut() {
+  await signOut({ redirectTo: '/' });
 }
 
 export async function registerUser(

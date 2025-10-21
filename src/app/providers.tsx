@@ -3,7 +3,6 @@
 
 import React from 'react';
 import { SessionProvider } from 'next-auth/react';
-import type { Session } from 'next-auth';
 
 // This component is now responsible for providing the client-side session.
 export default function Providers({

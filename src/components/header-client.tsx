@@ -14,7 +14,6 @@ import {
   UserPlus,
   BookCheck,
   BellPlus,
-  Loader2,
   Home,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -36,15 +35,15 @@ import { ROLES } from '@/lib/permissions';
 import { Badge } from './ui/badge';
 import { cn } from '@/lib/utils';
 import HeaderApprovals from './header-approvals';
-import type { Session } from 'next-auth';
-import AuthGuard from './auth/auth-guard';
-import { useRouter } from 'next/navigation';
-import { Skeleton } from './ui/skeleton';
-import { useSession } from 'next-auth/react';
 import { useLoading } from '@/context/loading-context';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { Skeleton } from './ui/skeleton';
+import AuthGuard from '@/components/auth/auth-guard';
+
 
 export default function HeaderClient() {
-  const { data: session, status: sessionStatus } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
   const { withLoading } = useLoading();
 
@@ -123,99 +122,103 @@ export default function HeaderClient() {
   };
 
   const renderUserMenu = () => {
-    if (sessionStatus === 'loading') {
+    if (status === 'loading') {
       return (
         <div className="flex items-center gap-2">
-          <Skeleton className="h-10 w-24 rounded-md" />
+          <Skeleton className="h-8 w-16 hidden md:block" />
           <Skeleton className="h-10 w-10 rounded-full" />
         </div>
       );
     }
 
-    if (sessionStatus === 'unauthenticated' || !user) {
+    if (status === 'unauthenticated' || !user) {
       return (
         <Button asChild variant="ghost">
           <Link href="/login" className="flex items-center gap-2">
             <LogIn className="h-5 w-5" />
-            <span>Login</span>
+            <span className="hidden sm:inline">Login</span>
           </Link>
         </Button>
       );
     }
     
     return (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            className="relative h-10 rounded-full px-2 space-x-2 justify-start"
-          >
-            <Avatar className="cursor-pointer h-8 w-8">
-              <AvatarImage
-                src={user.image || userAvatarPlaceholder?.imageUrl}
-                alt={user.name || 'User'}
-                data-ai-hint="person face"
-              />
-              <AvatarFallback>
-                {user.name?.charAt(0).toUpperCase() || 'U'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex flex-col items-start">
-              <span className="text-xs font-medium">{user.name}</span>
-              <Badge
-                variant={getBadgeVariant(user.role)}
-                className={cn(
-                  'h-auto px-1 py-0 text-[9px] leading-tight',
-                  {
-                    'bg-green-500/80': user.role === ROLES.SUPER_ADMIN,
-                  }
-                )}
-              >
-                {user.role}
-              </Badge>
-            </div>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-56 p-2">
-          <DropdownMenuLabel>
-            <p>My Account</p>
-            <p className="text-xs text-muted-foreground font-normal truncate">
-              {user.email}
-            </p>
-          </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
-            <Link href={`/profile/${user.id}`}>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link href="/favorites">
-              <Bookmark className="mr-2 h-4 w-4" />
-              <span>My Favorites</span>
-            </Link>
-          </DropdownMenuItem>
-          {canManage && (
+      <div className="flex items-center gap-2">
+        {renderCreateButton()}
+        {user && <HeaderApprovals />}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="relative h-10 rounded-full px-2 space-x-2 justify-start"
+            >
+              <Avatar className="cursor-pointer h-8 w-8">
+                <AvatarImage
+                  src={user.image || userAvatarPlaceholder?.imageUrl}
+                  alt={user.name || 'User'}
+                  data-ai-hint="person face"
+                />
+                <AvatarFallback>
+                  {user.name?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex-col items-start hidden md:flex">
+                <span className="text-xs font-medium">{user.name}</span>
+                <Badge
+                  variant={getBadgeVariant(user.role)}
+                  className={cn(
+                    'h-auto px-1 py-0 text-[9px] leading-tight',
+                    {
+                      'bg-green-500/80': user.role === ROLES.SUPER_ADMIN,
+                    }
+                  )}
+                >
+                  {user.role}
+                </Badge>
+              </div>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56 p-2">
+            <DropdownMenuLabel>
+              <p>My Account</p>
+              <p className="text-xs text-muted-foreground font-normal truncate">
+                {user.email}
+              </p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/manage">
-                <LayoutGrid className="mr-2 h-4 w-4" />
-                <span>Manage Posts</span>
+              <Link href={`/profile/${user.id}`}>
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
               </Link>
             </DropdownMenuItem>
-          )}
-          {user.role === ROLES.SUPER_ADMIN && (
             <DropdownMenuItem asChild>
-              <Link href="/admin/users">
-                <Users className="mr-2 h-4 w-4" />
-                <span>Manage Users</span>
+              <Link href="/favorites">
+                <Bookmark className="mr-2 h-4 w-4" />
+                <span>My Favorites</span>
               </Link>
             </DropdownMenuItem>
-          )}
-          <DropdownMenuSeparator />
-          <LogoutButton />
-        </DropdownMenuContent>
-      </DropdownMenu>
+            {canManage && (
+              <DropdownMenuItem asChild>
+                <Link href="/manage">
+                  <LayoutGrid className="mr-2 h-4 w-4" />
+                  <span>Manage Posts</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            {user.role === ROLES.SUPER_ADMIN && (
+              <DropdownMenuItem asChild>
+                <Link href="/admin/users">
+                  <Users className="mr-2 h-4 w-4" />
+                  <span>Manage Users</span>
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuSeparator />
+            <LogoutButton />
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     );
   };
 
@@ -253,9 +256,6 @@ export default function HeaderClient() {
            </div>
         </div>
         <div className="flex items-center justify-end space-x-2 flex-shrink-0">
-          {renderCreateButton()}
-          {user && <HeaderApprovals />}
-
           {renderUserMenu()}
         </div>
       </div>

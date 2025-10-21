@@ -1,6 +1,6 @@
+
 'use client';
 
-import { useActionState, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { LogOut, Loader2 } from 'lucide-react';
@@ -22,11 +22,9 @@ function LogoutFormContent() {
 }
 
 export default function LogoutButton() {
-  const [state, formAction] = useActionState(doSignOut, { message: null });
-
   return (
     <DropdownMenuItem className="p-0">
-       <form action={formAction} className="w-full px-2 py-1.5">
+       <form action={doSignOut} className="w-full px-2 py-1.5">
         <LogoutFormContent />
       </form>
     </DropdownMenuItem>
