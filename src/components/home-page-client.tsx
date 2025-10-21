@@ -30,6 +30,7 @@ import type { Notification as NotificationType } from '@prisma/client';
 import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
+import { useSession } from 'next-auth/react';
 import { Skeleton } from './ui/skeleton';
 import MovieGrid from './movie-grid';
 import { ROLES } from '@/lib/permissions';
@@ -43,7 +44,7 @@ interface HomePageClientProps {
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
     initialNotifications: NotificationType[];
-    session: Session | null;
+    session: Session | null; // Keep server-side session for initial render
 }
 
 const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
@@ -65,13 +66,24 @@ export default function HomePageClient({
     currentPage, 
     searchParams,
     initialNotifications,
-    session
+    session: serverSession, // Rename for clarity
 }: HomePageClientProps) {
+
+  const { data: session, status } = useSession(); // Use client-side session hook
   
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // This handles notifications based on the most current session state
+    if (session) {
+      setNotifications(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
+    } else {
+      setNotifications([]);
+    }
+  }, [session, initialNotifications]);
 
   useEffect(() => {
     // Simulate loading for better UX with skeletons
@@ -394,3 +406,5 @@ export default function HomePageClient({
     </TooltipProvider>
   );
 }
+
+    
