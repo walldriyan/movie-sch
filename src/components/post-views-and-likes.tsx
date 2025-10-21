@@ -1,20 +1,11 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import type { Post } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Eye, ThumbsUp } from 'lucide-react';
 
-export default function PostViewsAndLikes({ post }: { post: Post }) {
-  const [viewCount, setViewCount] = useState(post.viewCount);
-
-  useEffect(() => {
-    // Optimistically increment the view count on the client side when the component mounts.
-    // This provides immediate feedback to the user.
-    setViewCount(prevCount => prevCount + 1);
-  }, [post.id]); // Rerun effect if the post ID changes
-
+export default function PostViewsAndLikes({ post, viewCount }: { post: Post, viewCount: number }) {
   const likers = post.likedBy || [];
   const displayLikers = likers.slice(0, 3);
   const remainingLikersCount = (post._count?.likedBy || 0) > 3 ? (post._count?.likedBy || 0) - 3 : 0;

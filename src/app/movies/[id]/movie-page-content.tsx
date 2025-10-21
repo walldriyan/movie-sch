@@ -187,6 +187,7 @@ export default function MoviePageContent({
   session: Session | null;
 }) {
   const [post, setPost] = useState<any>(initialPost);
+  const [viewCount, setViewCount] = useState(initialPost.viewCount);
   const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>(initialSubtitles);
   const [currentReviews, setCurrentReviews] = useState<any[]>(initialPost.reviews || []);
   const { toast } = useToast();
@@ -199,14 +200,17 @@ export default function MoviePageContent({
   const currentUser = session?.user;
 
   useEffect(() => {
-    // This effect is now handled by the PostViewsAndLikes component for optimistic UI.
-    // However, we still want to fire the server action.
+    // Optimistically update the view count on the client
+    setViewCount(prevCount => prevCount + 1);
+    
+    // Trigger the server action to update the view count in the database
     startViewCountTransition(async () => {
         try {
             await incrementViewCount(initialPost.id);
         } catch (error) {
             console.error("Failed to update view count on server:", error);
-            // Don't show toast here to avoid bothering user for a background task.
+            // Optional: revert optimistic update on error, though not critical for view count
+            setViewCount(prevCount => prevCount - 1);
         }
     });
   }, [initialPost.id]);
@@ -379,7 +383,7 @@ export default function MoviePageContent({
                   )}
 
                   <Separator className="my-12" />
-                  <PostViewsAndLikes post={post} />
+                  <PostViewsAndLikes post={post} viewCount={viewCount} />
                   <Separator className="my-12" />
                   <SponsoredAdCard />
                   <Separator className="my-12" />
@@ -425,7 +429,7 @@ export default function MoviePageContent({
                           </>
                         ) : (
                           <>
-                            <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={post.viewCount.toLocaleString()} />
+                            <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={viewCount.toLocaleString()} />
                             <DetailItem icon={<ThumbsUp className="h-5 w-5" />} label="Likes" value={post._count?.likedBy || 0} />
                             <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={currentReviews.length} />
                           </>
