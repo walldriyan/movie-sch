@@ -2,7 +2,7 @@
 
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import {
   SidebarProvider,
@@ -41,13 +41,19 @@ interface ManageLayoutProps {
 
 export default function ManageLayout({ user: initialUser, children }: ManageLayoutProps) {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
   
   const user = session?.user ?? initialUser;
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   
   const canManagePosts = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
-  
+  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
+
   const AdminLinksSkeleton = () => (
      <div className="flex flex-col gap-1">
         <Skeleton className="h-8 w-full" />
@@ -84,20 +90,23 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
                     </SidebarMenuButton>
                     </SidebarMenuItem>
                     
-                    <AuthGuard requiredRole={ROLES.USER_ADMIN} fallback={<Skeleton className="h-8 w-full" />}>
-                       {canManagePosts && (
-                        <SidebarMenuItem>
-                            <SidebarMenuButton asChild isActive={pathname === '/manage'} className="text-base">
-                            <Link href="/manage">
-                                <LayoutGrid />
-                                <span>My Movies</span>
-                            </Link>
-                            </SidebarMenuButton>
-                        </SidebarMenuItem>
-                        )}
-                    </AuthGuard>
+                    {!isMounted || status === 'loading' ? (
+                      <Skeleton className="h-8 w-full" />
+                    ) : canManagePosts ? (
+                      <SidebarMenuItem>
+                          <SidebarMenuButton asChild isActive={pathname === '/manage'} className="text-base">
+                          <Link href="/manage">
+                              <LayoutGrid />
+                              <span>My Movies</span>
+                          </Link>
+                          </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ) : null}
                     
-                    <AuthGuard requiredRole={ROLES.SUPER_ADMIN} fallback={<AdminLinksSkeleton />}>
+                    {!isMounted || status === 'loading' ? (
+                      <AdminLinksSkeleton />
+                    ) : isSuperAdmin ? (
+                      <>
                         <SidebarMenuItem>
                             <SidebarMenuButton asChild isActive={pathname === '/admin/exams'} className="text-base">
                             <Link href="/admin/exams">
@@ -138,7 +147,8 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
                             </Link>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
-                    </AuthGuard>
+                      </>
+                    ) : null}
                 </SidebarMenu>
             </div>
             {/* Personal Group */}
