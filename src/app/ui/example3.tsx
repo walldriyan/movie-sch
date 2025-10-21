@@ -134,8 +134,6 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             return (
               <div key={idx} className="aspect-square rounded bg-muted overflow-hidden relative">
                 {post && post.posterUrl && (
-                  // <Image src={post.posterUrl} alt="series post"  fill
-                  // style={{ objectFit: 'cover' }} />
                   <Image
                     src={post.posterUrl}
                     alt="series post"
@@ -234,19 +232,10 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       </Link>
     );
   };
-  // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
+
   return (
-    <div className="h-[260px] p-8 bg-gradient-to-b from-zinc-950/70  to-stone-900/5 flex flex-col items-center  justify-center overflow-hidden relative">
-
-      {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
-        <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
-          style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
-          Put your <br />business in<br />the spotlight.
-        </h1>          <div className="ml-[80px]  text-white text-md md:text-lg font-bold tracking-wide" style={{ textShadow: '0 34px 320px rgba(0,0,0,0.8)' }}>Walldriyan</div>
-
-      </div> */}
-
-      <div className="relative w-[500px] flex items-center justify-center">
+    <div className="h-[260px] flex flex-col items-center justify-center overflow-hidden relative">
+      <div className="relative w-full h-full flex items-center justify-center">
         <Button
           variant="ghost"
           size="icon"
@@ -255,7 +244,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
         >
           <ChevronLeft className="h-6 w-6" />
         </Button>
-        <div ref={scrollContainerRef} className="w-[500px] h-[200px] overflow-y-hidden overflow-x-auto">
+        <div ref={scrollContainerRef} className="w-full h-full overflow-y-hidden overflow-x-auto no-scrollbar">
           <div
             ref={containerRef}
             className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
@@ -277,13 +266,8 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           <ChevronRight className="h-6 w-6" />
         </Button>
       </div>
-
-      {/* <div className="absolute  bottom-8 md:bottom-12 left-0 right-0 flex z-20">
-        <div className="flex items-center gap-2 md:gap-3 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
-          <div className="ml-[190px] text-white text-md md:text-1xl font-bold" style={{ textShadow: '0 54px 220px rgba(0,0,0,0.8)' }}>∞</div>
-          <div className="ml-12 text-white text-md md:text-lg font-bold tracking-wide" style={{ textShadow: '0 34px 320px rgba(0,0,0,0.8)' }}>Walldriyan</div>
-        </div>
-      </div> */}
     </div>
   );
 }
+
+    
