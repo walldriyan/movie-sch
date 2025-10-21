@@ -3,11 +3,11 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
-import Header from '@/components/header';
 import React from 'react';
 import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
 import Providers from './providers';
+import Navbar from '@/components/navigation/navbar';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -61,7 +61,7 @@ export default function RootLayout({
               <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
             </div>
             
-            <Header />
+            <Navbar />
             <main className="pt-16">
            
               {children}
