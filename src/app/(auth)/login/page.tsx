@@ -1,6 +1,6 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Film, AlertCircle, Loader2 } from 'lucide-react';
 import { doSignIn } from '@/lib/actions';
+import React from 'react';
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -28,8 +29,8 @@ function LoginButton() {
 
 
 export default function LoginPage() {
-  // useFormState is used to handle form state and responses from Server Actions
-  const [errorMessage, formAction] = useFormState(doSignIn, undefined);
+  // useActionState is used to handle form state and responses from Server Actions
+  const [errorMessage, formAction] = useActionState(doSignIn, undefined);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-8 overflow-hidden relative">

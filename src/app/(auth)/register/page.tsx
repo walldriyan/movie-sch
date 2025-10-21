@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -16,10 +16,11 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Film, AlertCircle } from 'lucide-react';
 import { getSuperAdminEmailForDebug, registerUser } from '@/lib/actions';
+import React from 'react';
 
 
 export default function RegisterPage() {
-  const [state, formAction] = useFormState(registerUser, { message: null });
+  const [state, formAction] = useActionState(registerUser, { message: null });
   const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(null);
 
   useEffect(() => {
