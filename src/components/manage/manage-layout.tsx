@@ -40,14 +40,13 @@ interface ManageLayoutProps {
 export default function ManageLayout({ user: initialUser, children }: ManageLayoutProps) {
   const pathname = usePathname();
   const { data: session, status } = useSession();
-  const user = session?.user;
   const [isMounted, setIsMounted] = React.useState(false);
 
   React.useEffect(() => {
     setIsMounted(true);
   }, []);
 
-
+  const user = session?.user;
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   
   const canManagePosts = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
@@ -55,6 +54,7 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
 
   const renderAdminLinks = () => {
     // Wait for the component to be mounted on the client and the session to be loaded.
+    // This prevents hydration mismatch and flickering of admin links.
     if (!isMounted || status === 'loading') {
       return (
         <>
