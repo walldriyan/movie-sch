@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React from 'react';
@@ -31,6 +32,7 @@ import { ROLES, PERMISSIONS } from '@/lib/permissions';
 import { usePathname } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Skeleton } from '../ui/skeleton';
+import AuthGuard from '../auth/auth-guard';
 
 interface ManageLayoutProps {
   user: any; // Keep this for initial render if needed, but we'll prioritize useSession
@@ -39,84 +41,24 @@ interface ManageLayoutProps {
 
 export default function ManageLayout({ user: initialUser, children }: ManageLayoutProps) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
-  const [isMounted, setIsMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  const user = session?.user;
+  const { data: session } = useSession();
+  
+  const user = session?.user ?? initialUser;
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   
   const canManagePosts = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
-  const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
-
-  const renderAdminLinks = () => {
-    // Wait for the component to be mounted on the client and the session to be loaded.
-    // This prevents hydration mismatch and flickering of admin links.
-    if (!isMounted || status === 'loading') {
-      return (
-        <>
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
-          <Skeleton className="h-8 w-full" />
-        </>
-      )
-    }
-    // Only render if the user is a super admin
-    if (isSuperAdmin) {
-      return (
-        <>
-          <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/admin/exams'} className="text-base">
-              <Link href="/admin/exams">
-                  <BookCheck />
-                  <span>Exams</span>
-              </Link>
-              </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/admin/users'} className="text-base">
-              <Link href="/admin/users">
-                  <Users />
-                  <span>Users</span>
-              </Link>
-              </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/admin/groups'} className="text-base">
-              <Link href="/admin/groups">
-                  <Users2 />
-                  <span>Groups</span>
-              </Link>
-              </SidebarMenuButton>
-          </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/admin/notifications'} className="text-base">
-              <Link href="/admin/notifications">
-                  <Bell />
-                  <span>Notifications</span>
-              </Link>
-              </SidebarMenuButton>
-          </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild isActive={pathname === '/admin/settings'} className="text-base">
-              <Link href="/admin/settings">
-                  <Settings />
-                  <span>Settings</span>
-              </Link>
-              </SidebarMenuButton>
-          </SidebarMenuItem>
-        </>
-      );
-    }
-    // Return null if not a super admin
-    return null;
-  }
   
+  const AdminLinksSkeleton = () => (
+     <div className="flex flex-col gap-1">
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+        <Skeleton className="h-8 w-full" />
+     </div>
+  );
+
+
   return (
     <SidebarProvider className="bg-transperent">
       <Sidebar className="bg-transperent" variant="inset" collapsible="icon">
@@ -141,17 +83,62 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
                         </Link>
                     </SidebarMenuButton>
                     </SidebarMenuItem>
-                    {canManagePosts && (
-                    <SidebarMenuItem>
-                        <SidebarMenuButton asChild isActive={pathname === '/manage'} className="text-base">
-                        <Link href="/manage">
-                            <LayoutGrid />
-                            <span>My Movies</span>
-                        </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                    )}
-                    {renderAdminLinks()}
+                    
+                    <AuthGuard requiredRole={ROLES.USER_ADMIN} fallback={<Skeleton className="h-8 w-full" />}>
+                       {canManagePosts && (
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={pathname === '/manage'} className="text-base">
+                            <Link href="/manage">
+                                <LayoutGrid />
+                                <span>My Movies</span>
+                            </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        )}
+                    </AuthGuard>
+                    
+                    <AuthGuard requiredRole={ROLES.SUPER_ADMIN} fallback={<AdminLinksSkeleton />}>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={pathname === '/admin/exams'} className="text-base">
+                            <Link href="/admin/exams">
+                                <BookCheck />
+                                <span>Exams</span>
+                            </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={pathname === '/admin/users'} className="text-base">
+                            <Link href="/admin/users">
+                                <Users />
+                                <span>Users</span>
+                            </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={pathname === '/admin/groups'} className="text-base">
+                            <Link href="/admin/groups">
+                                <Users2 />
+                                <span>Groups</span>
+                            </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={pathname === '/admin/notifications'} className="text-base">
+                            <Link href="/admin/notifications">
+                                <Bell />
+                                <span>Notifications</span>
+                            </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton asChild isActive={pathname === '/admin/settings'} className="text-base">
+                            <Link href="/admin/settings">
+                                <Settings />
+                                <span>Settings</span>
+                            </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    </AuthGuard>
                 </SidebarMenu>
             </div>
             {/* Personal Group */}
