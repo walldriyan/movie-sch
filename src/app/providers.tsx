@@ -8,10 +8,8 @@ import type { Session } from 'next-auth';
 // This component is now responsible for providing the client-side session.
 export default function Providers({
   children,
-  session,
 }: {
   children: React.ReactNode;
-  session: Session | null;
 }) {
-  return <SessionProvider session={session}>{children}</SessionProvider>;
+  return <SessionProvider>{children}</SessionProvider>;
 }

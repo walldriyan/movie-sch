@@ -8,7 +8,6 @@ import React from 'react';
 import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
 import Providers from './providers';
-import { auth } from '@/auth';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -34,13 +33,11 @@ export function reportWebVitals(metric: any) {
   // console.log('[Performance Metric]', metric);
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
   return (
     <html lang="en" className="dark overflow-x-hidden">
       <head>
@@ -55,7 +52,7 @@ export default async function RootLayout({
           fontSinhala.variable
         )}
       >
-        <Providers session={session}>
+        <Providers>
           <LoadingProvider>
             <GlobalLoadingBar />
             <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
