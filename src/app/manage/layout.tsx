@@ -1,26 +1,40 @@
+'use client';
 
-
-import { auth } from '@/auth';
-import { notFound } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import ManageLayout from '@/components/manage/manage-layout';
 import { ROLES } from '@/lib/permissions';
-import { redirect } from 'next/navigation';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useEffect } from 'react';
 
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const user = session?.user;
+  
+  useEffect(() => {
+    if (status === 'unauthenticated') {
+      router.push('/');
+    } else if (status === 'authenticated' && user && ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
+      router.push('/');
+    }
+  }, [status, user, router]);
 
 
-
+  if (status === 'loading') {
+    return (
+      <div className="flex items-center justify-center h-screen">
+          <Skeleton className="h-16 w-16 rounded-full" />
+      </div>
+    )
+  }
 
   if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
-    // Instead of notFound(), redirect to a more appropriate page like the homepage
-    // or a custom "access-denied" page.
-    redirect('/');
+    return null;
   }
 
   return <ManageLayout>{children}</ManageLayout>;

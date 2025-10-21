@@ -14,9 +14,13 @@ export async function doSignIn(
   formData: FormData
 ) {
   try {
-    // The signIn function from next-auth will handle the credential verification
-    // as defined in your auth.ts file.
-    await signIn('credentials', formData);
+    // The signIn function from next-auth will handle the credential verification.
+    // Adding redirectTo: '/' ensures a full page reload to the homepage,
+    // which correctly updates the client-side session state.
+    await signIn('credentials', {
+      ...Object.fromEntries(formData),
+      redirectTo: '/',
+    });
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
