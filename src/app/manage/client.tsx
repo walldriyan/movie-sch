@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useEffect, useState, useTransition } from 'react';
@@ -23,7 +21,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 
 interface ManagePostsClientProps {
@@ -37,10 +35,6 @@ export default function ManagePostsClient({
   initialTotalPages, 
   user, 
 }: ManagePostsClientProps) {
-  // console.log('--- [ManagePostsClient] Initial Props ---');
-  // console.log('Initial Posts:', initialPosts);
-  // console.log('User:', user);
-
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -51,6 +45,7 @@ export default function ManagePostsClient({
   const [statusFilter, setStatusFilter] = useState<string | null>(MovieStatus.PENDING_APPROVAL);
   const [isPending, startTransition] = useTransition();
 
+  const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useToast();
@@ -65,10 +60,8 @@ export default function ManagePostsClient({
     const create = searchParams.get('create');
 
     if (editId) {
-      // console.log(`--- [ManagePostsClient] useEffect: Found 'edit' param with ID: ${editId} ---`);
       const fetchPostToEdit = async () => {
         const postToEdit = await getPost(Number(editId));
-        // console.log('--- [ManagePostsClient] useEffect: Fetched post to edit ---', postToEdit);
         if (postToEdit && (postToEdit.authorId === user.id || user.role === ROLES.SUPER_ADMIN)) {
           setEditingPost(postToEdit as any);
           setView('form');
@@ -79,7 +72,6 @@ export default function ManagePostsClient({
       };
       fetchPostToEdit();
     } else if (create === 'true') {
-      // console.log("--- [ManagePostsClient] useEffect: Found 'create' param ---");
       setEditingPost(null);
       setView('form');
     } else {
@@ -89,7 +81,6 @@ export default function ManagePostsClient({
 
 
   const fetchPosts = async (page: number, status: string | null) => {
-    // console.log(`--- [ManagePostsClient] fetchPosts: Fetching page ${page} with status ${status} ---`);
     setIsRefreshing(true);
     startTransition(async () => {
       try {
@@ -100,7 +91,6 @@ export default function ManagePostsClient({
           userRole: user.role,
           status,
         });
-        // console.log('--- [ManagePostsClient] fetchPosts: Received data ---', { postsFromDb, newTotalPages });
         setPosts(postsFromDb as any);
         setTotalPages(newTotalPages);
         setCurrentPage(page);
@@ -124,7 +114,6 @@ export default function ManagePostsClient({
   }, [currentPage, statusFilter, view]);
 
   const handleAddNewPost = () => {
-    // console.log('--- [ManagePostsClient] handleAddNewPost: Switching to form view ---');
     setEditingPost(null);
     const url = new URL(window.location.href);
     url.searchParams.set('create', 'true');
@@ -134,7 +123,6 @@ export default function ManagePostsClient({
   };
 
   const handleEditPost = (post: Post) => {
-    // console.log('--- [ManagePostsClient] handleEditPost: Editing post ---', post);
     setEditingPost(post);
     const url = new URL(window.location.href);
     url.searchParams.set('edit', String(post.id));
@@ -147,7 +135,6 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
-    // console.log('--- [ManagePostsClient] handleFormSubmit: Submitting data ---', { postData, id });
     await savePost(postData, id);
     await fetchPosts(id ? currentPage : 1, statusFilter);
     handleBackFromForm(); // Go back to list and clear URL params
@@ -158,7 +145,6 @@ export default function ManagePostsClient({
   };
 
   const handleDeleteConfirmed = async (postId: number) => {
-    // console.log(`--- [ManagePostsClient] handleDeleteConfirmed: Deleting post with ID ${postId} ---`);
     const postToDelete = posts.find(m => m.id === postId);
     if (postToDelete) {
       await deletePost(postId);
@@ -172,7 +158,6 @@ export default function ManagePostsClient({
 
 
   const handleStatusChange = async (postId: number, newStatus: string) => {
-    // console.log(`--- [ManagePostsClient] handleStatusChange: Changing status for post ${postId} to ${newStatus} ---`);
     setStatusChangingPostId(postId);
     try {
       await updatePostStatus(postId, newStatus);
@@ -200,7 +185,6 @@ export default function ManagePostsClient({
   };
 
   const handleBackFromForm = () => {
-    // console.log('--- [ManagePostsClient] handleBackFromForm: Returning to list view ---');
     const url = new URL(window.location.href);
     url.searchParams.delete('edit');
     url.searchParams.delete('create');
@@ -228,7 +212,7 @@ export default function ManagePostsClient({
 
   return (
     <>
-      <ManageLayout user={user}>
+      <ManageLayout>
         {view === 'list' ? (
           <>
             <PostList

@@ -47,7 +47,7 @@ export default function Navbar() {
         <div className="flex items-center gap-2">
           {canManage && <CreateButton />}
           <HeaderApprovals />
-          <UserButton user={user} />
+          <UserButton />
         </div>
       );
     }

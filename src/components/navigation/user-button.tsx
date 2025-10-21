@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -23,19 +22,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { signOut } from 'next-auth/react'; // Import client-side signOut
+import { signOut, useSession } from 'next-auth/react';
 import { ROLES } from '@/lib/permissions';
-import type { Session } from 'next-auth';
 import { useState } from 'react';
+import { Skeleton } from '../ui/skeleton';
 
 function LogoutMenuItem() {
   const [isPending, setIsPending] = useState(false);
 
   const handleSignOut = async () => {
     setIsPending(true);
-    // Use client-side signOut. It handles session update and redirection.
     await signOut({ callbackUrl: '/' });
-    // No need to set isPending back to false as the page will redirect.
   };
 
   return (
@@ -52,10 +49,20 @@ function LogoutMenuItem() {
   );
 }
 
-export default function UserButton({ user }: { user: Session['user'] }) {
+export default function UserButton() {
+  const { data: session, status } = useSession();
+  const user = session?.user;
   const userAvatarPlaceholder = PlaceHolderImages.find(
     (img) => img.id === 'avatar-4'
   );
+
+  if (status === 'loading') {
+      return <Skeleton className="h-10 w-10 rounded-full" />;
+  }
+
+  if (!user) {
+      return null;
+  }
 
   const getBadgeVariant = (role: string) => {
     switch (role) {

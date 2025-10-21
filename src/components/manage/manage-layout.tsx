@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React from 'react';
@@ -30,24 +28,52 @@ import {
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES, PERMISSIONS } from '@/lib/permissions';
-import { Session } from 'next-auth';
+import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { Skeleton } from '../ui/skeleton';
 
 interface ManageLayoutProps {
-  user: Session['user'] | undefined;
   children: React.ReactNode;
 }
 
-export default function ManageLayout({ user, children }: ManageLayoutProps) {
+export default function ManageLayout({ children }: ManageLayoutProps) {
   const pathname = usePathname();
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
+
+  const { data: session, status } = useSession();
+  const user = session?.user;
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
-
-
-  console.log("Server  User from auth() on server:", JSON.stringify(user, null, 2));
-
-
+  if (status === 'loading') {
+      return (
+        <SidebarProvider className="bg-transparent">
+            <Sidebar className="bg-transparent" variant="inset" collapsible="icon">
+                <SidebarContent className="p-0 flex flex-col bg-transparent">
+                    <div className='p-4'><Skeleton className='h-8 w-32' /></div>
+                    <div className="p-4 flex flex-col gap-4">
+                        <div className="bg-muted/60 p-2 rounded-lg space-y-2">
+                           <Skeleton className='h-10 w-full' />
+                           <Skeleton className='h-10 w-full' />
+                           <Skeleton className='h-10 w-full' />
+                        </div>
+                         <div className="bg-muted/60 p-2 rounded-lg space-y-2">
+                           <Skeleton className='h-10 w-full' />
+                           <Skeleton className='h-10 w-full' />
+                        </div>
+                    </div>
+                </SidebarContent>
+                 <SidebarFooter>
+                     <Skeleton className="h-12 w-full" />
+                 </SidebarFooter>
+            </Sidebar>
+             <SidebarInset>
+                <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-2">
+                {children}
+                </main>
+            </SidebarInset>
+        </SidebarProvider>
+    );
+  }
   
   return (
     <SidebarProvider className="bg-transperent">

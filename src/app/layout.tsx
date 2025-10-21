@@ -5,8 +5,8 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
-import Providers from './providers';
 import Navbar from '@/components/navigation/navbar';
+import { SessionProvider } from 'next-auth/react';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -51,7 +51,7 @@ export default function RootLayout({
           fontSinhala.variable
         )}
       >
-        <Providers>
+        <SessionProvider>
           <LoadingProvider>
             <GlobalLoadingBar />
             <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
@@ -69,7 +69,7 @@ export default function RootLayout({
             {/* <OnlineUsersWidget /> */}
             <Toaster />
           </LoadingProvider>
-        </Providers>
+        </SessionProvider>
       </body>
     </html>
   );

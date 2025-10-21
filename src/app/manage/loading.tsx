@@ -3,7 +3,7 @@ import ManageLayout from "@/components/manage/manage-layout";
 
 export default function Loading() {
   return (
-    <ManageLayout user={undefined}>
+    <ManageLayout>
         <div className="flex items-center">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="ml-auto h-9 w-[150px] rounded-md" />
