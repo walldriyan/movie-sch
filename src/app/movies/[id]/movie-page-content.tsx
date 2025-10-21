@@ -199,28 +199,14 @@ export default function MoviePageContent({
   const currentUser = session?.user;
 
   useEffect(() => {
-    const originalViewCount = post.viewCount;
-    // Optimistic UI update
-    setPost((prevPost: any) => ({
-        ...prevPost,
-        viewCount: (prevPost.viewCount || 0) + 1,
-    }));
-
+    // This effect is now handled by the PostViewsAndLikes component for optimistic UI.
+    // However, we still want to fire the server action.
     startViewCountTransition(async () => {
         try {
-            await incrementViewCount(post.id);
+            await incrementViewCount(initialPost.id);
         } catch (error) {
-            console.error("Failed to update view count:", error);
-            // Revert optimistic update on error
-            setPost((prevPost: any) => ({
-                ...prevPost,
-                viewCount: originalViewCount,
-            }));
-            toast({
-                variant: "destructive",
-                title: "දැනුම්දීම",
-                description: "දැනට database එක read-only බැවින් view count එක update කළ නොහැක.",
-            });
+            console.error("Failed to update view count on server:", error);
+            // Don't show toast here to avoid bothering user for a background task.
         }
     });
   }, [initialPost.id]);

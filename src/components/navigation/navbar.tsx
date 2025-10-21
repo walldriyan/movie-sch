@@ -36,12 +36,12 @@ export default function Navbar() {
   // --- START: සිංහලෙන් Console Log පැහැදිලි කිරීම ---
 
   // 1. Component එක render වන සෑම වාරයකදීම session status එක පරීක්ෂා කිරීම
-  console.log(`[Navbar] Render: Status එක -> '${status}'`);
+  // console.log(`[Navbar] Render: Status එක -> '${status}'`);
 
   const renderUserMenu = () => {
     // 2. Loading State: Server එකෙන් session දත්ත ලබාගනිමින් පවතින අවස්ථාව
     if (status === 'loading') {
-      console.log('[Navbar] Logic: Session දත්ත ලබාගනිමින් පවතී... (status="loading"). Skeleton UI එක පෙන්වයි.');
+      // console.log('[Navbar] Logic: Session දත්ත ලබාගනිමින් පවතී... (status="loading"). Skeleton UI එක පෙන්වයි.');
       return (
         <div className="flex items-center gap-2">
           <Skeleton className="h-8 w-24 hidden md:block" />
@@ -52,7 +52,7 @@ export default function Navbar() {
 
     // 3. Authenticated State: පරිශීලකයා සාර්ථකව login වී ඇති අවස්ථාව
     if (status === 'authenticated' && user) {
-      console.log('[Navbar] Logic: පරිශීලකයා Login වී ඇත (status="authenticated"). User object එක:', user);
+      // console.log('[Navbar] Logic: පරිශීලකයා Login වී ඇත (status="authenticated"). User object එක:', user);
       return (
         <div className="flex items-center gap-2">
           {canManage && <CreateButton />}
@@ -63,7 +63,7 @@ export default function Navbar() {
     }
 
     // 4. Unauthenticated State: පරිශීලකයා login වී නැති අවස්ථාව
-    console.log('[Navbar] Logic: පරිශීලකයා Login වී නැත (status="unauthenticated"). Login button එක පෙන්වයි.');
+    // console.log('[Navbar] Logic: පරිශීලකයා Login වී නැත (status="unauthenticated"). Login button එක පෙන්වයි.');
     return (
       <Button asChild>
         <Link href="/login">
