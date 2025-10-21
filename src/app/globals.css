@@ -14,7 +14,7 @@
     --popover: 240 10% 3.9%;
     --popover-foreground: 0 0% 98%;
 
-    --primary: 201 96% 32%;
+    --primary: 142 76% 36%;
     /* Retain spotify green for accent */
     --primary-foreground: 0 0% 98%;
 
@@ -32,7 +32,7 @@
 
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
-    --ring: 201 96% 35%;
+    --ring: 142 76% 36%;
 
     --radius: 1rem;
 
