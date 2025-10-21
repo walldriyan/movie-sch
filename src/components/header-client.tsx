@@ -29,7 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import React, { useTransition } from 'react';
+import React from 'react';
 import { Button } from './ui/button';
 import LogoutButton from './auth/logout-button';
 import { ROLES } from '@/lib/permissions';
@@ -40,13 +40,13 @@ import type { Session } from 'next-auth';
 import AuthGuard from './auth/auth-guard';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from './ui/skeleton';
+import { useSession } from 'next-auth/react';
+import { useLoading } from '@/context/loading-context';
 
-export default function HeaderClient({ session: serverSession }: { session: Session | null }) {
-  // We receive the session from the server component as a prop to avoid hydration issues in the header.
-  const session = serverSession;
-  const sessionStatus = session ? 'authenticated' : 'unauthenticated';
+export default function HeaderClient() {
+  const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const { withLoading, isLoading } = useLoading();
 
   const user = session?.user;
 
@@ -68,8 +68,10 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
   };
 
   const handleNavigation = (href: string) => {
-    startTransition(() => {
+    withLoading(async () => {
       router.push(href);
+      // We don't have anything to return, but the wrapper expects a promise.
+      await Promise.resolve();
     });
   };
   
@@ -83,12 +85,8 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" disabled={isPending}>
-            {isPending ? (
-              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            ) : (
-              <PlusCircle className="mr-2 h-5 w-5" />
-            )}
+          <Button variant="outline">
+            <PlusCircle className="mr-2 h-5 w-5" />
             <span>Create</span>
           </Button>
         </DropdownMenuTrigger>
@@ -126,7 +124,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
 
   const renderUserMenu = () => {
     if (sessionStatus === 'loading') {
-      return <div className="h-10 w-24 bg-muted rounded-md animate-pulse" />;
+      return <Skeleton className="h-10 w-24 rounded-md" />;
     }
 
     if (!user) {
@@ -220,17 +218,11 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
         <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
-          {isPending ? (
-            <div className="flex items-center space-x-2 flex-shrink-0">
-              <Skeleton className="h-10 w-24" />
-            </div>
-          ) : (
             <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
               <Image src="/logo.png" alt="Logo" width={38} height={38}
                 style={{ objectFit: 'cover' }} />
             </Link>
-          )}
-           <div className="flex items-center gap-2 ml-6 flex-shrink-0">
+           <div className="flex items-center gap-1 ml-6 flex-shrink-0">
               <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
                 <Link href="/">
                     <Home />

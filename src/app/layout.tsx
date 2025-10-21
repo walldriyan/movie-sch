@@ -9,6 +9,8 @@ import React from 'react';
 import SessionProvider from '@/components/auth/session-provider';
 import { auth } from '@/auth';
 import OnlineUsersWidget from '@/components/online-users-widget';
+import { LoadingProvider } from '@/context/loading-context';
+import GlobalLoadingBar from '@/components/global-loading-bar';
 
 export const metadata: Metadata = {
   title: 'CineVerse Captions',
@@ -45,9 +47,6 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const session = await auth();
-  // console.log("Server [layout.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
-  // console.log("Current User Details (Layout):", session?.user);
-
 
   return (
     <html lang="en" className="dark overflow-x-hidden">
@@ -60,20 +59,23 @@ export default async function RootLayout({
         )}
       >
         <SessionProvider session={session}>
-          <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
-            <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
-            <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
-            <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
-          </div>
-          
-          <Header session={session} />
-          <main className="pt-16">
-         
-            {children}
-          </main>
-          
-          {/* <OnlineUsersWidget /> */}
-          <Toaster />
+          <LoadingProvider>
+            <GlobalLoadingBar />
+            <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
+              <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
+              <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
+              <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
+            </div>
+            
+            <Header />
+            <main className="pt-16">
+           
+              {children}
+            </main>
+            
+            {/* <OnlineUsersWidget /> */}
+            <Toaster />
+          </LoadingProvider>
         </SessionProvider>
       </body>
     </html>
