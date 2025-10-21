@@ -162,7 +162,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
     const isHero = card.type === 'hero';
 
     return (
-      <Link href={`/movies/${card.postId}`} key={card.id} className="block">
+      <Link href={`/movies/${card.postId}`} key={card.id} className="block h-full">
         <div
           className={cn(
             "group flex-shrink-0 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out flex flex-col h-full",
@@ -235,7 +235,9 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
   return (
     <div className="h-[260px] flex flex-col items-center justify-center overflow-hidden relative">
-      <div className="relative w-full h-full flex items-center justify-center">
+
+
+      <div className="relative p-2 w-full h-full flex items-center justify-center">
         <Button
           variant="ghost"
           size="icon"
@@ -245,6 +247,7 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           <ChevronLeft className="h-6 w-6" />
         </Button>
         <div ref={scrollContainerRef} className="w-full h-full overflow-y-hidden overflow-x-auto no-scrollbar">
+          
           <div
             ref={containerRef}
             className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
@@ -266,8 +269,8 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
           <ChevronRight className="h-6 w-6" />
         </Button>
       </div>
+
+
     </div>
   );
 }
-
-    
