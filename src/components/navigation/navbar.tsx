@@ -59,11 +59,11 @@ export default function Navbar() {
   const NavLink = ({ href, children, mobile = false, icon }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode }) => {
     const className = mobile
       ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
-      : `transition-colors hover:text-primary h-auto p-2 ${isActive(href) ? 'text-primary bg-secondary' : 'text-foreground/80'}`;
+      : `transition-colors hover:text-primary h-auto p-2 ${isActive(href) ? 'text-primary bg-muted' : 'text-foreground/80'}`;
       
     return (
-      <Button asChild variant="outline" className={cn("justify-center", className)}>
-        <Link href={href} onClick={(e) => { e.preventDefault(); handleNavigation(href); }} className="flex flex-col items-center h-full">
+      <Button asChild variant="ghost" className={cn("justify-center", className, "flex flex-col items-center h-full")}>
+        <Link href={href} onClick={(e) => { e.preventDefault(); handleNavigation(href); }}>
           <div className="mb-1">{icon}</div>
           <span className="text-xs">{children}</span>
         </Link>
@@ -82,7 +82,7 @@ export default function Navbar() {
   );
 
   const renderNavLinks = (isMobile = false) => {
-    const navClass = isMobile ? "flex flex-col space-y-2 mt-8" : "hidden md:flex items-center space-x-1";
+    const navClass = isMobile ? "flex flex-col space-y-2 mt-8" : "hidden md:flex items-center space-x-2";
 
     return (
        <nav className={navClass}>
