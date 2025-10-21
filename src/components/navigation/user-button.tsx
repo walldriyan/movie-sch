@@ -24,7 +24,6 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { useSession } from 'next-auth/react';
 import { ROLES } from '@/lib/permissions';
-import { useState } from 'react';
 import { Skeleton } from '../ui/skeleton';
 import { doSignOut } from '@/lib/actions';
 import { useFormStatus } from 'react-dom';

@@ -6,7 +6,7 @@ import React from 'react';
 import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
 import Navbar from '@/components/navigation/navbar';
-import { SessionProvider } from 'next-auth/react';
+import SessionProvider from '@/components/auth/session-provider';
 
 const fontSans = Inter({
   subsets: ['latin'],
