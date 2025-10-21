@@ -192,7 +192,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
             </Link>
           )}
           <div className="overflow-x-auto no-scrollbar">
-            <div className="flex items-center gap-1 ml-6 flex-shrink-0">
+             <div className="flex items-center gap-1 ml-6 flex-shrink-0">
                 <Button variant="ghost" size="icon" asChild>
                   <Link href="/"><Home /></Link>
                 </Button>
@@ -255,7 +255,7 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
             </DropdownMenu>
           )}
 
-          {user && <HeaderApprovals />}
+          <HeaderApprovals session={optimisticSession} />
           {renderUserMenu()}
         </div>
       </div>

@@ -14,13 +14,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bell, Film, Users, Inbox, RefreshCw, Loader2 } from 'lucide-react';
-import AuthGuard from '@/components/auth/auth-guard';
 import { ROLES } from '@/lib/permissions';
 import { getPendingApprovals } from '@/lib/actions';
 import type { Post, User } from '@prisma/client';
 import { ScrollArea } from './ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
+import type { Session } from 'next-auth';
 
 type PendingPost = Pick<Post, 'id' | 'title'> & { author: Pick<User, 'name'> | null };
 type PendingUser = Pick<User, 'id' | 'name' | 'email'>;
@@ -89,7 +89,7 @@ const renderContent = (approvals: ApprovalsState | null) => {
     )
   };
 
-export default function HeaderApprovals() {
+export default function HeaderApprovals({ session }: { session: Session | null }) {
   const [approvals, setApprovals] = useState<ApprovalsState | null>(null);
   const [isRefreshing, startRefreshTransition] = useTransition();
   const [isLoading, setIsLoading] = useState(true);
@@ -113,8 +113,14 @@ export default function HeaderApprovals() {
   }, [toast]);
   
   useEffect(() => {
-    fetchApprovals();
-  }, [fetchApprovals]);
+    // Only fetch if the user is logged in and has the right role
+    if (session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+      fetchApprovals();
+    } else {
+      setApprovals(null);
+      setIsLoading(false);
+    }
+  }, [fetchApprovals, session]);
   
   const handleRefresh = () => {
     startRefreshTransition(async () => {
@@ -126,10 +132,15 @@ export default function HeaderApprovals() {
     });
   }
 
+  const canManage = session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
+
+  if (!canManage) {
+    return null;
+  }
+
   const totalApprovals = (approvals?.pendingPosts?.length || 0) + (approvals?.pendingUsers?.length || 0);
 
   return (
-    <AuthGuard requiredRole={ROLES.SUPER_ADMIN || ROLES.USER_ADMIN}>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" size="icon" className="relative">
@@ -168,6 +179,5 @@ export default function HeaderApprovals() {
             )}
         </DropdownMenuContent>
       </DropdownMenu>
-    </AuthGuard>
   );
 }
