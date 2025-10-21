@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,7 +14,10 @@ import {
   Users,
   Bell,
   Settings,
-  Users2
+  Users2,
+  Shield,
+  Bookmark,
+  Heart
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -52,43 +56,43 @@ export default function Navbar() {
 
   const isActive = (path: string) => pathname === path;
 
-  const NavLink = ({ href, children, mobile = false }: { href: string, children: React.ReactNode, mobile?: boolean }) => {
+  const NavLink = ({ href, children, mobile = false, icon }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode }) => {
     const className = mobile
-      ? `text-lg font-medium ${isActive(href) ? 'text-primary' : ''}`
-      : `transition-colors hover:text-primary ${isActive(href) ? 'text-primary' : 'text-foreground/60'}`;
+      ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
+      : `transition-colors hover:text-primary ${isActive(href) ? 'text-primary' : 'text-foreground/80'}`;
       
     return (
-      <Link href={href} className={className} onClick={(e) => { e.preventDefault(); handleNavigation(href); }}>
-        {children}
-      </Link>
+      <Button asChild variant="ghost" className={cn("justify-start", className)}>
+        <Link href={href} onClick={(e) => { e.preventDefault(); handleNavigation(href); }}>
+          <div className="mr-2">{icon}</div>
+          {children}
+        </Link>
+      </Button>
     );
   };
   
   const AdminLinks = ({ mobile }: { mobile?: boolean }) => (
     <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-        <NavLink href="/admin/exams" mobile={mobile}><BookCheck className="mr-2 h-4 w-4" />Exams</NavLink>
-        <NavLink href="/admin/users" mobile={mobile}><Users className="mr-2 h-4 w-4" />Users</NavLink>
-        <NavLink href="/admin/groups" mobile={mobile}><Users2 className="mr-2 h-4 w-4" />Groups</NavLink>
-        <NavLink href="/admin/notifications" mobile={mobile}><Bell className="mr-2 h-4 w-4" />Notifications</NavLink>
-        <NavLink href="/admin/settings" mobile={mobile}><Settings className="mr-2 h-4 w-4" />Settings</NavLink>
+        <NavLink href="/admin/exams" mobile={mobile} icon={<BookCheck className="h-4 w-4" />}>Exams</NavLink>
+        <NavLink href="/admin/users" mobile={mobile} icon={<Users className="h-4 w-4" />}>Users</NavLink>
+        <NavLink href="/admin/groups" mobile={mobile} icon={<Users2 className="h-4 w-4" />}>Groups</NavLink>
+        <NavLink href="/admin/notifications" mobile={mobile} icon={<Bell className="h-4 w-4" />}>Notifications</NavLink>
+        <NavLink href="/admin/settings" mobile={mobile} icon={<Settings className="h-4 w-4" />}>Settings</NavLink>
     </AuthGuard>
   );
 
   const renderNavLinks = (isMobile = false) => {
-    const navClass = isMobile ? "flex flex-col space-y-4 mt-8" : "hidden md:flex items-center space-x-6 text-sm font-medium";
+    const navClass = isMobile ? "flex flex-col space-y-2 mt-8" : "hidden md:flex items-center space-x-1";
 
     return (
        <nav className={navClass}>
-        <NavLink href="/" mobile={isMobile}>Home</NavLink>
-        {canManage && <NavLink href="/manage" mobile={isMobile}>Manage</NavLink>}
-        {user?.role === ROLES.SUPER_ADMIN && !isMobile && (
-            <Link href="/admin/users" className={cn('transition-colors hover:text-primary', pathname?.startsWith('/admin') ? 'text-primary' : 'text-foreground/60')}>
-              Admin
-            </Link>
+        <NavLink href="/" mobile={isMobile} icon={<Home className="h-4 w-4"/>}>Home</NavLink>
+        {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-4 w-4"/>}>Manage</NavLink>}
+        {user?.role === ROLES.SUPER_ADMIN && (
+          <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-4 w-4"/>}>Admin</NavLink>
         )}
-        {user?.role === ROLES.SUPER_ADMIN && isMobile && <AdminLinks mobile />}
-        <NavLink href="/favorites" mobile={isMobile}>Favorites</NavLink>
-        {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile}>Profile</NavLink>}
+        {user && <NavLink href="/favorites" mobile={isMobile} icon={<Heart className="h-4 w-4"/>}>Favorites</NavLink>}
+        {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile} icon={<User className="h-4 w-4"/>}>Profile</NavLink>}
       </nav>
     );
   }
@@ -129,7 +133,6 @@ export default function Navbar() {
         <div className="flex items-center gap-4">
           <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
             <Image src="/logo.png" alt="Logo" width={38} height={38} />
-             <span className="inline-block font-bold font-serif text-2xl">CineVerse</span>
           </Link>
           {renderNavLinks()}
         </div>
