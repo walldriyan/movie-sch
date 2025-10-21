@@ -22,7 +22,7 @@ export function LoadingProvider({ children }: { children: React.ReactNode }) {
   const stopLoading = () => setLoadingRequests((count) => Math.max(0, count - 1));
 
   // A helper function to wrap promises
-  const withLoading = async <T>(action: () => Promise<T>): Promise<T> => {
+  const withLoading = async <T,>(action: () => Promise<T>): Promise<T> => {
     startLoading();
     try {
       // Use startTransition for any state updates resulting from the action

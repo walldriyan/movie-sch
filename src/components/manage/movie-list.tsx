@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, from 'react';
+import React from 'react';
 import type { Movie, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
