@@ -16,7 +16,7 @@ export async function doSignIn(
   try {
     // The signIn function from next-auth will handle the credential verification.
     // Adding redirectTo: '/' ensures a full page reload to the homepage,
-    // which correctly updates the client-side session state.
+    // which correctly updates the client-side session state and navbar.
     await signIn('credentials', {
       ...Object.fromEntries(formData),
       redirectTo: '/',
