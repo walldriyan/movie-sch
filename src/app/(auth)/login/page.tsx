@@ -1,8 +1,8 @@
+
 'use client';
 
-import { useActionState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { authenticate } from '@/lib/actions';
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -15,15 +15,49 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film, AlertCircle } from 'lucide-react';
+import { Film, AlertCircle, Loader2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 export default function LoginPage() {
-  const [errorMessage, dispatch] = useActionState(authenticate, undefined);
+  const [errorMessage, setErrorMessage] = useState<string | undefined>(undefined);
+  const [isPending, setIsPending] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPending(true);
+    setErrorMessage(undefined);
+
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
+      });
+
+      if (result?.error) {
+        setErrorMessage('Invalid email or password.');
+      } else if (result?.ok) {
+        // On successful sign-in, NextAuth's SessionProvider will update
+        // and the header will re-render automatically.
+        // We can then redirect the user.
+        router.push('/');
+        router.refresh(); // Ensure server-side data is refetched if needed
+      }
+    } catch (error) {
+      console.error('Login Error:', error);
+      setErrorMessage('Something went wrong. Please try again.');
+    } finally {
+      setIsPending(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-8 overflow-hidden relative">
-    
-    {/* // <div className="flex min-h-screen w-full items-center justify-center bg-background px-4"> */}
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
             <Link href="/" className="inline-flex items-center space-x-2">
@@ -35,7 +69,7 @@ export default function LoginPage() {
              <p className="mt-2 text-muted-foreground">Welcome back! Please sign in to your account.</p>
         </div>
         <Card>
-          <form action={dispatch}>
+          <form onSubmit={handleSubmit}>
             <CardHeader className="space-y-1">
               <CardTitle className="text-2xl">Login</CardTitle>
               <CardDescription>
@@ -51,6 +85,7 @@ export default function LoginPage() {
                     type="email"
                     placeholder="m@example.com"
                     required
+                    disabled={isPending}
                 />
               </div>
               <div className="grid gap-2">
@@ -60,6 +95,7 @@ export default function LoginPage() {
                     name="password"
                     type="password"
                     required
+                    disabled={isPending}
                 />
               </div>
               <div
@@ -76,7 +112,10 @@ export default function LoginPage() {
               </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
-               <LoginButton />
+               <Button className="w-full" type="submit" disabled={isPending}>
+                  {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isPending ? 'Signing in...' : 'Login'}
+                </Button>
                 <p className="text-sm text-muted-foreground">
                     Don't have an account?{' '}
                     <Link href="/register" className="font-semibold text-primary hover:underline">
@@ -88,15 +127,5 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
-  );
-}
-
-function LoginButton() {
-  const { pending } = useFormStatus();
- 
-  return (
-    <Button className="w-full" type="submit" disabled={pending}>
-      {pending ? 'Signing in...' : 'Login'}
-    </Button>
   );
 }

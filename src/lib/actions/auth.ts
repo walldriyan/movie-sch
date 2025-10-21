@@ -1,7 +1,6 @@
 
 'use server';
 
-import { signIn, signOut } from '@/auth';
 import { AuthError } from 'next-auth';
 import { redirect } from 'next/navigation';
 import bcrypt from 'bcryptjs';
@@ -9,32 +8,10 @@ import prisma from '@/lib/prisma';
 import { Prisma, Role } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 
-export async function authenticate(
-  prevState: string | undefined,
-  formData: FormData
-) {
-  try {
-    // The signIn function will automatically handle redirection on success
-    // and throw an error on failure, which is caught below.
-    await signIn('credentials', Object.fromEntries(formData));
-  } catch (error) {
-    if (error instanceof AuthError) {
-      switch (error.type) {
-        case 'CredentialsSignin':
-          return 'Invalid email or password.';
-        default:
-          return 'Something went wrong. Please try again.';
-      }
-    }
-    // Re-throw other errors to be caught by Next.js error boundary
-    throw error;
-  }
-}
 
-export async function doSignOut() {
-  await signOut();
-  redirect('/');
-}
+// NOTE: The `authenticate` and `doSignOut` server actions have been removed.
+// `signIn` and `signOut` are now called directly from client components
+// to ensure the client-side session is updated correctly and immediately.
 
 export async function registerUser(
   prevState: { message: string | null; input?: any },

@@ -1,21 +1,34 @@
+
 'use client';
 
-import { doSignOut } from '@/lib/actions';
+import { signOut } from 'next-auth/react';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
-import { LogOut } from 'lucide-react';
-import { useFormStatus } from 'react-dom';
+import { LogOut, Loader2 } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LogoutButton() {
-  const { pending } = useFormStatus();
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSignOut = async () => {
+    setIsPending(true);
+    try {
+      // The callbackUrl will redirect the user after sign-out.
+      // The SessionProvider will handle the state update.
+      await signOut({ callbackUrl: '/' });
+    } catch (error) {
+      console.error('Sign out error:', error);
+      setIsPending(false);
+    }
+  };
 
   return (
-    <form action={doSignOut}>
-      <DropdownMenuItem asChild>
-        <button type="submit" className="w-full" disabled={pending}>
-          <LogOut className="mr-2 h-4 w-4" />
-          <span>{pending ? 'Logging out...' : 'Log out'}</span>
-        </button>
-      </DropdownMenuItem>
-    </form>
+    <DropdownMenuItem onClick={handleSignOut} disabled={isPending}>
+      {isPending ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <LogOut className="mr-2 h-4 w-4" />
+      )}
+      <span>{isPending ? 'Logging out...' : 'Log out'}</span>
+    </DropdownMenuItem>
   );
 }
