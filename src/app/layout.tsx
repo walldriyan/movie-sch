@@ -1,15 +1,14 @@
 
-'use client'; // Convert to Client Component
-
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import Header from '@/components/header';
 import React from 'react';
-import { SessionProvider } from 'next-auth/react'; // Import SessionProvider directly
 import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
+import Providers from './providers';
+import { auth } from '@/auth';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -35,11 +34,12 @@ export function reportWebVitals(metric: any) {
   // console.log('[Performance Metric]', metric);
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
 
   return (
     <html lang="en" className="dark overflow-x-hidden">
@@ -55,8 +55,7 @@ export default function RootLayout({
           fontSinhala.variable
         )}
       >
-        {/* Let SessionProvider manage the session on the client */}
-        <SessionProvider>
+        <Providers session={session}>
           <LoadingProvider>
             <GlobalLoadingBar />
             <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
@@ -74,7 +73,7 @@ export default function RootLayout({
             {/* <OnlineUsersWidget /> */}
             <Toaster />
           </LoadingProvider>
-        </SessionProvider>
+        </Providers>
       </body>
     </html>
   );

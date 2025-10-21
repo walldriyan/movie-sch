@@ -46,7 +46,7 @@ import { useLoading } from '@/context/loading-context';
 export default function HeaderClient() {
   const { data: session, status: sessionStatus } = useSession();
   const router = useRouter();
-  const { withLoading, isLoading } = useLoading();
+  const { withLoading } = useLoading();
 
   const user = session?.user;
 
@@ -222,7 +222,7 @@ export default function HeaderClient() {
               <Image src="/logo.png" alt="Logo" width={38} height={38}
                 style={{ objectFit: 'cover' }} />
             </Link>
-           <div className="flex items-center gap-1 ml-6 flex-shrink-0">
+           <div className="flex items-center gap-2 ml-6 flex-shrink-0">
               <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
                 <Link href="/">
                     <Home />
