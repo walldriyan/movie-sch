@@ -1,8 +1,7 @@
-
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
-import { useFormStatus } from 'react-dom';
+import { useEffect, useState } from 'react';
+import { useFormState, useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -20,7 +19,7 @@ import { getSuperAdminEmailForDebug, registerUser } from '@/lib/actions';
 
 
 export default function RegisterPage() {
-  const [state, formAction] = useActionState(registerUser, { message: null });
+  const [state, formAction] = useFormState(registerUser, { message: null });
   const [superAdminEmail, setSuperAdminEmail] = useState<string | null>(null);
 
   useEffect(() => {
