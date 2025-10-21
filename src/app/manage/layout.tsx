@@ -2,12 +2,11 @@
 
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import ManageLayout from '@/components/manage/manage-layout';
 import { ROLES } from '@/lib/permissions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useEffect } from 'react';
 
-export default function AdminLayout({
+export default function ManageLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -37,5 +36,9 @@ export default function AdminLayout({
     return null;
   }
 
-  return <ManageLayout>{children}</ManageLayout>;
+  return (
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-16">
+        {children}
+      </main>
+  );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -9,39 +8,93 @@ import {
   Home,
   User,
   LayoutGrid,
-  LogIn
+  LogIn,
+  BookCheck,
+  Users,
+  Bell,
+  Settings,
+  Users2
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useLoading } from '@/context/loading-context';
 import HeaderApprovals from '../header-approvals';
 import UserButton from './user-button';
 import CreateButton from './create-button';
 import { ROLES } from '@/lib/permissions';
+import { cn } from '@/lib/utils';
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { Menu } from 'lucide-react';
+import React from 'react';
+import AuthGuard from '../auth/auth-guard';
+
 
 export default function Navbar() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const pathname = usePathname();
   const { withLoading } = useLoading();
+  const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const user = session?.user;
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
   const handleNavigation = (href: string) => {
     withLoading(async () => {
       router.push(href);
+      setMobileMenuOpen(false); // Close mobile menu on navigation
       await Promise.resolve();
     });
   };
 
-  // --- START: සිංහලෙන් Console Log පැහැදිලි කිරීම ---
+  const isActive = (path: string) => pathname === path;
 
-  // 1. Component එක render වන සෑම වාරයකදීම session status එක පරීක්ෂා කිරීම
-  // console.log(`[Navbar] Render: Status එක -> '${status}'`);
+  const NavLink = ({ href, children, mobile = false }: { href: string, children: React.ReactNode, mobile?: boolean }) => {
+    const className = mobile
+      ? `text-lg font-medium ${isActive(href) ? 'text-primary' : ''}`
+      : `transition-colors hover:text-primary ${isActive(href) ? 'text-primary' : 'text-foreground/60'}`;
+      
+    return (
+      <Link href={href} className={className} onClick={(e) => { e.preventDefault(); handleNavigation(href); }}>
+        {children}
+      </Link>
+    );
+  };
+  
+  const AdminLinks = ({ mobile }: { mobile?: boolean }) => (
+    <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+        <NavLink href="/admin/exams" mobile={mobile}><BookCheck className="mr-2 h-4 w-4" />Exams</NavLink>
+        <NavLink href="/admin/users" mobile={mobile}><Users className="mr-2 h-4 w-4" />Users</NavLink>
+        <NavLink href="/admin/groups" mobile={mobile}><Users2 className="mr-2 h-4 w-4" />Groups</NavLink>
+        <NavLink href="/admin/notifications" mobile={mobile}><Bell className="mr-2 h-4 w-4" />Notifications</NavLink>
+        <NavLink href="/admin/settings" mobile={mobile}><Settings className="mr-2 h-4 w-4" />Settings</NavLink>
+    </AuthGuard>
+  );
+
+  const renderNavLinks = (isMobile = false) => {
+    const navClass = isMobile ? "flex flex-col space-y-4 mt-8" : "hidden md:flex items-center space-x-6 text-sm font-medium";
+
+    return (
+       <nav className={navClass}>
+        <NavLink href="/" mobile={isMobile}>Home</NavLink>
+        {canManage && <NavLink href="/manage" mobile={isMobile}>Manage</NavLink>}
+        {user?.role === ROLES.SUPER_ADMIN && !isMobile && (
+            <Link href="/admin/users" className={cn('transition-colors hover:text-primary', pathname?.startsWith('/admin') ? 'text-primary' : 'text-foreground/60')}>
+              Admin
+            </Link>
+        )}
+        {user?.role === ROLES.SUPER_ADMIN && isMobile && <AdminLinks mobile />}
+        <NavLink href="/favorites" mobile={isMobile}>Favorites</NavLink>
+        {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile}>Profile</NavLink>}
+      </nav>
+    );
+  }
 
   const renderUserMenu = () => {
-    // 2. Loading State: Server එකෙන් session දත්ත ලබාගනිමින් පවතින අවස්ථාව
     if (status === 'loading') {
-      // console.log('[Navbar] Logic: Session දත්ත ලබාගනිමින් පවතී... (status="loading"). Skeleton UI එක පෙන්වයි.');
       return (
         <div className="flex items-center gap-2">
           <Skeleton className="h-8 w-24 hidden md:block" />
@@ -50,9 +103,7 @@ export default function Navbar() {
       );
     }
 
-    // 3. Authenticated State: පරිශීලකයා සාර්ථකව login වී ඇති අවස්ථාව
     if (status === 'authenticated' && user) {
-      // console.log('[Navbar] Logic: පරිශීලකයා Login වී ඇත (status="authenticated"). User object එක:', user);
       return (
         <div className="flex items-center gap-2">
           {canManage && <CreateButton />}
@@ -62,8 +113,6 @@ export default function Navbar() {
       );
     }
 
-    // 4. Unauthenticated State: පරිශීලකයා login වී නැති අවස්ථාව
-    // console.log('[Navbar] Logic: පරිශීලකයා Login වී නැත (status="unauthenticated"). Login button එක පෙන්වයි.');
     return (
       <Button asChild>
         <Link href="/login">
@@ -73,44 +122,32 @@ export default function Navbar() {
       </Button>
     );
   };
-  // --- END: සිංහලෙන් Console Log පැහැදිලි කිරීම ---
 
   return (
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
-        <div className="flex items-center gap-4 overflow-x-auto no-scrollbar">
+        <div className="flex items-center gap-4">
           <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
-            <Image src="/logo.png" alt="Logo" width={38} height={38} style={{ objectFit: 'cover' }} />
+            <Image src="/logo.png" alt="Logo" width={38} height={38} />
+             <span className="inline-block font-bold font-serif text-2xl">CineVerse</span>
           </Link>
-           <div className="flex items-center gap-2 ml-6 flex-shrink-0">
-              <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
-                <Link href="/">
-                    <Home />
-                    <span className="text-xs">Home</span>
-                </Link>
-              </Button>
-              {user && status === 'authenticated' && (
-                <>
-                  <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
-                    <Link href={`/profile/${user.id}`}>
-                      <User />
-                      <span className="text-xs">Profile</span>
-                    </Link>
-                  </Button>
-                  {canManage && (
-                      <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
-                          <Link href="/manage">
-                              <LayoutGrid />
-                              <span className="text-xs">Manage</span>
-                          </Link>
-                      </Button>
-                  )}
-                </>
-              )}
-           </div>
+          {renderNavLinks()}
         </div>
         <div className="flex items-center justify-end space-x-2 flex-shrink-0">
           {renderUserMenu()}
+
+           <div className="md:hidden">
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right">
+                {renderNavLinks(true)}
+              </SheetContent>
+            </Sheet>
+          </div>
         </div>
       </div>
     </header>
