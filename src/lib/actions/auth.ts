@@ -9,30 +9,33 @@ import { Prisma, Role } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { signIn, signOut } from '@/auth';
 
-
 export async function doSignIn(
   prevState: string | undefined,
   formData: FormData
 ) {
   try {
+    // The signIn function from next-auth will handle the credential verification
+    // as defined in your auth.ts file.
     await signIn('credentials', formData);
   } catch (error) {
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
-          return 'Invalid credentials.';
+          return 'Invalid credentials. Please check your email and password.';
         default:
-          return 'Something went wrong.';
+          return 'An unknown error occurred. Please try again.';
       }
     }
+    // Re-throw other errors to be caught by Next.js's error boundary
     throw error;
   }
 }
 
+// This Server Action can be used if you need to perform server-side logic before signing out.
+// For a simple sign-out, using the client-side signOut() is often easier and more reliable for UI updates.
 export async function doSignOut() {
   await signOut({ redirectTo: '/' });
 }
-
 
 export async function registerUser(
   prevState: { message: string | null; input?: any },
@@ -51,7 +54,6 @@ export async function registerUser(
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // This logic ensures only the first user with the SUPER_ADMIN_EMAIL becomes a super admin.
     if (
       process.env.SUPER_ADMIN_EMAIL &&
       email === process.env.SUPER_ADMIN_EMAIL
@@ -79,12 +81,10 @@ export async function registerUser(
               return { message: 'An account with this email already exists.', input: formInput };
           }
       }
-      // For other errors, return a generic message.
       console.error('Registration Error:', error);
       return { message: 'An unexpected error occurred during registration.', input: formInput };
   }
 
-  // After successful registration, redirect to the login page.
   redirect('/login');
 }
 

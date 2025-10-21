@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -22,30 +23,34 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { doSignOut } from '@/lib/actions/auth';
+import { signOut } from 'next-auth/react'; // Import client-side signOut
 import { ROLES } from '@/lib/permissions';
-import { useFormStatus } from 'react-dom';
 import type { Session } from 'next-auth';
+import { useState } from 'react';
 
-function LogoutButton() {
-  const { pending } = useFormStatus();
+function LogoutMenuItem() {
+  const [isPending, setIsPending] = useState(false);
+
+  const handleSignOut = async () => {
+    setIsPending(true);
+    // Use client-side signOut. It handles session update and redirection.
+    await signOut({ callbackUrl: '/' });
+    // No need to set isPending back to false as the page will redirect.
+  };
 
   return (
-     <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={pending}>
-       <form action={doSignOut} className="w-full">
-         <button type="submit" disabled={pending} className="flex w-full items-center">
-            {pending ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-            <LogOut className="mr-2 h-4 w-4" />
-            )}
-            <span>{pending ? 'Logging out...' : 'Log out'}</span>
-        </button>
-      </form>
+    <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={isPending}>
+      <button onClick={handleSignOut} disabled={isPending} className="flex w-full items-center">
+        {isPending ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <LogOut className="mr-2 h-4 w-4" />
+        )}
+        <span>{isPending ? 'Logging out...' : 'Log out'}</span>
+      </button>
     </DropdownMenuItem>
   );
 }
-
 
 export default function UserButton({ user }: { user: Session['user'] }) {
   const userAvatarPlaceholder = PlaceHolderImages.find(
@@ -137,7 +142,7 @@ export default function UserButton({ user }: { user: Session['user'] }) {
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />
-        <LogoutButton />
+        <LogoutMenuItem />
       </DropdownMenuContent>
     </DropdownMenu>
   );
