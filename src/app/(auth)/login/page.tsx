@@ -1,6 +1,7 @@
+
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,6 +18,7 @@ import Link from 'next/link';
 import { Film, AlertCircle, Loader2 } from 'lucide-react';
 import { doSignIn } from '@/lib/actions';
 import React from 'react';
+import { useRouter } from 'next/navigation';
 
 function LoginButton() {
   const { pending } = useFormStatus();
@@ -30,8 +32,17 @@ function LoginButton() {
 
 
 export default function LoginPage() {
-  // useActionState is used to handle form state and responses from Server Actions
-  const [errorMessage, formAction] = useActionState(doSignIn, undefined);
+  const router = useRouter();
+  const [state, formAction] = useActionState(doSignIn, { success: false, error: undefined });
+
+  // Effect to handle redirection on successful login
+  useEffect(() => {
+    if (state.success) {
+      // Perform a full page reload to the homepage to ensure session is updated everywhere.
+      window.location.href = '/';
+    }
+  }, [state.success, router]);
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-teal-800 flex flex-col items-center justify-center p-8 overflow-hidden relative">
@@ -78,10 +89,10 @@ export default function LoginPage() {
                 aria-live="polite"
                 aria-atomic="true"
               >
-                {errorMessage && (
+                {state.error && (
                   <>
                     <AlertCircle className="h-5 w-5 text-destructive" />
-                    <p className="text-sm text-destructive">{errorMessage}</p>
+                    <p className="text-sm text-destructive">{state.error}</p>
                   </>
                 )}
               </div>

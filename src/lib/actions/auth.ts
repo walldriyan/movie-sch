@@ -9,31 +9,40 @@ import { Prisma, Role } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { signIn, signOut } from '@/auth';
 
+// Updated doSignIn to return a status object instead of relying on redirect
 export async function doSignIn(
-  prevState: string | undefined,
+  prevState: any,
   formData: FormData
-) {
+): Promise<{ success: boolean; error?: string }> {
   try {
-    // The signIn function from next-auth will handle the credential verification.
-    // Adding redirectTo: '/' ensures a full page reload to the homepage,
-    // which correctly updates the client-side session state and navbar.
     await signIn('credentials', {
       ...Object.fromEntries(formData),
-      redirectTo: '/',
+      redirect: false, // Important: prevent default redirect to handle it manually
     });
+    // On success, we don't get here because signIn throws a special redirect error.
+    // However, in some configurations, it might proceed. Returning success is a fallback.
+    return { success: true };
   } catch (error) {
+    // NextAuth throws a special error for redirects, which we can safely ignore
+    // as we want to signal success to the client for manual redirection.
+    if ((error as any).type === 'redirect') {
+      return { success: true };
+    }
+    
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
-          return 'Invalid credentials. Please check your email and password.';
+          return { success: false, error: 'Invalid credentials. Please check your email and password.' };
         default:
-          return 'An unknown error occurred. Please try again.';
+          return { success: false, error: 'An unknown error occurred. Please try again.' };
       }
     }
     // Re-throw other errors to be caught by Next.js's error boundary
-    throw error;
+    console.error("Unexpected error in doSignIn:", error);
+    return { success: false, error: 'An unexpected server error occurred.' };
   }
 }
+
 
 // This Server Action can be used if you need to perform server-side logic before signing out.
 // For a simple sign-out, using the client-side signOut() is often easier and more reliable for UI updates.
