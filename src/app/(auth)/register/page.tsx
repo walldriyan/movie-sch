@@ -14,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { Film, AlertCircle } from 'lucide-react';
+import { Film, AlertCircle, Loader2 } from 'lucide-react';
 import { getSuperAdminEmailForDebug, registerUser } from '@/lib/actions';
 import React from 'react';
 
@@ -114,7 +114,7 @@ function RegisterButton() {
  
   return (
     <Button className="w-full" type="submit" disabled={pending}>
-      {pending ? 'Creating account...' : 'Register'}
+      {pending ? <> <Loader2 className='mr-2 h-4 w-4 animate-spin' /> Creating account...</> : 'Register'}
     </Button>
   );
 }

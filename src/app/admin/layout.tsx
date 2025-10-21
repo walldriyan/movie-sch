@@ -38,5 +38,5 @@ export default function AdminLayout({
     return null;
   }
 
-  return <ManageLayout user={user}>{children}</ManageLayout>;
+  return <ManageLayout>{children}</ManageLayout>;
 }
