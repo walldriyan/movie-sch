@@ -41,6 +41,12 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
   const pathname = usePathname();
   const { data: session, status } = useSession();
   const user = session?.user;
+  const [isMounted, setIsMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
 
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
   
@@ -48,7 +54,8 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
   const isSuperAdmin = user?.role === ROLES.SUPER_ADMIN;
 
   const renderAdminLinks = () => {
-    if (status === 'loading') {
+    // Wait for the component to be mounted on the client and the session to be loaded.
+    if (!isMounted || status === 'loading') {
       return (
         <>
           <Skeleton className="h-8 w-full" />
@@ -59,6 +66,7 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
         </>
       )
     }
+    // Only render if the user is a super admin
     if (isSuperAdmin) {
       return (
         <>
@@ -105,6 +113,7 @@ export default function ManageLayout({ user: initialUser, children }: ManageLayo
         </>
       );
     }
+    // Return null if not a super admin
     return null;
   }
   
