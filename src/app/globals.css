@@ -171,3 +171,18 @@ body {
   /* Firefox */
   
 }
+
+@keyframes loading-bar-animation {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-loading-bar {
+  position: absolute;
+  width: 50%;
+  animation: loading-bar-animation 1.5s infinite linear;
+}

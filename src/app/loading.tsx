@@ -1,9 +1,9 @@
-import { Loader2 } from 'lucide-react';
+import React from 'react';
 
 export default function Loading() {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/20 backdrop-blur-sm">
-      <Loader2 className="h-16 w-16 animate-spin text-primary" />
+    <div className="fixed top-0 left-0 w-full h-1 z-[100] overflow-hidden bg-primary/20">
+      <div className="h-full bg-primary animate-loading-bar"></div>
     </div>
   );
 }
