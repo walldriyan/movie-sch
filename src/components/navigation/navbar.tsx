@@ -59,13 +59,13 @@ export default function Navbar() {
   const NavLink = ({ href, children, mobile = false, icon }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode }) => {
     const className = mobile
       ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
-      : `transition-colors hover:text-primary ${isActive(href) ? 'text-primary bg-secondary' : 'text-foreground/80'}`;
+      : `transition-colors hover:text-primary h-auto p-2 ${isActive(href) ? 'text-primary bg-secondary' : 'text-foreground/80'}`;
       
     return (
-      <Button asChild variant="outline" className={cn("justify-start", className)}>
-        <Link href={href} onClick={(e) => { e.preventDefault(); handleNavigation(href); }}>
-          <div className="mr-2">{icon}</div>
-          {children}
+      <Button asChild variant="outline" className={cn("justify-center", className)}>
+        <Link href={href} onClick={(e) => { e.preventDefault(); handleNavigation(href); }} className="flex flex-col items-center h-full">
+          <div className="mb-1">{icon}</div>
+          <span className="text-xs">{children}</span>
         </Link>
       </Button>
     );
@@ -73,11 +73,11 @@ export default function Navbar() {
   
   const AdminLinks = ({ mobile }: { mobile?: boolean }) => (
     <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-        <NavLink href="/admin/exams" mobile={mobile} icon={<BookCheck className="h-4 w-4" />}>Exams</NavLink>
-        <NavLink href="/admin/users" mobile={mobile} icon={<Users className="h-4 w-4" />}>Users</NavLink>
-        <NavLink href="/admin/groups" mobile={mobile} icon={<Users2 className="h-4 w-4" />}>Groups</NavLink>
-        <NavLink href="/admin/notifications" mobile={mobile} icon={<Bell className="h-4 w-4" />}>Notifications</NavLink>
-        <NavLink href="/admin/settings" mobile={mobile} icon={<Settings className="h-4 w-4" />}>Settings</NavLink>
+        <NavLink href="/admin/exams" mobile={mobile} icon={<BookCheck className="h-5 w-5" />}>Exams</NavLink>
+        <NavLink href="/admin/users" mobile={mobile} icon={<Users className="h-5 w-5" />}>Users</NavLink>
+        <NavLink href="/admin/groups" mobile={mobile} icon={<Users2 className="h-5 w-5" />}>Groups</NavLink>
+        <NavLink href="/admin/notifications" mobile={mobile} icon={<Bell className="h-5 w-5" />}>Notifications</NavLink>
+        <NavLink href="/admin/settings" mobile={mobile} icon={<Settings className="h-5 w-5" />}>Settings</NavLink>
     </AuthGuard>
   );
 
@@ -86,13 +86,13 @@ export default function Navbar() {
 
     return (
        <nav className={navClass}>
-        <NavLink href="/" mobile={isMobile} icon={<Home className="h-4 w-4"/>}>Home</NavLink>
-        {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-4 w-4"/>}>Manage</NavLink>}
+        <NavLink href="/" mobile={isMobile} icon={<Home className="h-5 w-5"/>}>Home</NavLink>
+        {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
         {user?.role === ROLES.SUPER_ADMIN && (
-          <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-4 w-4"/>}>Admin</NavLink>
+          <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-5 w-5"/>}>Admin</NavLink>
         )}
-        {user && <NavLink href="/favorites" mobile={isMobile} icon={<Heart className="h-4 w-4"/>}>Favorites</NavLink>}
-        {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile} icon={<User className="h-4 w-4"/>}>Profile</NavLink>}
+        {user && <NavLink href="/favorites" mobile={isMobile} icon={<Heart className="h-5 w-5"/>}>Favorites</NavLink>}
+        {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile} icon={<User className="h-5 w-5"/>}>Profile</NavLink>}
       </nav>
     );
   }
