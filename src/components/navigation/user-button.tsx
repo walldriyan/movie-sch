@@ -22,30 +22,36 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { signOut, useSession } from 'next-auth/react';
+import { useSession } from 'next-auth/react';
 import { ROLES } from '@/lib/permissions';
 import { useState } from 'react';
 import { Skeleton } from '../ui/skeleton';
+import { doSignOut } from '@/lib/actions';
+import { useFormStatus } from 'react-dom';
+
+
+function LogoutButton() {
+    const { pending } = useFormStatus();
+
+    return (
+        <button type="submit" disabled={pending} className="flex w-full items-center">
+            {pending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+                <LogOut className="mr-2 h-4 w-4" />
+            )}
+            <span>{pending ? 'Logging out...' : 'Log out'}</span>
+      </button>
+    )
+}
 
 function LogoutMenuItem() {
-  const [isPending, setIsPending] = useState(false);
-
-  const handleSignOut = async () => {
-    setIsPending(true);
-    await signOut({ callbackUrl: '/' });
-  };
-
   return (
-    <DropdownMenuItem onSelect={(e) => e.preventDefault()} disabled={isPending}>
-      <button onClick={handleSignOut} disabled={isPending} className="flex w-full items-center">
-        {isPending ? (
-          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        ) : (
-          <LogOut className="mr-2 h-4 w-4" />
-        )}
-        <span>{isPending ? 'Logging out...' : 'Log out'}</span>
-      </button>
-    </DropdownMenuItem>
+    <form action={doSignOut} className="w-full">
+        <DropdownMenuItem asChild>
+            <LogoutButton />
+        </DropdownMenuItem>
+    </form>
   );
 }
 
