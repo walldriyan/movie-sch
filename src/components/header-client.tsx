@@ -245,16 +245,18 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
                 <Button variant="ghost" size="icon" asChild>
                   <Link href="/"><Home /></Link>
                 </Button>
-                <AuthGuard>
-                  <Button variant="ghost" size="icon" asChild>
-                    <Link href={`/profile/${user?.id}`}><User /></Link>
-                  </Button>
-                  {canManage && (
-                      <Button variant="ghost" size="icon" asChild>
-                          <Link href="/manage"><LayoutGrid /></Link>
-                      </Button>
-                  )}
-                </AuthGuard>
+                {user && (
+                  <>
+                    <Button variant="ghost" size="icon" asChild>
+                      <Link href={`/profile/${user.id}`}><User /></Link>
+                    </Button>
+                    {canManage && (
+                        <Button variant="ghost" size="icon" asChild>
+                            <Link href="/manage"><LayoutGrid /></Link>
+                        </Button>
+                    )}
+                  </>
+                )}
             </div>
           </div>
         </div>
