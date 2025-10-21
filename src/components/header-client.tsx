@@ -230,17 +230,26 @@ export default function HeaderClient({ session: serverSession }: { session: Sess
                 style={{ objectFit: 'cover' }} />
             </Link>
           )}
-           <div className="flex items-center gap-1 ml-6 flex-shrink-0">
-              <Button variant="ghost" size="icon" asChild>
-                <Link href="/"><Home /></Link>
+           <div className="flex items-center gap-2 ml-6 flex-shrink-0">
+              <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
+                <Link href="/">
+                    <Home />
+                    <span className="text-xs">Home</span>
+                </Link>
               </Button>
               <AuthGuard>
-                <Button variant="ghost" size="icon" asChild>
-                  <Link href={`/profile/${user?.id}`}><User /></Link>
+                <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
+                  <Link href={`/profile/${user?.id}`}>
+                    <User />
+                    <span className="text-xs">Profile</span>
+                  </Link>
                 </Button>
                 {canManage && (
-                    <Button variant="ghost" size="icon" asChild>
-                        <Link href="/manage"><LayoutGrid /></Link>
+                    <Button variant="ghost" asChild className="h-auto flex flex-col items-center gap-1 p-1">
+                        <Link href="/manage">
+                            <LayoutGrid />
+                            <span className="text-xs">Manage</span>
+                        </Link>
                     </Button>
                 )}
               </AuthGuard>
