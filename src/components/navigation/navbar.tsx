@@ -59,10 +59,10 @@ export default function Navbar() {
   const NavLink = ({ href, children, mobile = false, icon }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode }) => {
     const className = mobile
       ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
-      : `transition-colors hover:text-primary ${isActive(href) ? 'text-primary' : 'text-foreground/80'}`;
+      : `transition-colors hover:text-primary ${isActive(href) ? 'text-primary bg-secondary' : 'text-foreground/80'}`;
       
     return (
-      <Button asChild variant="ghost" className={cn("justify-start", className)}>
+      <Button asChild variant="outline" className={cn("justify-start", className)}>
         <Link href={href} onClick={(e) => { e.preventDefault(); handleNavigation(href); }}>
           <div className="mr-2">{icon}</div>
           {children}
