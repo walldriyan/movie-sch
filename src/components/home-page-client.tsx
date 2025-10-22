@@ -368,10 +368,10 @@ export default function HomePageClient({
           <Tabs defaultValue="discover" className="w-full">
             <TabsList className="grid w-full grid-cols-2 mb-8">
               <TabsTrigger value="discover">Discover</TabsTrigger>
-              <TabsTrigger value="news">News</TabsTrigger>
+              <TabsTrigger value="micro-posts">Micro Posts</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="news">
+            <TabsContent value="micro-posts">
               <CreateMicroPost />
                <div className="space-y-8">
                 {initialMicroPosts.length > 0 ? (

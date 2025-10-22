@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useTransition } from 'react';
+import React, { useState, useTransition, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ClientRelativeDate from '@/components/client-relative-date';
 import { MessageCircle, Heart, Share2, MoreHorizontal, Edit, Trash2, Loader2 } from 'lucide-react';
-import type { MicroPost, User, MicroPostImage, Category, Tag, MicroPostLike } from '@prisma/client';
+import type { MicroPost as MicroPostType, User, MicroPostImage, Category, Tag, MicroPostLike } from '@/lib/types';
 import { useSession } from 'next-auth/react';
 import { toggleMicroPostLike, deleteMicroPost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -19,18 +19,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from './ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import EditMicroPostDialog from './edit-micro-post-dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import MicroPostComments from './micro-post-comments';
 
-type MicroPostWithRelations = MicroPost & {
-    author: User;
-    images: MicroPostImage[];
-    categories: Category[];
-    tags: Tag[];
-    likes: MicroPostLike[];
-    _count: {
-        likes: number;
-        comments: number;
-    };
-};
+type MicroPostWithRelations = MicroPostType;
 
 interface MicroPostCardProps {
     post: MicroPostWithRelations;
@@ -48,8 +40,23 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const hasLiked = post.likes?.some(like => like.userId === user?.id) ?? false;
     
     const likeCount = post?._count?.likes ?? 0;
-    const commentCount = post?._count?.comments ?? 0;
+    
+    const handleCommentCountChange = useCallback((count: number) => {
+        setPost(currentPost => {
+            if (currentPost._count.comments === count) {
+                return currentPost;
+            }
+            return {
+                ...currentPost,
+                _count: {
+                    ...currentPost._count,
+                    comments: count,
+                },
+            };
+        });
+    }, []);
 
+    const commentCount = post?._count?.comments ?? 0;
 
     const handleLike = () => {
         if (!user) {
@@ -58,22 +65,20 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
         }
 
         startLikeTransition(async () => {
-             // Optimistic update
-            const newLikeCount = hasLiked ? (post._count?.likes ?? 1) - 1 : (post._count?.likes ?? 0) + 1;
+            const newLikeCount = hasLiked ? likeCount - 1 : likeCount + 1;
             const newLikes = hasLiked
-                ? (post.likes ?? []).filter(like => like.userId !== user.id)
-                : [...(post.likes ?? []), { userId: user.id, postId: post.id }];
-            
+                ? post.likes.filter(like => like.userId !== user.id)
+                : [...post.likes, { userId: user.id, microPostId: post.id, id: '', createdAt: new Date() }];
+
             setPost(currentPost => ({
                 ...currentPost,
                 likes: newLikes,
-                _count: { ...(currentPost._count), likes: newLikeCount }
+                _count: { ...currentPost._count, likes: newLikeCount }
             }));
 
             try {
                 await toggleMicroPostLike(post.id);
             } catch (error) {
-                // Revert on error
                 toast({ variant: 'destructive', title: 'Something went wrong.' });
                  setPost(initialPost);
             }
@@ -85,7 +90,6 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
             try {
                 await deleteMicroPost(post.id);
                 toast({ title: "Post Deleted" });
-                // Note: The post will disappear from the feed on the next page refresh/revalidation
             } catch (error: any) {
                  toast({ variant: 'destructive', title: "Error", description: error.message });
             }
@@ -136,25 +140,34 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             ))}
                         </div>
 
-                        <div className="mt-4 flex justify-between items-center text-muted-foreground">
-                            <div className="flex items-center gap-1.5">
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <MessageCircle className="h-4 w-4" />
-                                </Button>
-                                <span className="text-xs">{commentCount}</span>
-                            </div>
-                             <div className="flex items-center gap-1.5">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike} disabled={isLikePending}>
-                                    <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
-                                </Button>
-                                <span className="text-xs">{likeCount}</span>
-                            </div>
-                             <div className="flex items-center gap-1.5">
-                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                    <Share2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        </div>
+                        <Accordion type="single" collapsible className="w-full mt-2">
+                            <AccordionItem value="item-1" className="border-b-0">
+                                <div className="flex justify-between items-center text-muted-foreground">
+                                    <AccordionTrigger className="py-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MessageCircle className="h-4 w-4" />
+                                            </Button>
+                                            <span className="text-xs">{commentCount}</span>
+                                        </div>
+                                    </AccordionTrigger>
+                                    <div className="flex items-center gap-1.5">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike} disabled={isLikePending}>
+                                            <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
+                                        </Button>
+                                        <span className="text-xs">{likeCount}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <Share2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                </div>
+                                <AccordionContent>
+                                    <MicroPostComments postId={post.id} onCommentCountChange={handleCommentCountChange} />
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
                     </div>
                      {canManage && (
                         <AlertDialog>
