@@ -45,7 +45,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const [isDeletePending, startDeleteTransition] = useTransition();
 
     const postImage = post.images?.[0]?.url;
-    const hasLiked = post.likes.some(like => like.userId === user?.id);
+    const hasLiked = post?.likes?.some(like => like.userId === user?.id) ?? false;
 
     const handleLike = () => {
         if (!user) {
@@ -55,15 +55,15 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
 
         startLikeTransition(async () => {
              // Optimistic update
-            const newLikeCount = hasLiked ? post._count.likes - 1 : post._count.likes + 1;
+            const newLikeCount = hasLiked ? (post._count?.likes ?? 1) - 1 : (post._count?.likes ?? 0) + 1;
             const newLikes = hasLiked
-                ? post.likes.filter(like => like.userId !== user.id)
-                : [...post.likes, { userId: user.id, postId: post.id }];
+                ? (post.likes ?? []).filter(like => like.userId !== user.id)
+                : [...(post.likes ?? []), { userId: user.id, postId: post.id }];
             
             setPost(currentPost => ({
                 ...currentPost,
                 likes: newLikes,
-                _count: { ...currentPost._count, likes: newLikeCount }
+                _count: { ...(currentPost._count), likes: newLikeCount }
             }));
 
             try {
@@ -137,13 +137,13 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <MessageCircle className="h-4 w-4" />
                                 </Button>
-                                <span className="text-xs">{post._count.comments}</span>
+                                <span className="text-xs">{post._count?.comments ?? 0}</span>
                             </div>
                              <div className="flex items-center gap-1.5">
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike} disabled={isLikePending}>
                                     <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
                                 </Button>
-                                <span className="text-xs">{post._count.likes}</span>
+                                <span className="text-xs">{post._count?.likes ?? 0}</span>
                             </div>
                              <div className="flex items-center gap-1.5">
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
