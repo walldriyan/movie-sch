@@ -132,7 +132,7 @@ export default function ManagePostsClient({
     setView('form');
   };
 
-  const handleFormSubmit = async (
+  const handleFormSubmit = (
     postData: PostFormData,
     id: number | undefined
   ) => {
@@ -140,7 +140,6 @@ export default function ManagePostsClient({
       console.log("Submitting post...");
       try {
         await savePost(postData, id);
-        await fetchPosts(id ? currentPage : 1, statusFilter);
         handleBackFromForm(); // Go back to list and clear URL params
         toast({
           title: 'Success',
