@@ -1,10 +1,9 @@
 
-
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount } from '@/lib/types';
@@ -24,15 +23,17 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import GroupCard from './group-card';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Notification as NotificationType } from '@prisma/client';
 import { updateNotificationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
-import MovieGrid from './movie-grid';
+import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
+import { Textarea } from './ui/textarea';
+import { useSession } from 'next-auth/react';
 
 
 interface HomePageClientProps {
@@ -55,6 +56,41 @@ const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
         default:
             return <Bell className="h-4 w-4" />;
     }
+}
+
+function CreateMicroPost() {
+    const { data: session } = useSession();
+    const user = session?.user;
+    const userAvatar = user?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
+
+    if (!user) return null;
+
+    return (
+        <Card className="mb-8">
+            <CardContent className="p-4">
+                 <div className="flex items-start gap-4">
+                    <Avatar>
+                        <AvatarImage src={userAvatar} />
+                        <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div className="w-full space-y-2">
+                        <Textarea
+                            placeholder="What's happening?"
+                            className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
+                            rows={2}
+                        />
+                        <div className="flex justify-between items-center pt-2">
+                            <div className="flex gap-1 text-muted-foreground">
+                                <Button variant="ghost" size="icon"><ImageIcon className="h-5 w-5" /></Button>
+                                <Button variant="ghost" size="icon"><Link2 className="h-5 w-5" /></Button>
+                            </div>
+                            <Button disabled>Post</Button>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 export default function HomePageClient({ 
@@ -161,8 +197,28 @@ export default function HomePageClient({
 
   return (
     <TooltipProvider>
-        <div className="w-full bg-background text-foreground">
-             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 flex items-center justify-between">
+      <div className="w-full bg-background text-foreground">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
+          <Tabs defaultValue="discover" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="discover">Discover</TabsTrigger>
+              <TabsTrigger value="news">News</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="news">
+              <CreateMicroPost />
+               <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                  <h1 className="font-serif text-2xl font-bold text-muted-foreground">
+                    News Feed Coming Soon
+                  </h1>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    This section will show micro-posts from users you follow.
+                  </p>
+                </div>
+            </TabsContent>
+
+            <TabsContent value="discover">
+               <div className="max-w-4xl mx-auto pb-8 flex items-center justify-between">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <Button asChild variant={'outline'} className={cn(
                         "rounded-full hover:bg-gray-800 flex-shrink-0",
@@ -248,9 +304,7 @@ export default function HomePageClient({
                 </DropdownMenu>
 
             </div>
-            
-            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
-                {posts.length === 0 ? (
+              {posts.length === 0 ? (
                     <div className="text-center py-16">
                         <h1 className="font-serif text-4xl font-bold">
                             No Posts Found
@@ -285,7 +339,7 @@ export default function HomePageClient({
                   </Card>
                 )}
                 
-                <MovieGrid movies={posts} />
+                <PostGrid posts={posts} />
 
                     {totalPages > 1 && (
                     <Pagination className="mt-12">
@@ -389,8 +443,10 @@ export default function HomePageClient({
                 </section>
                 </>
             )}
-            </main>
-        </div>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </TooltipProvider>
   );
 }

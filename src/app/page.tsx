@@ -41,12 +41,6 @@ export default async function HomePage({
 
   return (
     <>
-
-      {/* <MetaSpotlight1 /> 
-
-
-      <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
-      <MetaSpotlight3 posts={posts as Post[]} />*/}
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
@@ -57,8 +51,6 @@ export default async function HomePage({
         initialNotifications={notifications}
         session={session}
       />
-
-      <MetaSpotlightPostGrid />
     </>
   );
 }
