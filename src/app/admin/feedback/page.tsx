@@ -3,7 +3,8 @@
 
 import React, { useState, useEffect, useTransition } from 'react';
 import { getFeedbackForAdmin, updateFeedbackStatus, replyToFeedback } from '@/lib/actions';
-import type { Feedback, User, FeedbackReply, FeedbackStatus } from '@prisma/client';
+import { FeedbackStatus } from '@prisma/client';
+import type { Feedback, User, FeedbackReply } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
