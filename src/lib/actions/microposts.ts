@@ -84,3 +84,24 @@ export async function getAllTags() {
         orderBy: { name: 'asc' }
     });
 }
+
+export async function getMicroPosts() {
+    const posts = await prisma.microPost.findMany({
+        orderBy: {
+            createdAt: 'desc',
+        },
+        include: {
+            author: true,
+            images: true,
+            categories: true,
+            tags: true,
+            _count: {
+                select: {
+                    likes: true,
+                    comments: true,
+                },
+            },
+        },
+    });
+    return posts;
+}

@@ -43,6 +43,7 @@ import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { CategoryInput } from '@/components/manage/category-input';
 import { TagInput } from '@/components/manage/tag-input';
+import MicroPostCard from './micro-post-card';
 
 
 interface HomePageClientProps {
@@ -54,6 +55,7 @@ interface HomePageClientProps {
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
     initialNotifications: NotificationType[];
     session: Session | null;
+    initialMicroPosts: any[];
 }
 
 const microPostSchema = z.object({
@@ -121,6 +123,10 @@ function CreateMicroPost() {
     const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
       if (file) {
+        if (file.size > 1024 * 1024) { // 1MB limit
+          toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 1MB.'});
+          return;
+        }
         form.setValue('image', file);
         const reader = new FileReader();
         reader.onloadend = () => {
@@ -164,7 +170,7 @@ function CreateMicroPost() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
                     <Avatar>
                         <AvatarImage src={userAvatar} />
-                        <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
+                        <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
                     <div className="w-full space-y-4">
                         <FormField
@@ -260,7 +266,8 @@ export default function HomePageClient({
     currentPage, 
     searchParams,
     initialNotifications,
-    session
+    session,
+    initialMicroPosts,
 }: HomePageClientProps) {
   
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
@@ -366,14 +373,20 @@ export default function HomePageClient({
             
             <TabsContent value="news">
               <CreateMicroPost />
-               <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                  <h1 className="font-serif text-2xl font-bold text-muted-foreground">
-                    News Feed Coming Soon
-                  </h1>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    This section will show micro-posts from users you follow.
-                  </p>
-                </div>
+               <div className="space-y-8">
+                {initialMicroPosts.length > 0 ? (
+                    initialMicroPosts.map(post => <MicroPostCard key={post.id} post={post} />)
+                ) : (
+                   <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                      <h1 className="font-serif text-2xl font-bold text-muted-foreground">
+                        The Feed is Quiet...
+                      </h1>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Be the first to post something!
+                      </p>
+                    </div>
+                )}
+               </div>
             </TabsContent>
 
             <TabsContent value="discover">
@@ -498,7 +511,7 @@ export default function HomePageClient({
                   </Card>
                 )}
                 
-                <PostGrid posts={posts} />
+                <PostGrid movies={posts} />
 
                     {totalPages > 1 && (
                     <Pagination className="mt-12">
