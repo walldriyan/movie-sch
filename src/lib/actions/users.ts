@@ -8,6 +8,7 @@ import { auth } from '@/auth';
 import { ROLES, MovieStatus } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { saveImageFromDataUrl, deleteUploadedFile } from './posts';
+import { subDays } from 'date-fns';
 
 
 export async function getUsers(): Promise<User[]> {
@@ -269,4 +270,45 @@ export async function getPendingApprovals() {
   }
 
   return { pendingPosts, pendingUsers };
+}
+
+export async function getPostCreationStatus() {
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user) {
+        throw new Error('Not authenticated');
+    }
+
+    const userRecord = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!userRecord) {
+        throw new Error('User not found');
+    }
+
+    const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' }});
+    const defaultLimit = defaultLimitSetting ? parseInt(defaultLimitSetting.value, 10) : 10;
+    
+    // User-specific limit overrides the default
+    const postLimit = userRecord.dailyPostLimit ?? defaultLimit;
+
+    let postCount = 0;
+    if (postLimit > 0) { // No need to count if limit is unlimited
+        const twentyFourHoursAgo = subDays(new Date(), 1);
+        postCount = await prisma.post.count({
+            where: {
+                authorId: user.id,
+                createdAt: {
+                    gte: twentyFourHoursAgo,
+                },
+            },
+        });
+    }
+    
+    const remaining = postLimit > 0 ? postLimit - postCount : Infinity;
+
+    return {
+        limit: postLimit,
+        count: postCount,
+        remaining: remaining,
+    };
 }
