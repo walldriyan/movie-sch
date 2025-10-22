@@ -1,0 +1,78 @@
+npm uninstall prisma @prisma/client
+npm install prisma @prisma/client
+
+npx prisma generate 
+npx prisma db push --force-reset
+
+
+
+
+# Folder එකටත් permissions දෙන්න
+chmod 755 ./path/to/database/folder/
+
+
+npx prisma generate
+npx prisma db push
+
+mee@sch.com
+
+
+To get started, take a look at src/app/page.tsx.
+sudo apt-get update
+sudo apt-get install -y openssl libssl-dev
+
+
+npm uninstall prisma @prisma/client
+npm install prisma @prisma/client
+
+npx prisma generate
+npx prisma db push --force-reset
+
+
+npx prisma generate
+npx prisma db push
+
+mee@sch.com
+
+# 🔐 Developer Rules:
+# - Do NOT edit styles, UI, or Tailwind layouts.
+# - Do NOT touch Firebase configuration files.
+# - All new features go under /features or /modules.
+# - Always confirm before editing existing logic.
+
+
+      "Never modify UI, Tailwind, or Framer Motion animations.",
+      "Do not change or delete existing files.",
+      "Do not modify database configuration or paths.",
+      "Only add or edit code related to explicitly requested features.",
+      "Always confirm before refactoring or adding dependencies.",
+      "Never edit environment files or Firebase configs.",
+      "Do not alter layouts or styles."
+
+      parana kisima deyak ahanne natiwa change kranna epa, 
+      awashayanam change kranna magen ahala inna
+      sinhalen respond kranna 
+
+
+
+git fetch --prune
+
+git branch -a
+
+ 
+git branch -D 18Group
+git branch -D v19improve
+git branch -D v23noti
+
+
+  git branch -D v10
+   git branch -D v11
+   git branch -D v112
+   git branch -D v12
+   git branch -D v14
+
+   git branch -D 15v
+   git branch -D v16
+   git branch -D v21groupsfetures
+
+

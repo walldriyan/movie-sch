@@ -1,34 +1,107 @@
-export interface User {
-  id: number;
-  name: string;
-  avatarUrlId: string;
+
+
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam as PrismaExam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption, JsonValue, SubmissionAnswer as PrismaSubmissionAnswer } from "@prisma/client";
+
+export enum PostType {
+  MOVIE = 'MOVIE',
+  TV_SERIES = 'TV_SERIES',
+  OTHER = 'OTHER',
 }
 
-export interface Review {
-  id: number;
+export type User = PrismaUser;
+
+export type Review = Omit<PrismaReview, 'parentId'> & {
   user: User;
-  rating: number;
-  comment: string;
+  replies?: Review[];
+  parentId?: number | null;
+};
+
+export type Subtitle = Omit<PrismaSubtitle, 'authorizedUsers'> & {
+  uploaderName: string;
+};
+
+export type MediaLink = {
+  id: number;
+  type: 'trailer' | 'image';
+  url: string;
 }
 
-export interface Subtitle {
-  id: number;
-  language: string;
-  uploader: string;
-  price: number;
-}
-
-export interface Movie {
-  id: number;
-  title: string;
-  description: string;
-  posterUrlId: string;
-  year: number;
+export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres' | 'subtitles'> & {
   genres: string[];
-  duration: string;
-  imdbRating: number;
-  viewCount: number;
-  likes: number;
+  mediaLinks: MediaLink[];
   reviews: Review[];
   subtitles: Subtitle[];
+  author: User;
+  series?: Series | null;
+  exam?: { id: number, title: string, description: string | null } | null;
+  favoritePosts?: PrismaFavoritePost[];
+  likedBy?: User[];
+  dislikedBy?: User[];
+  episodes?: Episode[];
+  metaData?: MetaData[];
+   _count?: {
+    likedBy: number;
+    reviews: number;
+  };
+  isContentLocked?: boolean;
+};
+
+export type Series = Omit<PrismaSeries, 'posts'> & {
+  posts: Post[];
+  _count?: {
+    posts: number;
+  }
 }
+
+export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'reviews' | 'subtitles' | 'author' | 'authorId' | 'mediaLinks' | 'favoritePosts' | 'likedBy' | 'dislikedBy' | 'genres' | 'episodes' | 'metaData' | 'series' | '_count' | 'exam' | 'isContentLocked'> & {
+  mediaLinks?: Omit<MediaLink, 'id'>[];
+  genres?: string[];
+  seriesId?: number | null;
+  groupId?: string | null;
+};
+
+
+// Group Management Types
+export type MemberWithUser = PrismaGroupMember & { user: User };
+
+export type GroupWithMembers = PrismaGroup & {
+  members: MemberWithUser[];
+};
+
+export type GroupWithCount = PrismaGroup & {
+  _count: {
+    members: number;
+    pendingRequests: number;
+  };
+};
+
+export type GroupForProfile = PrismaGroup & {
+    posts: Post[];
+    isMember: boolean;
+    membershipStatus: 'ACTIVE' | 'PENDING' | null;
+    _count: {
+        members: number;
+    };
+    members: { user: Pick<User, 'id' | 'name' | 'image'> }[];
+    createdBy: Pick<User, 'id' | 'name' | 'image'> | null;
+};
+
+export type GroupForEditing = Pick<PrismaGroup, 'id' | 'name' | 'description' | 'profilePhoto' | 'coverPhoto'> & {
+  createdById: string | null;
+};
+
+
+// Exam Types
+export type ExamResultSubmission = PrismaSubmission & {
+  user: Pick<User, 'id' | 'name' | 'email' | 'image'>;
+  answers: PrismaSubmissionAnswer[];
+  attemptHistory: JsonValue[];
+};
+
+export type ExamWithSubmissions = PrismaExam & {
+    post: { title: string } | null;
+    group: { name: string } | null;
+    _count: { questions: number };
+    questions: { points: number }[];
+    submissions: PrismaSubmission[];
+};

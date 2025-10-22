@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,24 +14,45 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { useToast } from '@/hooks/use-toast';
 import RatingStars from './rating-stars';
-import { Send } from 'lucide-react';
+import { Send, Loader2 } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import type { Session } from 'next-auth';
 
 const reviewFormSchema = z.object({
-  rating: z.number().min(1, { message: 'Please select a rating.' }).max(5),
+  rating: z.number().min(0).max(5),
   comment: z
     .string()
-    .min(10, {
-      message: 'Review must be at least 10 characters.',
+    .min(3, {
+      message: 'Review must be at least 3 characters.',
     })
-    .max(500, {
-      message: 'Review must not be longer than 500 characters.',
+    .max(1000, {
+      message: 'Review must not be longer than 1000 characters.',
     }),
 });
 
-export default function ReviewForm() {
-  const { toast } = useToast();
+interface ReviewFormProps {
+  postId: number;
+  parentId?: number;
+  onSuccess?: () => void;
+  showAvatar?: boolean;
+  isSubmitting: boolean;
+  onSubmitReview: (comment: string, rating: number, parentId?: number) => Promise<void>;
+  session: Session | null;
+}
+
+export default function ReviewForm({ 
+    postId, 
+    parentId, 
+    onSuccess, 
+    showAvatar = true,
+    isSubmitting,
+    onSubmitReview,
+    session,
+}: ReviewFormProps) {
+  const user = session?.user;
+  const userAvatar = PlaceHolderImages.find((img) => img.id === 'avatar-4');
 
   const form = useForm<z.infer<typeof reviewFormSchema>>({
     resolver: zodResolver(reviewFormSchema),
@@ -40,61 +62,81 @@ export default function ReviewForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof reviewFormSchema>) {
-    console.log(values);
-    toast({
-      title: 'Review Submitted!',
-      description: "Thanks for sharing your thoughts.",
-    });
+  async function onSubmit(values: z.infer<typeof reviewFormSchema>) {
+    await onSubmitReview(values.comment, values.rating, parentId);
     form.reset();
+    if (onSuccess) {
+      onSuccess();
+    }
   }
 
   return (
-    <div>
-      <h3 className="text-lg font-semibold mb-4">Write a review</h3>
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-          <FormField
-            control={form.control}
-            name="rating"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Your Rating</FormLabel>
-                <FormControl>
-                  <RatingStars
-                    rating={field.value}
-                    onRatingChange={field.onChange}
-                    isEditable={true}
-                    size={24}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+    <div className='flex items-start gap-4'>
+      {showAvatar && user && (
+        <Avatar className='mt-2'>
+          <AvatarImage src={user?.image || userAvatar?.imageUrl} alt={user?.name || 'User'} data-ai-hint="person face" />
+          <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+        </Avatar>
+      )}
+      <div className="w-full rounded-2xl opacity-80">
+        { !parentId && <h3 className="text-lg font-semibold mb-4">What are your thoughts?</h3>}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            {!parentId && (
+              <FormField
+                control={form.control}
+                name="rating"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <RatingStars
+                        rating={field.value}
+                        onRatingChange={field.onChange}
+                        isEditable={true}
+                        size={24}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             )}
-          />
-          <FormField
-            control={form.control}
-            name="comment"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Your Review</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Tell us what you think about the movie..."
-                    className="resize-none"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <Button type="submit">
-            <Send className="mr-2 h-4 w-4"/>
-            Submit Review
-          </Button>
-        </form>
-      </Form>
+            <FormField
+              control={form.control}
+              name="comment"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea
+                      placeholder={parentId ? "Write a reply..." : "Tell us what you think about the movie..."}
+                      className="resize-none bg-transparent border rounded-md focus-visible:ring-0 p-2"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className='flex justify-end'>
+              <Button type="submit" variant='ghost' disabled={isSubmitting}>
+                {isSubmitting && parentId ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Replying...
+                    </>
+                ) : isSubmitting ? (
+                   <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Submitting...
+                    </>
+                ) : (
+                    'Respond'
+                )}
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </div>
     </div>
   );
 }

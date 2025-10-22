@@ -1,0 +1,44 @@
+diff --git a/node_modules/react-quill/lib/index.js b/node_modules/react-quill/lib/index.js
+index 47c35a6..9205d8f 100644
+--- a/node_modules/react-quill/lib/index.js
++++ b/node_modules/react-quill/lib/index.js
+@@ -1,5 +1,6 @@
+ 'use strict';
+ var React = require('react');
++var {createRef} = require('react');
+ var ReactDOM = require('react-dom');
+ var Quill = require('quill');
+ var PropTypes = require('prop-types');
+@@ -140,6 +141,7 @@
+ 	/*
+ 	Creates an editor on the given element.
+ 	*/
++	
+ 	this.instantiateEditor = function() {
+ 		if (this.editor) return;
+ 		var editor = this.createEditor(
+@@ -149,6 +151,10 @@
+ 		this.editor = editor;
+ 	};
+ 
++	this.editingArea = createRef()
++
+ 	this.getEditingArea = function(){
+-		return ReactDOM.findDOMNode(this.editingArea);
++		return this.editingArea.current
+ 	}
+ 
+ 	/*
+@@ -201,11 +207,7 @@
+ 		}
+ 
+ 		return React.createElement('div', {
+-			ref: function(el) {
+-				if(el) {
+-					this.editingArea = el.firstChild
+-				}
+-			}.bind(this),
++			ref: this.editingArea,
+ 			key: this.state.generation,
+ 			id: this.props.id,
+ 			style: this.props.style,

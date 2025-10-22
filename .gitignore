@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+/public
 /.pnp
 .pnp.*
 .yarn/*
@@ -9,7 +10,7 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+/prisma/dev.db
 # testing
 /coverage
 
