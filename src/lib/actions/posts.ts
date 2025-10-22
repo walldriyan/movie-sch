@@ -5,7 +5,7 @@ import { Prisma } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { ROLES, MovieStatus } from '@/lib/permissions';
-import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from 'date-fns';
+import { startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays } from 'date-fns';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import prisma from '@/lib/prisma';
@@ -308,6 +308,37 @@ export async function savePost(postData: PostFormData, id?: number) {
     throw new Error('User not authenticated');
   }
   const userId = session.user.id;
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    throw new Error('User not found.');
+  }
+
+  // --- Start Daily Post Limit Check ---
+  if (!id) { // Only check for new posts, not edits
+    const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' }});
+    const defaultLimit = defaultLimitSetting ? parseInt(defaultLimitSetting.value, 10) : 10;
+    
+    // User-specific limit overrides the default
+    const postLimit = user.dailyPostLimit ?? defaultLimit;
+
+    if (postLimit > 0) { // A limit of 0 means unlimited
+      const twentyFourHoursAgo = subDays(new Date(), 1);
+      const userPostCount = await prisma.post.count({
+        where: {
+          authorId: userId,
+          createdAt: {
+            gte: twentyFourHoursAgo,
+          },
+        },
+      });
+
+      if (userPostCount >= postLimit) {
+        throw new Error(`You have reached your daily post limit of ${postLimit}.`);
+      }
+    }
+  }
+  // --- End Daily Post Limit Check ---
 
   let finalPosterUrl = postData.posterUrl;
   if (postData.posterUrl && postData.posterUrl.startsWith('data:image')) {
@@ -719,5 +750,3 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
-
-    
