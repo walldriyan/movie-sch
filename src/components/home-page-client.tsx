@@ -55,7 +55,7 @@ interface HomePageClientProps {
 
 const microPostSchema = z.object({
   content: z.string().min(1, 'Post content cannot be empty.').max(500, 'Post cannot exceed 500 characters.'),
-  tags: z.string().optional(),
+  category: z.string().optional(),
 });
 
 type MicroPostFormValues = z.infer<typeof microPostSchema>;
@@ -82,7 +82,7 @@ function CreateMicroPost() {
       resolver: zodResolver(microPostSchema),
       defaultValues: {
         content: '',
-        tags: '',
+        category: '',
       }
     });
 
@@ -93,8 +93,7 @@ function CreateMicroPost() {
     const onSubmit = (values: MicroPostFormValues) => {
       startTransition(async () => {
         try {
-          const tagsArray = values.tags ? values.tags.split(',').map(tag => tag.trim()) : [];
-          await createMicroPost(values.content, tagsArray);
+          await createMicroPost(values.content, values.category);
           toast({ title: 'Success', description: 'Your post has been published.' });
           form.reset();
         } catch (error: any) {
@@ -132,11 +131,11 @@ function CreateMicroPost() {
                         />
                          <FormField
                           control={form.control}
-                          name="tags"
+                          name="category"
                           render={({ field }) => (
                             <FormItem>
                               <FormControl>
-                                <Input placeholder="Add tags (comma-separated)" className="text-xs h-8" {...field} />
+                                <Input placeholder="Add a category (e.g., 'Tech', 'News')" className="text-xs h-8" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
