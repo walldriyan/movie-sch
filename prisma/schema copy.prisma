@@ -109,15 +109,17 @@ model MicroPostLike {
 }
 
 model MicroPostComment {
-  id          String    @id @default(cuid())
-  content     String
-  createdAt   DateTime  @default(now())
-  
-  userId      String
-  microPostId String
-  
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  postId String
+  post   MicroPost @relation(fields: [postId], references: [id], onDelete: Cascade) // <--- මෙම පේළියට onDelete: Cascade එක් කරන්න
+
+  @@map("micro_post_comments")
 }
 
 model User {
