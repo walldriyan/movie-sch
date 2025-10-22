@@ -20,8 +20,8 @@ export async function createMicroPost(formData: FormData) {
   const tagsStr = formData.get('tags') as string;
   const imageFile = formData.get('image') as File | null;
   
-  const categories = categoriesStr ? categoriesStr.split(',') : [];
-  const tags = tagsStr ? tagsStr.split(',') : [];
+  const categories = categoriesStr ? categoriesStr.split(',').map(c => c.trim()).filter(Boolean) : [];
+  const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
 
   if (!content.trim()) {
     throw new Error('Content cannot be empty.');
@@ -198,8 +198,8 @@ export async function updateMicroPost(postId: string, formData: FormData) {
   const categoriesStr = formData.get('categories') as string;
   const tagsStr = formData.get('tags') as string;
   
-  const categories = categoriesStr ? categoriesStr.split(',') : [];
-  const tags = tagsStr ? tagsStr.split(',') : [];
+  const categories = categoriesStr ? categoriesStr.split(',').map(c => c.trim()).filter(Boolean) : [];
+  const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
 
   if (!content.trim()) {
     throw new Error('Content cannot be empty.');
