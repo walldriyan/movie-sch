@@ -1,13 +1,15 @@
 
-
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2, X } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { User, Post, GroupWithCount } from '@/lib/types';
+import type { User, Post, GroupWithCount, MicroPost as MicroPostType } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -24,15 +26,24 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import GroupCard from './group-card';
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Notification as NotificationType } from '@prisma/client';
-import { updateNotificationStatus } from '@/lib/actions';
+import { updateNotificationStatus, createMicroPost, getAllCategories, getAllTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
-import MovieGrid from './movie-grid';
+import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
+import { Textarea } from './ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormMessage } from './ui/form';
+import { Input } from './ui/input';
+import { useSession } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { CategoryInput } from '@/components/manage/category-input';
+import { TagInput } from '@/components/manage/tag-input';
+import MicroPostCard from './micro-post-card';
 
 
 interface HomePageClientProps {
@@ -44,7 +55,19 @@ interface HomePageClientProps {
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
     initialNotifications: NotificationType[];
     session: Session | null;
+    initialMicroPosts: any[];
 }
+
+const microPostSchema = z.object({
+  content: z.string().min(1, 'Post content cannot be empty.').max(500, 'Post cannot exceed 500 characters.'),
+  categories: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  image: z.instanceof(File).optional()
+    .refine(file => !file || file.size <= 1024 * 1024, 'Image must be less than 1MB.'),
+});
+
+type MicroPostFormValues = z.infer<typeof microPostSchema>;
+
 
 const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
     switch (type) {
@@ -57,6 +80,184 @@ const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
     }
 }
 
+function CreateMicroPost() {
+    const { data: session } = useSession();
+    const user = session?.user;
+    const { toast } = useToast();
+    const [isSubmitting, startTransition] = useTransition();
+    const [allCategories, setAllCategories] = useState<string[]>([]);
+    const [allTags, setAllTags] = useState<string[]>([]);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                const [categoriesData, tagsData] = await Promise.all([
+                    getAllCategories(),
+                    getAllTags(),
+                ]);
+                setAllCategories(categoriesData.map(c => c.name));
+                setAllTags(tagsData.map(t => t.name));
+            } catch (error) {
+                console.error("Failed to fetch categories/tags", error);
+            }
+        };
+        fetchInitialData();
+    }, []);
+
+    const form = useForm<MicroPostFormValues>({
+      resolver: zodResolver(microPostSchema),
+      defaultValues: {
+        content: '',
+        categories: [],
+        tags: [],
+        image: undefined,
+      }
+    });
+
+    const userAvatar = user?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
+
+    if (!user) return null;
+    
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        if (file.size > 1024 * 1024) { // 1MB limit
+          toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 1MB.'});
+          return;
+        }
+        form.setValue('image', file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    const removeImage = () => {
+        setPreviewImage(null);
+        form.setValue('image', undefined);
+        if(fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
+
+    const onSubmit = (values: MicroPostFormValues) => {
+      startTransition(async () => {
+        const formData = new FormData();
+        formData.append('content', values.content);
+        if (values.categories) formData.append('categories', values.categories.join(','));
+        if (values.tags) formData.append('tags', values.tags.join(','));
+        if (values.image) formData.append('image', values.image);
+
+        try {
+          await createMicroPost(formData);
+          toast({ title: 'Success', description: 'Your post has been published.' });
+          form.reset();
+          setPreviewImage(null);
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+      });
+    }
+
+    return (
+        <Card className="mb-8">
+            <CardContent className="p-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
+                    <Avatar>
+                        <AvatarImage src={userAvatar} />
+                        <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+                    </Avatar>
+                    <div className="w-full space-y-4">
+                        <FormField
+                          control={form.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea
+                                    placeholder="What's happening?"
+                                    className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
+                                    rows={2}
+                                    {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                         {previewImage && (
+                          <div className="relative w-48 h-32 border rounded-md">
+                            <Image src={previewImage} alt="Image preview" fill className="object-cover rounded-md" />
+                            <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={removeImage}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        <FormField
+                            control={form.control}
+                            name="categories"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <CategoryInput
+                                            allCategories={allCategories}
+                                            value={field.value || []}
+                                            onChange={field.onChange}
+                                            placeholder="Add categories..."
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                         <FormField
+                            control={form.control}
+                            name="tags"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <TagInput
+                                            allTags={allTags}
+                                            value={field.value || []}
+                                            onChange={field.onChange}
+                                            placeholder="Add tags..."
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <div className="flex justify-between items-center pt-2">
+                            <div className="flex gap-1 text-muted-foreground">
+                                <Button variant="ghost" size="icon" type="button" onClick={() => fileInputRef.current?.click()} >
+                                  <ImageIcon className="h-5 w-5" />
+                                </Button>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
+                            </div>
+                            <Button type="submit" disabled={isSubmitting}>
+                              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Post
+                            </Button>
+                        </div>
+                    </div>
+                  </form>
+                </Form>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function HomePageClient({ 
     initialPosts, 
     initialUsers, 
@@ -65,7 +266,8 @@ export default function HomePageClient({
     currentPage, 
     searchParams,
     initialNotifications,
-    session
+    session,
+    initialMicroPosts,
 }: HomePageClientProps) {
   
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
@@ -161,8 +363,34 @@ export default function HomePageClient({
 
   return (
     <TooltipProvider>
-        <div className="w-full bg-background text-foreground">
-             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 pb-8 flex items-center justify-between">
+      <div className="w-full bg-background text-foreground">
+        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
+          <Tabs defaultValue="discover" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-8">
+              <TabsTrigger value="discover">Discover</TabsTrigger>
+              <TabsTrigger value="micro-posts">Micro Posts</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="micro-posts">
+              <CreateMicroPost />
+               <div className="space-y-8">
+                {initialMicroPosts.length > 0 ? (
+                    initialMicroPosts.map(post => <MicroPostCard key={post.id} post={post} />)
+                ) : (
+                   <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                      <h1 className="font-serif text-2xl font-bold text-muted-foreground">
+                        The Feed is Quiet...
+                      </h1>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        Be the first to post something!
+                      </p>
+                    </div>
+                )}
+               </div>
+            </TabsContent>
+
+            <TabsContent value="discover">
+               <div className="max-w-4xl mx-auto pb-8 flex items-center justify-between">
                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                     <Button asChild variant={'outline'} className={cn(
                         "rounded-full hover:bg-gray-800 flex-shrink-0",
@@ -248,9 +476,7 @@ export default function HomePageClient({
                 </DropdownMenu>
 
             </div>
-            
-            <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
-                {posts.length === 0 ? (
+              {posts.length === 0 ? (
                     <div className="text-center py-16">
                         <h1 className="font-serif text-4xl font-bold">
                             No Posts Found
@@ -285,7 +511,7 @@ export default function HomePageClient({
                   </Card>
                 )}
                 
-                <MovieGrid movies={posts} />
+                <PostGrid movies={posts} />
 
                     {totalPages > 1 && (
                     <Pagination className="mt-12">
@@ -389,8 +615,10 @@ export default function HomePageClient({
                 </section>
                 </>
             )}
-            </main>
-        </div>
+            </TabsContent>
+          </Tabs>
+        </main>
+      </div>
     </TooltipProvider>
   );
 }

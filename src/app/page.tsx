@@ -1,5 +1,5 @@
 
-import { getPosts, getUsers, getPublicGroups, getNotifications } from '@/lib/actions';
+import { getPosts, getUsers, getPublicGroups, getNotifications, getMicroPosts } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button';
 import { Mail } from 'lucide-react';
@@ -38,15 +38,10 @@ export default async function HomePage({
   const users = await getUsers();
   const groups = await getPublicGroups();
   const notifications = await getNotifications();
+  const microPosts = await getMicroPosts();
 
   return (
     <>
-
-      {/* <MetaSpotlight1 /> 
-
-
-      <MetaSpotlight posts={posts as Post[]} users={users} groups={groups} />
-      <MetaSpotlight3 posts={posts as Post[]} />*/}
       <HomePageClient
         initialPosts={posts}
         initialUsers={users}
@@ -56,9 +51,8 @@ export default async function HomePage({
         searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter, lockStatus }}
         initialNotifications={notifications}
         session={session}
+        initialMicroPosts={microPosts}
       />
-
-      <MetaSpotlightPostGrid />
     </>
   );
 }

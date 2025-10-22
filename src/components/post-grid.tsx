@@ -168,11 +168,11 @@ function PostCard({ post }: { post: Movie }) {
   );
 }
 
-export default function PostGrid({ posts }: PostGridProps) {
+export default function PostGrid({ movies }: PostGridProps) {
   return (
     <TooltipProvider>
       <ul>
-        {posts.map((post) => {
+        {movies.map((post) => {
           return (
             <PostCard
               key={post.id}
