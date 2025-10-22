@@ -9,3 +9,4 @@ export * from './actions/reviews';
 export * from './actions/subtitles';
 export * from './actions/notifications';
 export * from './actions/exams';
+export * from './actions/settings';

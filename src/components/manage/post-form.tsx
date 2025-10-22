@@ -30,15 +30,16 @@ import {
 import { Switch } from '@/components/ui/switch';
 
 import QuillEditor from '@/components/quill-editor';
-import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users, Lock, Unlock } from 'lucide-react';
+import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users, Lock, Unlock, Info } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Group } from '@prisma/client';
 import type { PostFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
-import { getSeries, createSeries, getGroupsForForm } from '@/lib/actions';
+import { getSeries, createSeries, getGroupsForForm, getPostCreationStatus } from '@/lib/actions';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '../ui/skeleton';
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
 
@@ -190,17 +191,30 @@ export default function PostForm({
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
   const { toast } = useToast();
-
+  const [postStatus, setPostStatus] = useState<{ limit: number; count: number; remaining: number } | null>(null);
+  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
-      const seriesData = await getSeries();
-      setSeriesList(seriesData);
-      const groupData = await getGroupsForForm();
-      setGroups(groupData as any);
+        try {
+            setIsLoadingStatus(true);
+            const [seriesData, groupData, statusData] = await Promise.all([
+                getSeries(),
+                getGroupsForForm(),
+                getPostCreationStatus()
+            ]);
+            setSeriesList(seriesData);
+            setGroups(groupData as any);
+            setPostStatus(statusData);
+        } catch (error) {
+            console.error("Failed to fetch initial form data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load necessary form data.'});
+        } finally {
+            setIsLoadingStatus(false);
+        }
     }
     fetchData();
-  }, []);
+  }, [toast]);
   
   const handleSeriesCreated = (newSeries: any) => {
     setSeriesList((prev) => [...prev, newSeries]);
@@ -330,6 +344,30 @@ export default function PostForm({
           </h1>
         </div>
       </div> 
+
+       {!editingPost && ( // Only show for new posts
+        <div className="mb-8">
+          {isLoadingStatus ? (
+            <div className="flex items-center gap-4 rounded-lg border p-4">
+              <Skeleton className="h-6 w-6 rounded-full" />
+              <div className="space-y-2 flex-grow">
+                <Skeleton className="h-4 w-3/4" />
+              </div>
+            </div>
+          ) : postStatus ? (
+            <Alert>
+              <Info className="h-4 w-4" />
+              <AlertTitle>Daily Post Status</AlertTitle>
+              <AlertDescription>
+                Your daily limit is {postStatus.limit === 0 ? 'unlimited' : `${postStatus.limit} posts`}. 
+                You have created {postStatus.count} posts today. 
+                {postStatus.limit > 0 && ` You can create ${postStatus.remaining} more posts.`}
+              </AlertDescription>
+            </Alert>
+          ) : null}
+        </div>
+      )}
+
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
