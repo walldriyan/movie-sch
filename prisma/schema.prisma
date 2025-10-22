@@ -644,11 +644,31 @@ model MicroPost {
   likes     MicroPostLike[]
   comments  MicroPostComment[]
 
-  categoryId String?
-  category   MicroPostCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categories Category[]
+  tags       Tag[]
+
+
 
   @@map("micro_posts")
 }
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+
+  posts     MicroPost[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+
+  posts     MicroPost[]
+
+  @@map("tags")
+}
+
 
 model MicroPostImage {
   id          String    @id @default(cuid())
@@ -669,13 +689,7 @@ model MicroPostLink {
   @@map("micro_post_links")
 }
 
-model MicroPostCategory {
-  id    String      @id @default(cuid())
-  name  String      @unique
-  posts MicroPost[]
 
-  @@map("micro_post_categories")
-}
 
 model MicroPostLike {
   id          String    @id @default(cuid())

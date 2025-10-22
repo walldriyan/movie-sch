@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState, useTransition, useEffect } from 'react';
+import { useState, useTransition, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2 } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2, X } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount } from '@/lib/types';
@@ -29,7 +29,7 @@ import GroupCard from './group-card';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Notification as NotificationType } from '@prisma/client';
-import { updateNotificationStatus, createMicroPost } from '@/lib/actions';
+import { updateNotificationStatus, createMicroPost, getAllCategories, getAllTags } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
@@ -40,6 +40,9 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from './ui/form';
 import { Input } from './ui/input';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
+import Image from 'next/image';
+import { CategoryInput } from '@/components/manage/category-input';
+import { TagInput } from '@/components/manage/tag-input';
 
 
 interface HomePageClientProps {
@@ -55,7 +58,10 @@ interface HomePageClientProps {
 
 const microPostSchema = z.object({
   content: z.string().min(1, 'Post content cannot be empty.').max(500, 'Post cannot exceed 500 characters.'),
-  category: z.string().optional(),
+  categories: z.array(z.string()).optional(),
+  tags: z.array(z.string()).optional(),
+  image: z.instanceof(File).optional()
+    .refine(file => !file || file.size <= 1024 * 1024, 'Image must be less than 1MB.'),
 });
 
 type MicroPostFormValues = z.infer<typeof microPostSchema>;
@@ -77,25 +83,74 @@ function CreateMicroPost() {
     const user = session?.user;
     const { toast } = useToast();
     const [isSubmitting, startTransition] = useTransition();
+    const [allCategories, setAllCategories] = useState<string[]>([]);
+    const [allTags, setAllTags] = useState<string[]>([]);
+    const [previewImage, setPreviewImage] = useState<string | null>(null);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const fetchInitialData = async () => {
+            try {
+                const [categoriesData, tagsData] = await Promise.all([
+                    getAllCategories(),
+                    getAllTags(),
+                ]);
+                setAllCategories(categoriesData.map(c => c.name));
+                setAllTags(tagsData.map(t => t.name));
+            } catch (error) {
+                console.error("Failed to fetch categories/tags", error);
+            }
+        };
+        fetchInitialData();
+    }, []);
 
     const form = useForm<MicroPostFormValues>({
       resolver: zodResolver(microPostSchema),
       defaultValues: {
         content: '',
-        category: '',
+        categories: [],
+        tags: [],
+        image: undefined,
       }
     });
 
     const userAvatar = user?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
     if (!user) return null;
+    
+    const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0];
+      if (file) {
+        form.setValue('image', file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+    
+    const removeImage = () => {
+        setPreviewImage(null);
+        form.setValue('image', undefined);
+        if(fileInputRef.current) {
+            fileInputRef.current.value = "";
+        }
+    };
 
     const onSubmit = (values: MicroPostFormValues) => {
       startTransition(async () => {
+        const formData = new FormData();
+        formData.append('content', values.content);
+        if (values.categories) formData.append('categories', values.categories.join(','));
+        if (values.tags) formData.append('tags', values.tags.join(','));
+        if (values.image) formData.append('image', values.image);
+
         try {
-          await createMicroPost(values.content, values.category);
+          await createMicroPost(formData);
           toast({ title: 'Success', description: 'Your post has been published.' });
           form.reset();
+          setPreviewImage(null);
         } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
         }
@@ -111,7 +166,7 @@ function CreateMicroPost() {
                         <AvatarImage src={userAvatar} />
                         <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
-                    <div className="w-full space-y-3">
+                    <div className="w-full space-y-4">
                         <FormField
                           control={form.control}
                           name="content"
@@ -129,22 +184,60 @@ function CreateMicroPost() {
                             </FormItem>
                           )}
                         />
+                         {previewImage && (
+                          <div className="relative w-48 h-32 border rounded-md">
+                            <Image src={previewImage} alt="Image preview" fill className="object-cover rounded-md" />
+                            <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={removeImage}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        <FormField
+                            control={form.control}
+                            name="categories"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <CategoryInput
+                                            allCategories={allCategories}
+                                            value={field.value || []}
+                                            onChange={field.onChange}
+                                            placeholder="Add categories..."
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                          <FormField
-                          control={form.control}
-                          name="category"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormControl>
-                                <Input placeholder="Add a category (e.g., 'Tech', 'News')" className="text-xs h-8" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
+                            control={form.control}
+                            name="tags"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormControl>
+                                        <TagInput
+                                            allTags={allTags}
+                                            value={field.value || []}
+                                            onChange={field.onChange}
+                                            placeholder="Add tags..."
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
                         <div className="flex justify-between items-center pt-2">
                             <div className="flex gap-1 text-muted-foreground">
-                                <Button variant="ghost" size="icon" type="button"><ImageIcon className="h-5 w-5" /></Button>
-                                <Button variant="ghost" size="icon" type="button"><Link2 className="h-5 w-5" /></Button>
+                                <Button variant="ghost" size="icon" type="button" onClick={() => fileInputRef.current?.click()} >
+                                  <ImageIcon className="h-5 w-5" />
+                                </Button>
+                                <input 
+                                    type="file" 
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="image/*"
+                                    onChange={handleImageChange}
+                                />
                             </div>
                             <Button type="submit" disabled={isSubmitting}>
                               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
