@@ -118,6 +118,7 @@ const QuillEditor = ({ value, onChange }: QuillEditorProps) => {
         class: 'tiptap p-4 min-h-[200px] max-h-[600px] overflow-y-auto focus:outline-none',
       },
     },
+    immediatelyRender: false,
   });
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
