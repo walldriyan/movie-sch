@@ -240,11 +240,11 @@ export async function updateUserRole(
   revalidatePath(`/profile/${userId}`);
 }
 
-export async function getPendingApprovals() {
+export async function getDashboardNotifications() {
   const session = await auth();
   const user = session?.user;
   if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
-    return { pendingPosts: [], pendingUsers: [] };
+    return { pendingPosts: [], pendingUsers: [], unreadFeedback: [] };
   }
 
   let whereClause: any = { status: MovieStatus.PENDING_APPROVAL };
@@ -252,7 +252,7 @@ export async function getPendingApprovals() {
     whereClause.authorId = user.id;
   }
   
-  const pendingPosts = await prisma.post.findMany({
+  const pendingPostsPromise = prisma.post.findMany({
     where: whereClause,
     select: { id: true, title: true, author: { select: { name: true } } },
     orderBy: {
@@ -260,16 +260,30 @@ export async function getPendingApprovals() {
     },
   });
 
-  let pendingUsers: Partial<User>[] = [];
+  let pendingUsersPromise: Promise<Partial<User>[]> = Promise.resolve([]);
+  let unreadFeedbackPromise: Promise<any[]> = Promise.resolve([]);
+
   if (user.role === ROLES.SUPER_ADMIN) {
-    pendingUsers = await prisma.user.findMany({
+    pendingUsersPromise = prisma.user.findMany({
       where: { permissionRequestStatus: 'PENDING' },
       select: { id: true, name: true, email: true },
       orderBy: { createdAt: 'desc' },
     });
+    
+    unreadFeedbackPromise = prisma.feedback.findMany({
+        where: { status: 'UNREAD' },
+        select: { id: true, title: true, user: { select: { name: true }}},
+        orderBy: { createdAt: 'desc' },
+    });
   }
 
-  return { pendingPosts, pendingUsers };
+  const [pendingPosts, pendingUsers, unreadFeedback] = await Promise.all([
+      pendingPostsPromise,
+      pendingUsersPromise,
+      unreadFeedbackPromise
+  ]);
+
+  return { pendingPosts, pendingUsers, unreadFeedback };
 }
 
 export async function getPostCreationStatus() {
