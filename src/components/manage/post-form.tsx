@@ -83,6 +83,7 @@ interface PostFormProps {
   editingPost: PostWithLinks | null;
   onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
   onBack: () => void;
+  isSubmitting: boolean;
   debugError?: any;
 }
 
@@ -182,12 +183,12 @@ export default function PostForm({
   editingPost,
   onFormSubmit,
   onBack,
+  isSubmitting,
   debugError,
 }: PostFormProps) {
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [isSubmitting, startTransition] = React.useTransition();
   const { toast } = useToast();
 
 
@@ -263,32 +264,30 @@ export default function PostForm({
   });
 
   const handleSubmit = (values: PostFormValues) => {
-    startTransition(async () => {
-        const postData: PostFormData = {
-          title: values.title,
-          description: values.description,
-          posterUrl: values.posterUrl || null,
-          year: values.year || null,
-          duration: values.duration || null,
-          genres: values.genres || [],
-          directors: values.directors || null,
-          mainCast: values.mainCast || null,
-          imdbRating: values.imdbRating || null,
-          rottenTomatoesRating: values.rottenTomatoesRating || null,
-          googleRating: values.googleRating || null,
-          status: editingPost?.status || 'DRAFT',
-          viewCount: editingPost?.viewCount || 0,
-          mediaLinks: values.mediaLinks,
-          type: values.type,
-          seriesId: values.seriesId,
-          orderInSeries: values.orderInSeries,
-          visibility: values.visibility,
-          groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
-          isLockedByDefault: values.isLockedByDefault,
-          requiresExamToUnlock: values.requiresExamToUnlock,
-        };
-        await onFormSubmit(postData, editingPost?.id);
-    });
+      const postData: PostFormData = {
+        title: values.title,
+        description: values.description,
+        posterUrl: values.posterUrl || null,
+        year: values.year || null,
+        duration: values.duration || null,
+        genres: values.genres || [],
+        directors: values.directors || null,
+        mainCast: values.mainCast || null,
+        imdbRating: values.imdbRating || null,
+        rottenTomatoesRating: values.rottenTomatoesRating || null,
+        googleRating: values.googleRating || null,
+        status: editingPost?.status || 'DRAFT',
+        viewCount: editingPost?.viewCount || 0,
+        mediaLinks: values.mediaLinks,
+        type: values.type,
+        seriesId: values.seriesId,
+        orderInSeries: values.orderInSeries,
+        visibility: values.visibility,
+        groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
+        isLockedByDefault: values.isLockedByDefault,
+        requiresExamToUnlock: values.requiresExamToUnlock,
+      };
+      onFormSubmit(postData, editingPost?.id);
   };
 
   const handleFileChange = (

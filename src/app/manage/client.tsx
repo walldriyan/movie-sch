@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useTransition } from 'react';
@@ -135,12 +136,26 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
-    await savePost(postData, id);
-    await fetchPosts(id ? currentPage : 1, statusFilter);
-    handleBackFromForm(); // Go back to list and clear URL params
-    toast({
-      title: 'Success',
-      description: `Post "${postData.title}" has been submitted for approval.`,
+    startTransition(async () => {
+      console.log("Submitting post...");
+      try {
+        await savePost(postData, id);
+        await fetchPosts(id ? currentPage : 1, statusFilter);
+        handleBackFromForm(); // Go back to list and clear URL params
+        toast({
+          title: 'Success',
+          description: `Post "${postData.title}" has been submitted for approval.`,
+        });
+      } catch (error: any) {
+        console.error("Post submission failed:", error);
+        toast({
+          variant: 'destructive',
+          title: 'Submission Failed',
+          description: error.message || "An unexpected error occurred."
+        });
+      } finally {
+        console.log("Post submission action finished.");
+      }
     });
   };
 
@@ -274,6 +289,7 @@ export default function ManagePostsClient({
             editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
+            isSubmitting={isPending}
             debugError={undefined}
           />
         )}
