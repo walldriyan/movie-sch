@@ -119,9 +119,9 @@ export async function toggleMicroPostLike(postId: string) {
 
     const existingLike = await prisma.microPostLike.findUnique({
         where: {
-            userId_postId: {
+            userId_microPostId: {
                 userId,
-                postId,
+                microPostId: postId,
             },
         },
     });
@@ -129,9 +129,9 @@ export async function toggleMicroPostLike(postId: string) {
     if (existingLike) {
         await prisma.microPostLike.delete({
             where: {
-                userId_postId: {
+                userId_microPostId: {
                     userId,
-                    postId,
+                    microPostId: postId,
                 },
             },
         });
@@ -139,7 +139,7 @@ export async function toggleMicroPostLike(postId: string) {
         await prisma.microPostLike.create({
             data: {
                 userId,
-                postId,
+                microPostId: postId,
             },
         });
     }
