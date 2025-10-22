@@ -45,7 +45,11 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const [isDeletePending, startDeleteTransition] = useTransition();
 
     const postImage = post.images?.[0]?.url;
-    const hasLiked = post?.likes?.some(like => like.userId === user?.id) ?? false;
+    const hasLiked = post.likes?.some(like => like.userId === user?.id) ?? false;
+    
+    const likeCount = post?._count?.likes ?? 0;
+    const commentCount = post?._count?.comments ?? 0;
+
 
     const handleLike = () => {
         if (!user) {
@@ -137,13 +141,13 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
                                     <MessageCircle className="h-4 w-4" />
                                 </Button>
-                                <span className="text-xs">{post._count?.comments ?? 0}</span>
+                                <span className="text-xs">{commentCount}</span>
                             </div>
                              <div className="flex items-center gap-1.5">
                                 <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike} disabled={isLikePending}>
                                     <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
                                 </Button>
-                                <span className="text-xs">{post._count?.likes ?? 0}</span>
+                                <span className="text-xs">{likeCount}</span>
                             </div>
                              <div className="flex items-center gap-1.5">
                                 <Button variant="ghost" size="icon" className="h-8 w-8">
