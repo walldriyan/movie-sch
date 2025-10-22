@@ -111,6 +111,9 @@ export async function getCommentsForMicroPost(postId: string) {
                     replies: { // Include second level of replies
                          include: {
                             user: true,
+                         },
+                         orderBy: {
+                           createdAt: 'asc'
                          }
                     }
                 },
