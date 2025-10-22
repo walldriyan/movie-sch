@@ -212,18 +212,26 @@ export async function requestAdminAccess(
 export async function updateUserRole(
   userId: string,
   role: string,
-  status: string
+  status: string,
+  dailyPostLimit: string | null
 ) {
   const session = await auth();
   if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
     throw new Error('Not authorized');
   }
 
+  const limit = dailyPostLimit === null || dailyPostLimit.trim() === '' ? null : parseInt(dailyPostLimit, 10);
+  if (dailyPostLimit !== null && dailyPostLimit.trim() !== '' && (isNaN(limit!) || limit! < 0)) {
+    throw new Error("Invalid Daily Post Limit. It must be a non-negative number.");
+  }
+
+
   await prisma.user.update({
     where: { id: userId },
     data: {
       role: role as any,
       permissionRequestStatus: status,
+      dailyPostLimit: limit,
     },
   });
 

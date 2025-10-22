@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import type { User } from '@prisma/client';
 import { getUsers, updateUserRole } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
   MoreHorizontal,
@@ -28,6 +37,8 @@ import {
   RefreshCw,
   Check,
   X,
+  Edit,
+  Loader2
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -35,16 +46,136 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuPortal,
-  DropdownMenuSubContent,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const userEditSchema = z.object({
+  role: z.nativeEnum(ROLES),
+  dailyPostLimit: z.string().optional(),
+});
+
+type UserEditFormValues = z.infer<typeof userEditSchema>;
+
+
+function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [isPending, startTransition] = useTransition();
+  const { toast } = useToast();
+
+  const form = useForm<UserEditFormValues>({
+    resolver: zodResolver(userEditSchema),
+    defaultValues: {
+      role: user.role as keyof typeof ROLES,
+      dailyPostLimit: user.dailyPostLimit?.toString() || '',
+    },
+  });
+
+  const onSubmit = (data: UserEditFormValues) => {
+    startTransition(async () => {
+      try {
+        let newStatus: string | null = user.permissionRequestStatus;
+        if (user.permissionRequestStatus === 'PENDING') {
+          newStatus = data.role === ROLES.USER ? 'REJECTED' : 'APPROVED';
+        }
+        
+        await updateUserRole(user.id, data.role, newStatus!, data.dailyPostLimit || null);
+        toast({ title: 'User Updated', description: `${user.name}'s details have been saved.` });
+        onUserUpdate();
+        setIsOpen(false);
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      }
+    });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+      <DialogTrigger asChild>
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit User
+        </DropdownMenuItem>
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit User: {user.name}</DialogTitle>
+          <DialogDescription>
+            Modify user role and set content limits.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <FormField
+              control={form.control}
+              name="role"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Role</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {Object.values(ROLES).map((role) => (
+                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="dailyPostLimit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Daily Post Limit</FormLabel>
+                   <FormControl>
+                    <Input type="number" placeholder="Default (10)" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter>
+              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={isPending}>
+                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 
 export default function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -56,9 +187,6 @@ export default function ManageUsersPage() {
     try {
       const usersFromDb = await getUsers();
       setUsers(usersFromDb);
-      toast({
-        title: 'User list refreshed',
-      });
     } catch (error) {
       toast({
         variant: 'destructive',
@@ -73,35 +201,11 @@ export default function ManageUsersPage() {
   useEffect(() => {
     fetchUsers();
   }, []);
-
-  const handleRoleChange = async (userId: string, newRole: string) => {
-    try {
-      const user = users.find((u) => u.id === userId);
-      if (!user) return;
-
-      let newStatus: string | null = user.permissionRequestStatus;
-      if (user.permissionRequestStatus === 'PENDING') {
-        newStatus = newRole === ROLES.USER ? 'REJECTED' : 'APPROVED';
-      }
-
-      if (newStatus === null) {
-        newStatus = user.permissionRequestStatus;
-      }
-      
-      await updateUserRole(userId, newRole, newStatus!);
-      await fetchUsers(); // Refetch users to update the list
-      toast({
-        title: 'Success',
-        description: `User role updated successfully.`,
-      });
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: 'Failed to update user role.',
-      });
-    }
-  };
+  
+  const handleRefreshAndToast = () => {
+    fetchUsers();
+    toast({ title: 'User list refreshed'});
+  }
 
   return (
     <div className="space-y-4">
@@ -121,7 +225,7 @@ export default function ManageUsersPage() {
                 A list of all users in the system.
               </CardDescription>
             </div>
-            <Button variant="outline" size="icon" onClick={fetchUsers} disabled={isRefreshing}>
+            <Button variant="outline" size="icon" onClick={handleRefreshAndToast} disabled={isRefreshing}>
               <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </Button>
           </div>
@@ -133,6 +237,7 @@ export default function ManageUsersPage() {
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Role</TableHead>
+                <TableHead>Post Limit</TableHead>
                 <TableHead>
                   <span className="sr-only">Actions</span>
                 </TableHead>
@@ -173,6 +278,11 @@ export default function ManageUsersPage() {
                       </Badge>
                     </TableCell>
                     <TableCell>
+                      <Badge variant="outline">
+                        {user.dailyPostLimit === null ? 'Default' : user.dailyPostLimit}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button
@@ -186,32 +296,8 @@ export default function ManageUsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuSub>
-                            <DropdownMenuSubTrigger>
-                              Change Role
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuPortal>
-                              <DropdownMenuSubContent>
-                                <DropdownMenuRadioGroup
-                                  value={user.role}
-                                  onValueChange={(newRole) =>
-                                    handleRoleChange(user.id, newRole)
-                                  }
-                                >
-                                  {Object.values(ROLES).map((role) => (
-                                    <DropdownMenuRadioItem
-                                      key={role}
-                                      value={role}
-                                    >
-                                      {role}
-                                    </DropdownMenuRadioItem>
-                                  ))}
-                                </DropdownMenuRadioGroup>
-                              </DropdownMenuSubContent>
-                            </DropdownMenuPortal>
-                          </DropdownMenuSub>
+                          <EditUserDialog user={user} onUserUpdate={fetchUsers} />
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem>Edit User</DropdownMenuItem>
                           <DropdownMenuItem className="text-destructive">
                             Delete User
                           </DropdownMenuItem>
@@ -222,7 +308,7 @@ export default function ManageUsersPage() {
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={4} className="h-24 text-center">
+                  <TableCell colSpan={5} className="h-24 text-center">
                     No users found.
                   </TableCell>
                 </TableRow>
