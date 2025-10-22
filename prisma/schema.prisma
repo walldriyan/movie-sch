@@ -33,6 +33,7 @@ model User {
   updatedAt               DateTime         @updatedAt
   permissionRequestStatus String?
   permissionRequestMessage String?
+ accountType             AccountType      @default(FREE)
 
   accounts                Account[]
   sessions                Session[]
@@ -58,6 +59,20 @@ model User {
 
   examSubmissions         ExamSubmission[]
   subtitles               Subtitle[]
+
+
+
+   
+ 
+  
+
+  feedback                Feedback[]
+  feedbackReplies         FeedbackReply[]
+  microPosts              MicroPost[]
+  microPostLikes          MicroPostLike[]
+  microPostComments       MicroPostComment[]
+
+
 
   @@map("users")
 }
@@ -551,3 +566,138 @@ enum ExamStatus {
   INACTIVE
 }
 
+enum FeedbackStatus {
+  UNREAD
+  READ
+  CLOSED
+}
+
+// =============================================================
+// NEW MODELS AND ENUMS (Copy and paste this entire block at the end of your schema file)
+// =============================================================
+
+// Enum for User Account Types
+enum AccountType {
+  FREE
+  PREMIUM
+  HYBRID
+}
+
+// For system-wide settings like post limits
+model AppSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+
+  @@map("app_settings")
+}
+
+// For user feedback
+model Feedback {
+  id          String         @id @default(cuid())
+  title       String
+  description String
+  imageUrl    String?
+  status      FeedbackStatus @default(UNREAD)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  replies     FeedbackReply[]
+
+  @@map("feedbacks")
+}
+
+// For replies to feedback
+model FeedbackReply {
+  id         String   @id @default(cuid())
+  message    String
+  createdAt  DateTime @default(now())
+
+  feedbackId String
+  feedback   Feedback @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("feedback_replies")
+}
+
+// For "Micro-Tweets"
+model MicroPost {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  images    MicroPostImage[]
+  links     MicroPostLink[]
+
+  viewCount Int                @default(0)
+  likes     MicroPostLike[]
+  comments  MicroPostComment[]
+
+  categoryId String?
+  category   MicroPostCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@map("micro_posts")
+}
+
+model MicroPostImage {
+  id          String    @id @default(cuid())
+  url         String
+  microPostId String
+  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  @@map("micro_post_images")
+}
+
+model MicroPostLink {
+  id          String    @id @default(cuid())
+  url         String
+  title       String?
+  microPostId String
+  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  @@map("micro_post_links")
+}
+
+model MicroPostCategory {
+  id    String      @id @default(cuid())
+  name  String      @unique
+  posts MicroPost[]
+
+  @@map("micro_post_categories")
+}
+
+model MicroPostLike {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  userId      String
+  microPostId String
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, microPostId])
+  @@map("micro_post_likes")
+}
+
+model MicroPostComment {
+  id          String    @id @default(cuid())
+  content     String
+  createdAt   DateTime  @default(now())
+
+  userId      String
+  microPostId String
+
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  @@map("micro_post_comments")
+}
