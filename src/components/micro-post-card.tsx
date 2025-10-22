@@ -143,11 +143,9 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                         <Accordion type="single" collapsible className="w-full mt-2">
                             <AccordionItem value="item-1" className="border-b-0">
                                 <div className="flex justify-between items-center text-muted-foreground">
-                                    <AccordionTrigger className="py-0">
-                                        <div className="flex items-center gap-1.5">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                <MessageCircle className="h-4 w-4" />
-                                            </Button>
+                                    <AccordionTrigger className="py-0 hover:no-underline">
+                                        <div className="flex items-center gap-1.5 p-2 rounded-md hover:bg-accent">
+                                            <MessageCircle className="h-4 w-4" />
                                             <span className="text-xs">{commentCount}</span>
                                         </div>
                                     </AccordionTrigger>
