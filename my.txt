@@ -14,7 +14,6 @@ chmod 755 ./path/to/database/folder/
 npx prisma generate
 npx prisma db push
 
-mee@sch.com
 
 
 To get started, take a look at src/app/page.tsx.
