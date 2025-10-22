@@ -2,6 +2,9 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2 } from 'lucide-react';
 import Link from 'next/link';
@@ -26,14 +29,17 @@ import GroupCard from './group-card';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { Notification as NotificationType } from '@prisma/client';
-import { updateNotificationStatus } from '@/lib/actions';
+import { updateNotificationStatus, createMicroPost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
 import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
 import { Textarea } from './ui/textarea';
+import { Form, FormControl, FormField, FormItem, FormMessage } from './ui/form';
+import { Input } from './ui/input';
 import { useSession } from 'next-auth/react';
+import { Loader2 } from 'lucide-react';
 
 
 interface HomePageClientProps {
@@ -46,6 +52,14 @@ interface HomePageClientProps {
     initialNotifications: NotificationType[];
     session: Session | null;
 }
+
+const microPostSchema = z.object({
+  content: z.string().min(1, 'Post content cannot be empty.').max(500, 'Post cannot exceed 500 characters.'),
+  tags: z.string().optional(),
+});
+
+type MicroPostFormValues = z.infer<typeof microPostSchema>;
+
 
 const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
     switch (type) {
@@ -61,33 +75,86 @@ const NotificationIcon = ({ type }: { type: NotificationType['type']}) => {
 function CreateMicroPost() {
     const { data: session } = useSession();
     const user = session?.user;
+    const { toast } = useToast();
+    const [isSubmitting, startTransition] = useTransition();
+
+    const form = useForm<MicroPostFormValues>({
+      resolver: zodResolver(microPostSchema),
+      defaultValues: {
+        content: '',
+        tags: '',
+      }
+    });
+
     const userAvatar = user?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
     if (!user) return null;
 
+    const onSubmit = (values: MicroPostFormValues) => {
+      startTransition(async () => {
+        try {
+          const tagsArray = values.tags ? values.tags.split(',').map(tag => tag.trim()) : [];
+          await createMicroPost(values.content, tagsArray);
+          toast({ title: 'Success', description: 'Your post has been published.' });
+          form.reset();
+        } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+      });
+    }
+
     return (
         <Card className="mb-8">
             <CardContent className="p-4">
-                 <div className="flex items-start gap-4">
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
                     <Avatar>
                         <AvatarImage src={userAvatar} />
                         <AvatarFallback>{user.name?.charAt(0) || 'U'}</AvatarFallback>
                     </Avatar>
-                    <div className="w-full space-y-2">
-                        <Textarea
-                            placeholder="What's happening?"
-                            className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
-                            rows={2}
+                    <div className="w-full space-y-3">
+                        <FormField
+                          control={form.control}
+                          name="content"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Textarea
+                                    placeholder="What's happening?"
+                                    className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
+                                    rows={2}
+                                    {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                         <FormField
+                          control={form.control}
+                          name="tags"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormControl>
+                                <Input placeholder="Add tags (comma-separated)" className="text-xs h-8" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                         <div className="flex justify-between items-center pt-2">
                             <div className="flex gap-1 text-muted-foreground">
-                                <Button variant="ghost" size="icon"><ImageIcon className="h-5 w-5" /></Button>
-                                <Button variant="ghost" size="icon"><Link2 className="h-5 w-5" /></Button>
+                                <Button variant="ghost" size="icon" type="button"><ImageIcon className="h-5 w-5" /></Button>
+                                <Button variant="ghost" size="icon" type="button"><Link2 className="h-5 w-5" /></Button>
                             </div>
-                            <Button disabled>Post</Button>
+                            <Button type="submit" disabled={isSubmitting}>
+                              {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                              Post
+                            </Button>
                         </div>
                     </div>
-                </div>
+                  </form>
+                </Form>
             </CardContent>
         </Card>
     );
