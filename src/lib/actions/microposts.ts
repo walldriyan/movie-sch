@@ -6,6 +6,8 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { saveImageFromDataUrl, deleteUploadedFile } from './posts';
 import { ROLES } from '../permissions';
+import type { MicroPost as PrismaMicroPost } from '@prisma/client';
+
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
 
@@ -96,7 +98,7 @@ export async function getMicroPosts() {
             images: true,
             categories: true,
             tags: true,
-            likes: true, // Include likes to check if current user has liked
+            likes: true, 
             _count: {
                 select: {
                     likes: true,
