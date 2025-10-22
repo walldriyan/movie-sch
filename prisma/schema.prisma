@@ -33,6 +33,8 @@ model User {
   updatedAt               DateTime         @updatedAt
   permissionRequestStatus String?
   permissionRequestMessage String?
+  dailyPostLimit          Int? 
+
  accountType             AccountType      @default(FREE)
 
   accounts                Account[]
