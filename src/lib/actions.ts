@@ -8,6 +8,7 @@ export * from './actions/reviews';
 export * from './actions/subtitles';
 export * from './actions/notifications';
 export * from './actions/exams';
-export *from './actions/settings';
+export * from './actions/settings';
 export * from './actions/feedback';
 export * from './actions/microposts';
+export * from './actions/comments';
