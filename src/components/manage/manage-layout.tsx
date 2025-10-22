@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect } from 'react';
@@ -24,6 +25,7 @@ import {
   Users2,
   Bell,
   BookCheck,
+  MessageSquareWarning,
 } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import AuthGuard from '@/components/auth/auth-guard';
@@ -139,6 +141,14 @@ export default function ManageLayout({ children }: ManageLayoutProps) {
                         <Link href="/admin/notifications">
                             <Bell />
                             <span>Notifications</span>
+                        </Link>
+                        </SidebarMenuButton>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive={pathname === '/admin/feedback'} className="text-base">
+                        <Link href="/admin/feedback">
+                            <MessageSquareWarning />
+                            <span>Feedback</span>
                         </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

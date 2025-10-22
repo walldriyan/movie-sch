@@ -1,5 +1,4 @@
 
-
 export * from './actions/auth';
 export * from './actions/posts';
 export * from './actions/users';
@@ -10,3 +9,4 @@ export * from './actions/subtitles';
 export * from './actions/notifications';
 export * from './actions/exams';
 export * from './actions/settings';
+export * from './actions/feedback';
