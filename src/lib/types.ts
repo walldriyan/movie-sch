@@ -1,6 +1,6 @@
 
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam as PrismaExam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption, JsonValue, SubmissionAnswer as PrismaSubmissionAnswer } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam as PrismaExam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption, JsonValue, SubmissionAnswer as PrismaSubmissionAnswer, MicroPost as PrismaMicroPost } from "@prisma/client";
 
 export enum PostType {
   MOVIE = 'MOVIE',
@@ -105,3 +105,6 @@ export type ExamWithSubmissions = PrismaExam & {
     questions: { points: number }[];
     submissions: PrismaSubmission[];
 };
+
+// Micro-post Types
+export type MicroPost = PrismaMicroPost;
