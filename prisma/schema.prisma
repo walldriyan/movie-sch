@@ -704,16 +704,24 @@ model MicroPostLike {
   @@map("micro_post_likes")
 }
 
+
+
 model MicroPostComment {
-  id          String    @id @default(cuid())
-  content     String
-  createdAt   DateTime  @default(now())
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  userId      String
+  userId String
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   microPostId String
+  post        MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
 
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+  // Self-relation for replies (මෙම කොටස අලුතින් එක් කරන්න)
+  parentId  String?
+  parent    MicroPostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  replies   MicroPostComment[] @relation("CommentReplies")
 
   @@map("micro_post_comments")
 }
