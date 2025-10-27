@@ -11,10 +11,11 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  CardDescription,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle, Pencil, FileText, Certificate, Film, CardDescription } from 'lucide-react';
+import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle, Pencil, FileText, Certificate, Film } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -334,9 +335,9 @@ export default function ExamResultsPage() {
                             <Award className="h-8 w-8 text-primary" />
                             Results for: {submission.exam.title}
                         </CardTitle>
-                        <CardDescription>
+                        <p className="text-sm text-muted-foreground pt-1">
                             Submitted on: {new Date(submission.submittedAt).toLocaleString()}
-                        </CardDescription>
+                        </p>
                     </CardHeader>
                     <CardContent>
                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 text-center">
@@ -392,7 +393,7 @@ export default function ExamResultsPage() {
                                     <React.Fragment key={question.id}>
                                     <Card className="bg-card/30 border-dashed p-6">
                                         <CardHeader className="p-0 mb-4">
-                                            <CardDescription className="font-serif text-xs text-muted-foreground uppercase tracking-wider">{numberToSinhala(index + 1)} ප්‍රශ්නය</CardDescription>
+                                            <p className="font-serif text-xs text-muted-foreground uppercase tracking-wider">{numberToSinhala(index + 1)} ප්‍රශ්නය</p>
                                             <CardTitle className="text-lg">{question.text} <span className="text-sm font-normal text-muted-foreground">({question.points} points)</span></CardTitle>
                                         </CardHeader>
                                         <CardContent className="p-0">
@@ -491,3 +492,5 @@ export default function ExamResultsPage() {
         </div>
     )
 }
+
+    
