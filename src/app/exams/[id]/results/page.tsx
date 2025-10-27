@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle, Pencil, FileText, Certificate, Film } from 'lucide-react';
+import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle, Pencil, FileText, Film } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -304,7 +304,7 @@ export default function ExamResultsPage() {
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
             <div id="printable-certificate-content" className="hidden">
-              <CertificateView results={results}/>
+              {results && <CertificateView results={results}/>}
             </div>
              <div id="printable-detailed-content" className="hidden">
               <div className="p-6">
@@ -494,7 +494,7 @@ export default function ExamResultsPage() {
                                 Download Detailed PDF
                             </Button>
                              <Button onClick={() => handlePrint('printable-certificate-content')}>
-                                <Certificate className="mr-2 h-4 w-4" />
+                                <Award className="mr-2 h-4 w-4" />
                                 Download Certificate
                             </Button>
                         </div>
