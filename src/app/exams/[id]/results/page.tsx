@@ -32,7 +32,7 @@ const formatTime = (totalSeconds: number | null | undefined): string => {
 };
 
 // New component for the printable view
-const CertificateView = ({ results }: { results: ExamResults }) => {
+const CertificateView = ({ results }: { results: ExamResults | null }) => {
     if (!results) return null;
 
     const { submission, user } = results;
@@ -231,16 +231,27 @@ export default function ExamResultsPage() {
         const printContent = document.getElementById(contentId)?.innerHTML;
         if (!printContent) return;
 
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) return;
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'absolute';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = '0';
+        document.body.appendChild(iframe);
 
-        printWindow.document.write(`
+        const doc = iframe.contentWindow?.document;
+        if (!doc) {
+            document.body.removeChild(iframe);
+            return;
+        }
+
+        doc.open();
+        doc.write(`
             <html>
                 <head>
-                    <title>Print Results</title>
+                    <title>Print</title>
                     <script src="https://cdn.tailwindcss.com"></script>
                     <style>
-                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; font-family: sans-serif; }
                         @page { size: A4; margin: 0; }
                         .printable-certificate, .printable-detailed { padding: 1.5rem; }
                         .break-inside-avoid { break-inside: avoid; }
@@ -249,12 +260,13 @@ export default function ExamResultsPage() {
                 <body>${printContent}</body>
             </html>
         `);
-        printWindow.document.close();
-        printWindow.focus();
+        doc.close();
+        
+        iframe.contentWindow?.focus();
         setTimeout(() => {
-            printWindow.print();
-            printWindow.close();
-        }, 500);
+            iframe.contentWindow?.print();
+            document.body.removeChild(iframe);
+        }, 500); // Timeout to ensure content is loaded
     };
 
     if (isLoading) {
@@ -292,7 +304,7 @@ export default function ExamResultsPage() {
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
             <div id="printable-certificate-content" className="hidden">
-              {results && <CertificateView results={results}/>}
+              <CertificateView results={results}/>
             </div>
              <div id="printable-detailed-content" className="hidden">
               <div className="p-6">
@@ -492,7 +504,3 @@ export default function ExamResultsPage() {
         </div>
     )
 }
-
-    
-
-    
