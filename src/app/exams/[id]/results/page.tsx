@@ -467,7 +467,7 @@ export default function ExamResultsPage() {
                             })}
                         </div>
 
-                         <div className="mt-12 flex justify-center gap-4">
+                         <div className="mt-12 flex flex-wrap justify-center gap-4">
                             {submission.exam.postId && (
                                 <Button asChild>
                                     <Link href={`/profile/${results.user.id}`}>Go to Profile</Link>
