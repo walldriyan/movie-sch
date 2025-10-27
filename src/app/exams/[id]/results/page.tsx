@@ -290,6 +290,36 @@ export default function ExamResultsPage() {
         };
     }, [results]);
 
+    const handlePrint = () => {
+        const printContent = document.getElementById('printable-content')?.innerHTML;
+        if (!printContent) return;
+
+        const printWindow = window.open('', '_blank');
+        if (!printWindow) return;
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Print Certificate</title>
+                    <script src="https://cdn.tailwindcss.com"></script>
+                    <style>
+                        body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+                        @page { size: A4; margin: 0; }
+                        .printable-area { padding: 1.5rem; }
+                        .break-inside-avoid { break-inside: avoid; }
+                    </style>
+                </head>
+                <body>${printContent}</body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    };
+
     if (isLoading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -324,10 +354,10 @@ export default function ExamResultsPage() {
 
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
-            <div className="hidden print:block">
-              <PrintableView results={results}/>
+            <div id="printable-content" className="hidden">
+              {results && <PrintableView results={results}/>}
             </div>
-            <div className="max-w-4xl mx-auto no-print">
+            <div className="max-w-4xl mx-auto">
                 <Card>
                     <CardHeader>
                         <CardTitle className="text-3xl font-bold font-serif flex items-center gap-3">
@@ -481,7 +511,7 @@ export default function ExamResultsPage() {
                                     </Link>
                                 </Button>
                             )}
-                             <Button variant="secondary" onClick={() => window.print()}>
+                             <Button variant="secondary" onClick={handlePrint}>
                                 <Download className="mr-2 h-4 w-4" />
                                 Download as PDF
                             </Button>
