@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle, Pencil } from 'lucide-react';
+import { AlertCircle, Check, X, Award, Percent, Target, FileQuestion, MessageSquare, Repeat, Download, Loader2, Calendar, User, Hash, Clock, CircleDot, CheckCircle, XCircle, HelpCircle, Pencil, FileText, Certificate } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
@@ -34,7 +34,7 @@ const formatTime = (totalSeconds: number | null | undefined): string => {
 };
 
 // New component for the printable view
-const PrintableView = ({ results }: { results: ExamResults }) => {
+const CertificateView = ({ results }: { results: ExamResults }) => {
     if (!results) return null;
 
     const { submission, user } = results;
@@ -42,7 +42,7 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
     
     return (
-        <div className="printable-area font-sans text-black bg-white">
+        <div className="printable-certificate font-sans text-black bg-white">
              <header className="text-center mb-12 border-b-2 border-gray-200 pb-8">
                 <div className="inline-flex items-center space-x-3 mb-4">
                     <Film className="h-10 w-10 text-primary" />
@@ -96,67 +96,6 @@ const PrintableView = ({ results }: { results: ExamResults }) => {
                             <p className="text-base text-gray-500">Result</p>
                             <p className={`text-4xl font-bold ${percentage >= 50 ? 'text-green-500' : 'text-red-500'}`}>{percentage >= 50 ? "Passed" : "Failed"}</p>
                         </div>
-                    </div>
-                </section>
-                
-                 <section>
-                    <h2 className="text-2xl font-semibold border-b pb-2 mb-6 text-gray-700">Answer Review</h2>
-                    <div className="space-y-8">
-                        {submission.exam.questions.map((question, index) => {
-                            const userAnswers = submission.answers.filter(a => a.questionId === question.id);
-                            
-                            return (
-                                <div key={question.id} className="p-4 border border-gray-200 rounded-lg break-inside-avoid">
-                                    <p className="font-bold text-gray-800">{index + 1}. {question.text} <span className="font-normal text-gray-500">({question.points} points)</span></p>
-                                    
-                                     {question.type === 'MCQ' ? (
-                                        <div className="mt-4 space-y-3">
-                                            {question.options.map(option => {
-                                                const isUserChoice = userAnswers.some(a => a.selectedOptionId === option.id);
-                                                const isTheCorrectAnswer = option.isCorrect;
-                                                
-                                                return (
-                                                    <div 
-                                                        key={option.id}
-                                                        className={cn(
-                                                            "flex items-start gap-3 p-3 rounded-md text-sm border",
-                                                            isTheCorrectAnswer && "bg-green-50 border-green-300",
-                                                            isUserChoice && !isTheCorrectAnswer && "bg-red-50 border-red-300"
-                                                        )}
-                                                    >
-                                                        <div className='flex-shrink-0'>
-                                                            {isUserChoice && isTheCorrectAnswer && <Check className="h-5 w-5 text-green-500" />}
-                                                            {isUserChoice && !isTheCorrectAnswer && <X className="h-5 w-5 text-red-500" />}
-                                                            {!isUserChoice && isTheCorrectAnswer && <Target className="h-5 w-5 text-green-500" />}
-                                                            {!isUserChoice && !isTheCorrectAnswer && <FileQuestion className="h-5 w-5 text-gray-400" />}
-                                                        </div>
-                                                        <div className="flex-grow">
-                                                            <p className={cn(isTheCorrectAnswer && 'font-semibold', isUserChoice && !isTheCorrectAnswer && 'line-through')}>{option.text}</p>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    ) : (
-                                        <div className="mt-4 space-y-4">
-                                             {question.images && question.images.length > 0 && (
-                                                <div className="grid grid-cols-2 gap-2">
-                                                    {question.images.map(image => (
-                                                        <div key={image.id} className="relative aspect-video">
-                                                            <Image src={image.url} alt={`Question ${index + 1} image`} layout="fill" className="object-contain rounded-md" />
-                                                        </div>
-                                                    ))}
-                                                </div>
-                                            )}
-                                            <div className="p-3 rounded-md bg-gray-50 border">
-                                                <p className="text-sm font-semibold text-gray-600 mb-2">Your Answer:</p>
-                                                <p className="text-base text-gray-800 whitespace-pre-wrap">{userAnswers[0]?.customAnswer || 'No answer provided.'}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
                     </div>
                 </section>
             </main>
@@ -290,8 +229,8 @@ export default function ExamResultsPage() {
         };
     }, [results]);
 
-    const handlePrint = () => {
-        const printContent = document.getElementById('printable-content')?.innerHTML;
+    const handlePrint = (contentId: string) => {
+        const printContent = document.getElementById(contentId)?.innerHTML;
         if (!printContent) return;
 
         const printWindow = window.open('', '_blank');
@@ -300,12 +239,12 @@ export default function ExamResultsPage() {
         printWindow.document.write(`
             <html>
                 <head>
-                    <title>Print Certificate</title>
+                    <title>Print Results</title>
                     <script src="https://cdn.tailwindcss.com"></script>
                     <style>
                         body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
                         @page { size: A4; margin: 0; }
-                        .printable-area { padding: 1.5rem; }
+                        .printable-certificate, .printable-detailed { padding: 1.5rem; }
                         .break-inside-avoid { break-inside: avoid; }
                     </style>
                 </head>
@@ -354,9 +293,43 @@ export default function ExamResultsPage() {
 
     return (
         <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8">
-            <div id="printable-content" className="hidden">
-              {results && <PrintableView results={results}/>}
+            <div id="printable-certificate-content" className="hidden">
+              {results && <CertificateView results={results}/>}
             </div>
+             <div id="printable-detailed-content" className="hidden">
+              <div className="p-6">
+                <h1 className="text-2xl font-bold mb-4">{submission.exam.title} - Detailed Results</h1>
+                <p>Student: {results.user.name}</p>
+                <p>Date: {new Date(submission.submittedAt).toLocaleString()}</p>
+                <p className="font-bold mt-4">Final Score: {submission.score} / {totalPoints}</p>
+                <hr className="my-4" />
+                 <div className="space-y-4">
+                    {submission.exam.questions.map((question, index) => (
+                        <div key={question.id}>
+                            <p className="font-semibold">{index + 1}. {question.text}</p>
+                            {question.type === 'MCQ' ? (
+                                <ul className="list-disc pl-5 mt-2">
+                                {question.options.map(option => {
+                                    const isUserChoice = submission.answers.some(a => a.questionId === question.id && a.selectedOptionId === option.id);
+                                    return (
+                                    <li key={option.id} className={cn(
+                                        option.isCorrect && 'text-green-500 font-semibold',
+                                        isUserChoice && !option.isCorrect && 'text-red-500'
+                                    )}>
+                                        {option.text} {isUserChoice && '(Your answer)'}
+                                    </li>
+                                    )
+                                })}
+                                </ul>
+                            ) : (
+                                <p className="mt-2 text-gray-500 italic">Your answer: {submission.answers.find(a => a.questionId === question.id)?.customAnswer || 'N/A'}</p>
+                            )}
+                        </div>
+                    ))}
+                 </div>
+              </div>
+            </div>
+            
             <div className="max-w-4xl mx-auto">
                 <Card>
                     <CardHeader>
@@ -498,11 +471,6 @@ export default function ExamResultsPage() {
                         </div>
 
                          <div className="mt-12 flex flex-wrap justify-center gap-4">
-                            {submission.exam.postId && (
-                                <Button asChild>
-                                    <Link href={`/profile/${results.user.id}`}>Go to Profile</Link>
-                                </Button>
-                            )}
                             {canRetry && (
                                 <Button asChild variant="outline">
                                     <Link href={`/exams/${submission.exam.id}`}>
@@ -511,9 +479,13 @@ export default function ExamResultsPage() {
                                     </Link>
                                 </Button>
                             )}
-                             <Button variant="secondary" onClick={handlePrint}>
-                                <Download className="mr-2 h-4 w-4" />
-                                Download as PDF
+                             <Button variant="secondary" onClick={() => handlePrint('printable-detailed-content')}>
+                                <FileText className="mr-2 h-4 w-4" />
+                                Download Detailed PDF
+                            </Button>
+                             <Button onClick={() => handlePrint('printable-certificate-content')}>
+                                <Certificate className="mr-2 h-4 w-4" />
+                                Download Certificate
                             </Button>
                         </div>
                     </CardContent>
