@@ -148,7 +148,7 @@ export default function ExamResultsPage() {
 
     }, [examId, submissionId]);
 
-    const calculateQuestionScore = useMemo(() => (question: typeof results.submission.exam.questions[0]) => {
+    const calculateQuestionScore = useMemo(() => (question: NonNullable<ExamResults>['submission']['exam']['questions'][0]) => {
         if (!results) return 0;
         const { submission } = results;
         if (question.type !== 'MCQ') return 0; // Don't calculate for non-MCQ
