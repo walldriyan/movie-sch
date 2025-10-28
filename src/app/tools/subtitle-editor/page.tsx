@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -58,8 +57,9 @@ const secondsToSrtTime = (seconds: number): string => {
 
 
 const parseSrt = (srtContent: string): Omit<SubtitleEntry, 'id'>[] => {
+    console.log("--- [SRT Parser] පියවර 1: SRT ගොනුව parse කිරීම ආරම්භ විය.");
     const blocks = srtContent.trim().split(/\r?\n\r?\n/);
-    return blocks.map(block => {
+    const parsed = blocks.map(block => {
         const lines = block.split(/\r?\n/);
         if (lines.length < 3) return null;
         const timeMatch = lines[1]?.match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
@@ -72,10 +72,13 @@ const parseSrt = (srtContent: string): Omit<SubtitleEntry, 'id'>[] => {
             sinhala: '',
         };
     }).filter((s): s is Omit<SubtitleEntry, 'id'> => s !== null);
+    console.log(`--- [SRT Parser] පියවර 2: Subtitle lines ${parsed.length} ක් සාර්ථකව parse කරන ලදී.`);
+    return parsed;
 };
 
 
 export default function SubtitleEditorPage() {
+    console.log("--- [Editor Page] Component එක render වීම ආරම්භ විය.");
     const { toast } = useToast();
     const [videoUrl, setVideoUrl] = useState<string | null>(null);
     const [subtitles, setSubtitles] = useState<SubtitleEntry[]>([]);
@@ -98,19 +101,23 @@ export default function SubtitleEditorPage() {
     const activeRowRef = useRef<HTMLTableRowElement>(null);
 
     const loadSubtitlesFromDB = async () => {
+        console.log("--- [DB] IndexedDB වෙතින් subtitles load කිරීම ආරම්භ විය.");
         if (!dbPromise) return;
         const db = await dbPromise;
         const tx = db.transaction(SUBTITLE_STORE, 'readonly');
         const allSubs = await tx.store.getAll();
         setSubtitles(allSubs);
+        console.log(`--- [DB] Subtitles ${allSubs.length} ක් DB එකෙන් load කරන ලදී. State යාවත්කාලීන විය.`);
     };
 
     useEffect(() => {
+        console.log("--- [useEffect] පළමු render එකෙන් පසු subtitles load කිරීමේ effect එක ක්‍රියාත්මක විය.");
         loadSubtitlesFromDB();
     }, []);
     
     useEffect(() => {
         if (activeRowRef.current) {
+            console.log(`--- [useEffect] Active subtitle (ID: ${currentSubtitle?.id}) වෙනස් විය. අදාළ row එක scroll කරමින් පවතී.`);
             activeRowRef.current.scrollIntoView({
                 behavior: 'smooth',
                 block: 'center',
@@ -122,22 +129,26 @@ export default function SubtitleEditorPage() {
         if (currentSubtitle) {
             const overlayInput = document.getElementById(`overlay-input-${currentSubtitle.id}`);
             if (overlayInput) {
+                console.log(`--- [useEffect] Overlay input (ID: ${currentSubtitle.id}) එක focus කිරීම සඳහා setTimeout යොදන ලදී.`);
                 setTimeout(() => overlayInput.focus(), 0);
             }
         }
     }, [currentSubtitle]);
 
     const handleVideoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log("--- [File Handling] Video ගොනුවක් තෝරාගෙන ඇත.");
         const file = event.target.files?.[0];
         if (file) {
             const url = URL.createObjectURL(file);
             setVideoUrl(url);
             setPlayed(0);
             setCurrentTime(0);
+            console.log(`--- [File Handling] Video URL එක state එකට set කරන ලදී: ${url}`);
         }
     };
     
     const handleSubtitleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        console.log("--- [File Handling] Subtitle ගොනුවක් තෝරාගෙන ඇත.");
         const file = event.target.files?.[0];
         if (file && dbPromise) {
             const reader = new FileReader();
@@ -145,6 +156,7 @@ export default function SubtitleEditorPage() {
                 const content = e.target?.result as string;
                 const parsedSubs = parseSrt(content);
                 
+                console.log("--- [DB] ਪੁਰਾਣੇ subtitles clear කරමින්, අලුත් ඒවා DB එකට add කරමින් පවතී.");
                 const db = await dbPromise!;
                 const tx = db.transaction(SUBTITLE_STORE, 'readwrite');
                 await tx.store.clear();
@@ -165,22 +177,30 @@ export default function SubtitleEditorPage() {
     };
 
     const saveChanges = async (id: number, text: string) => {
+        console.log(`--- [Save] saveChanges function එක ක්‍රියාත්මක විය. ID: ${id}, Text: "${text}"`);
         if (dbPromise) {
              const db = await dbPromise;
              const existingSub = await db.get(SUBTITLE_STORE, id);
              if (existingSub) {
+                 console.log(`--- [Save] DB එකේ ID: ${id} සොයා ගන්නා ලදී. Sinhala text එක update කරමින් පවතී.`);
                  await db.put(SUBTITLE_STORE, { ...existingSub, sinhala: text });
+                 console.log(`--- [Save] DB එක සාර්ථකව update කරන ලදී.`);
+             } else {
+                 console.warn(`--- [Save] DB එකේ ID: ${id} සොයා ගැනීමට නොහැකි විය.`);
              }
              
-             // Optimistically update the main state
-             setSubtitles(prevSubs =>
-                 prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
-             );
+             setSubtitles(prevSubs => {
+                console.log(`--- [Save] Optimistic UI: ප්‍රධාන 'subtitles' state එක update කරමින් පවතී.`);
+                const updated = prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s);
+                console.log(`--- [Save] Optimistic UI: State එක update කරන ලදී.`);
+                return updated;
+             });
         }
      };
     
     const handleInputBlur = () => {
         if(editingState.id !== null) {
+            console.log(`--- [Input Event] Input field එක blur විය. ID: ${editingState.id} සඳහා saveChanges call කරමින් පවතී.`);
             saveChanges(editingState.id, editingState.text);
             setEditingState({ id: null, text: '' });
         }
@@ -189,23 +209,30 @@ export default function SubtitleEditorPage() {
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
+            console.log("--- [Input Event] 'Enter' key එක press කරන ලදී.");
             const currentTarget = e.target as HTMLInputElement;
-            const currentId = currentTarget.id.split('-')[2];
+            const currentIdStr = currentTarget.id.split('-')[2];
             const currentText = currentTarget.value;
             
-            if (!currentId) return;
+            if (!currentIdStr) {
+                console.warn("--- [Input Event] 'Enter': Input ID එක සොයා ගැනීමට නොහැකි විය.");
+                return;
+            }
     
-            const idAsNum = parseInt(currentId, 10);
-            
+            const idAsNum = parseInt(currentIdStr, 10);
+            console.log(`--- [Input Event] 'Enter': ID: ${idAsNum}, Text: "${currentText}" save කිරීම ආරම්භ විය.`);
             await saveChanges(idAsNum, currentText);
+            console.log("--- [Input Event] 'Enter': Save කිරීම අවසන්. ඊළඟ subtitle එකට jump වීමට සූදානම්.");
             
-            const updatedSubs = subtitles.map(s => s.id === idAsNum ? { ...s, sinhala: currentText } : s);
-            const currentIndex = updatedSubs.findIndex(s => s.id === idAsNum);
-            const nextSub = updatedSubs[currentIndex + 1];
+            const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
+            const nextSub = subtitles[currentIndex + 1];
     
             if (nextSub) {
+                console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
                 setPlaying(false);
                 playerRef.current?.seekTo(nextSub.startTime);
+            } else {
+                console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
             }
         }
     };
@@ -227,55 +254,49 @@ export default function SubtitleEditorPage() {
         const newPlayed = value[0];
         setPlayed(newPlayed);
         playerRef.current?.seekTo(newPlayed, 'fraction');
+        console.log(`--- [Player Control] Slider එක මගින් video එක ${Math.round(newPlayed * 100)}% වෙත seek කරන ලදී.`);
     };
     
     const handleSeekStep = (seconds: number) => {
         const newTime = (playerRef.current?.getCurrentTime() || 0) + seconds;
         playerRef.current?.seekTo(newTime);
+        console.log(`--- [Player Control] Video එක තත්පර ${seconds} කින් ${seconds > 0 ? 'ඉදිරියට' : 'පිටුපසට'} seek කරන ලදී.`);
     };
     
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
+        console.log(`--- [Player Control] '${direction}' subtitle jump button එක click කරන ලදී.`);
         setPlaying(false);
         const time = playerRef.current?.getCurrentTime() || 0;
-        const currentSub = currentSubtitle;
+        console.log(`--- [Player Control] Jump: දැනට පවතින වේලාව: ${time}`);
       
         let targetSub: SubtitleEntry | undefined;
     
         if (direction === 'next') {
-            if (currentSub) {
-                const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
-                targetSub = subtitles[currentIndex + 1];
-            } else {
-                // If no sub is active, find the very next one from the current time
-                targetSub = subtitles.find(s => s.startTime > time);
-            }
+            targetSub = subtitles.find(s => s.startTime > time);
         } else { // prev
-            // Find all subs that start before the current time
             const prevSubs = subtitles.filter(s => s.startTime < time);
-            if (currentSub && prevSubs.length > 1) {
-                 const currentIndex = prevSubs.findIndex(s => s.id === currentSub.id);
-                 // Target the one before the current one in the filtered list
-                 targetSub = prevSubs[currentIndex-1];
-            } else {
-                // If no sub is active or we are at the first sub, target the last one before current time
-                targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
-            }
+            targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
         }
       
         if (targetSub) {
+            console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
             playerRef.current?.seekTo(targetSub.startTime);
+        } else {
+             console.log(`--- [Player Control] Jump: '${direction}' දෙසට subtitle එකක් සොයා ගැනීමට නොහැකි විය.`);
         }
     };
 
 
     const handleRowClick = (startTime: number) => {
+        console.log(`--- [UI Event] Subtitle row එකක් click කරන ලදී. Player එක ${startTime} තත්පරයට seek කරමින් පවතී.`);
         playerRef.current?.seekTo(startTime);
     }
     
     const handleSave = () => {
+        console.log("--- [File Handling] 'Save Sinhala SRT' button එක click කරන ලදී.");
         let srtContent = '';
         subtitles.forEach((sub, index) => {
-            srtContent += `${sub.id}\n`;
+            srtContent += `${index + 1}\n`;
             srtContent += `${secondsToSrtTime(sub.startTime)} --> ${secondsToSrtTime(sub.endTime)}\n`;
             srtContent += `${sub.sinhala || ''}\n\n`;
         });
@@ -288,6 +309,7 @@ export default function SubtitleEditorPage() {
         a.click();
         URL.revokeObjectURL(url);
         toast({ title: 'File Saved', description: 'Your Sinhala subtitle file has been downloaded.' });
+        console.log("--- [File Handling] SRT ගොනුව සාර්ථකව generate කර download කරන ලදී.");
     };
 
     return (
@@ -312,9 +334,12 @@ export default function SubtitleEditorPage() {
                                 height="100%"
                                 playing={playing}
                                 onProgress={handleProgress}
-                                onDuration={setDuration}
-                                onBuffer={() => setIsBuffering(true)}
-                                onBufferEnd={() => setIsBuffering(false)}
+                                onDuration={(d) => { console.log(`--- [Player Event] Video duration එක ලැබුණි: ${d}`); setDuration(d); }}
+                                onBuffer={() => { console.log("--- [Player Event] Video එක buffer වෙමින් පවතී..."); setIsBuffering(true); }}
+                                onBufferEnd={() => { console.log("--- [Player Event] Buffering අවසන්."); setIsBuffering(false); }}
+                                onPlay={() => console.log("--- [Player Event] Video එක play විය.")}
+                                onPause={() => console.log("--- [Player Event] Video එක pause විය.")}
+                                onSeek={(seconds) => console.log(`--- [Player Event] Video එක ${seconds} තත්පරයට seek කරන ලදී.`)}
                                 controls={false}
                                 config={{
                                     file: {
