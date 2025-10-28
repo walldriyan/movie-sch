@@ -1,5 +1,5 @@
 
-import { getPosts, getUsers, getPublicGroups, getNotifications, getMicroPosts } from '@/lib/actions';
+import { getPosts, getUsers, getPublicGroups } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button';
 import { Mail } from 'lucide-react';
@@ -11,16 +11,16 @@ import MetaSpotlight3 from './ui/example3';
 import { Post } from '@/lib/types';
 import MetaSpotlightPostGrid from './ui/postGrid';
 import { Drag_Transform } from './ui/dragComponent';
+import prisma from '@/lib/prisma';
+import { ROLES } from '@/lib/permissions';
 
 export default async function HomePage({
   searchParams,
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>; // ✅ Promise type එක හරි
 }) {
-  // 👇 මෙතන await කරන්න ඕනේ!
   const params = await searchParams;
 
-  // දැන් params use කරන්න
   const timeFilter = (params.timeFilter as string) || 'updatedAt-desc';
   const sortBy = (params.sortBy as string) || 'updatedAt-desc';
   const typeFilter = params.type as string | undefined;
@@ -28,18 +28,21 @@ export default async function HomePage({
   const lockStatus = params.lockStatus as string | undefined;
 
   const session = await auth();
-  // console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
-
-  const { posts, totalPages } = await getPosts({
+  
+  const postDataPromise = getPosts({
     page: currentPage,
     limit: 10,
     filters: { timeFilter, sortBy, type: typeFilter, lockStatus },
   });
-  const users = await getUsers();
-  const groups = await getPublicGroups();
-  const notifications = await getNotifications();
-  const microPosts = await getMicroPosts();
+  const usersPromise = getUsers({ limit: 10 }); // Fetch only 10 users for the homepage
+  const groupsPromise = getPublicGroups();
 
+  const [{ posts, totalPages }, users, groups] = await Promise.all([
+    postDataPromise,
+    usersPromise,
+    groupsPromise
+  ]);
+  
   return (
     <>
       <HomePageClient
@@ -49,9 +52,7 @@ export default async function HomePage({
         totalPages={totalPages}
         currentPage={currentPage}
         searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter, lockStatus }}
-        initialNotifications={notifications}
         session={session}
-        initialMicroPosts={microPosts}
       />
     </>
   );

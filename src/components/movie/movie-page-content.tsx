@@ -1,10 +1,9 @@
 
-
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, useRef } from 'react';
 import type { Session } from 'next-auth';
-import { createReview, deleteReview, deleteSubtitle } from '@/lib/actions';
+import { createReview, deleteReview, deleteSubtitle, incrementViewCount } from '@/lib/actions';
 import type { Post, Review, Subtitle } from '@/lib/types';
 import MovieDetailClient from './movie-detail-client';
 import { TabsContent } from '@/components/ui/tabs';
@@ -12,8 +11,8 @@ import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import UploadSubtitleDialog from '@/components/upload-subtitle-dialog';
-// import SubtitleRequestForm from '@/components/subtitle-request-form';
-// import MovieRecommendations from '@/components/movie-recommendations';
+
+
 import {
   Card,
   CardContent,
@@ -61,6 +60,9 @@ import { ROLES } from '@/lib/permissions';
 import SponsoredAdCard from '@/components/sponsored-ad-card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import PostViewsAndLikes from '@/components/post-views-and-likes';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) => (
   <div className="flex items-start gap-4">
@@ -172,6 +174,8 @@ const ExamSection = ({ exam }: { exam: { id: number; title: string; description:
   );
 };
 
+
+
 type SubtitleWithPermission = Subtitle & { canDownload: boolean };
 
 export default function MoviePageContent({ 
@@ -184,6 +188,7 @@ export default function MoviePageContent({
   session: Session | null;
 }) {
   const [post, setPost] = useState<any>(initialPost);
+  const [viewCount, setViewCount] = useState(initialPost.viewCount);
   const [subtitles, setSubtitles] = useState<SubtitleWithPermission[]>(initialSubtitles);
   const [currentReviews, setCurrentReviews] = useState<any[]>(initialPost.reviews || []);
   const { toast } = useToast();
@@ -191,8 +196,37 @@ export default function MoviePageContent({
   const [subtitleToDelete, setSubtitleToDelete] = useState<Subtitle | null>(null);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSubmittingReview, startReviewTransition] = useTransition();
+  const [isUpdatingViewCount, startViewCountTransition] = useTransition();
   const [showReviews, setShowReviews] = useState(false);
   const currentUser = session?.user;
+  const effectRan = useRef(false);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || !effectRan.current) {
+        startViewCountTransition(async () => {
+            try {
+                // We only call the server action, the UI is updated via `viewCount` state
+                await incrementViewCount(initialPost.id);
+            } catch (error) {
+                console.error("Failed to update view count on server:", error);
+            }
+        });
+    }
+
+    // Cleanup function to set the ref back to false on unmount
+    return () => {
+        if (process.env.NODE_ENV !== 'production') {
+            effectRan.current = true;
+        }
+    };
+  }, [initialPost.id]);
+
+  // This effect will run only once on mount to set the initial view count
+  // And won't re-run to increment it again.
+  useEffect(() => {
+    setViewCount(initialPost.viewCount + 1);
+  }, []); // Empty dependency array
+
 
   useEffect(() => {
     if (post) {
@@ -336,13 +370,32 @@ export default function MoviePageContent({
                       </h3>
                     </div>
                   )}
-                  <div
-                    className="prose prose-invert max-w-none text-foreground/80"
-                    dangerouslySetInnerHTML={{ __html: post.description }}
-                  />
-                  <TrailerSection post={post} />
-                  <ImageGallerySection post={post} />
-                  <ExamSection exam={post.exam} />
+
+                  {post.isContentLocked ? (
+                      <div className="min-h-[200px] flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                          <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+                          <h3 className="text-lg font-semibold">Content Locked</h3>
+                          <p className="text-muted-foreground mt-2 max-w-sm">
+                              This content is currently locked. You may need to join a group or complete a previous step in a series to view it.
+                          </p>
+                      </div>
+                  ) : (
+                      <div
+                          className="prose prose-invert max-w-none text-foreground/80"
+                          dangerouslySetInnerHTML={{ __html: post.description }}
+                      />
+                  )}
+
+                  {!post.isContentLocked && (
+                    <>
+                      <TrailerSection post={post} />
+                      <ImageGallerySection post={post} />
+                      <ExamSection exam={post.exam} />
+                    </>
+                  )}
+
+                  <Separator className="my-12" />
+                  <PostViewsAndLikes post={post} viewCount={viewCount} />
                   <Separator className="my-12" />
                   <SponsoredAdCard />
                   <Separator className="my-12" />
@@ -371,8 +424,7 @@ export default function MoviePageContent({
                             <h4 className="font-semibold pt-2">Ratings</h4>
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
-                                <Image src="/imdb.png" alt="IMDb" width={32} height={16}  fill
-  style={{ objectFit: 'cover' }}/>
+                                <Image src="/imdb.png" alt="IMDb" width={32} height={16} />
                                 <span className="font-bold">{post.imdbRating?.toFixed(1) || 'N/A'}</span>
                               </div>
                               <div className="flex items-center gap-2 text-sm">
@@ -389,7 +441,7 @@ export default function MoviePageContent({
                           </>
                         ) : (
                           <>
-                            <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={post.viewCount.toLocaleString()} />
+                            <DetailItem icon={<Eye className="h-5 w-5" />} label="Views" value={viewCount.toLocaleString()} />
                             <DetailItem icon={<ThumbsUp className="h-5 w-5" />} label="Likes" value={post._count?.likedBy || 0} />
                             <DetailItem icon={<MessageCircle className="h-5 w-5" />} label="Comments" value={currentReviews.length} />
                           </>
@@ -410,38 +462,48 @@ export default function MoviePageContent({
                     Responses ({currentReviews.length})
                   </h2>
                   <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
-                    {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                     <motion.div animate={{ rotate: showReviews ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-6 h-6" />
+                     </motion.div>
                   </Button>
                 </div>
                 
-                {showReviews && (
-                  <>
-                    <ReviewForm 
-                      postId={post.id} 
-                      isSubmitting={isSubmittingReview}
-                      onSubmitReview={handleReviewSubmit}
-                      session={session}
-                    />
-                    <Separator className="my-8" />
-                    <div className="space-y-8">
-                      {currentReviews.length > 0 ? (
-                        currentReviews.map((review: any) => (
-                          <ReviewCard 
-                            key={review.id} 
-                            review={review} 
-                            onReviewSubmit={handleReviewSubmit} 
-                            onReviewDelete={handleReviewDelete} 
-                            session={session}
-                          />
-                        ))
-                      ) : (
-                        !isSubmittingReview && (
-                          <p className="text-muted-foreground">Be the first to share your thoughts!</p>
-                        )
-                      )}
-                    </div>
-                  </>
-                )}
+                <AnimatePresence initial={false}>
+                  {showReviews && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                    >
+                      <ReviewForm 
+                        postId={post.id} 
+                        isSubmitting={isSubmittingReview}
+                        onSubmitReview={handleReviewSubmit}
+                        session={session}
+                      />
+                      <Separator className="my-8" />
+                      <div className="space-y-8">
+                        {currentReviews.length > 0 ? (
+                          currentReviews.map((review: any) => (
+                            <ReviewCard 
+                              key={review.id} 
+                              review={review} 
+                              onReviewSubmit={handleReviewSubmit} 
+                              onReviewDelete={handleReviewDelete} 
+                              session={session}
+                            />
+                          ))
+                        ) : (
+                          !isSubmittingReview && (
+                            <p className="text-muted-foreground">Be the first to share your thoughts!</p>
+                          )
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </section>
             </TabsContent>
             
@@ -545,3 +607,5 @@ export default function MoviePageContent({
     </div>
   );
 }
+
+    

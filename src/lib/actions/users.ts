@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import type { User } from '@prisma/client';
@@ -11,10 +10,20 @@ import { saveImageFromDataUrl, deleteUploadedFile } from './posts';
 import { subDays } from 'date-fns';
 
 
-export async function getUsers(): Promise<User[]> {
-  const users = await prisma.user.findMany({
+export async function getUsers(options: { page?: number; limit?: number } = {}): Promise<User[]> {
+  const { page, limit } = options;
+
+  let queryOptions: any = {
     orderBy: { name: 'asc' },
-  });
+  };
+
+  if (page && limit) {
+    queryOptions.skip = (page - 1) * limit;
+    queryOptions.take = limit;
+  }
+  
+  const users = await prisma.user.findMany(queryOptions);
+
   return users.map(user => ({
     ...user,
     createdAt: user.createdAt.toISOString(),
@@ -325,4 +334,39 @@ export async function getPostCreationStatus() {
         count: postCount,
         remaining: remaining,
     };
+}
+
+
+export async function canUserAccessMicroPosts(): Promise<boolean> {
+  const session = await auth();
+  if (!session?.user) {
+    return false;
+  }
+  
+  if (session.user.role === ROLES.SUPER_ADMIN) {
+    return true;
+  }
+
+  const allowedGroupsSetting = await prisma.appSetting.findUnique({
+    where: { key: 'microPostAllowedGroupIds' },
+  });
+
+  if (!allowedGroupsSetting?.value) {
+    return false; // No groups are allowed
+  }
+
+  const allowedGroupIds = allowedGroupsSetting.value.split(',').filter(Boolean);
+  if (allowedGroupIds.length === 0) {
+      return false;
+  }
+
+  const userMembershipCount = await prisma.groupMember.count({
+    where: {
+      userId: session.user.id,
+      status: 'ACTIVE',
+      groupId: { in: allowedGroupIds },
+    },
+  });
+
+  return userMembershipCount > 0;
 }

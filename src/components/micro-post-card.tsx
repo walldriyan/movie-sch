@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useTransition, useCallback } from 'react';
+import React, { useState, useTransition, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ClientRelativeDate from '@/components/client-relative-date';
-import { MessageCircle, Heart, Share2, MoreHorizontal, Edit, Trash2, Loader2 } from 'lucide-react';
+import { MessageCircle, Heart, Share2, MoreHorizontal, Edit, Trash2, Loader2, Bookmark } from 'lucide-react';
 import type { MicroPost as MicroPostType, User, MicroPostImage, Category, Tag, MicroPostLike } from '@/lib/types';
 import { useSession } from 'next-auth/react';
 import { toggleMicroPostLike, deleteMicroPost } from '@/lib/actions';
@@ -35,11 +35,29 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const [post, setPost] = useState(initialPost);
     const [isLikePending, startLikeTransition] = useTransition();
     const [isDeletePending, startDeleteTransition] = useTransition();
+    const [isBookmarked, setIsBookmarked] = useState(false);
+    
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [isTruncated, setIsTruncated] = useState(false);
+    const contentRef = useRef<HTMLParagraphElement>(null);
+
 
     const postImage = post.images?.[0]?.url;
     const hasLiked = post.likes?.some(like => like.userId === user?.id) ?? false;
     
     const likeCount = post?._count?.likes ?? 0;
+
+    useEffect(() => {
+        if (contentRef.current) {
+            setIsTruncated(contentRef.current.scrollHeight > contentRef.current.clientHeight);
+        }
+    }, [post.content]);
+
+     useEffect(() => {
+        // Check localStorage on mount to set initial bookmark state
+        const savedPosts = JSON.parse(localStorage.getItem('bookmarkedMicroPosts') || '[]');
+        setIsBookmarked(savedPosts.includes(post.id));
+    }, [post.id]);
     
     const handleCommentCountChange = useCallback((count: number) => {
         setPost(currentPost => {
@@ -85,6 +103,24 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
         });
     };
 
+    const handleBookmark = () => {
+        const savedPosts: string[] = JSON.parse(localStorage.getItem('bookmarkedMicroPosts') || '[]');
+        const isCurrentlyBookmarked = savedPosts.includes(post.id);
+        
+        let updatedSavedPosts: string[];
+
+        if (isCurrentlyBookmarked) {
+            updatedSavedPosts = savedPosts.filter(id => id !== post.id);
+            toast({ title: "Bookmark removed"});
+        } else {
+            updatedSavedPosts = [...savedPosts, post.id];
+            toast({ title: "Post bookmarked"});
+        }
+
+        localStorage.setItem('bookmarkedMicroPosts', JSON.stringify(updatedSavedPosts));
+        setIsBookmarked(!isCurrentlyBookmarked);
+    };
+
     const handleDelete = () => {
         startDeleteTransition(async () => {
             try {
@@ -118,7 +154,24 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             <ClientRelativeDate date={post.createdAt} />
                         </div>
                         
-                        <p className="mt-2 whitespace-pre-wrap">{post.content}</p>
+                        <p 
+                            ref={contentRef}
+                            className={cn(
+                                "mt-2 whitespace-pre-wrap",
+                                !isExpanded && "line-clamp-4"
+                            )}
+                        >
+                            {post.content}
+                        </p>
+                        {isTruncated && (
+                            <button 
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className="text-primary text-sm font-semibold mt-1"
+                            >
+                                {isExpanded ? 'Show less' : 'Show more'}
+                            </button>
+                        )}
+
 
                         {postImage && (
                              <div className="mt-3 relative aspect-video max-h-[400px] w-full overflow-hidden rounded-xl border">
@@ -141,7 +194,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                         </div>
 
                         <Accordion type="single" collapsible className="w-full mt-2">
-                            <AccordionItem value="item-1" className="border-b-0">
+                            <AccordionItem value={post.id} className="border-b-0">
                                 <div className="flex justify-between items-center text-muted-foreground">
                                     <AccordionTrigger className="py-0 hover:no-underline">
                                         <div className="flex items-center gap-1.5 p-2 rounded-md hover:bg-accent">
@@ -154,6 +207,11 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                             <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
                                         </Button>
                                         <span className="text-xs">{likeCount}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
+                                            <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-primary text-primary")} />
+                                        </Button>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Button variant="ghost" size="icon" className="h-8 w-8">

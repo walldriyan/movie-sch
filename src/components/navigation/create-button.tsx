@@ -19,6 +19,7 @@ import {
   UserPlus,
   BookCheck,
   BellPlus,
+  Subtitles,
 } from 'lucide-react';
 import { useLoading } from '@/context/loading-context';
 import { useSession } from 'next-auth/react';
@@ -56,6 +57,10 @@ export default function CreateButton() {
         <DropdownMenuItem onSelect={() => handleNavigation('/manage?create=true')}>
           <FilePlus className="mr-2 h-4 w-4" />
           <span>Post</span>
+        </DropdownMenuItem>
+        <DropdownMenuItem onSelect={() => handleNavigation('/tools/subtitle-editor')}>
+          <Subtitles className="mr-2 h-4 w-4" />
+          <span>Subtitle Editor</span>
         </DropdownMenuItem>
         {isSuperAdmin && (
           <>
