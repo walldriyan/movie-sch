@@ -1,5 +1,5 @@
 
-import { getPosts, getUsers, getPublicGroups, getNotifications, getMicroPosts, getSetting } from '@/lib/actions';
+import { getPosts, getUsers, getPublicGroups } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button';
 import { Mail } from 'lucide-react';
@@ -30,8 +30,7 @@ export default async function HomePage({
   const lockStatus = params.lockStatus as string | undefined;
 
   const session = await auth();
-  // console.log("Server [/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
-
+  
   const { posts, totalPages } = await getPosts({
     page: currentPage,
     limit: 10,
@@ -39,31 +38,7 @@ export default async function HomePage({
   });
   const users = await getUsers();
   const groups = await getPublicGroups();
-  const notifications = await getNotifications();
-  const microPosts = await getMicroPosts();
   
-  // Check for Micro Post access
-  let canAccessMicroPosts = false;
-  if (session?.user) {
-    if (session.user.role === ROLES.SUPER_ADMIN) {
-      canAccessMicroPosts = true;
-    } else {
-      const allowedGroupsSetting = await getSetting('microPostAllowedGroupIds');
-      const allowedGroupIds = allowedGroupsSetting?.value.split(',').filter(Boolean) || [];
-      if (allowedGroupIds.length > 0) {
-        const userMembershipCount = await prisma.groupMember.count({
-          where: {
-            userId: session.user.id,
-            status: 'ACTIVE',
-            groupId: { in: allowedGroupIds },
-          },
-        });
-        canAccessMicroPosts = userMembershipCount > 0;
-      }
-    }
-  }
-
-
   return (
     <>
       <HomePageClient
@@ -73,10 +48,7 @@ export default async function HomePage({
         totalPages={totalPages}
         currentPage={currentPage}
         searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter, lockStatus }}
-        initialNotifications={notifications}
         session={session}
-        initialMicroPosts={microPosts}
-        canAccessMicroPosts={canAccessMicroPosts}
       />
     </>
   );

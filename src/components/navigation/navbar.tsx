@@ -17,7 +17,8 @@ import {
   Users2,
   Shield,
   Bookmark,
-  Heart
+  Heart,
+  MessageSquare
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -87,6 +88,9 @@ export default function Navbar() {
     return (
        <nav className={navClass}>
         <NavLink href="/" mobile={isMobile} icon={<Home className="h-5 w-5"/>}>Home</NavLink>
+        <AuthGuard allowByDefault={false}>
+          <NavLink href="/wall" mobile={isMobile} icon={<MessageSquare className="h-5 w-5"/>}>Wall</NavLink>
+        </AuthGuard>
         {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
         {user?.role === ROLES.SUPER_ADMIN && (
           <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-5 w-5"/>}>Admin</NavLink>
