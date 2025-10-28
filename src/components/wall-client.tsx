@@ -91,6 +91,8 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
       }
     });
 
+    const contentValue = form.watch('content');
+
     const userAvatar = user?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
     if (!user) return null;
@@ -141,6 +143,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
     }
     
     const canPost = postStatus ? postStatus.remaining > 0 || postStatus.limit === 0 : false;
+    const maxChars = 500;
 
     return (
         <Card className="mb-8">
@@ -233,7 +236,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                             )}
                         />
                         <div className="flex justify-between items-center pt-2">
-                            <div className="flex gap-1 text-muted-foreground">
+                            <div className="flex gap-1 text-muted-foreground items-center">
                                 <Button variant="ghost" size="icon" type="button" onClick={() => fileInputRef.current?.click()} disabled={!canPost || isSubmitting}>
                                   <ImageIcon className="h-5 w-5" />
                                 </Button>
@@ -244,6 +247,9 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                                     accept="image/*"
                                     onChange={handleImageChange}
                                 />
+                                <div className="text-xs text-muted-foreground ml-2">
+                                  <span>{contentValue.length}</span> / <span>{maxChars}</span>
+                                </div>
                             </div>
                             <Button type="submit" disabled={isSubmitting || !canPost}>
                               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
