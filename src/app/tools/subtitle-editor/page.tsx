@@ -210,7 +210,7 @@ export default function SubtitleEditorPage() {
     };
 
     return (
-        <main className="max-w-full mx-auto p-4 md:p-8 pt-6 space-y-6">
+        <main className="max-w-7xl mx-auto p-4 md:p-8 pt-6 space-y-6">
             <h1 className="text-3xl font-bold">Subtitle Editor</h1>
             
             <div className="grid grid-cols-4 gap-8">
@@ -307,9 +307,8 @@ export default function SubtitleEditorPage() {
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-card z-10">
                                         <TableRow>
-                                            <TableHead className="w-[150px]">Time</TableHead>
-                                            <TableHead>English</TableHead>
-                                            <TableHead>Sinhala</TableHead>
+                                            <TableHead className="w-[100px]">Time</TableHead>
+                                            <TableHead>Subtitles</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -320,15 +319,15 @@ export default function SubtitleEditorPage() {
                                                 onClick={() => handleRowClick(sub.startTime)}
                                                 className={cn("cursor-pointer", currentSubtitle?.id === sub.id && 'bg-primary/10')}
                                             >
-                                                <TableCell className="font-mono text-xs text-muted-foreground">
+                                                <TableCell className="font-mono text-xs text-muted-foreground align-top pt-3">
                                                     {secondsToSrtTime(sub.startTime).split(',')[0]}
                                                 </TableCell>
-                                                <TableCell className="text-sm">{sub.english}</TableCell>
-                                                <TableCell>
+                                                <TableCell className="space-y-1 pr-4">
+                                                    <p className="text-sm text-muted-foreground">{sub.english}</p>
                                                     <Input 
                                                         type="text" 
                                                         placeholder="Enter Sinhala translation..." 
-                                                        className="bg-transparent border-0 focus-visible:ring-1 text-base"
+                                                        className="bg-transparent border-0 focus-visible:ring-1 text-base px-1 h-auto"
                                                         value={sub.sinhala || ''}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
                                                         onClick={(e) => e.stopPropagation()} // Prevent row click when editing
@@ -352,3 +351,5 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
+    
