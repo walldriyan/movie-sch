@@ -160,7 +160,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                   <Alert>
                     <Info className="h-4 w-4" />
                     <AlertTitle className="text-sm text-muted-foreground">Daily Micro-Post Status</AlertTitle>
-                    <AlertDescription>
+                    <AlertDescription className="text-xs text-muted-foreground">
                       Your daily limit is {postStatus.limit === 0 ? 'unlimited' : `${postStatus.limit} posts`}. 
                       You have created {postStatus.count} posts today. 
                       {postStatus.limit > 0 && ` You can create ${postStatus.remaining} more posts.`}
