@@ -326,3 +326,38 @@ export async function getPostCreationStatus() {
         remaining: remaining,
     };
 }
+
+
+export async function canUserAccessMicroPosts(): Promise<boolean> {
+  const session = await auth();
+  if (!session?.user) {
+    return false;
+  }
+  
+  if (session.user.role === ROLES.SUPER_ADMIN) {
+    return true;
+  }
+
+  const allowedGroupsSetting = await prisma.appSetting.findUnique({
+    where: { key: 'microPostAllowedGroupIds' },
+  });
+
+  if (!allowedGroupsSetting?.value) {
+    return false; // No groups are allowed
+  }
+
+  const allowedGroupIds = allowedGroupsSetting.value.split(',').filter(Boolean);
+  if (allowedGroupIds.length === 0) {
+      return false;
+  }
+
+  const userMembershipCount = await prisma.groupMember.count({
+    where: {
+      userId: session.user.id,
+      status: 'ACTIVE',
+      groupId: { in: allowedGroupIds },
+    },
+  });
+
+  return userMembershipCount > 0;
+}

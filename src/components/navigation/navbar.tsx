@@ -36,6 +36,7 @@ import {
 import { Menu } from 'lucide-react';
 import React from 'react';
 import AuthGuard from '../auth/auth-guard';
+import { canUserAccessMicroPosts } from '@/lib/actions/users';
 
 
 export default function Navbar() {
@@ -44,8 +45,21 @@ export default function Navbar() {
   const pathname = usePathname();
   const { withLoading } = useLoading();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [showWall, setShowWall] = React.useState(false);
   const user = session?.user;
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
+
+  React.useEffect(() => {
+    async function checkWallAccess() {
+      if (status === 'authenticated') {
+        const canAccess = await canUserAccessMicroPosts();
+        setShowWall(canAccess);
+      } else {
+        setShowWall(false);
+      }
+    }
+    checkWallAccess();
+  }, [status]);
 
   const handleNavigation = (href: string) => {
     withLoading(async () => {
@@ -88,9 +102,9 @@ export default function Navbar() {
     return (
        <nav className={navClass}>
         <NavLink href="/" mobile={isMobile} icon={<Home className="h-5 w-5"/>}>Home</NavLink>
-        <AuthGuard allowByDefault={false}>
-          <NavLink href="/wall" mobile={isMobile} icon={<MessageSquare className="h-5 w-5"/>}>Wall</NavLink>
-        </AuthGuard>
+        {showWall && (
+           <NavLink href="/wall" mobile={isMobile} icon={<MessageSquare className="h-5 w-5"/>}>Wall</NavLink>
+        )}
         {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
         {user?.role === ROLES.SUPER_ADMIN && (
           <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-5 w-5"/>}>Admin</NavLink>
