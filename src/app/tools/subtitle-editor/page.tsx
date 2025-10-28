@@ -220,7 +220,7 @@ export default function SubtitleEditorPage() {
             if (nextSub) {
                 console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
                 playerRef.current?.seekTo(nextSub.startTime);
-                setPlaying(true);
+                setPlaying(false);
             } else {
                 console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
             }
