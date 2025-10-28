@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -198,20 +199,12 @@ export default function SubtitleEditorPage() {
         }
      };
     
-    const handleInputBlur = () => {
-        if(editingState.id !== null) {
-            console.log(`--- [Input Event] Input field එක blur විය. ID: ${editingState.id} සඳහා saveChanges call කරමින් පවතී.`);
-            saveChanges(editingState.id, editingState.text);
-            setEditingState({ id: null, text: '' });
-        }
-    };
-    
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             console.log("--- [Input Event] 'Enter' key එක press කරන ලදී.");
             const currentTarget = e.target as HTMLInputElement;
-            const currentIdStr = currentTarget.id.split('-')[2];
+            const currentIdStr = currentTarget.id.split('-')[2] || currentTarget.id.split('-')[1]; // Handles both sub-input and overlay-input
             const currentText = currentTarget.value;
             
             if (!currentIdStr) {
@@ -245,7 +238,6 @@ export default function SubtitleEditorPage() {
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
         
         if (activeSub?.id !== currentSubtitle?.id) {
-            setEditingState({ id: null, text: '' });
             setCurrentSubtitle(activeSub || null);
         }
     };
@@ -266,15 +258,18 @@ export default function SubtitleEditorPage() {
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
         console.log(`--- [Player Control] '${direction}' subtitle jump button එක click කරන ලදී.`);
         setPlaying(false);
-        const time = playerRef.current?.getCurrentTime() || 0;
+        const time = currentTime;
         console.log(`--- [Player Control] Jump: දැනට පවතින වේලාව: ${time}`);
       
         let targetSub: SubtitleEntry | undefined;
     
         if (direction === 'next') {
+            // Find the first subtitle that starts AFTER the current time
             targetSub = subtitles.find(s => s.startTime > time);
         } else { // prev
+            // Find all subtitles that start BEFORE the current time
             const prevSubs = subtitles.filter(s => s.startTime < time);
+            // The target is the last one in that filtered list
             targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
         }
       
@@ -371,7 +366,6 @@ export default function SubtitleEditorPage() {
                                         value={editingState.id === currentSubtitle.id ? editingState.text : currentSubtitle.sinhala || ''}
                                         onChange={(e) => handleSinhalaChange(currentSubtitle.id, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(e)}
-                                        onBlur={handleInputBlur}
                                     />
                                 </div>
                             </div>
@@ -433,7 +427,7 @@ export default function SubtitleEditorPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow overflow-hidden flex flex-col">
-                            <div className="flex items-center justify-between mb-4 p-2 border-t">
+                           <div className="flex items-center justify-between mb-4 p-2 border-t">
                                 <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('prev')}>
                                     <ChevronLeft className="h-4 w-4 mr-1" />
                                     Prev Sub
@@ -472,7 +466,6 @@ export default function SubtitleEditorPage() {
                                                         value={editingState.id === sub.id ? editingState.text : sub.sinhala || ''}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
                                                         onKeyDown={(e) => handleKeyDown(e)}
-                                                        onBlur={handleInputBlur}
                                                         onClick={(e) => e.stopPropagation()}
                                                     />
                                                 </TableCell>
@@ -494,3 +487,4 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
