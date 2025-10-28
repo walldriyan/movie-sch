@@ -217,25 +217,21 @@ export default function SubtitleEditorPage() {
     
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
         setPlaying(false);
-        const currentTime = playerRef.current?.getCurrentTime() || 0;
+        const time = playerRef.current?.getCurrentTime() || 0;
         
         let targetIndex = -1;
 
         if (direction === 'next') {
-            // Find the first subtitle that starts AFTER the current time
-            targetIndex = subtitles.findIndex(s => s.startTime > currentTime);
+            targetIndex = subtitles.findIndex(s => s.startTime > time);
         } else { // 'prev'
-            // Find the last subtitle that starts BEFORE the current time
-            const prevSubs = subtitles.filter(s => s.startTime < currentTime);
-            targetIndex = prevSubs.length > 0 ? subtitles.indexOf(prevSubs[prevSubs.length - 1]) : 0;
+            const prevSubs = subtitles.filter(s => s.startTime < time);
+            targetIndex = prevSubs.length > 1 ? subtitles.indexOf(prevSubs[prevSubs.length - 1]) : 0;
         }
 
-        if (targetIndex === -1 && direction === 'next') {
-            // If no next sub is found, maybe go to the last one if we are not there already
-            if (subtitles.length > 0) targetIndex = subtitles.length - 1;
-        }
-        if (targetIndex === -1 && direction === 'prev') {
-            targetIndex = 0;
+        if (targetIndex === -1 && direction === 'next' && subtitles.length > 0) {
+            targetIndex = subtitles.length - 1;
+        } else if (targetIndex === -1 && direction === 'prev') {
+             targetIndex = 0;
         }
         
         if (targetIndex !== -1 && subtitles[targetIndex]) {
@@ -271,7 +267,7 @@ export default function SubtitleEditorPage() {
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Side: Player and Controls */}
-                <div className="md:col-span-1 flex flex-col gap-4">
+                 <div className="md:col-span-1 flex flex-col gap-4">
                      <div className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
                         {videoUrl ? (
                             <ReactPlayer
