@@ -173,6 +173,11 @@ export default function SubtitleEditorPage() {
 
     const saveChanges = async (id: number, text: string) => {
         let updatedSubtitles: SubtitleEntry[] = [];
+        setSubtitles(prevSubs => {
+            updatedSubtitles = prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s);
+            return updatedSubtitles;
+        });
+
         if (dbPromise) {
             try {
                 const db = await dbPromise;
@@ -181,12 +186,9 @@ export default function SubtitleEditorPage() {
                     const objectToSave = { ...subToUpdate, sinhala: text };
                     await db.put(SUBTITLE_STORE, objectToSave);
                 }
-                 updatedSubtitles = await db.getAll(SUBTITLE_STORE);
-                 setSubtitles(updatedSubtitles);
             } catch (error) {
                 console.error("Failed to save to DB:", error);
-                // On error, revert to original state
-                 updatedSubtitles = subtitles;
+                 // On error, revert to original state from DB if necessary, but optimistic update handles UI
             }
         }
         return updatedSubtitles;
@@ -199,20 +201,19 @@ export default function SubtitleEditorPage() {
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const currentText = (e.target as HTMLInputElement).value;
             setPlaying(false);
-
-            const updatedSubs = await saveChanges(currentId, currentText);
-            
-            const currentIndex = updatedSubs.findIndex(s => s.id === currentId);
-            const nextSub = updatedSubs[currentIndex + 1];
+            const currentText = (e.target as HTMLInputElement).value;
     
-            if (nextSub) {
+            // Save changes and get the updated list of subtitles
+            const updatedSubs = await saveChanges(currentId, currentText);
+    
+            // Find the index of the current subtitle in the *updated* list
+            const currentIndexInUpdated = updatedSubs.findIndex(s => s.id === currentId);
+            
+            // Find the next subtitle
+            if (currentIndexInUpdated > -1 && currentIndexInUpdated < updatedSubs.length - 1) {
+                const nextSub = updatedSubs[currentIndexInUpdated + 1];
                 playerRef.current?.seekTo(nextSub.startTime);
-                const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
-                if (nextSubPageIndex !== currentPage) {
-                    setCurrentPage(nextSubPageIndex);
-                }
             }
         }
     };
@@ -417,6 +418,29 @@ export default function SubtitleEditorPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow overflow-hidden flex flex-col">
+                             <div className="flex items-center justify-between mb-4 p-2 border-t">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                    disabled={currentPage === 1}
+                                >
+                                    <ChevronLeft className="h-4 w-4 mr-1" />
+                                    Previous Page
+                                </Button>
+                                <span className="text-sm font-medium">
+                                    Page {currentPage} of {totalPages}
+                                </span>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                    disabled={currentPage === totalPages}
+                                >
+                                    Next Page
+                                    <ChevronRight className="h-4 w-4 ml-1" />
+                                </Button>
+                            </div>
                             <ScrollArea className="h-full">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-card z-10">
@@ -461,31 +485,6 @@ export default function SubtitleEditorPage() {
                                     </TableBody>
                                 </Table>
                             </ScrollArea>
-                             {totalPages > 1 && (
-                                <div className="flex items-center justify-between mt-4 p-2 border-t">
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setCurrentPage(p => p - 1)}
-                                        disabled={currentPage === 1}
-                                    >
-                                        <ChevronLeft className="h-4 w-4 mr-1" />
-                                        Previous
-                                    </Button>
-                                    <span className="text-sm font-medium">
-                                        Page {currentPage} of {totalPages}
-                                    </span>
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setCurrentPage(p => p + 1)}
-                                        disabled={currentPage === totalPages}
-                                    >
-                                        Next
-                                        <ChevronRight className="h-4 w-4 ml-1" />
-                                    </Button>
-                                </div>
-                            )}
                         </CardContent>
                     </Card>
                 </div>
@@ -493,6 +492,3 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
-
-
-    
