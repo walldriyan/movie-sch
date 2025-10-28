@@ -244,6 +244,9 @@ export default function SubtitleEditorPage() {
                     // Video එක pause කර, seek කරමු
                     setPlaying(false);
                     
+                    // CRITICAL FIX: currentSubtitle state එක වහාම update කරමු seek කිරීමට පෙර
+                    setCurrentSubtitle(nextSub);
+                    
                     // requestAnimationFrame භාවිතා කර seek එක delay කරමු
                     requestAnimationFrame(() => {
                         playerRef.current?.seekTo(nextSub.startTime);
@@ -254,17 +257,17 @@ export default function SubtitleEditorPage() {
                                 overlayInputRef.current.focus();
                                 overlayInputRef.current.select();
                             }
-                        }, 100);
+                        }, 150);
                     });
                 } else {
                     console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
                 }
             } finally {
-                // 500ms යන තුරු තවත් Enter presses ignore කරමු
+                // 300ms යන තුරු තවත් Enter presses ignore කරමු (500ms වෙනුවට කෙටි කළා)
                 setTimeout(() => {
                     isProcessingEnter.current = false;
                     console.log("--- [Input Event] 'Enter' processing flag එක reset විය.");
-                }, 500);
+                }, 300);
             }
         }
     };
