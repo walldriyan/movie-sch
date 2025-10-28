@@ -182,12 +182,9 @@ export default function SubtitleEditorPage() {
                 console.warn(`--- [Save] DB එකේ ID: ${id} සොයා ගැනීමට නොහැකි විය.`);
             }
             
-            setSubtitles(prevSubs => {
-                console.log(`--- [Save] Optimistic UI: ප්‍රධාන 'subtitles' state එක update කරමින් පවතී.`);
-                const updated = prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s);
-                console.log(`--- [Save] Optimistic UI: State එක update කරන ලදී.`);
-                return updated;
-            });
+            console.log(`--- [Save] Optimistic UI: ප්‍රධාන 'subtitles' state එක update කරමින් පවතී.`);
+            setSubtitles(prevSubs => prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s));
+            console.log(`--- [Save] Optimistic UI: State එක update කරන ලදී.`);
         }
     };
     
@@ -208,8 +205,6 @@ export default function SubtitleEditorPage() {
             console.log(`--- [Input Event] 'Enter': ID: ${idAsNum}, Text: "${currentText}" save කිරීම ආරම්භ විය.`);
             await saveChanges(idAsNum, currentText);
             console.log("--- [Input Event] 'Enter': Save කිරීම අවසන්. ඊළඟ subtitle එකට jump වීමට සූදානම්.");
-
-            currentTarget.blur();
             
             const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
             const nextSub = subtitles[currentIndex + 1];
@@ -499,5 +494,6 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
 
 
