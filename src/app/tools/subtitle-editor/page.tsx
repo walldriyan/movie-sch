@@ -166,18 +166,18 @@ export default function SubtitleEditorPage() {
 
     const saveChanges = async (id: number, text: string) => {
         if (dbPromise) {
-            const db = await dbPromise;
-            const existingSub = await db.get(SUBTITLE_STORE, id);
-            if (existingSub) {
-                await db.put(SUBTITLE_STORE, { ...existingSub, sinhala: text });
-            }
-
-            // Optimistically update the main state
-            setSubtitles(prevSubs =>
-                prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
-            );
+             const db = await dbPromise;
+             const existingSub = await db.get(SUBTITLE_STORE, id);
+             if (existingSub) {
+                 await db.put(SUBTITLE_STORE, { ...existingSub, sinhala: text });
+             }
+             
+             // Optimistically update the main state
+             setSubtitles(prevSubs =>
+                 prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
+             );
         }
-    };
+     };
     
     const handleInputBlur = () => {
         if(editingState.id !== null) {
@@ -194,13 +194,14 @@ export default function SubtitleEditorPage() {
             const currentText = currentTarget.value;
             
             if (!currentId) return;
-
+    
             const idAsNum = parseInt(currentId, 10);
             
             await saveChanges(idAsNum, currentText);
             
-            const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
-            const nextSub = subtitles[currentIndex + 1];
+            const updatedSubs = subtitles.map(s => s.id === idAsNum ? { ...s, sinhala: currentText } : s);
+            const currentIndex = updatedSubs.findIndex(s => s.id === idAsNum);
+            const nextSub = updatedSubs[currentIndex + 1];
     
             if (nextSub) {
                 setPlaying(false);
@@ -239,34 +240,30 @@ export default function SubtitleEditorPage() {
         const currentSub = currentSubtitle;
       
         let targetSub: SubtitleEntry | undefined;
-
+    
         if (direction === 'next') {
             if (currentSub) {
                 const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
                 targetSub = subtitles[currentIndex + 1];
             } else {
+                // If no sub is active, find the very next one from the current time
                 targetSub = subtitles.find(s => s.startTime > time);
             }
         } else { // prev
+            // Find all subs that start before the current time
             const prevSubs = subtitles.filter(s => s.startTime < time);
             if (currentSub && prevSubs.length > 1) {
                  const currentIndex = prevSubs.findIndex(s => s.id === currentSub.id);
+                 // Target the one before the current one in the filtered list
                  targetSub = prevSubs[currentIndex-1];
             } else {
+                // If no sub is active or we are at the first sub, target the last one before current time
                 targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
             }
         }
       
         if (targetSub) {
             playerRef.current?.seekTo(targetSub.startTime);
-        } else {
-             const message = direction === 'next' ? 'You are at the last subtitle.' : 'You are at the first subtitle.';
-            toast({
-                variant: 'destructive',
-                title: 'Navigation Limit Reached',
-                description: message
-            });
-            console.error(message);
         }
     };
 
