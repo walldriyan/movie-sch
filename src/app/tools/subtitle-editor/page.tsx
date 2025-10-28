@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
@@ -88,14 +87,14 @@ export default function SubtitleEditorPage() {
     const [currentTime, setCurrentTime] = useState(0);
     const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleEntry | null>(null);
     
-    // Fix 1: Use a separate Map for editing states to avoid re-rendering the whole list
+    // Fix 1: වෙනම editing state map එකක් භාවිතා කරමු
     const [editingTexts, setEditingTexts] = useState<Map<number, string>>(new Map());
     
     // States for debug overlay
     const [isBuffering, setIsBuffering] = useState(false);
     const [bufferedAmount, setBufferedAmount] = useState(0);
     
-    // Fix 2: Add a flag to prevent multiple 'Enter' key processing
+    // Fix 2: Enter key processing flag එකක් add කරමු
     const isProcessingEnter = useRef(false);
     
     const playerRef = useRef<ReactPlayer>(null);
@@ -161,7 +160,6 @@ export default function SubtitleEditorPage() {
                 await tx.done;
                 
                 await loadSubtitlesFromDB();
-                // Reset editing state on new file load
                 setEditingTexts(new Map());
                 toast({ title: 'Subtitles Loaded', description: `${parsedSubs.length} lines loaded into the editor.`})
             };
@@ -169,7 +167,7 @@ export default function SubtitleEditorPage() {
         }
     };
     
-    // Fix 3: Optimize state updates for input changes
+    // Fix 3: handleSinhalaChange එක optimize කරමු
     const handleSinhalaChange = useCallback((id: number, text: string) => {
         setEditingTexts(prev => {
             const newMap = new Map(prev);
@@ -178,7 +176,7 @@ export default function SubtitleEditorPage() {
         });
     }, []);
 
-    // Fix 4: Decouple save operation from React state updates
+    // Fix 4: saveChanges එක async තත්වයෙන් මුදවා ගැනීමට debounce කරමු
     const saveChanges = async (id: number, text: string) => {
         console.log(`--- [Save] saveChanges function එක ක්‍රියාත්මක විය. ID: ${id}, Text: "${text}"`);
         if (dbPromise) {
@@ -192,17 +190,16 @@ export default function SubtitleEditorPage() {
                 console.warn(`--- [Save] DB එකේ ID: ${id} සොයා ගැනීමට නොහැකි විය.`);
             }
             
-            // This is an optimistic UI update.
             console.log(`--- [Save] Optimistic UI: ප්‍රධාන 'subtitles' state එක update කරමින් පවතී.`);
             setSubtitles(prevSubs => prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s));
             console.log(`--- [Save] Optimistic UI: State එක update කරන ලදී.`);
         }
     };
     
-    // Fix 5: Complete rewrite of handleKeyDown to prevent loops
+    // Fix 5: handleKeyDown එක සම්පූර්ණයෙන්ම නැවත ලියමු - loop එක නතර කිරීමට
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            // Prevent multiple rapid Enter presses
+            // වහාම processing flag එක check කරමු
             if (isProcessingEnter.current) {
                 console.log("--- [Input Event] 'Enter': දැනට ම process වෙමින් පවතී, ignore කරමින් පවතී.");
                 e.preventDefault();
@@ -210,7 +207,7 @@ export default function SubtitleEditorPage() {
             }
             
             e.preventDefault();
-            isProcessingEnter.current = true; // Set the flag
+            isProcessingEnter.current = true;
             console.log("--- [Input Event] 'Enter' key එක press කරන ලදී.");
             
             const currentTarget = e.target as HTMLInputElement;
@@ -231,7 +228,7 @@ export default function SubtitleEditorPage() {
                 await saveChanges(idAsNum, currentText);
                 console.log("--- [Input Event] 'Enter': Save කිරීම අවසන්. ඊළඟ subtitle එකට jump වීමට සූදානම්.");
                 
-                // Clear the temporary editing state for this ID
+                // Editing text එකෙන් remove කරමු
                 setEditingTexts(prev => {
                     const newMap = new Map(prev);
                     newMap.delete(idAsNum);
@@ -244,25 +241,26 @@ export default function SubtitleEditorPage() {
                 if (nextSub) {
                     console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
                     
+                    // Video එක pause කර, seek කරමු
                     setPlaying(false);
                     
-                    // Use requestAnimationFrame to ensure the seek happens on the next paint cycle
+                    // requestAnimationFrame භාවිතා කර seek එක delay කරමු
                     requestAnimationFrame(() => {
                         playerRef.current?.seekTo(nextSub.startTime);
                         
-                        // Focus the overlay input for a seamless workflow
+                        // Focus එක next input එකට move කරමු
                         setTimeout(() => {
                             if (overlayInputRef.current) {
                                 overlayInputRef.current.focus();
-                                overlayInputRef.current.select(); // Select text for easy replacement
+                                overlayInputRef.current.select();
                             }
-                        }, 100); // Small delay to ensure DOM is ready
+                        }, 100);
                     });
                 } else {
                     console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
                 }
             } finally {
-                // Release the flag after a short debounce period
+                // 500ms යන තුරු තවත් Enter presses ignore කරමු
                 setTimeout(() => {
                     isProcessingEnter.current = false;
                     console.log("--- [Input Event] 'Enter' processing flag එක reset විය.");
@@ -271,7 +269,7 @@ export default function SubtitleEditorPage() {
         }
     };
 
-    // Fix 6: Optimize handleProgress with useCallback to prevent unnecessary re-renders
+    // Fix 6: handleProgress එක optimize කරමු - අනවශ්‍ය re-renders නතර කිරීමට
     const handleProgress = useCallback((state: { played: number; playedSeconds: number; loadedSeconds: number }) => {
         setPlayed(state.played);
         setCurrentTime(state.playedSeconds);
@@ -279,7 +277,7 @@ export default function SubtitleEditorPage() {
 
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
         
-        // Only update state if the subtitle has actually changed
+        // වෙනස් වුනාම පමණක් update කරමු
         if (activeSub?.id !== currentSubtitle?.id) {
             console.log(`--- [Progress] Active subtitle වෙනස් විය: ${activeSub?.id || 'none'}`);
             setCurrentSubtitle(activeSub || null);
@@ -305,28 +303,72 @@ export default function SubtitleEditorPage() {
         const time = playerRef.current?.getCurrentTime() || currentTime;
         console.log(`--- [Player Control] Jump: දැනට පවතින වේලාව: ${time}`);
       
+        // CRITICAL FIX: වේලාව භාවිතා කර current subtitle index එක නිවැරදිව හඳුනා ගනිමු
+        // endTime එක හරියටම match වුනාම ඊළඟ subtitle එකට move වෙන්න tolerance එකක් use කරමු
+        let currentIndex = -1;
+        
+        for (let i = 0; i < subtitles.length; i++) {
+            const sub = subtitles[i];
+            // වේලාව subtitle range එක තුළ තියෙනවා නම්
+            if (time >= sub.startTime && time < sub.endTime - 0.01) {
+                currentIndex = i;
+                break;
+            }
+            // වේලාව subtitle එකෙන් පස්සේ නම්, මේක current එක කියලා mark කරන්න
+            if (time >= sub.endTime - 0.01 && (i === subtitles.length - 1 || time < subtitles[i + 1].startTime)) {
+                currentIndex = i;
+                break;
+            }
+        }
+        
+        // තවමත් හමු නොවී නම්, වේලාවට වඩා පෙර ඇති අන්තිම subtitle එක සොයන්න
+        if (currentIndex === -1) {
+            for (let i = subtitles.length - 1; i >= 0; i--) {
+                if (subtitles[i].startTime <= time) {
+                    currentIndex = i;
+                    break;
+                }
+            }
+        }
+        
+        console.log(`--- [Player Control] Jump: Current index: ${currentIndex}, Subtitle: ${currentIndex >= 0 ? subtitles[currentIndex].id : 'none'}`);
+        
         let targetSub: SubtitleEntry | undefined;
     
         if (direction === 'next') {
-            if (currentSubtitle) {
-                targetSub = subtitles.find(s => s.startTime >= currentSubtitle.endTime);
+            if (currentIndex >= 0 && currentIndex < subtitles.length - 1) {
+                // Array එකේ ඊළඟ subtitle එක ගන්න
+                targetSub = subtitles[currentIndex + 1];
+            } else if (currentIndex < 0) {
+                // වේලාව subtitles වලට පෙර නම්, පළමු එක ගන්න
+                targetSub = subtitles[0];
             } else {
-                targetSub = subtitles.find(s => s.startTime > time);
+                // අන්තිම subtitle එකේ නම්
+                console.log(`--- [Player Control] Jump: අන්තිම subtitle එකේ ඉන්නවා. ඊළඟ එකක් නැහැ.`);
             }
-        } else {
-            if (currentSubtitle && time > currentSubtitle.startTime + 1) {
-                 targetSub = currentSubtitle;
+        } else { // 'prev'
+            const currentSub = currentIndex >= 0 ? subtitles[currentIndex] : null;
+            if (currentSub && time > currentSub.startTime + 1) {
+                // දැනට පවතින subtitle එකේ මැද නම්, ඒ එකේම මුල වෙත යන්න
+                targetSub = currentSub;
+            } else if (currentIndex > 0) {
+                // පෙර subtitle එකට යන්න
+                targetSub = subtitles[currentIndex - 1];
+            } else if (currentIndex === 0) {
+                // පළමු subtitle එකේ නම්, ඒ එකේම මුල වෙත යන්න
+                targetSub = subtitles[0];
             } else {
-                const prevSubs = subtitles.filter(s => s.startTime < time - 0.1);
-                targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[0];
+                // Subtitles වලට පෙර නම්, පළමු එකට යන්න
+                targetSub = subtitles[0];
             }
         }
       
         if (targetSub) {
-            console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
+            const targetIndex = subtitles.findIndex(s => s.id === targetSub!.id);
+            console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}, Index: ${targetIndex}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
             playerRef.current?.seekTo(targetSub.startTime);
             
-            // Also focus the overlay input for consistency
+            // Focus එක overlay input එකට දෙමු
             setTimeout(() => {
                 if (overlayInputRef.current) {
                     overlayInputRef.current.focus();
@@ -334,11 +376,11 @@ export default function SubtitleEditorPage() {
                 }
             }, 100);
         } else {
-             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එකක් හමු නොවීය. (${direction === 'next' ? 'End of video?' : 'Start of video?'})`);
+             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එකක් හමු නොවීය. (${direction === 'next' ? 'End of video' : 'Start of video'})`);
              toast({
                 variant: "destructive",
                 title: "Navigation Limit",
-                description: `Could not find a ${direction} subtitle. You might be at the ${direction === 'next' ? 'end' : 'beginning'}.`,
+                description: `You are at the ${direction === 'next' ? 'last' : 'first'} subtitle.`,
             });
         }
     };
@@ -370,7 +412,7 @@ export default function SubtitleEditorPage() {
         console.log("--- [File Handling] SRT ගොනුව සාර්ථකව generate කර download කරන ලදී.");
     };
     
-    // Helper function to get the current value for an input, prioritizing the temp editing state
+    // Helper function - input value එක get කිරීමට
     const getInputValue = (sub: SubtitleEntry) => {
         return editingTexts.get(sub.id) ?? sub.sinhala ?? '';
     };
@@ -404,7 +446,7 @@ export default function SubtitleEditorPage() {
                                 onPause={() => console.log("--- [Player Event] Video එක pause විය.")}
                                 onSeek={(seconds) => console.log(`--- [Player Event] Video එක ${seconds} තත්පරයට seek කරන ලදී.`)}
                                 controls={false}
-                                progressInterval={100} // Get progress updates more frequently
+                                progressInterval={100}
                                 config={{
                                     file: {
                                         forceVideo: true,
@@ -428,7 +470,7 @@ export default function SubtitleEditorPage() {
                                 <div className="pointer-events-auto">
                                     <Input
                                         ref={overlayInputRef}
-                                        key={`overlay-${currentSubtitle.id}`} // Force re-mount on subtitle change
+                                        key={`overlay-${currentSubtitle.id}`}
                                         id={`overlay-input-${currentSubtitle.id}`}
                                         type="text"
                                         placeholder="Enter Sinhala translation..."
@@ -530,7 +572,7 @@ export default function SubtitleEditorPage() {
                                                 <TableCell className="space-y-2 pr-4">
                                                     <p className="text-sm text-muted-foreground">{sub.english}</p>
                                                     <Input 
-                                                        key={`table-${sub.id}`} // Force re-mount on subtitle change
+                                                        key={`table-${sub.id}`}
                                                         id={`sub-input-${sub.id}`}
                                                         type="text" 
                                                         placeholder="Enter Sinhala translation..." 
