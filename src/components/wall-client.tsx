@@ -49,6 +49,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
     const [allTags, setAllTags] = useState<string[]>([]);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const [postStatus, setPostStatus] = useState<{ limit: number; count: number; remaining: number } | null>(null);
     const [isLoadingStatus, setIsLoadingStatus] = useState(true);
 
@@ -135,6 +136,9 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
           toast({ title: 'Success', description: 'Your post has been published.' });
           form.reset();
           setPreviewImage(null);
+          if (textareaRef.current) {
+            textareaRef.current.style.height = 'auto'; // Reset height
+          }
           await fetchPostStatus(); // Refresh status after posting
         } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
@@ -182,6 +186,11 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                             <FormItem>
                               <FormControl>
                                 <Textarea
+                                    ref={(e) => {
+                                      field.ref(e);
+                                      // @ts-ignore
+                                      textareaRef.current = e;
+                                    }}
                                     placeholder="What's happening?"
                                     className="w-full bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 p-2 text-base"
                                     rows={2}

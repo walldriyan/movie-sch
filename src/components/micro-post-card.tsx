@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useTransition, useCallback } from 'react';
+import React, { useState, useTransition, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,11 +35,22 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const [post, setPost] = useState(initialPost);
     const [isLikePending, startLikeTransition] = useTransition();
     const [isDeletePending, startDeleteTransition] = useTransition();
+    
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [isTruncated, setIsTruncated] = useState(false);
+    const contentRef = useRef<HTMLParagraphElement>(null);
+
 
     const postImage = post.images?.[0]?.url;
     const hasLiked = post.likes?.some(like => like.userId === user?.id) ?? false;
     
     const likeCount = post?._count?.likes ?? 0;
+
+    useEffect(() => {
+        if (contentRef.current) {
+            setIsTruncated(contentRef.current.scrollHeight > contentRef.current.clientHeight);
+        }
+    }, [post.content]);
     
     const handleCommentCountChange = useCallback((count: number) => {
         setPost(currentPost => {
@@ -118,7 +129,24 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             <ClientRelativeDate date={post.createdAt} />
                         </div>
                         
-                        <p className="mt-2 whitespace-pre-wrap">{post.content}</p>
+                        <p 
+                            ref={contentRef}
+                            className={cn(
+                                "mt-2 whitespace-pre-wrap",
+                                !isExpanded && "line-clamp-4"
+                            )}
+                        >
+                            {post.content}
+                        </p>
+                        {isTruncated && (
+                            <button 
+                                onClick={() => setIsExpanded(!isExpanded)}
+                                className="text-primary text-sm font-semibold mt-1"
+                            >
+                                {isExpanded ? 'Show less' : 'Show more'}
+                            </button>
+                        )}
+
 
                         {postImage && (
                              <div className="mt-3 relative aspect-video max-h-[400px] w-full overflow-hidden rounded-xl border">
@@ -140,8 +168,8 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             ))}
                         </div>
 
-                        <Accordion type="single" collapsible className="w-full mt-2">
-                            <AccordionItem value={`comments-${post.id}`} className="border-b-0">
+                        <Accordion type="single" collapsible className="w-full mt-2" defaultValue={post.id}>
+                            <AccordionItem value={post.id} className="border-b-0">
                                 <div className="flex justify-between items-center text-muted-foreground">
                                     <AccordionTrigger className="py-0 hover:no-underline">
                                         <div className="flex items-center gap-1.5 p-2 rounded-md hover:bg-accent">
