@@ -172,6 +172,7 @@ export default function SubtitleEditorPage() {
     };
 
     const saveChanges = async (id: number, text: string) => {
+        let updatedSubtitles: SubtitleEntry[] = [];
         if (dbPromise) {
             try {
                 const db = await dbPromise;
@@ -180,12 +181,15 @@ export default function SubtitleEditorPage() {
                     const objectToSave = { ...subToUpdate, sinhala: text };
                     await db.put(SUBTITLE_STORE, objectToSave);
                 }
+                 updatedSubtitles = await db.getAll(SUBTITLE_STORE);
+                 setSubtitles(updatedSubtitles);
             } catch (error) {
                 console.error("Failed to save to DB:", error);
+                // On error, revert to original state
+                 updatedSubtitles = subtitles;
             }
         }
-        // Return a new array with the updated item for immediate state update
-        return subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
+        return updatedSubtitles;
     };
     
     const handleInputBlur = () => {
@@ -198,11 +202,10 @@ export default function SubtitleEditorPage() {
             const currentText = (e.target as HTMLInputElement).value;
             setPlaying(false);
 
-            const updatedSubtitles = await saveChanges(currentId, currentText);
-            setSubtitles(updatedSubtitles); // Update state immediately
+            const updatedSubs = await saveChanges(currentId, currentText);
             
-            const currentIndex = updatedSubtitles.findIndex(s => s.id === currentId);
-            const nextSub = updatedSubtitles[currentIndex + 1];
+            const currentIndex = updatedSubs.findIndex(s => s.id === currentId);
+            const nextSub = updatedSubs[currentIndex + 1];
     
             if (nextSub) {
                 playerRef.current?.seekTo(nextSub.startTime);
