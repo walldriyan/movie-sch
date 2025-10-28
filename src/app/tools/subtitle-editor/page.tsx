@@ -100,6 +100,8 @@ export default function SubtitleEditorPage() {
     const videoInputRef = useRef<HTMLInputElement>(null);
     const subtitleInputRef = useRef<HTMLInputElement>(null);
     const activeRowRef = useRef<HTMLTableRowElement>(null);
+    const overlayInputRef = useRef<HTMLInputElement>(null);
+
 
     const loadSubtitlesFromDB = async () => {
         console.log("--- [DB] IndexedDB වෙතින් subtitles load කිරීම ආරම්භ විය.");
@@ -123,11 +125,6 @@ export default function SubtitleEditorPage() {
                 behavior: 'smooth',
                 block: 'center',
             });
-             const inputElement = activeRowRef.current.querySelector('input');
-             if (inputElement) {
-                console.log(`--- [useEffect] Active row එකේ input එක focus කරමින් පවතී.`);
-                inputElement.focus();
-             }
         }
     }, [currentSubtitle]);
 
@@ -175,26 +172,26 @@ export default function SubtitleEditorPage() {
     const saveChanges = async (id: number, text: string) => {
         console.log(`--- [Save] saveChanges function එක ක්‍රියාත්මක විය. ID: ${id}, Text: "${text}"`);
         if (dbPromise) {
-             const db = await dbPromise;
-             const existingSub = await db.get(SUBTITLE_STORE, id);
-             if (existingSub) {
-                 console.log(`--- [Save] DB එකේ ID: ${id} සොයා ගන්නා ලදී. Sinhala text එක update කරමින් පවතී.`);
-                 await db.put(SUBTITLE_STORE, { ...existingSub, sinhala: text });
-                 console.log(`--- [Save] DB එක සාර්ථකව update කරන ලදී.`);
-             } else {
-                 console.warn(`--- [Save] DB එකේ ID: ${id} සොයා ගැනීමට නොහැකි විය.`);
-             }
-             
-             setSubtitles(prevSubs => {
+            const db = await dbPromise;
+            const existingSub = await db.get(SUBTITLE_STORE, id);
+            if (existingSub) {
+                console.log(`--- [Save] DB එකේ ID: ${id} සොයා ගන්නා ලදී. Sinhala text එක update කරමින් පවතී.`);
+                await db.put(SUBTITLE_STORE, { ...existingSub, sinhala: text });
+                console.log(`--- [Save] DB එක සාර්ථකව update කරන ලදී.`);
+            } else {
+                console.warn(`--- [Save] DB එකේ ID: ${id} සොයා ගැනීමට නොහැකි විය.`);
+            }
+            
+            setSubtitles(prevSubs => {
                 console.log(`--- [Save] Optimistic UI: ප්‍රධාන 'subtitles' state එක update කරමින් පවතී.`);
                 const updated = prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s);
                 console.log(`--- [Save] Optimistic UI: State එක update කරන ලදී.`);
                 return updated;
-             });
+            });
         }
-     };
+    };
     
-    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
+     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             console.log("--- [Input Event] 'Enter' key එක press කරන ලදී.");
@@ -221,6 +218,9 @@ export default function SubtitleEditorPage() {
                 console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
                 playerRef.current?.seekTo(nextSub.startTime);
                 setPlaying(false);
+                 if (overlayInputRef.current) {
+                    overlayInputRef.current.focus();
+                }
             } else {
                 console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
             }
@@ -261,15 +261,34 @@ export default function SubtitleEditorPage() {
         let targetSub: SubtitleEntry | undefined;
     
         if (direction === 'next') {
-            targetSub = subtitles.find(s => s.startTime > time);
-        } else {
-            const prevSubs = subtitles.filter(s => s.startTime < time);
-            targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[0];
+            if (currentSubtitle) {
+                // Find the very next subtitle after the current one ends
+                targetSub = subtitles.find(s => s.startTime >= currentSubtitle.endTime);
+            } else {
+                // If no subtitle is active, find the next one from the current time
+                targetSub = subtitles.find(s => s.startTime > time);
+            }
+        } else { // 'prev'
+            if (currentSubtitle && time > currentSubtitle.startTime + 1) {
+                 // If we are well into the current subtitle, jump to its beginning
+                 targetSub = currentSubtitle;
+            } else {
+                // Otherwise, find the one that starts just before the current time
+                const prevSubs = subtitles.filter(s => s.startTime < time - 0.1);
+                targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[0];
+            }
         }
       
         if (targetSub) {
             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
             playerRef.current?.seekTo(targetSub.startTime);
+        } else {
+             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එකක් හමු නොවීය. (${direction === 'next' ? 'End of video?' : 'Start of video?'})`);
+             toast({
+                variant: "destructive",
+                title: "Navigation Limit",
+                description: `Could not find a ${direction} subtitle. You might be at the ${direction === 'next' ? 'end' : 'beginning'}.`,
+            });
         }
     };
 
@@ -350,6 +369,7 @@ export default function SubtitleEditorPage() {
                                 </p>
                                 <div className="pointer-events-auto">
                                     <Input
+                                        ref={overlayInputRef}
                                         id={`overlay-input-${currentSubtitle.id}`}
                                         type="text"
                                         placeholder="Enter Sinhala translation..."
@@ -479,4 +499,5 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
 
