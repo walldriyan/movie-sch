@@ -168,7 +168,7 @@ export default function SubtitleEditorPage() {
     };
     
     const saveChanges = (id: number, text: string) => {
-        // Optimistic UI update
+        // Optimistic UI update for the main state
         const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
         setSubtitles(updatedSubs);
 
@@ -193,9 +193,9 @@ export default function SubtitleEditorPage() {
         if (e.key === 'Enter') {
             e.preventDefault();
             
-            if (editingState.id === currentId) {
-                saveChanges(currentId, editingState.text);
-            }
+            // Always save the current state from the input field
+            const currentText = (e.target as HTMLInputElement).value;
+            saveChanges(currentId, currentText);
 
             setPlaying(false);
 
@@ -205,7 +205,6 @@ export default function SubtitleEditorPage() {
             if (nextSub) {
                 playerRef.current?.seekTo(nextSub.startTime);
                 
-                // No need to focus sidebar input, useEffect will focus the overlay input
                 const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
                 if (nextSubPageIndex !== currentPage) {
                     setCurrentPage(nextSubPageIndex);
@@ -245,15 +244,13 @@ export default function SubtitleEditorPage() {
             const prevSubs = subtitles.filter(s => s.startTime < time);
             targetIndex = subtitles.indexOf(prevSubs[prevSubs.length - 1]);
         }
-
-        if (targetIndex === -1 && direction === 'next' && subtitles.length > 0) {
-            targetIndex = subtitles.length - 1;
-        } else if (targetIndex === -1 && direction === 'prev') {
-             targetIndex = 0;
-        }
         
         if (targetIndex !== -1 && subtitles[targetIndex]) {
             playerRef.current?.seekTo(subtitles[targetIndex].startTime);
+        } else if (direction === 'next' && subtitles.length > 0) { // jump to last if no next found
+            playerRef.current?.seekTo(subtitles[subtitles.length - 1].startTime);
+        } else if (direction === 'prev' && subtitles.length > 0) { // jump to first if no prev found
+             playerRef.current?.seekTo(subtitles[0].startTime);
         }
     };
 
