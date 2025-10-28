@@ -7,12 +7,8 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  optimizeFonts: true,
   eslint: {
     ignoreDuringBuilds: true,
-  },
-  serverActions: {
-    bodySizeLimit: '4mb',
   },
   images: {
     remotePatterns: [
