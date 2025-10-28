@@ -123,16 +123,11 @@ export default function SubtitleEditorPage() {
                 behavior: 'smooth',
                 block: 'center',
             });
-        }
-    }, [currentSubtitle]);
-
-     useEffect(() => {
-        if (currentSubtitle) {
-            const overlayInput = document.getElementById(`overlay-input-${currentSubtitle.id}`);
-            if (overlayInput) {
-                console.log(`--- [useEffect] Overlay input (ID: ${currentSubtitle.id}) එක focus කිරීම සඳහා setTimeout යොදන ලදී.`);
-                setTimeout(() => overlayInput.focus(), 0);
-            }
+             const inputElement = activeRowRef.current.querySelector('input');
+             if (inputElement) {
+                console.log(`--- [useEffect] Active row එකේ input එක focus කරමින් පවතී.`);
+                inputElement.focus();
+             }
         }
     }, [currentSubtitle]);
 
@@ -204,26 +199,28 @@ export default function SubtitleEditorPage() {
             e.preventDefault();
             console.log("--- [Input Event] 'Enter' key එක press කරන ලදී.");
             const currentTarget = e.target as HTMLInputElement;
-            const currentIdStr = currentTarget.id.split('-')[2] || currentTarget.id.split('-')[1]; // Handles both sub-input and overlay-input
+            const currentIdStr = currentTarget.id.split('-')[2] || currentTarget.id.split('-')[1];
             const currentText = currentTarget.value;
             
             if (!currentIdStr) {
                 console.warn("--- [Input Event] 'Enter': Input ID එක සොයා ගැනීමට නොහැකි විය.");
                 return;
             }
-    
+
             const idAsNum = parseInt(currentIdStr, 10);
             console.log(`--- [Input Event] 'Enter': ID: ${idAsNum}, Text: "${currentText}" save කිරීම ආරම්භ විය.`);
             await saveChanges(idAsNum, currentText);
             console.log("--- [Input Event] 'Enter': Save කිරීම අවසන්. ඊළඟ subtitle එකට jump වීමට සූදානම්.");
+
+            currentTarget.blur();
             
             const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
             const nextSub = subtitles[currentIndex + 1];
     
             if (nextSub) {
                 console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
-                setPlaying(false);
                 playerRef.current?.seekTo(nextSub.startTime);
+                setPlaying(true);
             } else {
                 console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
             }
@@ -255,29 +252,24 @@ export default function SubtitleEditorPage() {
         console.log(`--- [Player Control] Video එක තත්පර ${seconds} කින් ${seconds > 0 ? 'ඉදිරියට' : 'පිටුපසට'} seek කරන ලදී.`);
     };
     
-    const handleSubtitleJump = (direction: 'next' | 'prev') => {
+   const handleSubtitleJump = (direction: 'next' | 'prev') => {
         console.log(`--- [Player Control] '${direction}' subtitle jump button එක click කරන ලදී.`);
         setPlaying(false);
-        const time = currentTime;
+        const time = playerRef.current?.getCurrentTime() || currentTime;
         console.log(`--- [Player Control] Jump: දැනට පවතින වේලාව: ${time}`);
       
         let targetSub: SubtitleEntry | undefined;
     
         if (direction === 'next') {
-            // Find the first subtitle that starts AFTER the current time
             targetSub = subtitles.find(s => s.startTime > time);
-        } else { // prev
-            // Find all subtitles that start BEFORE the current time
+        } else {
             const prevSubs = subtitles.filter(s => s.startTime < time);
-            // The target is the last one in that filtered list
-            targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
+            targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[0];
         }
       
         if (targetSub) {
             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
             playerRef.current?.seekTo(targetSub.startTime);
-        } else {
-             console.log(`--- [Player Control] Jump: '${direction}' දෙසට subtitle එකක් සොයා ගැනීමට නොහැකි විය.`);
         }
     };
 
