@@ -59,6 +59,7 @@ const parseSrt = (srtContent: string): Omit<SubtitleEntry, 'id'>[] => {
     const blocks = srtContent.trim().split(/\r?\n\r?\n/);
     return blocks.map(block => {
         const lines = block.split(/\r?\n/);
+        if (lines.length < 3) return null;
         const timeMatch = lines[1]?.match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
         if (!timeMatch) return null;
 
@@ -209,7 +210,7 @@ export default function SubtitleEditorPage() {
     };
 
     return (
-        <main className="flex-1 p-4 md:p-8 pt-6 space-y-6">
+        <main className="max-w-4xl mx-auto p-4 md:p-8 pt-6 space-y-6">
             <h1 className="text-3xl font-bold">Subtitle Editor</h1>
             
             {/* Top Section: Player and Controls */}
