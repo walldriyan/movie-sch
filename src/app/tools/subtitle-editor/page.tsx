@@ -172,9 +172,9 @@ export default function SubtitleEditorPage() {
     };
 
     const saveChanges = async (id: number, text: string) => {
-        setSubtitles(prevSubs => 
-            prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
-        );
+        const newSubtitles = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
+        setSubtitles(newSubtitles);
+        setEditingState({ id: null, text: '' }); 
 
         if (dbPromise) {
             try {
@@ -183,16 +183,14 @@ export default function SubtitleEditorPage() {
                 if (subToUpdate) {
                     const objectToSave = { ...subToUpdate, sinhala: text };
                     await db.put(SUBTITLE_STORE, objectToSave);
-                } else {
-                    const newSubData = subtitles.find(s => s.id === id);
-                    if (newSubData) {
-                        await db.put(SUBTITLE_STORE, {...newSubData, sinhala: text});
-                    }
                 }
             } catch (error) {
                 console.error("Failed to save to DB:", error);
+                // Optionally revert state on DB error
+                // setSubtitles(subtitles); 
             }
         }
+        return newSubtitles;
     };
     
     const handleInputBlur = () => {
@@ -203,13 +201,10 @@ export default function SubtitleEditorPage() {
         if (e.key === 'Enter') {
             e.preventDefault();
             const currentText = (e.target as HTMLInputElement).value;
-            
-            await saveChanges(currentId, currentText);
-            setEditingState({ id: null, text: '' }); 
             setPlaying(false);
-    
-            // Find next subtitle from the *updated* state
-            const updatedSubtitles = subtitles.map(s => s.id === currentId ? { ...s, sinhala: currentText } : s);
+
+            const updatedSubtitles = await saveChanges(currentId, currentText);
+            
             const currentIndex = updatedSubtitles.findIndex(s => s.id === currentId);
             const nextSub = updatedSubtitles[currentIndex + 1];
     
@@ -251,17 +246,30 @@ export default function SubtitleEditorPage() {
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
       setPlaying(false);
       const time = playerRef.current?.getCurrentTime() ?? 0;
+      const currentSub = currentSubtitle;
       
       let targetSub: SubtitleEntry | undefined;
 
       if (direction === 'next') {
-          targetSub = subtitles.find(s => s.startTime > time);
-          if (!targetSub && subtitles.length > 0) {
-              targetSub = subtitles[0]; // Loop to the beginning if at the end
+          if (currentSub) {
+              const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
+              targetSub = subtitles[currentIndex + 1];
+          } else {
+              targetSub = subtitles.find(s => s.startTime > time);
           }
-      } else { 
-          const prevSubs = subtitles.filter(s => s.startTime < time);
-          targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[subtitles.length - 1]; // Loop to end if at beginning
+      } else { // prev
+          if (currentSub) {
+              const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
+              targetSub = subtitles[currentIndex - 1];
+          } else {
+              const prevSubs = subtitles.filter(s => s.startTime < time);
+              targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
+          }
+      }
+      
+      if (!targetSub) {
+         if (direction === 'next' && subtitles.length > 0) targetSub = subtitles[0];
+         if (direction === 'prev' && subtitles.length > 0) targetSub = subtitles[subtitles.length - 1];
       }
       
       if (targetSub) {
@@ -486,4 +494,3 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
-
