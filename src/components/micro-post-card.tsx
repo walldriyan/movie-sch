@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ClientRelativeDate from '@/components/client-relative-date';
-import { MessageCircle, Heart, Share2, MoreHorizontal, Edit, Trash2, Loader2 } from 'lucide-react';
+import { MessageCircle, Heart, Share2, MoreHorizontal, Edit, Trash2, Loader2, Bookmark } from 'lucide-react';
 import type { MicroPost as MicroPostType, User, MicroPostImage, Category, Tag, MicroPostLike } from '@/lib/types';
 import { useSession } from 'next-auth/react';
 import { toggleMicroPostLike, deleteMicroPost } from '@/lib/actions';
@@ -35,6 +35,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const [post, setPost] = useState(initialPost);
     const [isLikePending, startLikeTransition] = useTransition();
     const [isDeletePending, startDeleteTransition] = useTransition();
+    const [isBookmarked, setIsBookmarked] = useState(false);
     
     const [isExpanded, setIsExpanded] = useState(false);
     const [isTruncated, setIsTruncated] = useState(false);
@@ -51,6 +52,12 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
             setIsTruncated(contentRef.current.scrollHeight > contentRef.current.clientHeight);
         }
     }, [post.content]);
+
+     useEffect(() => {
+        // Check localStorage on mount to set initial bookmark state
+        const savedPosts = JSON.parse(localStorage.getItem('bookmarkedMicroPosts') || '[]');
+        setIsBookmarked(savedPosts.includes(post.id));
+    }, [post.id]);
     
     const handleCommentCountChange = useCallback((count: number) => {
         setPost(currentPost => {
@@ -94,6 +101,24 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                  setPost(initialPost);
             }
         });
+    };
+
+    const handleBookmark = () => {
+        const savedPosts: string[] = JSON.parse(localStorage.getItem('bookmarkedMicroPosts') || '[]');
+        const isCurrentlyBookmarked = savedPosts.includes(post.id);
+        
+        let updatedSavedPosts: string[];
+
+        if (isCurrentlyBookmarked) {
+            updatedSavedPosts = savedPosts.filter(id => id !== post.id);
+            toast({ title: "Bookmark removed"});
+        } else {
+            updatedSavedPosts = [...savedPosts, post.id];
+            toast({ title: "Post bookmarked"});
+        }
+
+        localStorage.setItem('bookmarkedMicroPosts', JSON.stringify(updatedSavedPosts));
+        setIsBookmarked(!isCurrentlyBookmarked);
     };
 
     const handleDelete = () => {
@@ -182,6 +207,11 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                             <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
                                         </Button>
                                         <span className="text-xs">{likeCount}</span>
+                                    </div>
+                                    <div className="flex items-center gap-1.5">
+                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
+                                            <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-primary text-primary")} />
+                                        </Button>
                                     </div>
                                     <div className="flex items-center gap-1.5">
                                         <Button variant="ghost" size="icon" className="h-8 w-8">
