@@ -213,9 +213,9 @@ export default function SubtitleEditorPage() {
         <main className="max-w-full mx-auto p-4 md:p-8 pt-6 space-y-6">
             <h1 className="text-3xl font-bold">Subtitle Editor</h1>
             
-            <div className="grid grid-cols-5 gap-8">
+            <div className="grid grid-cols-4 gap-8">
                 {/* Left Side: Player and Controls */}
-                <div className="col-span-2 flex flex-col gap-4">
+                <div className="col-span-3 flex flex-col gap-4">
                      <Card className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
                         {videoUrl ? (
                             <ReactPlayer
@@ -279,7 +279,7 @@ export default function SubtitleEditorPage() {
                 </div>
 
                  {/* Right Side: Subtitle Editor Table */}
-                <div className="col-span-3">
+                <div className="col-span-1">
                      <Card className="flex flex-col h-[calc(100vh-12rem)]">
                         <CardHeader>
                             <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -287,7 +287,7 @@ export default function SubtitleEditorPage() {
                                     <CardTitle>Editor</CardTitle>
                                     <CardDescription>Load files, then click a row to seek video and start editing.</CardDescription>
                                 </div>
-                                <div className="flex gap-4 pt-2 flex-shrink-0">
+                                <div className="flex flex-col gap-2 pt-2 flex-shrink-0">
                                 <Button variant="outline" onClick={() => videoInputRef.current?.click()}>
                                         <Upload className="w-4 h-4 mr-2"/> Select Video
                                     </Button>
