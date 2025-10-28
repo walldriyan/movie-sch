@@ -210,141 +210,145 @@ export default function SubtitleEditorPage() {
     };
 
     return (
-        <main className="max-w-4xl mx-auto p-4 md:p-8 pt-6 space-y-6">
+        <main className="max-w-full mx-auto p-4 md:p-8 pt-6 space-y-6">
             <h1 className="text-3xl font-bold">Subtitle Editor</h1>
             
-            {/* Top Section: Player and Controls */}
-            <div className="flex flex-col gap-4">
-                 <Card className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
-                    {videoUrl ? (
-                        <ReactPlayer
-                            ref={playerRef}
-                            url={videoUrl}
-                            width="100%"
-                            height="100%"
-                            playing={playing}
-                            onProgress={handleProgress}
-                            onDuration={setDuration}
-                            controls={false} // We use custom controls
+            <div className="grid grid-cols-5 gap-8">
+                {/* Left Side: Player and Controls */}
+                <div className="col-span-2 flex flex-col gap-4">
+                     <Card className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
+                        {videoUrl ? (
+                            <ReactPlayer
+                                ref={playerRef}
+                                url={videoUrl}
+                                width="100%"
+                                height="100%"
+                                playing={playing}
+                                onProgress={handleProgress}
+                                onDuration={setDuration}
+                                controls={false} // We use custom controls
+                            />
+                        ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
+                                <Video className="w-16 h-16 mb-4" />
+                                <p>Select a video file to begin</p>
+                            </div>
+                        )}
+                        {/* Subtitle Overlay */}
+                        {currentSubtitle && (
+                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 text-center pointer-events-none">
+                                <p className="py-1 px-3 text-2xl font-semibold text-white bg-black/50 rounded" style={{ textShadow: '2px 2px 4px #000000' }}>
+                                    {currentSubtitle.english}
+                                </p>
+                                <p className="mt-2 py-1 px-3 text-2xl font-semibold text-yellow-300 bg-black/50 rounded" style={{ textShadow: '2px 2px 4px #000000' }}>
+                                    {currentSubtitle.sinhala}
+                                </p>
+                            </div>
+                        )}
+                    </Card>
+                    <div className="space-y-4 p-4 border rounded-lg bg-card">
+                        <Slider
+                            value={[played]}
+                            onValueChange={handleSeekChange}
+                            max={1}
+                            step={0.001}
                         />
-                    ) : (
-                        <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
-                            <Video className="w-16 h-16 mb-4" />
-                            <p>Select a video file to begin</p>
-                        </div>
-                    )}
-                    {/* Subtitle Overlay */}
-                    {currentSubtitle && (
-                        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 text-center pointer-events-none">
-                            <p className="py-1 px-3 text-2xl font-semibold text-white bg-black/50 rounded" style={{ textShadow: '2px 2px 4px #000000' }}>
-                                {currentSubtitle.english}
-                            </p>
-                            <p className="mt-2 py-1 px-3 text-2xl font-semibold text-yellow-300 bg-black/50 rounded" style={{ textShadow: '2px 2px 4px #000000' }}>
-                                {currentSubtitle.sinhala}
-                            </p>
-                        </div>
-                    )}
-                </Card>
-                <div className="space-y-4 p-4 border rounded-lg bg-card">
-                    <Slider
-                        value={[played]}
-                        onValueChange={handleSeekChange}
-                        max={1}
-                        step={0.001}
-                    />
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="icon" onClick={() => handleSeekStep(-5)}><Rewind className="w-5 h-5" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => setPlaying(!playing)}>
-                                {playing ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => handleSeekStep(5)}><FastForward className="w-5 h-5" /></Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('prev')}>
-                                <SkipBack className="w-4 h-4 mr-2" /> Prev Sub
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('next')}>
-                                Next Sub <SkipForward className="w-4 h-4 ml-2" />
-                            </Button>
-                        </div>
-                        <div className="text-sm font-mono text-muted-foreground">
-                            <span>{new Date(currentTime * 1000).toISOString().substr(11, 8)}</span>
-                            /
-                            <span>{new Date(duration * 1000).toISOString().substr(11, 8)}</span>
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" onClick={() => handleSeekStep(-5)}><Rewind className="w-5 h-5" /></Button>
+                                <Button variant="ghost" size="icon" onClick={() => setPlaying(!playing)}>
+                                    {playing ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+                                </Button>
+                                <Button variant="ghost" size="icon" onClick={() => handleSeekStep(5)}><FastForward className="w-5 h-5" /></Button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('prev')}>
+                                    <SkipBack className="w-4 h-4 mr-2" /> Prev Sub
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('next')}>
+                                    Next Sub <SkipForward className="w-4 h-4 ml-2" />
+                                </Button>
+                            </div>
+                            <div className="text-sm font-mono text-muted-foreground">
+                                <span>{new Date(currentTime * 1000).toISOString().substr(11, 8)}</span>
+                                /
+                                <span>{new Date(duration * 1000).toISOString().substr(11, 8)}</span>
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
-            {/* Bottom Section: Subtitle Editor Table */}
-            <Card className="flex flex-col h-[600px]">
-                <CardHeader>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-between">
-                        <div>
-                             <CardTitle>Editor</CardTitle>
-                             <CardDescription>Load files, then click a row to seek video and start editing.</CardDescription>
-                        </div>
-                         <div className="flex gap-4 pt-2 flex-shrink-0">
-                           <Button variant="outline" onClick={() => videoInputRef.current?.click()}>
-                                <Upload className="w-4 h-4 mr-2"/> Select Video
-                            </Button>
-                             <Button variant="outline" onClick={() => subtitleInputRef.current?.click()}>
-                                <Subtitles className="w-4 h-4 mr-2"/> Select Subtitle File
-                            </Button>
-                            <Button onClick={handleSave} >
-                                <Save className="w-4 h-4 mr-2"/> Save Sinhala SRT
-                            </Button>
-                            <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoFileChange} />
-                            <input ref={subtitleInputRef} type="file" accept=".srt,.vtt" className="hidden" onChange={handleSubtitleFileChange} />
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="flex-grow overflow-hidden">
-                    <ScrollArea className="h-full">
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-card z-10">
-                                <TableRow>
-                                    <TableHead className="w-[200px]">Time</TableHead>
-                                    <TableHead>English</TableHead>
-                                    <TableHead>Sinhala</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {subtitles.length > 0 ? subtitles.map(sub => (
-                                    <TableRow 
-                                        key={sub.id} 
-                                        ref={currentSubtitle?.id === sub.id ? activeRowRef : null}
-                                        onClick={() => handleRowClick(sub.startTime)}
-                                        className={cn("cursor-pointer", currentSubtitle?.id === sub.id && 'bg-primary/10')}
-                                    >
-                                        <TableCell className="font-mono text-xs text-muted-foreground">
-                                            {secondsToSrtTime(sub.startTime).split(',')[0]}
-                                        </TableCell>
-                                        <TableCell className="text-sm">{sub.english}</TableCell>
-                                        <TableCell>
-                                            <Input 
-                                                type="text" 
-                                                placeholder="Enter Sinhala translation..." 
-                                                className="bg-transparent border-0 focus-visible:ring-1 text-base"
-                                                value={sub.sinhala || ''}
-                                                onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
-                                                onClick={(e) => e.stopPropagation()} // Prevent row click when editing
-                                            />
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={3} className="text-center h-24">
-                                            No subtitles loaded.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </ScrollArea>
-                </CardContent>
-            </Card>
+                 {/* Right Side: Subtitle Editor Table */}
+                <div className="col-span-3">
+                     <Card className="flex flex-col h-[calc(100vh-12rem)]">
+                        <CardHeader>
+                            <div className="flex flex-col sm:flex-row gap-4 justify-between">
+                                <div>
+                                    <CardTitle>Editor</CardTitle>
+                                    <CardDescription>Load files, then click a row to seek video and start editing.</CardDescription>
+                                </div>
+                                <div className="flex gap-4 pt-2 flex-shrink-0">
+                                <Button variant="outline" onClick={() => videoInputRef.current?.click()}>
+                                        <Upload className="w-4 h-4 mr-2"/> Select Video
+                                    </Button>
+                                    <Button variant="outline" onClick={() => subtitleInputRef.current?.click()}>
+                                        <Subtitles className="w-4 h-4 mr-2"/> Select Subtitle File
+                                    </Button>
+                                    <Button onClick={handleSave} >
+                                        <Save className="w-4 h-4 mr-2"/> Save Sinhala SRT
+                                    </Button>
+                                    <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoFileChange} />
+                                    <input ref={subtitleInputRef} type="file" accept=".srt,.vtt" className="hidden" onChange={handleSubtitleFileChange} />
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="flex-grow overflow-hidden">
+                            <ScrollArea className="h-full">
+                                <Table>
+                                    <TableHeader className="sticky top-0 bg-card z-10">
+                                        <TableRow>
+                                            <TableHead className="w-[150px]">Time</TableHead>
+                                            <TableHead>English</TableHead>
+                                            <TableHead>Sinhala</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {subtitles.length > 0 ? subtitles.map(sub => (
+                                            <TableRow 
+                                                key={sub.id} 
+                                                ref={currentSubtitle?.id === sub.id ? activeRowRef : null}
+                                                onClick={() => handleRowClick(sub.startTime)}
+                                                className={cn("cursor-pointer", currentSubtitle?.id === sub.id && 'bg-primary/10')}
+                                            >
+                                                <TableCell className="font-mono text-xs text-muted-foreground">
+                                                    {secondsToSrtTime(sub.startTime).split(',')[0]}
+                                                </TableCell>
+                                                <TableCell className="text-sm">{sub.english}</TableCell>
+                                                <TableCell>
+                                                    <Input 
+                                                        type="text" 
+                                                        placeholder="Enter Sinhala translation..." 
+                                                        className="bg-transparent border-0 focus-visible:ring-1 text-base"
+                                                        value={sub.sinhala || ''}
+                                                        onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
+                                                        onClick={(e) => e.stopPropagation()} // Prevent row click when editing
+                                                    />
+                                                </TableCell>
+                                            </TableRow>
+                                        )) : (
+                                            <TableRow>
+                                                <TableCell colSpan={3} className="text-center h-24">
+                                                    No subtitles loaded.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </ScrollArea>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
         </main>
     );
 }
