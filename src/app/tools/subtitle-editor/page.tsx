@@ -172,10 +172,6 @@ export default function SubtitleEditorPage() {
     };
 
     const saveChanges = async (id: number, text: string) => {
-        const newSubtitles = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
-        setSubtitles(newSubtitles);
-        setEditingState({ id: null, text: '' }); 
-
         if (dbPromise) {
             try {
                 const db = await dbPromise;
@@ -188,7 +184,8 @@ export default function SubtitleEditorPage() {
                 console.error("Failed to save to DB:", error);
             }
         }
-        return newSubtitles;
+        // Return a new array with the updated item for immediate state update
+        return subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
     };
     
     const handleInputBlur = () => {
@@ -202,6 +199,7 @@ export default function SubtitleEditorPage() {
             setPlaying(false);
 
             const updatedSubtitles = await saveChanges(currentId, currentText);
+            setSubtitles(updatedSubtitles); // Update state immediately
             
             const currentIndex = updatedSubtitles.findIndex(s => s.id === currentId);
             const nextSub = updatedSubtitles[currentIndex + 1];
