@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect, useTransition } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ReactPlayer from 'react-player';
 import { openDB, IDBPDatabase } from 'idb';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Upload, Video, Subtitles, Play, Pause, Rewind, FastForward, SkipBack, SkipForward, Save, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Upload, Video, Subtitles, Play, Pause, Rewind, FastForward, SkipBack, SkipForward, Save, ChevronLeft, ChevronRight, Info } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -48,6 +48,7 @@ const timeToSeconds = (time: string): number => {
 };
 
 const secondsToSrtTime = (seconds: number): string => {
+    if (isNaN(seconds) || seconds < 0) return '00:00:00,000';
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
     const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toFixed(3).replace('.', ',').padStart(6, '0');
@@ -85,8 +86,12 @@ export default function SubtitleEditorPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const subtitlesPerPage = 20;
     
-    // This state holds the text being typed, before it's saved.
+    // State for temporary edits
     const [editingState, setEditingState] = useState<{ id: number | null; text: string }>({ id: null, text: '' });
+    
+    // States for debug overlay
+    const [isBuffering, setIsBuffering] = useState(false);
+    const [bufferedAmount, setBufferedAmount] = useState(0);
     
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -117,10 +122,9 @@ export default function SubtitleEditorPage() {
                 block: 'center',
             });
         }
-    }, [currentSubtitle, currentPage]); // Also trigger on page change
+    }, [currentSubtitle, currentPage]);
 
      useEffect(() => {
-        // Auto-focus the overlay input when the current subtitle changes
         if (currentSubtitle) {
             const overlayInput = document.getElementById(`overlay-input-${currentSubtitle.id}`);
             if (overlayInput) {
@@ -162,33 +166,33 @@ export default function SubtitleEditorPage() {
             reader.readAsText(file);
         }
     };
-
+    
     const handleSinhalaChange = (id: number, text: string) => {
         setEditingState({ id, text });
     };
 
     const saveChanges = async (id: number, text: string) => {
-      setSubtitles(prevSubs => 
-          prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
-      );
+        setSubtitles(prevSubs => 
+            prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
+        );
 
-      if (dbPromise) {
-          try {
-              const db = await dbPromise;
-              const subToUpdate = await db.get(SUBTITLE_STORE, id);
-              if (subToUpdate) {
-                  const objectToSave = { ...subToUpdate, sinhala: text };
-                  await db.put(SUBTITLE_STORE, objectToSave);
-              } else { // It's a new subtitle for a line that was empty
-                  const newSubData = subtitles.find(s => s.id === id);
-                  if (newSubData) {
-                    await db.put(SUBTITLE_STORE, {...newSubData, sinhala: text});
-                  }
-              }
-          } catch (error) {
-              console.error("Failed to save to DB:", error);
-          }
-      }
+        if (dbPromise) {
+            try {
+                const db = await dbPromise;
+                const subToUpdate = await db.get(SUBTITLE_STORE, id);
+                if (subToUpdate) {
+                    const objectToSave = { ...subToUpdate, sinhala: text };
+                    await db.put(SUBTITLE_STORE, objectToSave);
+                } else {
+                    const newSubData = subtitles.find(s => s.id === id);
+                    if (newSubData) {
+                        await db.put(SUBTITLE_STORE, {...newSubData, sinhala: text});
+                    }
+                }
+            } catch (error) {
+                console.error("Failed to save to DB:", error);
+            }
+        }
     };
     
     const handleInputBlur = () => {
@@ -199,41 +203,38 @@ export default function SubtitleEditorPage() {
         if (e.key === 'Enter') {
             e.preventDefault();
             const currentText = (e.target as HTMLInputElement).value;
-    
+            
             await saveChanges(currentId, currentText);
             setEditingState({ id: null, text: '' }); 
             setPlaying(false);
     
-            setSubtitles(currentSubs => {
-                const currentIndex = currentSubs.findIndex(s => s.id === currentId);
-                const nextSub = currentSubs[currentIndex + 1];
-        
-                if (nextSub) {
-                    playerRef.current?.seekTo(nextSub.startTime);
-                    const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
-                    if (nextSubPageIndex !== currentPage) {
-                        setCurrentPage(nextSubPageIndex);
-                    }
+            // Find next subtitle from the *updated* state
+            const updatedSubtitles = subtitles.map(s => s.id === currentId ? { ...s, sinhala: currentText } : s);
+            const currentIndex = updatedSubtitles.findIndex(s => s.id === currentId);
+            const nextSub = updatedSubtitles[currentIndex + 1];
+    
+            if (nextSub) {
+                playerRef.current?.seekTo(nextSub.startTime);
+                const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
+                if (nextSubPageIndex !== currentPage) {
+                    setCurrentPage(nextSubPageIndex);
                 }
-                return currentSubs;
-            });
+            }
         }
     };
     
 
-    const handleProgress = (state: { played: number; playedSeconds: number }) => {
+    const handleProgress = (state: { played: number; playedSeconds: number; loadedSeconds: number }) => {
         setPlayed(state.played);
         setCurrentTime(state.playedSeconds);
+        setBufferedAmount(state.loadedSeconds);
 
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
         
-        setCurrentSubtitle(prevSub => {
-            if (activeSub?.id !== prevSub?.id) {
-                setEditingState({ id: null, text: '' });
-                return activeSub || null;
-            }
-            return prevSub;
-        });
+        if (activeSub?.id !== currentSubtitle?.id) {
+            setEditingState({ id: null, text: '' });
+            setCurrentSubtitle(activeSub || null);
+        }
     };
 
     const handleSeekChange = (value: number[]) => {
@@ -298,6 +299,13 @@ export default function SubtitleEditorPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="md:col-span-1 flex flex-col gap-4">
                      <div className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
+                        <div className="absolute top-2 left-2 z-20 bg-black/50 text-white text-xs font-mono p-2 rounded-lg pointer-events-none">
+                            <h4 className="font-bold mb-1 flex items-center gap-2"><Info className="w-4 h-4"/>Debug Info</h4>
+                            <p>Duration: {secondsToSrtTime(duration)}</p>
+                            <p>Current: {secondsToSrtTime(currentTime)}</p>
+                            <p>Buffered: {secondsToSrtTime(bufferedAmount)}</p>
+                            <p>Buffering: {isBuffering ? 'Yes' : 'No'}</p>
+                        </div>
                         {videoUrl ? (
                             <ReactPlayer
                                 ref={playerRef}
@@ -307,6 +315,8 @@ export default function SubtitleEditorPage() {
                                 playing={playing}
                                 onProgress={handleProgress}
                                 onDuration={setDuration}
+                                onBuffer={() => setIsBuffering(true)}
+                                onBufferEnd={() => setIsBuffering(false)}
                                 controls={false}
                                 config={{
                                     file: {
@@ -368,9 +378,9 @@ export default function SubtitleEditorPage() {
                                 </Button>
                             </div>
                             <div className="text-sm font-mono text-muted-foreground">
-                                <span>{new Date(currentTime * 1000).toISOString().substr(11, 8)}</span>
+                                <span>{secondsToSrtTime(currentTime)}</span>
                                 /
-                                <span>{new Date(duration * 1000).toISOString().substr(11, 8)}</span>
+                                <span>{secondsToSrtTime(duration)}</span>
                             </div>
                         </div>
                     </div>
@@ -476,7 +486,4 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
-
-
-
 
