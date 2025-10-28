@@ -166,21 +166,29 @@ export default function SubtitleEditorPage() {
         });
     };
     
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentIndex: number) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             setPlaying(false);
 
-            const nextInput = document.getElementById(`sub-input-${currentSubtitleSlice[currentIndex + 1]?.id}`);
-            if (nextInput) {
-                nextInput.focus();
-            } else {
-                // If it's the last item on the page, go to the next page
-                if (currentPage < totalPages) {
-                    setCurrentPage(p => p + 1);
+            const currentIndex = subtitles.findIndex(s => s.id === currentId);
+            const nextSub = subtitles[currentIndex + 1];
+
+            if (nextSub) {
+                const nextInputId = `sub-input-${nextSub.id}`;
+                const nextInput = document.getElementById(nextInputId) || document.getElementById(`overlay-input-${nextSub.id}`);
+                
+                 if (nextInput) {
+                    nextInput.focus();
+                }
+
+                // Check if next subtitle is on another page
+                const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
+                if (nextSubPageIndex !== currentPage) {
+                    setCurrentPage(nextSubPageIndex);
                      setTimeout(() => {
-                        const firstInputOnNextPage = document.getElementById(`sub-input-${subtitles[endIndex]?.id}`);
-                        firstInputOnNextPage?.focus();
+                        const finalNextInput = document.getElementById(nextInputId) || document.getElementById(`overlay-input-${nextSub.id}`);
+                        finalNextInput?.focus();
                     }, 100);
                 }
             }
@@ -208,18 +216,31 @@ export default function SubtitleEditorPage() {
     };
     
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
-        setPlaying(false); // Pause the player
-        if (!currentSubtitle) {
-            playerRef.current?.seekTo(subtitles[0]?.startTime || 0);
-            return;
-        };
-
-        const currentIndex = subtitles.findIndex(s => s.id === currentSubtitle.id);
-        let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-        if (nextIndex < 0) nextIndex = 0;
-        if (nextIndex >= subtitles.length) nextIndex = subtitles.length - 1;
+        setPlaying(false);
+        const currentTime = playerRef.current?.getCurrentTime() || 0;
         
-        playerRef.current?.seekTo(subtitles[nextIndex].startTime);
+        let targetIndex = -1;
+
+        if (direction === 'next') {
+            // Find the first subtitle that starts AFTER the current time
+            targetIndex = subtitles.findIndex(s => s.startTime > currentTime);
+        } else { // 'prev'
+            // Find the last subtitle that starts BEFORE the current time
+            const prevSubs = subtitles.filter(s => s.startTime < currentTime);
+            targetIndex = prevSubs.length > 0 ? subtitles.indexOf(prevSubs[prevSubs.length - 1]) : 0;
+        }
+
+        if (targetIndex === -1 && direction === 'next') {
+            // If no next sub is found, maybe go to the last one if we are not there already
+            if (subtitles.length > 0) targetIndex = subtitles.length - 1;
+        }
+        if (targetIndex === -1 && direction === 'prev') {
+            targetIndex = 0;
+        }
+        
+        if (targetIndex !== -1 && subtitles[targetIndex]) {
+            playerRef.current?.seekTo(subtitles[targetIndex].startTime);
+        }
     };
 
     const handleRowClick = (startTime: number) => {
@@ -251,7 +272,7 @@ export default function SubtitleEditorPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Side: Player and Controls */}
                 <div className="md:col-span-1 flex flex-col gap-4">
-                     <Card className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
+                     <div className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
                         {videoUrl ? (
                             <ReactPlayer
                                 ref={playerRef}
@@ -261,7 +282,7 @@ export default function SubtitleEditorPage() {
                                 playing={playing}
                                 onProgress={handleProgress}
                                 onDuration={setDuration}
-                                controls={false} // We use custom controls
+                                controls={false}
                             />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
@@ -271,16 +292,25 @@ export default function SubtitleEditorPage() {
                         )}
                         {/* Subtitle Overlay */}
                         {currentSubtitle && (
-                            <div className="absolute bottom-8 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 text-center pointer-events-none">
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 text-center pointer-events-none space-y-2">
                                 <p className="py-1 px-3 text-2xl font-semibold text-white bg-black/50 rounded" style={{ textShadow: '2px 2px 4px #000000' }}>
                                     {currentSubtitle.english}
                                 </p>
-                                <p className="mt-2 py-1 px-3 text-2xl font-semibold text-yellow-300 bg-black/50 rounded" style={{ textShadow: '2px 2px 4px #000000' }}>
-                                    {currentSubtitle.sinhala}
-                                </p>
+                                <div className="pointer-events-auto">
+                                    <Input
+                                        id={`overlay-input-${currentSubtitle.id}`}
+                                        type="text"
+                                        placeholder="Enter Sinhala translation..."
+                                        className="bg-black/50 border-primary/50 text-yellow-300 text-center text-2xl font-semibold focus-visible:ring-primary h-auto p-2"
+                                        style={{ textShadow: '2px 2px 4px #000000' }}
+                                        value={currentSubtitle.sinhala || ''}
+                                        onChange={(e) => handleSinhalaChange(currentSubtitle.id, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(e, currentSubtitle.id)}
+                                    />
+                                </div>
                             </div>
                         )}
-                    </Card>
+                    </div>
                     <div className="space-y-4 p-4 border rounded-lg bg-card">
                         <Slider
                             value={[played]}
@@ -347,7 +377,7 @@ export default function SubtitleEditorPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {currentSubtitleSlice.length > 0 ? currentSubtitleSlice.map((sub, index) => (
+                                        {currentSubtitleSlice.length > 0 ? currentSubtitleSlice.map((sub) => (
                                             <TableRow 
                                                 key={sub.id} 
                                                 ref={currentSubtitle?.id === sub.id ? activeRowRef : null}
@@ -366,8 +396,8 @@ export default function SubtitleEditorPage() {
                                                         className="bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary text-base p-1 h-auto"
                                                         value={sub.sinhala || ''}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
-                                                        onKeyDown={(e) => handleKeyDown(e, index)}
-                                                        onClick={(e) => e.stopPropagation()} // Prevent row click when editing
+                                                        onKeyDown={(e) => handleKeyDown(e, sub.id)}
+                                                        onClick={(e) => e.stopPropagation()}
                                                     />
                                                 </TableCell>
                                             </TableRow>
