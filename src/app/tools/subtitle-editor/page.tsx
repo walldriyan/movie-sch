@@ -87,8 +87,8 @@ export default function SubtitleEditorPage() {
     const [currentTime, setCurrentTime] = useState(0);
     const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleEntry | null>(null);
     
-    // Fix 1: වෙනම editing state map එකක් භාවිතා කරමු
-    const [editingTexts, setEditingTexts] = useState<Map<number, string>>(new Map());
+    // PERFORMANCE FIX: Local input values - මේවා render trigger කරන්නේ නැහැ!
+    const inputValuesRef = useRef<Map<number, string>>(new Map());
     
     // States for debug overlay
     const [isBuffering, setIsBuffering] = useState(false);
@@ -96,6 +96,9 @@ export default function SubtitleEditorPage() {
     
     // Fix 2: Enter key processing flag එකක් add කරමු
     const isProcessingEnter = useRef(false);
+    
+    // PERFORMANCE: Debounce timer for auto-save
+    const saveTimerRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
     
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -111,6 +114,14 @@ export default function SubtitleEditorPage() {
         const tx = db.transaction(SUBTITLE_STORE, 'readonly');
         const allSubs = await tx.store.getAll();
         setSubtitles(allSubs);
+        
+        // Load existing values into ref
+        const valueMap = new Map<number, string>();
+        allSubs.forEach(sub => {
+            if (sub.sinhala) valueMap.set(sub.id, sub.sinhala);
+        });
+        inputValuesRef.current = valueMap;
+        
         console.log(`--- [DB] Subtitles ${allSubs.length} ක් DB එකෙන් load කරන ලදී. State යාවත්කාලීන විය.`);
     };
 
@@ -160,23 +171,14 @@ export default function SubtitleEditorPage() {
                 await tx.done;
                 
                 await loadSubtitlesFromDB();
-                setEditingTexts(new Map());
+                inputValuesRef.current.clear();
                 toast({ title: 'Subtitles Loaded', description: `${parsedSubs.length} lines loaded into the editor.`})
             };
             reader.readAsText(file);
         }
     };
     
-    // Fix 3: handleSinhalaChange එක optimize කරමු
-    const handleSinhalaChange = useCallback((id: number, text: string) => {
-        setEditingTexts(prev => {
-            const newMap = new Map(prev);
-            newMap.set(id, text);
-            return newMap;
-        });
-    }, []);
-
-    // Fix 4: saveChanges එක async තත්වයෙන් මුදවා ගැනීමට debounce කරමු
+    // PERFORMANCE FIX: Debounced save - save කිරීම Enter button එකට පමණක්
     const saveChanges = async (id: number, text: string) => {
         console.log(`--- [Save] saveChanges function එක ක්‍රියාත්මක විය. ID: ${id}, Text: "${text}"`);
         if (dbPromise) {
@@ -196,10 +198,26 @@ export default function SubtitleEditorPage() {
         }
     };
     
-    // Fix 5: handleKeyDown එක සම්පූර්ණයෙන්ම නැවත ලියමු - loop එක නතර කිරීමට
+    // PERFORMANCE FIX: Input change - state update කරන්නේ නැහැ, ref එකේ පමණක් store කරනවා
+    const handleSinhalaChange = useCallback((id: number, text: string) => {
+        // Ref එකේ value එක update කරමු - මේක render trigger කරන්නේ නැහැ!
+        inputValuesRef.current.set(id, text);
+        
+        // Input element එකම directly update කරමු (React re-render නැතිව)
+        const overlayInput = document.getElementById(`overlay-input-${id}`) as HTMLInputElement;
+        const tableInput = document.getElementById(`sub-input-${id}`) as HTMLInputElement;
+        
+        if (overlayInput && overlayInput !== document.activeElement) {
+            overlayInput.value = text;
+        }
+        if (tableInput && tableInput !== document.activeElement) {
+            tableInput.value = text;
+        }
+    }, []);
+    
+    // Fix handleKeyDown - Enter button එකට පමණක් save කරනවා
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            // වහාම processing flag එක check කරමු
             if (isProcessingEnter.current) {
                 console.log("--- [Input Event] 'Enter': දැනට ම process වෙමින් පවතී, ignore කරමින් පවතී.");
                 e.preventDefault();
@@ -225,15 +243,12 @@ export default function SubtitleEditorPage() {
             console.log(`--- [Input Event] 'Enter': ID: ${idAsNum}, Text: "${currentText}" save කිරීම ආරම්භ විය.`);
             
             try {
+                // Save කරමු
                 await saveChanges(idAsNum, currentText);
                 console.log("--- [Input Event] 'Enter': Save කිරීම අවසන්. ඊළඟ subtitle එකට jump වීමට සූදානම්.");
                 
-                // Editing text එකෙන් remove කරමු
-                setEditingTexts(prev => {
-                    const newMap = new Map(prev);
-                    newMap.delete(idAsNum);
-                    return newMap;
-                });
+                // Ref වලින් clear කරමු
+                inputValuesRef.current.delete(idAsNum);
                 
                 const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
                 const nextSub = subtitles[currentIndex + 1];
@@ -241,17 +256,12 @@ export default function SubtitleEditorPage() {
                 if (nextSub) {
                     console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
                     
-                    // Video එක pause කර, seek කරමු
                     setPlaying(false);
-                    
-                    // CRITICAL FIX: currentSubtitle state එක වහාම update කරමු seek කිරීමට පෙර
                     setCurrentSubtitle(nextSub);
                     
-                    // requestAnimationFrame භාවිතා කර seek එක delay කරමු
                     requestAnimationFrame(() => {
                         playerRef.current?.seekTo(nextSub.startTime);
                         
-                        // Focus එක next input එකට move කරමු
                         setTimeout(() => {
                             if (overlayInputRef.current) {
                                 overlayInputRef.current.focus();
@@ -263,7 +273,6 @@ export default function SubtitleEditorPage() {
                     console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
                 }
             } finally {
-                // 300ms යන තුරු තවත් Enter presses ignore කරමු (500ms වෙනුවට කෙටි කළා)
                 setTimeout(() => {
                     isProcessingEnter.current = false;
                     console.log("--- [Input Event] 'Enter' processing flag එක reset විය.");
@@ -280,7 +289,6 @@ export default function SubtitleEditorPage() {
 
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
         
-        // වෙනස් වුනාම පමණක් update කරමු
         if (activeSub?.id !== currentSubtitle?.id) {
             console.log(`--- [Progress] Active subtitle වෙනස් විය: ${activeSub?.id || 'none'}`);
             setCurrentSubtitle(activeSub || null);
@@ -311,7 +319,6 @@ export default function SubtitleEditorPage() {
         let currentIndex = -1;
         
         for (let i = subtitles.length - 1; i >= 0; i--) {
-            // වේලාව subtitle එකේ startTime එකට වඩා වැඩි හෝ සමාන නම්, මේක තමයි current එක
             if (time >= subtitles[i].startTime) {
                 currentIndex = i;
                 break;
@@ -324,28 +331,21 @@ export default function SubtitleEditorPage() {
     
         if (direction === 'next') {
             if (currentIndex >= 0 && currentIndex < subtitles.length - 1) {
-                // Array එකේ ඊළඟ subtitle එක ගන්න
                 targetSub = subtitles[currentIndex + 1];
             } else if (currentIndex < 0) {
-                // වේලාව subtitles වලට පෙර නම්, පළමු එක ගන්න
                 targetSub = subtitles[0];
             } else {
-                // අන්තිම subtitle එකේ නම්
                 console.log(`--- [Player Control] Jump: අන්තිම subtitle එකේ ඉන්නවා. ඊළඟ එකක් නැහැ.`);
             }
-        } else { // 'prev'
+        } else {
             const currentSub = currentIndex >= 0 ? subtitles[currentIndex] : null;
             if (currentSub && time > currentSub.startTime + 1) {
-                // දැනට පවතින subtitle එකේ මැද නම්, ඒ එකේම මුල වෙත යන්න
                 targetSub = currentSub;
             } else if (currentIndex > 0) {
-                // පෙර subtitle එකට යන්න
                 targetSub = subtitles[currentIndex - 1];
             } else if (currentIndex === 0) {
-                // පළමු subtitle එකේ නම්, ඒ එකේම මුල වෙත යන්න
                 targetSub = subtitles[0];
             } else {
-                // Subtitles වලට පෙර නම්, පළමු එකට යන්න
                 targetSub = subtitles[0];
             }
         }
@@ -355,7 +355,6 @@ export default function SubtitleEditorPage() {
             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}, Index: ${targetIndex}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
             playerRef.current?.seekTo(targetSub.startTime);
             
-            // Focus එක overlay input එකට දෙමු
             setTimeout(() => {
                 if (overlayInputRef.current) {
                     overlayInputRef.current.focus();
@@ -401,7 +400,7 @@ export default function SubtitleEditorPage() {
     
     // Helper function - input value එක get කිරීමට
     const getInputValue = (sub: SubtitleEntry) => {
-        return editingTexts.get(sub.id) ?? sub.sinhala ?? '';
+        return inputValuesRef.current.get(sub.id) ?? sub.sinhala ?? '';
     };
 
     return (
@@ -463,7 +462,7 @@ export default function SubtitleEditorPage() {
                                         placeholder="Enter Sinhala translation..."
                                         className="bg-black/50 border-primary/50 text-yellow-300 text-center text-2xl font-semibold focus-visible:ring-primary h-auto p-2"
                                         style={{ textShadow: '2px 2px 4px #000000' }}
-                                        value={getInputValue(currentSubtitle)}
+                                        defaultValue={getInputValue(currentSubtitle)}
                                         onChange={(e) => handleSinhalaChange(currentSubtitle.id, e.target.value)}
                                         onKeyDown={handleKeyDown}
                                     />
@@ -564,7 +563,7 @@ export default function SubtitleEditorPage() {
                                                         type="text" 
                                                         placeholder="Enter Sinhala translation..." 
                                                         className="bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary text-base p-1 h-auto"
-                                                        value={getInputValue(sub)}
+                                                        defaultValue={getInputValue(sub)}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
                                                         onKeyDown={handleKeyDown}
                                                         onClick={(e) => e.stopPropagation()}
