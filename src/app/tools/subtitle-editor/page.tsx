@@ -168,29 +168,30 @@ export default function SubtitleEditorPage() {
     };
 
     const saveChanges = async (id: number, text: string) => {
-      // Update the main state first for a responsive UI
       setSubtitles(prevSubs => 
           prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
       );
 
-      // Save to DB in the background
-       if (dbPromise) {
+      if (dbPromise) {
           try {
               const db = await dbPromise;
               const subToUpdate = await db.get(SUBTITLE_STORE, id);
               if (subToUpdate) {
                   const objectToSave = { ...subToUpdate, sinhala: text };
                   await db.put(SUBTITLE_STORE, objectToSave);
+              } else { // It's a new subtitle for a line that was empty
+                  const newSubData = subtitles.find(s => s.id === id);
+                  if (newSubData) {
+                    await db.put(SUBTITLE_STORE, {...newSubData, sinhala: text});
+                  }
               }
           } catch (error) {
               console.error("Failed to save to DB:", error);
-              // Optionally revert state or show toast
           }
       }
     };
     
     const handleInputBlur = () => {
-        // When focus is lost, clear the temporary editing state
         setEditingState({ id: null, text: '' });
     };
     
@@ -199,30 +200,23 @@ export default function SubtitleEditorPage() {
             e.preventDefault();
             const currentText = (e.target as HTMLInputElement).value;
     
-            // Step 1: Save the current change.
             await saveChanges(currentId, currentText);
-            setEditingState({ id: null, text: '' }); // Clear editing state
+            setEditingState({ id: null, text: '' }); 
             setPlaying(false);
     
-            // Step 2: Find the next subtitle to jump to.
-            // We use a timeout to ensure the state update from saveChanges has time to propagate
-            // before we search for the next item.
-            setTimeout(() => {
-                setSubtitles(currentSubs => {
-                    const currentIndex = currentSubs.findIndex(s => s.id === currentId);
-                    const nextSub = currentSubs[currentIndex + 1];
-            
-                    if (nextSub) {
-                        playerRef.current?.seekTo(nextSub.startTime);
-            
-                        const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
-                        if (nextSubPageIndex !== currentPage) {
-                            setCurrentPage(nextSubPageIndex);
-                        }
+            setSubtitles(currentSubs => {
+                const currentIndex = currentSubs.findIndex(s => s.id === currentId);
+                const nextSub = currentSubs[currentIndex + 1];
+        
+                if (nextSub) {
+                    playerRef.current?.seekTo(nextSub.startTime);
+                    const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
+                    if (nextSubPageIndex !== currentPage) {
+                        setCurrentPage(nextSubPageIndex);
                     }
-                    return currentSubs; // Return the current state
-                });
-            }, 0);
+                }
+                return currentSubs;
+            });
         }
     };
     
@@ -233,7 +227,6 @@ export default function SubtitleEditorPage() {
 
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
         
-        // Update currentSubtitle and clear editingState if the subtitle changes
         setCurrentSubtitle(prevSub => {
             if (activeSub?.id !== prevSub?.id) {
                 setEditingState({ id: null, text: '' });
@@ -263,11 +256,11 @@ export default function SubtitleEditorPage() {
       if (direction === 'next') {
           targetSub = subtitles.find(s => s.startTime > time);
           if (!targetSub && subtitles.length > 0) {
-              targetSub = subtitles[0];
+              targetSub = subtitles[0]; // Loop to the beginning if at the end
           }
       } else { 
           const prevSubs = subtitles.filter(s => s.startTime < time);
-          targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[subtitles.length - 1];
+          targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[subtitles.length - 1]; // Loop to end if at beginning
       }
       
       if (targetSub) {
@@ -315,6 +308,14 @@ export default function SubtitleEditorPage() {
                                 onProgress={handleProgress}
                                 onDuration={setDuration}
                                 controls={false}
+                                config={{
+                                    file: {
+                                        forceVideo: true,
+                                        attributes: {
+                                            preload: 'auto',
+                                        }
+                                    }
+                                }}
                             />
                         ) : (
                             <div className="w-full h-full flex flex-col items-center justify-center text-muted-foreground bg-muted">
@@ -475,6 +476,7 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
 
 
 
