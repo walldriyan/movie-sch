@@ -26,6 +26,7 @@ export async function updateSetting(key: string, value: string) {
 
   // Revalidate paths that might be affected by this setting change
   revalidatePath('/admin/settings');
+  revalidatePath('/');
   // Add other relevant paths if needed, e.g., revalidatePath('/manage');
 
   return setting;

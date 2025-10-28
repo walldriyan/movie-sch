@@ -1,5 +1,5 @@
 
-import { getPosts, getUsers, getPublicGroups, getNotifications, getMicroPosts } from '@/lib/actions';
+import { getPosts, getUsers, getPublicGroups, getNotifications, getMicroPosts, getSetting } from '@/lib/actions';
 import HomePageClient from '@/components/home-page-client';
 import { MyReusableButton } from '@/components/my-reusable-button';
 import { Mail } from 'lucide-react';
@@ -11,6 +11,8 @@ import MetaSpotlight3 from './ui/example3';
 import { Post } from '@/lib/types';
 import MetaSpotlightPostGrid from './ui/postGrid';
 import { Drag_Transform } from './ui/dragComponent';
+import prisma from '@/lib/prisma';
+import { ROLES } from '@/lib/permissions';
 
 export default async function HomePage({
   searchParams,
@@ -39,6 +41,28 @@ export default async function HomePage({
   const groups = await getPublicGroups();
   const notifications = await getNotifications();
   const microPosts = await getMicroPosts();
+  
+  // Check for Micro Post access
+  let canAccessMicroPosts = false;
+  if (session?.user) {
+    if (session.user.role === ROLES.SUPER_ADMIN) {
+      canAccessMicroPosts = true;
+    } else {
+      const allowedGroupsSetting = await getSetting('microPostAllowedGroupIds');
+      const allowedGroupIds = allowedGroupsSetting?.value.split(',').filter(Boolean) || [];
+      if (allowedGroupIds.length > 0) {
+        const userMembershipCount = await prisma.groupMember.count({
+          where: {
+            userId: session.user.id,
+            status: 'ACTIVE',
+            groupId: { in: allowedGroupIds },
+          },
+        });
+        canAccessMicroPosts = userMembershipCount > 0;
+      }
+    }
+  }
+
 
   return (
     <>
@@ -52,6 +76,7 @@ export default async function HomePage({
         initialNotifications={notifications}
         session={session}
         initialMicroPosts={microPosts}
+        canAccessMicroPosts={canAccessMicroPosts}
       />
     </>
   );

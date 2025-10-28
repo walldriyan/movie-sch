@@ -56,6 +56,7 @@ interface HomePageClientProps {
     initialNotifications: NotificationType[];
     session: Session | null;
     initialMicroPosts: any[];
+    canAccessMicroPosts: boolean;
 }
 
 const microPostSchema = z.object({
@@ -268,6 +269,7 @@ export default function HomePageClient({
     initialNotifications,
     session,
     initialMicroPosts,
+    canAccessMicroPosts,
 }: HomePageClientProps) {
   
   const [notifications, setNotifications] = useState<NotificationType[]>(initialNotifications.map(n => ({...n, createdAt: new Date(n.createdAt), updatedAt: new Date(n.updatedAt)})));
@@ -366,28 +368,30 @@ export default function HomePageClient({
       <div className="w-full bg-background text-foreground">
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
           <Tabs defaultValue="discover" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsList className={cn("grid w-full mb-8", canAccessMicroPosts ? "grid-cols-2" : "grid-cols-1")}>
               <TabsTrigger value="discover">Discover</TabsTrigger>
-              <TabsTrigger value="micro-posts">Micro Posts</TabsTrigger>
+              {canAccessMicroPosts && <TabsTrigger value="micro-posts">Micro Posts</TabsTrigger>}
             </TabsList>
             
-            <TabsContent value="micro-posts">
-              <CreateMicroPost />
-               <div className="space-y-8">
-                {initialMicroPosts.length > 0 ? (
-                    initialMicroPosts.map(post => <MicroPostCard key={post.id} post={post} />)
-                ) : (
-                   <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                      <h1 className="font-serif text-2xl font-bold text-muted-foreground">
-                        The Feed is Quiet...
-                      </h1>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        Be the first to post something!
-                      </p>
-                    </div>
-                )}
-               </div>
-            </TabsContent>
+            {canAccessMicroPosts && (
+              <TabsContent value="micro-posts">
+                <CreateMicroPost />
+                <div className="space-y-8">
+                  {initialMicroPosts.length > 0 ? (
+                      initialMicroPosts.map(post => <MicroPostCard key={post.id} post={post} />)
+                  ) : (
+                    <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                        <h1 className="font-serif text-2xl font-bold text-muted-foreground">
+                          The Feed is Quiet...
+                        </h1>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Be the first to post something!
+                        </p>
+                      </div>
+                  )}
+                </div>
+              </TabsContent>
+            )}
 
             <TabsContent value="discover">
                <div className="max-w-4xl mx-auto pb-8 flex items-center justify-between">
