@@ -87,6 +87,7 @@ export default function SubtitleEditorPage() {
     
     // This state holds the text being typed, before it's saved.
     const [editingState, setEditingState] = useState<{ id: number | null; text: string }>({ id: null, text: '' });
+    const [isSaving, startTransition] = useTransition();
 
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -169,25 +170,28 @@ export default function SubtitleEditorPage() {
 
     // This function now handles saving and updating the UI state.
     const saveChanges = async (id: number, text: string) => {
-        // Update the main state immediately (Optimistic Update)
-        const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
-        setSubtitles(updatedSubs);
+        // Optimistically update the main subtitles state
+        setSubtitles(prevSubs => 
+            prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
+        );
         setEditingState({ id: null, text: '' }); 
 
         // Save to DB in the background
-        if (dbPromise) {
-            try {
-                const db = await dbPromise;
-                const subToUpdate = await db.get(SUBTITLE_STORE, id);
-                if (subToUpdate) {
-                    const objectToSave = { ...subToUpdate, sinhala: text };
-                    await db.put(SUBTITLE_STORE, objectToSave);
+        startTransition(async () => {
+             if (dbPromise) {
+                try {
+                    const db = await dbPromise;
+                    const subToUpdate = await db.get(SUBTITLE_STORE, id);
+                    if (subToUpdate) {
+                        const objectToSave = { ...subToUpdate, sinhala: text };
+                        await db.put(SUBTITLE_STORE, objectToSave);
+                    }
+                } catch (error) {
+                    console.error("Failed to save to DB:", error);
+                    // Optionally revert state or show toast
                 }
-            } catch (error) {
-                console.error("Failed to save to DB:", error);
-                // Optionally revert state or show toast
             }
-        }
+        });
     };
     
     const handleInputBlur = () => {
@@ -200,20 +204,40 @@ export default function SubtitleEditorPage() {
         if (e.key === 'Enter') {
             e.preventDefault();
             const currentText = (e.target as HTMLInputElement).value;
-
-            // 1. Save the current text
-            await saveChanges(currentId, currentText);
-
-            // 2. Pause the player
+    
+            // Perform an optimistic UI update and save in the background
             setPlaying(false);
-
-            // 3. Find and jump to the next subtitle
-            const currentIndex = subtitles.findIndex(s => s.id === currentId);
-            const nextSub = subtitles[currentIndex + 1];
-
+    
+            // Update the state optimistically before finding the next sub
+            const updatedSubs = subtitles.map(s => s.id === currentId ? { ...s, sinhala: currentText } : s);
+            setSubtitles(updatedSubs);
+            setEditingState({ id: null, text: '' }); // Clear editing state
+    
+            // Save to DB in the background using transition
+            startTransition(async () => {
+                if (dbPromise) {
+                    try {
+                        const db = await dbPromise;
+                        const subToUpdate = await db.get(SUBTITLE_STORE, currentId);
+                        if (subToUpdate) {
+                            const objectToSave = { ...subToUpdate, sinhala: currentText };
+                            await db.put(SUBTITLE_STORE, objectToSave);
+                        }
+                    } catch (error) {
+                        console.error("Failed to save to DB:", error);
+                        // Revert optimistic update on error
+                        setSubtitles(subtitles); 
+                    }
+                }
+            });
+    
+            // Now find the next subtitle based on the already updated `updatedSubs` state
+            const currentIndex = updatedSubs.findIndex(s => s.id === currentId);
+            const nextSub = updatedSubs[currentIndex + 1];
+    
             if (nextSub) {
                 playerRef.current?.seekTo(nextSub.startTime);
-                
+    
                 const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
                 if (nextSubPageIndex !== currentPage) {
                     setCurrentPage(nextSubPageIndex);
@@ -221,6 +245,7 @@ export default function SubtitleEditorPage() {
             }
         }
     };
+    
 
     const handleProgress = (state: { played: number; playedSeconds: number }) => {
         setPlayed(state.played);
