@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Upload, Video, Subtitles, Play, Pause, Rewind, FastForward, SkipBack, SkipForward, Save } from 'lucide-react';
+import { Upload, Video, Subtitles, Play, Pause, Rewind, FastForward, SkipBack, SkipForward, Save, ChevronLeft, ChevronRight } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
@@ -82,11 +82,18 @@ export default function SubtitleEditorPage() {
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleEntry | null>(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const subtitlesPerPage = 20;
 
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     const subtitleInputRef = useRef<HTMLInputElement>(null);
     const activeRowRef = useRef<HTMLTableRowElement>(null);
+    
+    const totalPages = Math.ceil(subtitles.length / subtitlesPerPage);
+    const startIndex = (currentPage - 1) * subtitlesPerPage;
+    const endIndex = startIndex + subtitlesPerPage;
+    const currentSubtitleSlice = subtitles.slice(startIndex, endIndex);
 
     // --- Data Fetching and Persistence ---
     const loadSubtitlesFromDB = async () => {
@@ -137,6 +144,7 @@ export default function SubtitleEditorPage() {
                 await tx.done;
                 
                 await loadSubtitlesFromDB();
+                setCurrentPage(1); // Reset to first page
                 toast({ title: 'Subtitles Loaded', description: `${parsedSubs.length} lines loaded into the editor.`})
             };
             reader.readAsText(file);
@@ -150,6 +158,27 @@ export default function SubtitleEditorPage() {
         if (dbPromise) {
             const db = await dbPromise;
             await db.put(SUBTITLE_STORE, { ...subtitles.find(s => s.id === id)!, sinhala: text });
+        }
+    };
+    
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentIndex: number) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            setPlaying(false);
+
+            const nextInput = document.getElementById(`sub-input-${currentSubtitleSlice[currentIndex + 1]?.id}`);
+            if (nextInput) {
+                nextInput.focus();
+            } else {
+                // If it's the last item on the page, go to the next page
+                if (currentPage < totalPages) {
+                    setCurrentPage(p => p + 1);
+                     setTimeout(() => {
+                        const firstInputOnNextPage = document.getElementById(`sub-input-${subtitles[endIndex]?.id}`);
+                        firstInputOnNextPage?.focus();
+                    }, 100);
+                }
+            }
         }
     };
 
@@ -302,7 +331,7 @@ export default function SubtitleEditorPage() {
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-grow overflow-hidden">
+                        <CardContent className="flex-grow overflow-hidden flex flex-col">
                             <ScrollArea className="h-full">
                                 <Table>
                                     <TableHeader className="sticky top-0 bg-card z-10">
@@ -312,7 +341,7 @@ export default function SubtitleEditorPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {subtitles.length > 0 ? subtitles.map(sub => (
+                                        {currentSubtitleSlice.length > 0 ? currentSubtitleSlice.map((sub, index) => (
                                             <TableRow 
                                                 key={sub.id} 
                                                 ref={currentSubtitle?.id === sub.id ? activeRowRef : null}
@@ -325,11 +354,13 @@ export default function SubtitleEditorPage() {
                                                 <TableCell className="space-y-2 pr-4">
                                                     <p className="text-sm text-muted-foreground">{sub.english}</p>
                                                     <Input 
+                                                        id={`sub-input-${sub.id}`}
                                                         type="text" 
                                                         placeholder="Enter Sinhala translation..." 
                                                         className="bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary text-base p-1 h-auto"
                                                         value={sub.sinhala || ''}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
+                                                        onKeyDown={(e) => handleKeyDown(e, index)}
                                                         onClick={(e) => e.stopPropagation()} // Prevent row click when editing
                                                     />
                                                 </TableCell>
@@ -344,6 +375,31 @@ export default function SubtitleEditorPage() {
                                     </TableBody>
                                 </Table>
                             </ScrollArea>
+                             {totalPages > 1 && (
+                                <div className="flex items-center justify-between mt-4 p-2 border-t">
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(p => p - 1)}
+                                        disabled={currentPage === 1}
+                                    >
+                                        <ChevronLeft className="h-4 w-4 mr-1" />
+                                        Previous
+                                    </Button>
+                                    <span className="text-sm font-medium">
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => setCurrentPage(p => p + 1)}
+                                        disabled={currentPage === totalPages}
+                                    >
+                                        Next
+                                        <ChevronRight className="h-4 w-4 ml-1" />
+                                    </Button>
+                                </div>
+                            )}
                         </CardContent>
                     </Card>
                 </div>
