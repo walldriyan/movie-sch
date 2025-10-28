@@ -83,8 +83,6 @@ export default function SubtitleEditorPage() {
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleEntry | null>(null);
-    const [currentPage, setCurrentPage] = useState(1);
-    const subtitlesPerPage = 20;
     
     // State for temporary edits
     const [editingState, setEditingState] = useState<{ id: number | null; text: string }>({ id: null, text: '' });
@@ -97,11 +95,6 @@ export default function SubtitleEditorPage() {
     const videoInputRef = useRef<HTMLInputElement>(null);
     const subtitleInputRef = useRef<HTMLInputElement>(null);
     const activeRowRef = useRef<HTMLTableRowElement>(null);
-    
-    const totalPages = Math.ceil(subtitles.length / subtitlesPerPage);
-    const startIndex = (currentPage - 1) * subtitlesPerPage;
-    const endIndex = startIndex + subtitlesPerPage;
-    const currentSubtitleSlice = subtitles.slice(startIndex, endIndex);
 
     const loadSubtitlesFromDB = async () => {
         if (!dbPromise) return;
@@ -122,7 +115,7 @@ export default function SubtitleEditorPage() {
                 block: 'center',
             });
         }
-    }, [currentSubtitle, currentPage]);
+    }, [currentSubtitle]);
 
      useEffect(() => {
         if (currentSubtitle) {
@@ -160,7 +153,6 @@ export default function SubtitleEditorPage() {
                 await tx.done;
                 
                 await loadSubtitlesFromDB();
-                setCurrentPage(1); 
                 toast({ title: 'Subtitles Loaded', description: `${parsedSubs.length} lines loaded into the editor.`})
             };
             reader.readAsText(file);
@@ -172,52 +164,47 @@ export default function SubtitleEditorPage() {
     };
 
     const saveChanges = async (id: number, text: string) => {
-        let updatedSubtitles: SubtitleEntry[] = [];
-        setSubtitles(prevSubs => {
-            updatedSubtitles = prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s);
-            return updatedSubtitles;
-        });
-
         if (dbPromise) {
-            try {
-                const db = await dbPromise;
-                const subToUpdate = await db.get(SUBTITLE_STORE, id);
-                if (subToUpdate) {
-                    const objectToSave = { ...subToUpdate, sinhala: text };
-                    await db.put(SUBTITLE_STORE, objectToSave);
-                }
-            } catch (error) {
-                console.error("Failed to save to DB:", error);
-                 // On error, revert to original state from DB if necessary, but optimistic update handles UI
-            }
+             const db = await dbPromise;
+             await db.put(SUBTITLE_STORE, { id, sinhala: text }, id);
+             
+             // Optimistically update the main state
+             setSubtitles(prevSubs => 
+                prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
+             );
         }
-        return updatedSubtitles;
     };
     
     const handleInputBlur = () => {
-        setEditingState({ id: null, text: '' });
+        if(editingState.id !== null) {
+            saveChanges(editingState.id, editingState.text);
+            setEditingState({ id: null, text: '' });
+        }
     };
     
-    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
+    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            setPlaying(false);
+            const currentId = (e.target as HTMLInputElement).id.split('-')[2];
             const currentText = (e.target as HTMLInputElement).value;
-    
-            // Save changes and get the updated list of subtitles
-            const updatedSubs = await saveChanges(currentId, currentText);
-    
-            // Find the index of the current subtitle in the *updated* list
-            const currentIndexInUpdated = updatedSubs.findIndex(s => s.id === currentId);
             
-            // Find the next subtitle
-            if (currentIndexInUpdated > -1 && currentIndexInUpdated < updatedSubs.length - 1) {
-                const nextSub = updatedSubs[currentIndexInUpdated + 1];
+            if (!currentId) return;
+
+            const idAsNum = parseInt(currentId, 10);
+            
+            // Immediately save the current change
+            await saveChanges(idAsNum, currentText);
+            
+            // Find the next subtitle from the updated state
+            const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
+            const nextSub = subtitles[currentIndex + 1];
+    
+            if (nextSub) {
+                setPlaying(false);
                 playerRef.current?.seekTo(nextSub.startTime);
             }
         }
     };
-    
 
     const handleProgress = (state: { played: number; playedSeconds: number; loadedSeconds: number }) => {
         setPlayed(state.played);
@@ -244,37 +231,40 @@ export default function SubtitleEditorPage() {
     };
     
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
-      setPlaying(false);
-      const time = playerRef.current?.getCurrentTime() ?? 0;
-      const currentSub = currentSubtitle;
+        setPlaying(false);
+        const time = currentTime;
+        const currentSub = currentSubtitle;
       
-      let targetSub: SubtitleEntry | undefined;
+        let targetSub: SubtitleEntry | undefined;
 
-      if (direction === 'next') {
-          if (currentSub) {
-              const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
-              targetSub = subtitles[currentIndex + 1];
-          } else {
-              targetSub = subtitles.find(s => s.startTime > time);
-          }
-      } else { // prev
-          if (currentSub) {
-              const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
-              targetSub = subtitles[currentIndex - 1];
-          } else {
-              const prevSubs = subtitles.filter(s => s.startTime < time);
-              targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
-          }
-      }
+        if (direction === 'next') {
+            if (currentSub) {
+                const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
+                targetSub = subtitles[currentIndex + 1];
+            } else {
+                targetSub = subtitles.find(s => s.startTime > time);
+            }
+        } else { // prev
+            if (currentSub) {
+                const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
+                targetSub = subtitles[currentIndex - 1];
+            } else {
+                const prevSubs = subtitles.filter(s => s.startTime < time);
+                targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
+            }
+        }
       
-      if (!targetSub) {
-         if (direction === 'next' && subtitles.length > 0) targetSub = subtitles[0];
-         if (direction === 'prev' && subtitles.length > 0) targetSub = subtitles[subtitles.length - 1];
-      }
-      
-      if (targetSub) {
-          playerRef.current?.seekTo(targetSub.startTime);
-      }
+        if (targetSub) {
+            playerRef.current?.seekTo(targetSub.startTime);
+        } else {
+            const message = direction === 'next' ? 'You are at the last subtitle.' : 'You are at the first subtitle.';
+            toast({
+                variant: 'destructive',
+                title: 'Navigation Limit Reached',
+                description: message
+            });
+            console.error(message);
+        }
     };
 
 
@@ -285,7 +275,7 @@ export default function SubtitleEditorPage() {
     const handleSave = () => {
         let srtContent = '';
         subtitles.forEach((sub, index) => {
-            srtContent += `${index + 1}\n`;
+            srtContent += `${sub.id}\n`;
             srtContent += `${secondsToSrtTime(sub.startTime)} --> ${secondsToSrtTime(sub.endTime)}\n`;
             srtContent += `${sub.sinhala || ''}\n\n`;
         });
@@ -355,7 +345,7 @@ export default function SubtitleEditorPage() {
                                         style={{ textShadow: '2px 2px 4px #000000' }}
                                         value={editingState.id === currentSubtitle.id ? editingState.text : currentSubtitle.sinhala || ''}
                                         onChange={(e) => handleSinhalaChange(currentSubtitle.id, e.target.value)}
-                                        onKeyDown={(e) => handleKeyDown(e, currentSubtitle.id)}
+                                        onKeyDown={(e) => handleKeyDown(e)}
                                         onBlur={handleInputBlur}
                                     />
                                 </div>
@@ -418,26 +408,13 @@ export default function SubtitleEditorPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow overflow-hidden flex flex-col">
-                             <div className="flex items-center justify-between mb-4 p-2 border-t">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                >
+                            <div className="flex items-center justify-between mb-4 p-2 border-t">
+                                <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('prev')}>
                                     <ChevronLeft className="h-4 w-4 mr-1" />
-                                    Previous Page
+                                    Prev Sub
                                 </Button>
-                                <span className="text-sm font-medium">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Next Page
+                                <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('next')}>
+                                    Next Sub
                                     <ChevronRight className="h-4 w-4 ml-1" />
                                 </Button>
                             </div>
@@ -450,7 +427,7 @@ export default function SubtitleEditorPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {currentSubtitleSlice.length > 0 ? currentSubtitleSlice.map((sub) => (
+                                        {subtitles.length > 0 ? subtitles.map((sub) => (
                                             <TableRow 
                                                 key={sub.id} 
                                                 ref={currentSubtitle?.id === sub.id ? activeRowRef : null}
@@ -469,7 +446,7 @@ export default function SubtitleEditorPage() {
                                                         className="bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary text-base p-1 h-auto"
                                                         value={editingState.id === sub.id ? editingState.text : sub.sinhala || ''}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
-                                                        onKeyDown={(e) => handleKeyDown(e, sub.id)}
+                                                        onKeyDown={(e) => handleKeyDown(e)}
                                                         onBlur={handleInputBlur}
                                                         onClick={(e) => e.stopPropagation()}
                                                     />
