@@ -49,7 +49,7 @@ const timeToSeconds = (time: string): number => {
 
 const secondsToSrtTime = (seconds: number): string => {
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(6, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
     const s = (seconds % 60).toFixed(3).replace('.', ',').padStart(6, '0');
     return `${h}:${m}:${s}`;
 }
@@ -119,6 +119,16 @@ export default function SubtitleEditorPage() {
         }
     }, [currentSubtitle]);
 
+     useEffect(() => {
+        // Auto-focus the overlay input when the current subtitle changes
+        if (currentSubtitle) {
+            const overlayInput = document.getElementById(`overlay-input-${currentSubtitle.id}`);
+            if (overlayInput) {
+                setTimeout(() => overlayInput.focus(), 0);
+            }
+        }
+    }, [currentSubtitle]);
+
     const handleVideoFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -158,6 +168,7 @@ export default function SubtitleEditorPage() {
     };
     
     const saveChanges = (id: number, text: string) => {
+        // Optimistic UI update
         const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
         setSubtitles(updatedSubs);
 
@@ -194,20 +205,10 @@ export default function SubtitleEditorPage() {
             if (nextSub) {
                 playerRef.current?.seekTo(nextSub.startTime);
                 
-                const nextInputId = `sub-input-${nextSub.id}`;
-                const nextInput = document.getElementById(nextInputId) || document.getElementById(`overlay-input-${nextSub.id}`);
-                
+                // No need to focus sidebar input, useEffect will focus the overlay input
                 const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
                 if (nextSubPageIndex !== currentPage) {
                     setCurrentPage(nextSubPageIndex);
-                     setTimeout(() => {
-                        const finalNextInput = document.getElementById(`sub-input-${nextSub.id}`) || document.getElementById(`overlay-input-${nextSub.id}`);
-                        finalNextInput?.focus();
-                    }, 100);
-                } else {
-                     if (nextInput) {
-                        nextInput.focus();
-                    }
                 }
             }
         }
@@ -455,3 +456,4 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
