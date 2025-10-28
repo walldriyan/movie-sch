@@ -97,7 +97,7 @@ export default function Navbar() {
   );
 
   const renderNavLinks = (isMobile = false) => {
-    const navClass = isMobile ? "flex flex-col space-y-2 mt-8" : "hidden md:flex items-center space-x-2";
+    const navClass = isMobile ? "flex flex-col space-y-2 mt-8" : "hidden md:flex items-center space-x-2 ml-[100px]";
 
     return (
        <nav className={navClass}>
