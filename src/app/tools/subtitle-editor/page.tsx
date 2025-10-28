@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useTransition } from 'react';
 import ReactPlayer from 'react-player';
 import { openDB, IDBPDatabase } from 'idb';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,7 @@ export default function SubtitleEditorPage() {
     const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleEntry | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const subtitlesPerPage = 20;
+    const [isSaving, startTransition] = useTransition();
 
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
@@ -151,14 +152,18 @@ export default function SubtitleEditorPage() {
         }
     };
 
-    const handleSinhalaChange = async (id: number, text: string) => {
+    const handleSinhalaChange = (id: number, text: string) => {
+        // Optimistic UI update
         const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
         setSubtitles(updatedSubs);
         
-        if (dbPromise) {
-            const db = await dbPromise;
-            await db.put(SUBTITLE_STORE, { ...subtitles.find(s => s.id === id)!, sinhala: text });
-        }
+        // Save to DB in background
+        startTransition(async () => {
+            if (dbPromise) {
+                const db = await dbPromise;
+                await db.put(SUBTITLE_STORE, { ...subtitles.find(s => s.id === id)!, sinhala: text });
+            }
+        });
     };
     
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentIndex: number) => {
@@ -203,6 +208,7 @@ export default function SubtitleEditorPage() {
     };
     
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
+        setPlaying(false); // Pause the player
         if (!currentSubtitle) {
             playerRef.current?.seekTo(subtitles[0]?.startTime || 0);
             return;
