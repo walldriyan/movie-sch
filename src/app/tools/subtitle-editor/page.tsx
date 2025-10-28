@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useRef, useEffect, useTransition } from 'react';
@@ -153,6 +154,9 @@ export default function SubtitleEditorPage() {
     };
 
     const handleSinhalaChange = (id: number, text: string) => {
+        const originalSubtitle = subtitles.find(s => s.id === id);
+        if (!originalSubtitle) return;
+
         // Optimistic UI update
         const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
         setSubtitles(updatedSubs);
@@ -161,7 +165,9 @@ export default function SubtitleEditorPage() {
         startTransition(async () => {
             if (dbPromise) {
                 const db = await dbPromise;
-                await db.put(SUBTITLE_STORE, { ...subtitles.find(s => s.id === id)!, sinhala: text });
+                // Use the original object and just update the text to avoid closure issues
+                const objectToSave = { ...originalSubtitle, sinhala: text };
+                await db.put(SUBTITLE_STORE, objectToSave);
             }
         });
     };
