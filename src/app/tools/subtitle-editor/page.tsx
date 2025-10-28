@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import React, { useState, useRef, useEffect, useTransition } from 'react';
@@ -87,6 +85,9 @@ export default function SubtitleEditorPage() {
     const subtitlesPerPage = 20;
     const [isSaving, startTransition] = useTransition();
 
+    // New state to hold the text being currently edited without saving it immediately
+    const [editingState, setEditingState] = useState<{ id: number | null; text: string }>({ id: null, text: '' });
+
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     const subtitleInputRef = useRef<HTMLInputElement>(null);
@@ -154,29 +155,45 @@ export default function SubtitleEditorPage() {
     };
 
     const handleSinhalaChange = (id: number, text: string) => {
-        const originalSubtitle = subtitles.find(s => s.id === id);
-        if (!originalSubtitle) return;
+        // Only update the temporary editing state on each keystroke
+        setEditingState({ id, text });
+    };
 
-        // Optimistic UI update
-        const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
-        setSubtitles(updatedSubs);
-        
-        // Save to DB in background
-        startTransition(async () => {
-            if (dbPromise) {
-                const db = await dbPromise;
-                // Use the original object and just update the text to avoid closure issues
-                const objectToSave = { ...originalSubtitle, sinhala: text };
-                await db.put(SUBTITLE_STORE, objectToSave);
-            }
-        });
+    const saveChanges = (id: number, text: string) => {
+      // Update the main subtitles state for immediate UI feedback
+      setSubtitles(prevSubs => prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s));
+
+      // Save to DB in a transition to avoid blocking the UI
+      startTransition(async () => {
+        if (dbPromise) {
+          const db = await dbPromise;
+          const subToUpdate = await db.get(SUBTITLE_STORE, id);
+          if (subToUpdate) {
+            const objectToSave = { ...subToUpdate, sinhala: text };
+            await db.put(SUBTITLE_STORE, objectToSave);
+          }
+        }
+      });
+    };
+
+    const handleInputBlur = () => {
+        // When user clicks away, discard the changes by clearing the editing state
+        setEditingState({ id: null, text: '' });
     };
     
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
         if (e.key === 'Enter') {
             e.preventDefault();
+            
+            // 1. Save the current text from editingState
+            if (editingState.id === currentId) {
+                saveChanges(currentId, editingState.text);
+            }
+
+            // 2. Pause the player
             setPlaying(false);
 
+            // 3. Find and focus the next input
             const currentIndex = subtitles.findIndex(s => s.id === currentId);
             const nextSub = subtitles[currentIndex + 1];
 
@@ -188,7 +205,6 @@ export default function SubtitleEditorPage() {
                     nextInput.focus();
                 }
 
-                // Check if next subtitle is on another page
                 const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
                 if (nextSubPageIndex !== currentPage) {
                     setCurrentPage(nextSubPageIndex);
@@ -228,14 +244,19 @@ export default function SubtitleEditorPage() {
         let targetIndex = -1;
 
         if (direction === 'next') {
+            // Find the first subtitle that starts AFTER the current time
             targetIndex = subtitles.findIndex(s => s.startTime > time);
         } else { // 'prev'
+            // Find all subtitles that start BEFORE the current time
             const prevSubs = subtitles.filter(s => s.startTime < time);
-            targetIndex = prevSubs.length > 1 ? subtitles.indexOf(prevSubs[prevSubs.length - 1]) : 0;
+            // The target is the last one in that filtered list
+            targetIndex = subtitles.indexOf(prevSubs[prevSubs.length - 1]);
         }
 
+        // If 'next' didn't find anything, it means we are at or after the last sub. Go to last sub.
         if (targetIndex === -1 && direction === 'next' && subtitles.length > 0) {
             targetIndex = subtitles.length - 1;
+        // If 'prev' didn't find anything (or we're at the first), go to the first sub.
         } else if (targetIndex === -1 && direction === 'prev') {
              targetIndex = 0;
         }
@@ -305,9 +326,10 @@ export default function SubtitleEditorPage() {
                                         placeholder="Enter Sinhala translation..."
                                         className="bg-black/50 border-primary/50 text-yellow-300 text-center text-2xl font-semibold focus-visible:ring-primary h-auto p-2"
                                         style={{ textShadow: '2px 2px 4px #000000' }}
-                                        value={currentSubtitle.sinhala || ''}
+                                        value={editingState.id === currentSubtitle.id ? editingState.text : currentSubtitle.sinhala || ''}
                                         onChange={(e) => handleSinhalaChange(currentSubtitle.id, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(e, currentSubtitle.id)}
+                                        onBlur={handleInputBlur}
                                     />
                                 </div>
                             </div>
@@ -396,9 +418,10 @@ export default function SubtitleEditorPage() {
                                                         type="text" 
                                                         placeholder="Enter Sinhala translation..." 
                                                         className="bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary text-base p-1 h-auto"
-                                                        value={sub.sinhala || ''}
+                                                        value={editingState.id === sub.id ? editingState.text : sub.sinhala || ''}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
                                                         onKeyDown={(e) => handleKeyDown(e, sub.id)}
+                                                        onBlur={handleInputBlur}
                                                         onClick={(e) => e.stopPropagation()}
                                                     />
                                                 </TableCell>
@@ -445,5 +468,3 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
-
-    
