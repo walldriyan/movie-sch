@@ -7,6 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { saveImageFromDataUrl, deleteUploadedFile } from './posts';
 import { ROLES } from '../permissions';
 import type { MicroPost as PrismaMicroPost } from '@prisma/client';
+import { subDays } from 'date-fns';
 
 
 const MAX_FILE_SIZE = 1024 * 1024; // 1MB
@@ -68,9 +69,22 @@ export async function createMicroPost(formData: FormData) {
         create: { url: imageUrl }
       } : undefined,
     },
+    include: {
+        author: true,
+        images: true,
+        categories: true,
+        tags: true,
+        likes: true,
+        _count: {
+            select: {
+                likes: true,
+                comments: true,
+            },
+        },
+    }
   });
 
-  revalidatePath('/');
+  revalidatePath('/wall');
   return newPost;
 }
 
@@ -144,7 +158,7 @@ export async function toggleMicroPostLike(postId: string) {
         });
     }
 
-    revalidatePath('/');
+    revalidatePath('/wall');
 }
 
 
@@ -178,7 +192,7 @@ export async function deleteMicroPost(postId: string) {
         where: { id: postId },
     });
 
-    revalidatePath('/');
+    revalidatePath('/wall');
 }
 
 export async function updateMicroPost(postId: string, formData: FormData) {
@@ -232,6 +246,47 @@ export async function updateMicroPost(postId: string, formData: FormData) {
     },
   });
 
-  revalidatePath('/');
+  revalidatePath('/wall');
   return updatedPost;
+}
+
+export async function getMicroPostCreationStatus() {
+    const session = await auth();
+    const user = session?.user;
+
+    if (!user) {
+        throw new Error('Not authenticated');
+    }
+
+    const userRecord = await prisma.user.findUnique({ where: { id: user.id } });
+    if (!userRecord) {
+        throw new Error('User not found');
+    }
+
+    const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' }});
+    const defaultLimit = defaultLimitSetting ? parseInt(defaultLimitSetting.value, 10) : 10;
+    
+    // User-specific limit overrides the default
+    const postLimit = userRecord.dailyPostLimit ?? defaultLimit;
+
+    let postCount = 0;
+    if (postLimit > 0) { // No need to count if limit is unlimited
+        const twentyFourHoursAgo = subDays(new Date(), 1);
+        postCount = await prisma.microPost.count({
+            where: {
+                authorId: user.id,
+                createdAt: {
+                    gte: twentyFourHoursAgo,
+                },
+            },
+        });
+    }
+    
+    const remaining = postLimit > 0 ? postLimit - postCount : Infinity;
+
+    return {
+        limit: postLimit,
+        count: postCount,
+        remaining: remaining,
+    };
 }

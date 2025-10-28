@@ -6,12 +6,12 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Image as ImageIcon, X } from 'lucide-react';
+import { Image as ImageIcon, X, Info } from 'lucide-react';
 import type { User, MicroPost as MicroPostType } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent } from "@/components/ui/card";
-import { createMicroPost, getAllCategories, getAllTags } from '@/lib/actions';
+import { createMicroPost, getAllCategories, getAllTags, getMicroPostCreationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
@@ -21,6 +21,8 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from './ui/form';
 import { CategoryInput } from '@/components/manage/category-input';
 import { TagInput } from '@/components/manage/tag-input';
 import MicroPostCard from './micro-post-card';
+import { Alert, AlertDescription, AlertTitle } from './ui/alert';
+import { Skeleton } from './ui/skeleton';
 
 
 interface WallClientProps {
@@ -47,8 +49,23 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
     const [allTags, setAllTags] = useState<string[]>([]);
     const [previewImage, setPreviewImage] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [postStatus, setPostStatus] = useState<{ limit: number; count: number; remaining: number } | null>(null);
+    const [isLoadingStatus, setIsLoadingStatus] = useState(true);
+
+    const fetchPostStatus = async () => {
+        try {
+            setIsLoadingStatus(true);
+            const statusData = await getMicroPostCreationStatus();
+            setPostStatus(statusData);
+        } catch (error) {
+            console.error("Failed to fetch post status:", error);
+        } finally {
+            setIsLoadingStatus(false);
+        }
+    }
 
     useEffect(() => {
+        fetchPostStatus();
         const fetchInitialData = async () => {
             try {
                 const [categoriesData, tagsData] = await Promise.all([
@@ -116,15 +133,38 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
           toast({ title: 'Success', description: 'Your post has been published.' });
           form.reset();
           setPreviewImage(null);
+          await fetchPostStatus(); // Refresh status after posting
         } catch (error: any) {
           toast({ variant: 'destructive', title: 'Error', description: error.message });
         }
       });
     }
+    
+    const canPost = postStatus ? postStatus.remaining > 0 || postStatus.limit === 0 : false;
 
     return (
         <Card className="mb-8">
             <CardContent className="p-4">
+               <div className="mb-4">
+                {isLoadingStatus ? (
+                  <div className="flex items-center gap-4 rounded-lg border p-4">
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <div className="space-y-2 flex-grow">
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  </div>
+                ) : postStatus ? (
+                  <Alert>
+                    <Info className="h-4 w-4" />
+                    <AlertTitle>Daily Micro-Post Status</AlertTitle>
+                    <AlertDescription>
+                      Your daily limit is {postStatus.limit === 0 ? 'unlimited' : `${postStatus.limit} posts`}. 
+                      You have created {postStatus.count} posts today. 
+                      {postStatus.limit > 0 && ` You can create ${postStatus.remaining} more posts.`}
+                    </AlertDescription>
+                  </Alert>
+                ) : null}
+              </div>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
                     <Avatar>
@@ -143,6 +183,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                                     className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
                                     rows={2}
                                     {...field}
+                                    disabled={!canPost || isSubmitting}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -193,7 +234,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                         />
                         <div className="flex justify-between items-center pt-2">
                             <div className="flex gap-1 text-muted-foreground">
-                                <Button variant="ghost" size="icon" type="button" onClick={() => fileInputRef.current?.click()} >
+                                <Button variant="ghost" size="icon" type="button" onClick={() => fileInputRef.current?.click()} disabled={!canPost || isSubmitting}>
                                   <ImageIcon className="h-5 w-5" />
                                 </Button>
                                 <input 
@@ -204,7 +245,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                                     onChange={handleImageChange}
                                 />
                             </div>
-                            <Button type="submit" disabled={isSubmitting}>
+                            <Button type="submit" disabled={isSubmitting || !canPost}>
                               {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                               Post
                             </Button>
