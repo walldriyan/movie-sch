@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -165,13 +166,16 @@ export default function SubtitleEditorPage() {
 
     const saveChanges = async (id: number, text: string) => {
         if (dbPromise) {
-             const db = await dbPromise;
-             await db.put(SUBTITLE_STORE, { id, sinhala: text }, id);
-             
-             // Optimistically update the main state
-             setSubtitles(prevSubs => 
+            const db = await dbPromise;
+            const existingSub = await db.get(SUBTITLE_STORE, id);
+            if (existingSub) {
+                await db.put(SUBTITLE_STORE, { ...existingSub, sinhala: text });
+            }
+
+            // Optimistically update the main state
+            setSubtitles(prevSubs =>
                 prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
-             );
+            );
         }
     };
     
@@ -185,17 +189,16 @@ export default function SubtitleEditorPage() {
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            const currentId = (e.target as HTMLInputElement).id.split('-')[2];
-            const currentText = (e.target as HTMLInputElement).value;
+            const currentTarget = e.target as HTMLInputElement;
+            const currentId = currentTarget.id.split('-')[2];
+            const currentText = currentTarget.value;
             
             if (!currentId) return;
 
             const idAsNum = parseInt(currentId, 10);
             
-            // Immediately save the current change
             await saveChanges(idAsNum, currentText);
             
-            // Find the next subtitle from the updated state
             const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
             const nextSub = subtitles[currentIndex + 1];
     
@@ -232,7 +235,7 @@ export default function SubtitleEditorPage() {
     
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
         setPlaying(false);
-        const time = currentTime;
+        const time = playerRef.current?.getCurrentTime() || 0;
         const currentSub = currentSubtitle;
       
         let targetSub: SubtitleEntry | undefined;
@@ -245,11 +248,11 @@ export default function SubtitleEditorPage() {
                 targetSub = subtitles.find(s => s.startTime > time);
             }
         } else { // prev
-            if (currentSub) {
-                const currentIndex = subtitles.findIndex(s => s.id === currentSub.id);
-                targetSub = subtitles[currentIndex - 1];
+            const prevSubs = subtitles.filter(s => s.startTime < time);
+            if (currentSub && prevSubs.length > 1) {
+                 const currentIndex = prevSubs.findIndex(s => s.id === currentSub.id);
+                 targetSub = prevSubs[currentIndex-1];
             } else {
-                const prevSubs = subtitles.filter(s => s.startTime < time);
                 targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : undefined;
             }
         }
@@ -257,7 +260,7 @@ export default function SubtitleEditorPage() {
         if (targetSub) {
             playerRef.current?.seekTo(targetSub.startTime);
         } else {
-            const message = direction === 'next' ? 'You are at the last subtitle.' : 'You are at the first subtitle.';
+             const message = direction === 'next' ? 'You are at the last subtitle.' : 'You are at the first subtitle.';
             toast({
                 variant: 'destructive',
                 title: 'Navigation Limit Reached',
