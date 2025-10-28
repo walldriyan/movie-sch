@@ -186,8 +186,6 @@ export default function SubtitleEditorPage() {
                 }
             } catch (error) {
                 console.error("Failed to save to DB:", error);
-                // Optionally revert state on DB error
-                // setSubtitles(subtitles); 
             }
         }
         return newSubtitles;
@@ -494,3 +492,4 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
