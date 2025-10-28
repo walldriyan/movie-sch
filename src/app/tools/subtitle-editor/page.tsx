@@ -213,9 +213,9 @@ export default function SubtitleEditorPage() {
         <main className="max-w-7xl mx-auto p-4 md:p-8 pt-6 space-y-6">
             <h1 className="text-3xl font-bold">Subtitle Editor</h1>
             
-            <div className="grid grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Left Side: Player and Controls */}
-                <div className="col-span-3 flex flex-col gap-4">
+                <div className="md:col-span-1 flex flex-col gap-4">
                      <Card className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
                         {videoUrl ? (
                             <ReactPlayer
@@ -279,7 +279,7 @@ export default function SubtitleEditorPage() {
                 </div>
 
                  {/* Right Side: Subtitle Editor Table */}
-                <div className="col-span-1">
+                <div className="md:col-span-1">
                      <Card className="flex flex-col h-[calc(100vh-12rem)]">
                         <CardHeader>
                             <div className="flex flex-col sm:flex-row gap-4 justify-between">
@@ -322,12 +322,12 @@ export default function SubtitleEditorPage() {
                                                 <TableCell className="font-mono text-xs text-muted-foreground align-top pt-3">
                                                     {secondsToSrtTime(sub.startTime).split(',')[0]}
                                                 </TableCell>
-                                                <TableCell className="space-y-1 pr-4">
+                                                <TableCell className="space-y-2 pr-4">
                                                     <p className="text-sm text-muted-foreground">{sub.english}</p>
                                                     <Input 
                                                         type="text" 
                                                         placeholder="Enter Sinhala translation..." 
-                                                        className="bg-transparent border-0 focus-visible:ring-1 text-base px-1 h-auto"
+                                                        className="bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary text-base p-1 h-auto"
                                                         value={sub.sinhala || ''}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
                                                         onClick={(e) => e.stopPropagation()} // Prevent row click when editing
