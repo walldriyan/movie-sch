@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useRef, useEffect, useTransition } from 'react';
@@ -48,7 +49,7 @@ const timeToSeconds = (time: string): number => {
 
 const secondsToSrtTime = (seconds: number): string => {
     const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-    const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+    const m = Math.floor((seconds % 3600) / 60).toString().padStart(6, '0');
     const s = (seconds % 60).toFixed(3).replace('.', ',').padStart(6, '0');
     return `${h}:${m}:${s}`;
 }
@@ -85,7 +86,6 @@ export default function SubtitleEditorPage() {
     const subtitlesPerPage = 20;
     const [isSaving, startTransition] = useTransition();
 
-    // New state to hold the text being currently edited without saving it immediately
     const [editingState, setEditingState] = useState<{ id: number | null; text: string }>({ id: null, text: '' });
 
     const playerRef = useRef<ReactPlayer>(null);
@@ -98,7 +98,6 @@ export default function SubtitleEditorPage() {
     const endIndex = startIndex + subtitlesPerPage;
     const currentSubtitleSlice = subtitles.slice(startIndex, endIndex);
 
-    // --- Data Fetching and Persistence ---
     const loadSubtitlesFromDB = async () => {
         if (!dbPromise) return;
         const db = await dbPromise;
@@ -147,7 +146,7 @@ export default function SubtitleEditorPage() {
                 await tx.done;
                 
                 await loadSubtitlesFromDB();
-                setCurrentPage(1); // Reset to first page
+                setCurrentPage(1); 
                 toast({ title: 'Subtitles Loaded', description: `${parsedSubs.length} lines loaded into the editor.`})
             };
             reader.readAsText(file);
@@ -155,29 +154,27 @@ export default function SubtitleEditorPage() {
     };
 
     const handleSinhalaChange = (id: number, text: string) => {
-        // Only update the temporary editing state on each keystroke
         setEditingState({ id, text });
     };
-
+    
     const saveChanges = (id: number, text: string) => {
-      // Update the main subtitles state for immediate UI feedback
-      setSubtitles(prevSubs => prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s));
+        const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
+        setSubtitles(updatedSubs);
 
-      // Save to DB in a transition to avoid blocking the UI
-      startTransition(async () => {
-        if (dbPromise) {
-          const db = await dbPromise;
-          const subToUpdate = await db.get(SUBTITLE_STORE, id);
-          if (subToUpdate) {
-            const objectToSave = { ...subToUpdate, sinhala: text };
-            await db.put(SUBTITLE_STORE, objectToSave);
-          }
-        }
-      });
+        startTransition(async () => {
+            if (dbPromise) {
+              const db = await dbPromise;
+              const subToUpdate = await db.get(SUBTITLE_STORE, id);
+              if (subToUpdate) {
+                const objectToSave = { ...subToUpdate, sinhala: text };
+                await db.put(SUBTITLE_STORE, objectToSave);
+              }
+            }
+        });
+        setEditingState({ id: null, text: '' }); 
     };
 
     const handleInputBlur = () => {
-        // When user clicks away, discard the changes by clearing the editing state
         setEditingState({ id: null, text: '' });
     };
     
@@ -185,39 +182,37 @@ export default function SubtitleEditorPage() {
         if (e.key === 'Enter') {
             e.preventDefault();
             
-            // 1. Save the current text from editingState
             if (editingState.id === currentId) {
                 saveChanges(currentId, editingState.text);
             }
 
-            // 2. Pause the player
             setPlaying(false);
 
-            // 3. Find and focus the next input
             const currentIndex = subtitles.findIndex(s => s.id === currentId);
             const nextSub = subtitles[currentIndex + 1];
 
             if (nextSub) {
+                playerRef.current?.seekTo(nextSub.startTime);
+                
                 const nextInputId = `sub-input-${nextSub.id}`;
                 const nextInput = document.getElementById(nextInputId) || document.getElementById(`overlay-input-${nextSub.id}`);
                 
-                 if (nextInput) {
-                    nextInput.focus();
-                }
-
                 const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
                 if (nextSubPageIndex !== currentPage) {
                     setCurrentPage(nextSubPageIndex);
                      setTimeout(() => {
-                        const finalNextInput = document.getElementById(nextInputId) || document.getElementById(`overlay-input-${nextSub.id}`);
+                        const finalNextInput = document.getElementById(`sub-input-${nextSub.id}`) || document.getElementById(`overlay-input-${nextSub.id}`);
                         finalNextInput?.focus();
                     }, 100);
+                } else {
+                     if (nextInput) {
+                        nextInput.focus();
+                    }
                 }
             }
         }
     };
 
-    // --- Player Controls ---
     const handleProgress = (state: { played: number; playedSeconds: number }) => {
         setPlayed(state.played);
         setCurrentTime(state.playedSeconds);
@@ -239,24 +234,19 @@ export default function SubtitleEditorPage() {
     
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
         setPlaying(false);
-        const time = playerRef.current?.getCurrentTime() || 0;
+        const time = currentSubtitle?.startTime ?? playerRef.current?.getCurrentTime() ?? 0;
         
         let targetIndex = -1;
 
         if (direction === 'next') {
-            // Find the first subtitle that starts AFTER the current time
             targetIndex = subtitles.findIndex(s => s.startTime > time);
-        } else { // 'prev'
-            // Find all subtitles that start BEFORE the current time
+        } else {
             const prevSubs = subtitles.filter(s => s.startTime < time);
-            // The target is the last one in that filtered list
             targetIndex = subtitles.indexOf(prevSubs[prevSubs.length - 1]);
         }
 
-        // If 'next' didn't find anything, it means we are at or after the last sub. Go to last sub.
         if (targetIndex === -1 && direction === 'next' && subtitles.length > 0) {
             targetIndex = subtitles.length - 1;
-        // If 'prev' didn't find anything (or we're at the first), go to the first sub.
         } else if (targetIndex === -1 && direction === 'prev') {
              targetIndex = 0;
         }
@@ -293,8 +283,7 @@ export default function SubtitleEditorPage() {
             <h1 className="text-3xl font-bold">Subtitle Editor</h1>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Left Side: Player and Controls */}
-                 <div className="md:col-span-1 flex flex-col gap-4">
+                <div className="md:col-span-1 flex flex-col gap-4">
                      <div className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
                         {videoUrl ? (
                             <ReactPlayer
@@ -313,7 +302,6 @@ export default function SubtitleEditorPage() {
                                 <p>Select a video file to begin</p>
                             </div>
                         )}
-                        {/* Subtitle Overlay */}
                         {currentSubtitle && (
                             <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-full max-w-4xl px-4 text-center pointer-events-none space-y-2">
                                 <p className="py-1 px-3 text-2xl font-semibold text-white bg-black/50 rounded" style={{ textShadow: '2px 2px 4px #000000' }}>
@@ -367,7 +355,6 @@ export default function SubtitleEditorPage() {
                     </div>
                 </div>
 
-                 {/* Right Side: Subtitle Editor Table */}
                 <div className="md:col-span-1">
                      <Card className="flex flex-col h-[calc(100vh-12rem)]">
                         <CardHeader>
