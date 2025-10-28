@@ -30,5 +30,3 @@ if (process.env.NEXT_RUNTIME === 'client') {
 }
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
-export const onRouterTransitionEnd = Sentry.captureRouterTransitionEnd;
-export const onBeforeNavigate = Sentry.captureBeforeNavigate;
