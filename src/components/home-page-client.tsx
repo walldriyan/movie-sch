@@ -181,7 +181,7 @@ export default function HomePageClient({
             </DropdownMenuContent>
             </DropdownMenu>
           </div>
-          {posts.length === 0 ? (
+          {posts.length === 0 && !loading ? (
                 <div className="text-center py-16">
                     <h1 className="font-serif text-4xl font-bold">
                         No Posts Found

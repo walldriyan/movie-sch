@@ -87,8 +87,7 @@ export default function SubtitleEditorPage() {
     
     // This state holds the text being typed, before it's saved.
     const [editingState, setEditingState] = useState<{ id: number | null; text: string }>({ id: null, text: '' });
-    const [isSaving, startTransition] = useTransition();
-
+    
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     const subtitleInputRef = useRef<HTMLInputElement>(null);
@@ -168,61 +167,61 @@ export default function SubtitleEditorPage() {
         setEditingState({ id, text });
     };
 
-    const saveChanges = (id: number, text: string) => {
-      // Optimistic UI Update first
+    const saveChanges = async (id: number, text: string) => {
+      // Update the main state first for a responsive UI
       setSubtitles(prevSubs => 
           prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s)
       );
 
       // Save to DB in the background
-      startTransition(async () => {
-           if (dbPromise) {
-              try {
-                  const db = await dbPromise;
-                  // Get the most recent version of the item before updating
-                  const subToUpdate = await db.get(SUBTITLE_STORE, id);
-                  if (subToUpdate) {
-                      const objectToSave = { ...subToUpdate, sinhala: text };
-                      await db.put(SUBTITLE_STORE, objectToSave);
-                  }
-              } catch (error) {
-                  console.error("Failed to save to DB:", error);
-                  // Optionally revert state or show toast
+       if (dbPromise) {
+          try {
+              const db = await dbPromise;
+              const subToUpdate = await db.get(SUBTITLE_STORE, id);
+              if (subToUpdate) {
+                  const objectToSave = { ...subToUpdate, sinhala: text };
+                  await db.put(SUBTITLE_STORE, objectToSave);
               }
+          } catch (error) {
+              console.error("Failed to save to DB:", error);
+              // Optionally revert state or show toast
           }
-      });
-  };
+      }
+    };
     
     const handleInputBlur = () => {
         // When focus is lost, clear the temporary editing state
-        // This effectively discards unsaved changes if Enter wasn't pressed.
         setEditingState({ id: null, text: '' });
     };
     
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
+    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
         if (e.key === 'Enter') {
             e.preventDefault();
             const currentText = (e.target as HTMLInputElement).value;
     
-            // Save the current change
-            saveChanges(currentId, currentText);
+            // Step 1: Save the current change.
+            await saveChanges(currentId, currentText);
             setEditingState({ id: null, text: '' }); // Clear editing state
             setPlaying(false);
     
-            // Now find the next subtitle based on the already updated `subtitles` state in the next render cycle.
-            // We use a timeout to allow the state to update before finding the next sub.
+            // Step 2: Find the next subtitle to jump to.
+            // We use a timeout to ensure the state update from saveChanges has time to propagate
+            // before we search for the next item.
             setTimeout(() => {
-                const currentIndex = subtitles.findIndex(s => s.id === currentId);
-                const nextSub = subtitles[currentIndex + 1];
-        
-                if (nextSub) {
-                    playerRef.current?.seekTo(nextSub.startTime);
-        
-                    const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
-                    if (nextSubPageIndex !== currentPage) {
-                        setCurrentPage(nextSubPageIndex);
+                setSubtitles(currentSubs => {
+                    const currentIndex = currentSubs.findIndex(s => s.id === currentId);
+                    const nextSub = currentSubs[currentIndex + 1];
+            
+                    if (nextSub) {
+                        playerRef.current?.seekTo(nextSub.startTime);
+            
+                        const nextSubPageIndex = Math.floor((currentIndex + 1) / subtitlesPerPage) + 1;
+                        if (nextSubPageIndex !== currentPage) {
+                            setCurrentPage(nextSubPageIndex);
+                        }
                     }
-                }
+                    return currentSubs; // Return the current state
+                });
             }, 0);
         }
     };
@@ -262,28 +261,19 @@ export default function SubtitleEditorPage() {
       let targetSub: SubtitleEntry | undefined;
 
       if (direction === 'next') {
-          // Find the first subtitle that starts *after* the current time.
           targetSub = subtitles.find(s => s.startTime > time);
-          // If no next sub is found (we are at/after the last one), loop to the first.
           if (!targetSub && subtitles.length > 0) {
               targetSub = subtitles[0];
           }
-      } else { // 'prev'
-          // Find all subtitles that start *before* the current time.
+      } else { 
           const prevSubs = subtitles.filter(s => s.startTime < time);
-          // The one we want is the last one in that filtered list.
-          if (prevSubs.length > 0) {
-              targetSub = prevSubs[prevSubs.length - 1];
-          } else if (subtitles.length > 0) {
-              // If no previous sub found (we are at/before the first one), loop to the last.
-              targetSub = subtitles[subtitles.length - 1];
-          }
+          targetSub = prevSubs.length > 0 ? prevSubs[prevSubs.length - 1] : subtitles[subtitles.length - 1];
       }
       
       if (targetSub) {
           playerRef.current?.seekTo(targetSub.startTime);
       }
-  };
+    };
 
 
     const handleRowClick = (startTime: number) => {
@@ -485,5 +475,6 @@ export default function SubtitleEditorPage() {
         </main>
     );
 }
+
 
 

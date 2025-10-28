@@ -273,8 +273,40 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
     );
 }
 
+function WallSkeleton() {
+    return (
+        <div className="space-y-8">
+            {[...Array(3)].map((_, i) => (
+                 <Card key={i}>
+                    <CardContent className="p-4">
+                        <div className="flex items-start gap-4">
+                            <Skeleton className="h-10 w-10 rounded-full" />
+                            <div className="flex-grow space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <Skeleton className="h-4 w-24" />
+                                    <Skeleton className="h-3 w-16" />
+                                </div>
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-5/6" />
+                                <Skeleton className="aspect-video w-full rounded-xl" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            ))}
+        </div>
+    )
+}
+
 export default function WallClient({ initialMicroPosts }: WallClientProps) {
     const [posts, setPosts] = useState(initialMicroPosts);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        // Simulate loading to show skeletons
+        const timer = setTimeout(() => setIsLoading(false), 700);
+        return () => clearTimeout(timer);
+    }, []);
 
     const handlePostCreated = (newPost: any) => {
         // Since getMicroPosts fetches the full related data, we can just add the new post
@@ -285,20 +317,24 @@ export default function WallClient({ initialMicroPosts }: WallClientProps) {
     return (
         <main className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <CreateMicroPost onPostCreated={handlePostCreated} />
-            <div className="space-y-8">
-                {posts.length > 0 ? (
-                    posts.map(post => <MicroPostCard key={post.id} post={post} />)
-                ) : (
-                <div className="text-center py-16 border-2 border-dashed rounded-lg">
-                    <h1 className="font-serif text-2xl font-bold text-muted-foreground">
-                        The Wall is Quiet...
-                    </h1>
-                    <p className="mt-2 text-sm text-muted-foreground">
-                        Be the first to post something!
-                    </p>
-                    </div>
-                )}
-            </div>
+             {isLoading ? (
+                <WallSkeleton />
+            ) : (
+                <div className="space-y-8">
+                    {posts.length > 0 ? (
+                        posts.map(post => <MicroPostCard key={post.id} post={post} />)
+                    ) : (
+                    <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                        <h1 className="font-serif text-2xl font-bold text-muted-foreground">
+                            The Wall is Quiet...
+                        </h1>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                            Be the first to post something!
+                        </p>
+                        </div>
+                    )}
+                </div>
+            )}
         </main>
     );
 }
