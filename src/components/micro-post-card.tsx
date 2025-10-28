@@ -168,7 +168,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             ))}
                         </div>
 
-                        <Accordion type="single" collapsible className="w-full mt-2" defaultValue={post.id}>
+                        <Accordion type="single" collapsible className="w-full mt-2">
                             <AccordionItem value={post.id} className="border-b-0">
                                 <div className="flex justify-between items-center text-muted-foreground">
                                     <AccordionTrigger className="py-0 hover:no-underline">
