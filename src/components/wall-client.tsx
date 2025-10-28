@@ -30,7 +30,7 @@ interface WallClientProps {
 }
 
 const microPostSchema = z.object({
-  content: z.string().min(1, 'Post content cannot be empty.').max(500, 'Post cannot exceed 500 characters.'),
+  content: z.string().min(1, 'Post content cannot be empty.').max(2000, 'Post cannot exceed 2000 characters.'),
   categories: z.array(z.string()).optional(),
   tags: z.array(z.string()).optional(),
   image: z.instanceof(File).optional()
@@ -143,7 +143,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
     }
     
     const canPost = postStatus ? postStatus.remaining > 0 || postStatus.limit === 0 : false;
-    const maxChars = 500;
+    const maxChars = 2000;
 
     return (
         <Card className="mb-8">
@@ -159,7 +159,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                 ) : postStatus ? (
                   <Alert>
                     <Info className="h-4 w-4" />
-                    <AlertTitle>Daily Micro-Post Status</AlertTitle>
+                    <AlertTitle className="text-sm text-muted-foreground">Daily Micro-Post Status</AlertTitle>
                     <AlertDescription>
                       Your daily limit is {postStatus.limit === 0 ? 'unlimited' : `${postStatus.limit} posts`}. 
                       You have created {postStatus.count} posts today. 
@@ -183,7 +183,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: any) => v
                               <FormControl>
                                 <Textarea
                                     placeholder="What's happening?"
-                                    className="w-full bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 p-0 text-base"
+                                    className="w-full bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 p-2 text-base"
                                     rows={2}
                                     {...field}
                                     disabled={!canPost || isSubmitting}
