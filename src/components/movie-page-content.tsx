@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, useRef } from 'react';
 import type { Session } from 'next-auth';
 import { createReview, deleteReview, deleteSubtitle, incrementViewCount } from '@/lib/actions';
 import type { Post, Review, Subtitle } from '@/lib/types';
@@ -198,22 +198,33 @@ export default function MoviePageContent({
   const [isUpdatingViewCount, startViewCountTransition] = useTransition();
   const [showReviews, setShowReviews] = useState(false);
   const currentUser = session?.user;
+  const effectRan = useRef(false);
 
   useEffect(() => {
-    // Optimistically update the view count on the client
-    setViewCount(prevCount => prevCount + 1);
-    
-    // Trigger the server action to update the view count in the database
-    startViewCountTransition(async () => {
-        try {
-            await incrementViewCount(initialPost.id);
-        } catch (error) {
-            console.error("Failed to update view count on server:", error);
-            // Optional: revert optimistic update on error, though not critical for view count
-            setViewCount(prevCount => prevCount - 1);
+    if (process.env.NODE_ENV === 'production' || !effectRan.current) {
+        startViewCountTransition(async () => {
+            try {
+                // We only call the server action, the UI is updated via `viewCount` state
+                await incrementViewCount(initialPost.id);
+            } catch (error) {
+                console.error("Failed to update view count on server:", error);
+            }
+        });
+    }
+
+    // Cleanup function to set the ref back to false on unmount
+    return () => {
+        if (process.env.NODE_ENV !== 'production') {
+            effectRan.current = true;
         }
-    });
+    };
   }, [initialPost.id]);
+
+  // This effect will run only once on mount to set the initial view count
+  // And won't re-run to increment it again.
+  useEffect(() => {
+    setViewCount(initialPost.viewCount + 1);
+  }, []); // Empty dependency array
 
 
   useEffect(() => {
@@ -585,5 +596,3 @@ export default function MoviePageContent({
     </div>
   );
 }
-
-    

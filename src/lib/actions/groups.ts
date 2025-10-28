@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { revalidatePath } from 'next/cache';
@@ -38,34 +37,46 @@ export async function getGroups() {
     if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
         throw new Error('Not authorized');
     }
+
+    // Step 1: Fetch all groups with their active member counts
     const groups = await prisma.group.findMany({
         include: {
             _count: {
                 select: { 
-                    members: true
+                    members: { where: { status: 'ACTIVE' }}
                 },
             },
         },
         orderBy: { name: 'asc' },
     });
 
-    const groupsWithPendingCounts = await Promise.all(groups.map(async (group) => {
-        const pendingRequestsCount = await prisma.groupMember.count({
-            where: {
-                groupId: group.id,
-                status: 'PENDING',
-            },
-        });
-        return {
-            ...group,
-            _count: {
-                members: group._count.members,
-                pendingRequests: pendingRequestsCount,
-            }
-        }
+    // Step 2: Get all pending request counts in a single query
+    const pendingCounts = await prisma.groupMember.groupBy({
+        by: ['groupId'],
+        where: {
+            status: 'PENDING',
+            groupId: { in: groups.map(g => g.id) }
+        },
+        _count: {
+            userId: true,
+        },
+    });
+
+    // Step 3: Create a map for easy lookup
+    const pendingCountsMap = new Map(
+        pendingCounts.map(item => [item.groupId, item._count.userId])
+    );
+
+    // Step 4: Combine the data
+    const groupsWithAllCounts = groups.map(group => ({
+        ...group,
+        _count: {
+            members: group._count.members,
+            pendingRequests: pendingCountsMap.get(group.id) || 0,
+        },
     }));
     
-    return groupsWithPendingCounts;
+    return groupsWithAllCounts;
 }
 
 export async function getGroupsForForm(): Promise<Pick<Group, 'id' | 'name'>[]> {

@@ -1,5 +1,4 @@
 
-
 import { notFound } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
 import type { Post, Subtitle, User } from '@/lib/types';
@@ -60,7 +59,7 @@ function serializeReview(review: any): any {
 }
 
 export default async function MoviePage({ params }: { params: Promise<{ id: string }>}) {
-  const resolvedParams = await params; // ✅ params await කරලා resolve කරන්න
+  const resolvedParams = await params;
   const postId = Number(resolvedParams.id);
 
   if (isNaN(postId)) {
@@ -116,9 +115,9 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
       canDownload: await canUserDownloadSubtitle(subtitle.id),
     }))
   );
-
-  // Serialize post data properly - CRITICAL: Remove ALL non-serializable data
-  const serializablePost = {
+  
+  // The full post object is large. We only need specific fields for the client component.
+  const serializablePostForClient = {
     id: postData.id,
     title: postData.title,
     description: postData.description,
@@ -132,19 +131,14 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     imdbRating: postData.imdbRating,
     rottenTomatoesRating: postData.rottenTomatoesRating,
     googleRating: postData.googleRating,
-    viewCount: postData.viewCount || 0,
+    viewCount: postData.viewCount || 0, // Pass initial viewCount
     status: postData.status,
     visibility: postData.visibility,
     seriesId: postData.seriesId,
     orderInSeries: postData.orderInSeries,
     authorId: postData.authorId,
     groupId: postData.groupId,
-    createdAt: serializeDate(postData.createdAt),
-    updatedAt: serializeDate(postData.updatedAt),
-    publishedAt: serializeDate(postData.publishedAt),
-    isLockedByDefault: postData.isLockedByDefault, // pass this through
-    requiresExamToUnlock: postData.requiresExamToUnlock, // pass this through
-    isContentLocked: isContentLocked, // Add the calculated lock status
+    isContentLocked: isContentLocked, // Pass calculated lock status
     
     // Serialize nested objects
     author: serializeUser(postData.author),
@@ -156,11 +150,6 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     series: postData.series ? {
       id: postData.series.id,
       title: postData.series.title,
-      description: postData.series.description,
-      posterUrl: postData.series.posterUrl,
-      createdAt: serializeDate(postData.series.createdAt),
-      updatedAt: serializeDate(postData.series.updatedAt),
-      authorId: postData.series.authorId,
     } : null,
     
     exam: postData.exam ? {
@@ -169,13 +158,10 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
         description: postData.exam.description,
     } : null,
     
-    // Serialize media links
     mediaLinks: (postData.mediaLinks || []).map((link: any) => ({
       id: link.id,
       url: link.url,
       type: link.type,
-      postId: link.postId,
-      createdAt: serializeDate(link.createdAt),
     })),
 
     // Add required _count, likedBy, dislikedBy, favoritePosts
@@ -183,14 +169,15 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     likedBy: (postData.likedBy || []).map(serializeUser),
     dislikedBy: (postData.dislikedBy || []).map(serializeUser),
     favoritePosts: (postData.favoritePosts || []).map((fp:any) => ({
-        ...fp,
+        userId: fp.userId,
+        postId: fp.postId,
         createdAt: serializeDate(fp.createdAt),
     })),
   };
 
   return (
     <MoviePageContent 
-      initialPost={serializablePost}
+      initialPost={serializablePostForClient}
       initialSubtitles={subtitlesWithPermissions}
       session={session}
     />

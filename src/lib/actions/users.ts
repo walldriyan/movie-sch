@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import type { User } from '@prisma/client';
@@ -11,10 +10,20 @@ import { saveImageFromDataUrl, deleteUploadedFile } from './posts';
 import { subDays } from 'date-fns';
 
 
-export async function getUsers(): Promise<User[]> {
-  const users = await prisma.user.findMany({
+export async function getUsers(options: { page?: number; limit?: number } = {}): Promise<User[]> {
+  const { page, limit } = options;
+
+  let queryOptions: any = {
     orderBy: { name: 'asc' },
-  });
+  };
+
+  if (page && limit) {
+    queryOptions.skip = (page - 1) * limit;
+    queryOptions.take = limit;
+  }
+  
+  const users = await prisma.user.findMany(queryOptions);
+
   return users.map(user => ({
     ...user,
     createdAt: user.createdAt.toISOString(),

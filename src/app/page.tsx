@@ -19,10 +19,8 @@ export default async function HomePage({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>; // ✅ Promise type එක හරි
 }) {
-  // 👇 මෙතන await කරන්න ඕනේ!
   const params = await searchParams;
 
-  // දැන් params use කරන්න
   const timeFilter = (params.timeFilter as string) || 'updatedAt-desc';
   const sortBy = (params.sortBy as string) || 'updatedAt-desc';
   const typeFilter = params.type as string | undefined;
@@ -31,13 +29,19 @@ export default async function HomePage({
 
   const session = await auth();
   
-  const { posts, totalPages } = await getPosts({
+  const postDataPromise = getPosts({
     page: currentPage,
     limit: 10,
     filters: { timeFilter, sortBy, type: typeFilter, lockStatus },
   });
-  const users = await getUsers();
-  const groups = await getPublicGroups();
+  const usersPromise = getUsers({ limit: 10 }); // Fetch only 10 users for the homepage
+  const groupsPromise = getPublicGroups();
+
+  const [{ posts, totalPages }, users, groups] = await Promise.all([
+    postDataPromise,
+    usersPromise,
+    groupsPromise
+  ]);
   
   return (
     <>
