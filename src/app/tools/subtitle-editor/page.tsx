@@ -84,8 +84,8 @@ export default function SubtitleEditorPage() {
     const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleEntry | null>(null);
     const [currentPage, setCurrentPage] = useState(1);
     const subtitlesPerPage = 20;
-    const [isSaving, startTransition] = useTransition();
-
+    
+    // This state holds the text being typed, before it's saved.
     const [editingState, setEditingState] = useState<{ id: number | null; text: string }>({ id: null, text: '' });
 
     const playerRef = useRef<ReactPlayer>(null);
@@ -117,7 +117,7 @@ export default function SubtitleEditorPage() {
                 block: 'center',
             });
         }
-    }, [currentSubtitle]);
+    }, [currentSubtitle, currentPage]); // Also trigger on page change
 
      useEffect(() => {
         // Auto-focus the overlay input when the current subtitle changes
@@ -166,39 +166,48 @@ export default function SubtitleEditorPage() {
     const handleSinhalaChange = (id: number, text: string) => {
         setEditingState({ id, text });
     };
-    
-    const saveChanges = (id: number, text: string) => {
-        // Optimistic UI update for the main state
+
+    // This function now handles saving and updating the UI state.
+    const saveChanges = async (id: number, text: string) => {
+        // Update the main state immediately (Optimistic Update)
         const updatedSubs = subtitles.map(s => s.id === id ? { ...s, sinhala: text } : s);
         setSubtitles(updatedSubs);
-
-        startTransition(async () => {
-            if (dbPromise) {
-              const db = await dbPromise;
-              const subToUpdate = await db.get(SUBTITLE_STORE, id);
-              if (subToUpdate) {
-                const objectToSave = { ...subToUpdate, sinhala: text };
-                await db.put(SUBTITLE_STORE, objectToSave);
-              }
-            }
-        });
         setEditingState({ id: null, text: '' }); 
-    };
 
+        // Save to DB in the background
+        if (dbPromise) {
+            try {
+                const db = await dbPromise;
+                const subToUpdate = await db.get(SUBTITLE_STORE, id);
+                if (subToUpdate) {
+                    const objectToSave = { ...subToUpdate, sinhala: text };
+                    await db.put(SUBTITLE_STORE, objectToSave);
+                }
+            } catch (error) {
+                console.error("Failed to save to DB:", error);
+                // Optionally revert state or show toast
+            }
+        }
+    };
+    
     const handleInputBlur = () => {
+        // When focus is lost, clear the temporary editing state
+        // This effectively discards unsaved changes if Enter wasn't pressed.
         setEditingState({ id: null, text: '' });
     };
     
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
+    const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>, currentId: number) => {
         if (e.key === 'Enter') {
             e.preventDefault();
-            
-            // Always save the current state from the input field
             const currentText = (e.target as HTMLInputElement).value;
-            saveChanges(currentId, currentText);
 
+            // 1. Save the current text
+            await saveChanges(currentId, currentText);
+
+            // 2. Pause the player
             setPlaying(false);
 
+            // 3. Find and jump to the next subtitle
             const currentIndex = subtitles.findIndex(s => s.id === currentId);
             const nextSub = subtitles[currentIndex + 1];
 
@@ -218,7 +227,15 @@ export default function SubtitleEditorPage() {
         setCurrentTime(state.playedSeconds);
 
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
-        setCurrentSubtitle(activeSub || null);
+        
+        // Update currentSubtitle and clear editingState if the subtitle changes
+        setCurrentSubtitle(prevSub => {
+            if (activeSub?.id !== prevSub?.id) {
+                setEditingState({ id: null, text: '' });
+                return activeSub || null;
+            }
+            return prevSub;
+        });
     };
 
     const handleSeekChange = (value: number[]) => {
@@ -240,17 +257,20 @@ export default function SubtitleEditorPage() {
 
         if (direction === 'next') {
             targetIndex = subtitles.findIndex(s => s.startTime > time);
+            if (targetIndex === -1 && subtitles.length > 0) { // If no next found, maybe loop to first or last
+                targetIndex = 0; // Or subtitles.length - 1
+            }
         } else {
             const prevSubs = subtitles.filter(s => s.startTime < time);
-            targetIndex = subtitles.indexOf(prevSubs[prevSubs.length - 1]);
+            if (prevSubs.length > 0) {
+                 targetIndex = subtitles.indexOf(prevSubs[prevSubs.length - 1]);
+            } else if (subtitles.length > 0) { // If no prev found, loop to last
+                targetIndex = subtitles.length - 1;
+            }
         }
         
         if (targetIndex !== -1 && subtitles[targetIndex]) {
             playerRef.current?.seekTo(subtitles[targetIndex].startTime);
-        } else if (direction === 'next' && subtitles.length > 0) { // jump to last if no next found
-            playerRef.current?.seekTo(subtitles[subtitles.length - 1].startTime);
-        } else if (direction === 'prev' && subtitles.length > 0) { // jump to first if no prev found
-             playerRef.current?.seekTo(subtitles[0].startTime);
         }
     };
 
