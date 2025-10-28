@@ -304,30 +304,14 @@ export default function SubtitleEditorPage() {
         console.log(`--- [Player Control] Jump: දැනට පවතින වේලාව: ${time}`);
       
         // CRITICAL FIX: වේලාව භාවිතා කර current subtitle index එක නිවැරදිව හඳුනා ගනිමු
-        // endTime එක හරියටම match වුනාම ඊළඟ subtitle එකට move වෙන්න tolerance එකක් use කරමු
+        // සරල logic: වේලාව >= startTime වන අන්තිම subtitle එක තෝරන්න
         let currentIndex = -1;
         
-        for (let i = 0; i < subtitles.length; i++) {
-            const sub = subtitles[i];
-            // වේලාව subtitle range එක තුළ තියෙනවා නම්
-            if (time >= sub.startTime && time < sub.endTime - 0.01) {
+        for (let i = subtitles.length - 1; i >= 0; i--) {
+            // වේලාව subtitle එකේ startTime එකට වඩා වැඩි හෝ සමාන නම්, මේක තමයි current එක
+            if (time >= subtitles[i].startTime) {
                 currentIndex = i;
                 break;
-            }
-            // වේලාව subtitle එකෙන් පස්සේ නම්, මේක current එක කියලා mark කරන්න
-            if (time >= sub.endTime - 0.01 && (i === subtitles.length - 1 || time < subtitles[i + 1].startTime)) {
-                currentIndex = i;
-                break;
-            }
-        }
-        
-        // තවමත් හමු නොවී නම්, වේලාවට වඩා පෙර ඇති අන්තිම subtitle එක සොයන්න
-        if (currentIndex === -1) {
-            for (let i = subtitles.length - 1; i >= 0; i--) {
-                if (subtitles[i].startTime <= time) {
-                    currentIndex = i;
-                    break;
-                }
             }
         }
         
