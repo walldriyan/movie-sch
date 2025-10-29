@@ -1,4 +1,6 @@
 
+@import url("../../prisma/Fonts/WEB/css/cabinet-grotesk.css");
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
