@@ -166,9 +166,9 @@ export default function Navbar() {
             animate={{ width: isNavExpanded ? 'auto' : 64 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
           >
-            <nav className="flex items-center">
+            <nav className="flex items-center gap-1">
               <NavLink href="/" icon={<Home className="h-5 w-5"/>}>Home</NavLink>
-              <div className={cn("flex items-center transition-opacity duration-200", isNavExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden')}>
+              <div className={cn("flex items-center gap-1 transition-opacity duration-200", isNavExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden')}>
                 <NavLink href="/wall" icon={<MessageSquare className="h-5 w-5"/>} hidden={!showWall}>Wall</NavLink>
                 {user && <NavLink href="/activity" icon={<Activity className="h-5 w-5"/>}>Activity</NavLink>}
                 {canManage && <NavLink href="/manage" icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
