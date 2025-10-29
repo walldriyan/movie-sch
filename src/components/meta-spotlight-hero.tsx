@@ -5,13 +5,15 @@ import React, { useState, useEffect, useRef } from 'react';
 import type { Post } from '@/lib/types';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, ThumbsUp, Eye } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ThumbsUp, Eye, Facebook, Instagram, Linkedin, Youtube, Link as LinkIcon, Twitter } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import Link from 'next/link';
 
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
-export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] }) {
+export default function MetaSpotlightHero({ posts: initialPosts }: { posts: Post[] }) {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -26,7 +28,6 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
 
     const generatedCards = sortedPosts.map((post, index) => {
       const isSeriesPost = post.series && post.series.posts && post.series.posts.length > 0;
-      // Ensure the hero card is still somewhat centered if possible
       const isHeroIndex = sortedPosts.length > 2 ? Math.floor(sortedPosts.length / 2) : 0;
       const cardType = index === isHeroIndex ? 'hero' : (isSeriesPost ? 'series' : (index % 3 === 1 ? 'dots' : 'single'));
 
@@ -132,8 +133,6 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             return (
               <div key={idx} className="aspect-square rounded bg-muted overflow-hidden relative">
                 {post && post.posterUrl && (
-                  // <Image src={post.posterUrl} alt="series post"  fill
-                  // style={{ objectFit: 'cover' }} />
                   <Image
                     src={post.posterUrl}
                     alt="series post"
@@ -178,8 +177,6 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
             <div className="absolute top-2 md:top-3 left-2 md:left-3 z-10 flex items-center gap-2">
               <div className="bg-black text-white rounded-full w-6 h-6 md:w-7 md:h-7 flex items-center justify-center text-xs font-bold overflow-hidden relative">
                 {card.authorImage ? (
-                  // <Image src={card.authorImage} alt={card.brand}  fill
-                  // style={{ objectFit: 'cover' }} />
                   <Image
                     src={card.authorImage}
                     alt={card.brand}
@@ -233,56 +230,71 @@ export default function MetaSpotlight3({ posts: initialPosts }: { posts: Post[] 
       </div>
     );
   };
-  // bg-gradient-to-b  from-zinc-950/70  to-stone-900/5 
+  
   return (
-    <div className="h-[260px] p-8 bg-gradient-to-b from-zinc-950/70  to-stone-900/5 flex flex-col items-center  justify-center overflow-hidden relative">
+    <div className="bg-gradient-to-b from-background to-background/80 py-16 md:py-24 px-4 overflow-hidden">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="z-10 text-center lg:text-left">
+                 <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
+                    style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
+                    Unlock Your
+                    <br />
+                    Content Potential
+                </h1>
+                <p className="text-lg md:text-xl text-muted-foreground max-w-lg mx-auto lg:mx-0">
+                    Get scalable, platform-specific content solutions tailored for you.
+                </p>
+                <div className="flex items-center justify-center lg:justify-start gap-4 my-8">
+                    <Link href="#"><Facebook className="h-6 w-6 text-muted-foreground hover:text-primary" /></Link>
+                    <Link href="#"><Instagram className="h-6 w-6 text-muted-foreground hover:text-primary" /></Link>
+                    <Link href="#"><Linkedin className="h-6 w-6 text-muted-foreground hover:text-primary" /></Link>
+                    <Link href="#"><Youtube className="h-6 w-6 text-muted-foreground hover:text-primary" /></Link>
+                    <Link href="#"><Twitter className="h-6 w-6 text-muted-foreground hover:text-primary" /></Link>
+                </div>
+                <div className="flex flex-col items-center lg:items-start gap-4">
+                    <Button size="lg" className="bg-primary/90 hover:bg-primary text-lg h-12 px-8">
+                        <Avatar className="w-8 h-8 mr-3">
+                            <AvatarImage src="https://github.com/shadcn.png" />
+                            <AvatarFallback>U</AvatarFallback>
+                        </Avatar>
+                        Book a Call
+                    </Button>
+                    <p className="text-xs text-muted-foreground">Limited slots available.</p>
+                </div>
+            </div>
 
-      {/* <div className="absolute max-w-[700px] top-8 md:top-12 left-0 right-0 z-20 px-4 ">
-        <h1 className="w-fit max-w-[700px] ml-[80px] text-23xl sm:text-4xl md:text-3xl lg:text-5xl font-bold text-white mb-4 tracking-tight drop-shadow-[0_4px_24px_rgba(0,0,0,0.7)]"
-          style={{ textShadow: '0 30px 350px rgba(0,0,0,0.9), 0 2px 350px rgba(0,0,0,0.7)' }}>
-          Put your <br />business in<br />the spotlight.
-        </h1>          <div className="ml-[80px]  text-white text-md md:text-lg font-bold tracking-wide" style={{ textShadow: '0 34px 320px rgba(0,0,0,0.8)' }}>Walldriyan</div>
-
-      </div> */}
-
-      <div className="relative w-[500px] flex items-center justify-center">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleScroll('left')}
-          className="absolute left-2 md:left-4 top-1/2 -translate-y-1/2 z-30 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20"
-        >
-          <ChevronLeft className="h-6 w-6" />
-        </Button>
-        <div ref={scrollContainerRef} className="w-[500px] h-[200px] overflow-y-hidden overflow-x-auto">
-          <div
-            ref={containerRef}
-            className="flex p-4 items-center gap-2 md:gap-2 lg:gap-2 h-full"
-            style={{
-              perspective: '1000px',
-              paddingLeft: 'calc(50% - 8rem)',
-              paddingRight: 'calc(50% - 8rem)',
-            } as React.CSSProperties}
-          >
-            {cards.map(card => renderCard(card))}
-          </div>
+            <div className="relative w-full flex items-center justify-center h-[200px] lg:h-[400px]">
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleScroll('left')}
+                className="absolute left-0 top-1/2 -translate-y-1/2 z-30 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 lg:-left-12"
+                >
+                <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <div ref={scrollContainerRef} className="w-full h-full overflow-y-hidden overflow-x-auto no-scrollbar">
+                <div
+                    ref={containerRef}
+                    className="flex p-4 items-center gap-2 md:gap-3 lg:gap-4 h-full"
+                    style={{
+                    perspective: '1000px',
+                    paddingLeft: 'calc(50% - 8rem)',
+                    paddingRight: 'calc(50% - 8rem)',
+                    } as React.CSSProperties}
+                >
+                    {cards.map(card => renderCard(card))}
+                </div>
+                </div>
+                <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => handleScroll('right')}
+                className="absolute right-0 top-1/2 -translate-y-1/2 z-30 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 lg:-right-12"
+                >
+                <ChevronRight className="h-6 w-6" />
+                </Button>
+            </div>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => handleScroll('right')}
-          className="absolute right-2 md:right-4 top-1/2 -translate-y-1/2 z-30 rounded-full bg-white/10 backdrop-blur-sm text-white hover:bg-white/20"
-        >
-          <ChevronRight className="h-6 w-6" />
-        </Button>
-      </div>
-
-      {/* <div className="absolute  bottom-8 md:bottom-12 left-0 right-0 flex z-20">
-        <div className="flex items-center gap-2 md:gap-3 drop-shadow-[0_4px_12px_rgba(0,0,0,0.6)]">
-          <div className="ml-[190px] text-white text-md md:text-1xl font-bold" style={{ textShadow: '0 54px 220px rgba(0,0,0,0.8)' }}>∞</div>
-          <div className="ml-12 text-white text-md md:text-lg font-bold tracking-wide" style={{ textShadow: '0 34px 320px rgba(0,0,0,0.8)' }}>Walldriyan</div>
-        </div>
-      </div> */}
     </div>
   );
 }

@@ -5,12 +5,7 @@ import { MyReusableButton } from '@/components/my-reusable-button';
 import { Mail } from 'lucide-react';
 import type { Notification } from '@prisma/client';
 import { auth } from '@/auth';
-import MetaSpotlight from './ui/page';
-
-import MetaSpotlight3 from './ui/example3';
 import { Post } from '@/lib/types';
-import MetaSpotlightPostGrid from './ui/postGrid';
-import { Drag_Transform } from './ui/dragComponent';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 
@@ -31,7 +26,7 @@ export default async function HomePage({
   
   const postDataPromise = getPosts({
     page: currentPage,
-    limit: 10,
+    limit: 12, // Fetch a bit more for the hero
     filters: { timeFilter, sortBy, type: typeFilter, lockStatus },
   });
   const usersPromise = getUsers({ limit: 10 }); // Fetch only 10 users for the homepage

@@ -1,10 +1,11 @@
+
 'use server';
 
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 import { revalidatePath } from 'next/cache';
-import type { Notification, NotificationStatus, NotificationType } from '@prisma/client';
+import type { Notification, NotificationStatus, NotificationType, UserNotification } from '@prisma/client';
 
 export async function sendNotification(
   values: {
@@ -70,13 +71,20 @@ export async function sendNotification(
   return notification;
 }
 
-export async function getNotifications(): Promise<Notification[]> {
+export async function getNotifications(options: { page?: number; limit?: number } = {}) {
   const session = await auth();
   const user = session?.user;
+  
+  const { page = 1, limit = 10 } = options;
+  const skip = (page - 1) * limit;
 
   if (!user) {
-    return [];
+    return { items: [], total: 0 };
   }
+
+  const total = await prisma.userNotification.count({
+      where: { userId: user.id },
+  });
 
   const userNotifications = await prisma.userNotification.findMany({
     where: { userId: user.id },
@@ -88,16 +96,19 @@ export async function getNotifications(): Promise<Notification[]> {
         createdAt: 'desc',
       },
     },
+    skip,
+    take: limit,
   });
 
-  return userNotifications.map(un => ({
+  const items = userNotifications.map(un => ({
     ...un.notification,
-    // Override notification status with user-specific status
     status: un.status, 
-    id: un.notificationId, // Use notification ID
+    id: un.notificationId,
     createdAt: un.notification.createdAt.toISOString(),
     updatedAt: un.notification.updatedAt.toISOString(),
   })) as unknown as Notification[];
+
+  return { items, total };
 }
 
 export async function updateNotificationStatus(notificationId: string, status: NotificationStatus): Promise<UserNotification | null> {
@@ -112,8 +123,6 @@ export async function updateNotificationStatus(notificationId: string, status: N
     });
 
     if (!userNotification) {
-      // This might happen if a notification is created for a user who then logs out
-      // or if the notification is deleted before they can mark it as read.
       console.warn(`UserNotification record not found for userId: ${userId} and notificationId: ${notificationId}`);
       return null;
     }

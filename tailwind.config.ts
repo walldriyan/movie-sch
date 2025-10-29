@@ -19,8 +19,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['var(--font-sinhala)', ...fontFamily.sans],
-        serif: ['var(--font-serif)'],
+        sans: ['CabinetGrotesk-Regular', 'var(--font-sinhala)', ...fontFamily.sans],
+        serif: ['CabinetGrotesk-Bold', 'var(--font-serif)'],
       },
       colors: {
         background: 'hsl(var(--background))',
