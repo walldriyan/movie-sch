@@ -238,7 +238,7 @@ export default function HomePageClient({
                     "rounded-full hover:bg-gray-800 flex-shrink-0",
                     !typeFilter && (!lockStatus || lockStatus === 'unlocked') ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                 )}>
-                <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: allButtonLockStatus })} className="flex items-center gap-2">
+                <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: allButtonLockStatus })} scroll={false} className="flex items-center gap-2">
                     <Film className="w-4 h-4" />
                     <span>All</span>
                 </Link>
@@ -248,7 +248,7 @@ export default function HomePageClient({
                     "rounded-full hover:bg-gray-800 flex-shrink-0",
                     typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
-                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus })} className="flex items-center gap-2">
+                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus })} scroll={false} className="flex items-center gap-2">
                         {filter.icon}
                         <span>{filter.label}</span>
                     </Link>
@@ -258,7 +258,7 @@ export default function HomePageClient({
                   "rounded-full hover:bg-gray-800 flex-shrink-0",
                   lockStatus === 'locked' ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                 )}>
-                  <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: typeFilter, lockStatus: 'locked' })} className="flex items-center gap-2">
+                  <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: typeFilter, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
                     <Lock className="w-4 h-4" />
                     <span>Locked</span>
                   </Link>
@@ -275,17 +275,17 @@ export default function HomePageClient({
             <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel>Sort by</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })}>
+                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })} scroll={false}>
                     <DropdownMenuRadioItem value="newest" checked={sortBy === 'updatedAt-desc' || !sortBy}>
                     <Clock className="mr-2 h-4 w-4" /> Newest
                     </DropdownMenuRadioItem>
                 </Link>
-                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })}>
+                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })} scroll={false}>
                     <DropdownMenuRadioItem value="oldest" checked={sortBy === 'updatedAt-asc'}>
                     <Clock className="mr-2 h-4 w-4" /> Oldest
                     </DropdownMenuRadioItem>
                 </Link>
-                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })}>
+                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })} scroll={false}>
                     <DropdownMenuRadioItem value="imdb" checked={sortBy === 'imdbRating-desc'}>
                     <Star className="mr-2 h-4 w-4" /> IMDb Rating
                     </DropdownMenuRadioItem>
@@ -294,22 +294,22 @@ export default function HomePageClient({
                 <DropdownMenuSeparator />
                 <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })}>
+                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })} scroll={false}>
                     <DropdownMenuRadioItem value="today" checked={timeFilter === 'today'}>
                     <Calendar className="mr-2 h-4 w-4" /> Today
                     </DropdownMenuRadioItem>
                 </Link>
-                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })}>
+                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })} scroll={false}>
                     <DropdownMenuRadioItem value="this_week" checked={timeFilter === 'this_week'}>
                     <Calendar className="mr-2 h-4 w-4" /> This Week
                     </DropdownMenuRadioItem>
                 </Link>
-                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter, lockStatus })}>
+                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter, lockStatus })} scroll={false}>
                     <DropdownMenuRadioItem value="this_month" checked={timeFilter === 'this_month'}>
                     <Calendar className="mr-2 h-4 w-4" /> This Month
                     </DropdownMenuRadioItem>
                 </Link>
-                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })}>
+                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })} scroll={false}>
                     <DropdownMenuRadioItem value="all" checked={timeFilter === 'all' || !timeFilter}>
                     <Calendar className="mr-2 h-4 w-4" /> All Time
                     </DropdownMenuRadioItem>
@@ -339,6 +339,7 @@ export default function HomePageClient({
                   <PaginationItem>
                       <PaginationPrevious 
                       href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter, lockStatus })}
+                      scroll={false}
                       className={cn(
                           "dark bg-gray-800 hover:bg-gray-700",
                           currentPage <= 1 && "pointer-events-none opacity-50"
@@ -356,6 +357,7 @@ export default function HomePageClient({
                   <PaginationItem>
                       <PaginationNext
                       href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter, lockStatus })}
+                      scroll={false}
                       className={cn(
                           "dark bg-gray-800 hover:bg-gray-700",
                           currentPage >= totalPages && "pointer-events-none opacity-50"
