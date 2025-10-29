@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -34,7 +35,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import AuthGuard from '../auth/auth-guard';
 import { canUserAccessMicroPosts } from '@/lib/actions/users';
 
@@ -45,6 +46,7 @@ export default function Navbar() {
   const pathname = usePathname();
   const { withLoading } = useLoading();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
+  const [isNavExpanded, setIsNavExpanded] = useState(false);
   const [showWall, setShowWall] = React.useState(false);
   const user = session?.user;
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
@@ -71,13 +73,13 @@ export default function Navbar() {
 
   const isActive = (path: string) => pathname === path;
 
-  const NavLink = ({ href, children, mobile = false, icon }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode }) => {
+  const NavLink = ({ href, children, mobile = false, icon, hidden }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode, hidden?: boolean }) => {
     const className = mobile
       ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
       : `transition-colors hover:text-primary h-auto p-2 ${isActive(href) ? 'text-primary bg-muted' : 'text-foreground/80'}`;
       
     return (
-      <Button asChild variant="ghost" className={cn("justify-center", className, "flex flex-col items-center h-full")}>
+      <Button asChild variant="ghost" className={cn("justify-center", className, "flex flex-col items-center h-full", hidden && 'hidden')}>
         <Link href={href} onClick={(e) => { e.preventDefault(); handleNavigation(href); }}>
           <div className="mb-1">{icon}</div>
           <span className="text-xs">{children}</span>
@@ -97,21 +99,19 @@ export default function Navbar() {
   );
 
   const renderNavLinks = (isMobile = false) => {
-    const navClass = isMobile ? "flex flex-col space-y-2 mt-8" : "hidden md:flex items-center space-x-2 ml-[100px]";
+    const navClass = isMobile ? "flex flex-col space-y-2 mt-8" : "hidden md:flex items-center space-x-2";
 
     return (
        <nav className={navClass}>
         <NavLink href="/" mobile={isMobile} icon={<Home className="h-5 w-5"/>}>Home</NavLink>
-        {showWall && (
-           <NavLink href="/wall" mobile={isMobile} icon={<MessageSquare className="h-5 w-5"/>}>Wall</NavLink>
-        )}
-        {user && <NavLink href="/activity" mobile={isMobile} icon={<Activity className="h-5 w-5"/>}>Activity</NavLink>}
-        {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
+        <NavLink href="/wall" mobile={isMobile} icon={<MessageSquare className="h-5 w-5"/>} hidden={!isNavExpanded || !showWall}>Wall</NavLink>
+        {user && <NavLink href="/activity" mobile={isMobile} icon={<Activity className="h-5 w-5"/>} hidden={!isNavExpanded}>Activity</NavLink>}
+        {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-5 w-5"/>} hidden={!isNavExpanded}>Manage</NavLink>}
         {user?.role === ROLES.SUPER_ADMIN && (
-          <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-5 w-5"/>}>Admin</NavLink>
+          <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-5 w-5"/>} hidden={!isNavExpanded}>Admin</NavLink>
         )}
-        {user && <NavLink href="/favorites" mobile={isMobile} icon={<Heart className="h-5 w-5"/>}>Favorites</NavLink>}
-        {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile} icon={<User className="h-5 w-5"/>}>Profile</NavLink>}
+        {user && <NavLink href="/favorites" mobile={isMobile} icon={<Heart className="h-5 w-5"/>} hidden={!isNavExpanded}>Favorites</NavLink>}
+        {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile} icon={<User className="h-5 w-5"/>} hidden={!isNavExpanded}>Profile</NavLink>}
       </nav>
     );
   }
@@ -149,7 +149,14 @@ export default function Navbar() {
   return (
     <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
-        <div className="flex items-center gap-4">
+        <div 
+            className={cn(
+              "flex items-center gap-4 transition-all duration-300 ease-in-out",
+              isNavExpanded ? 'w-auto' : 'w-16'
+            )}
+            onMouseEnter={() => setIsNavExpanded(true)}
+            onMouseLeave={() => setIsNavExpanded(false)}
+        >
           <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
             <Image src="/logo.png" alt="Logo" width={38} height={38} />
           </Link>
