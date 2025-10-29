@@ -39,6 +39,7 @@ import { Menu } from 'lucide-react';
 import React, { useState } from 'react';
 import AuthGuard from '../auth/auth-guard';
 import { canUserAccessMicroPosts } from '@/lib/actions/users';
+import { motion } from 'framer-motion';
 
 
 export default function Navbar() {
@@ -158,13 +159,16 @@ export default function Navbar() {
           <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
             <Image src="/logo.png" alt="Logo" width={38} height={38} />
           </Link>
-          <div className={cn(
-            "flex items-center p-1 rounded-full bg-background/80 border border-border/60 transition-all duration-300 ease-in-out",
-            isNavExpanded ? 'w-auto' : 'w-16'
-          )}>
+          <motion.div 
+            className={cn(
+              "flex items-center p-1 rounded-full bg-background/80 border border-border/60"
+            )}
+            animate={{ width: isNavExpanded ? 'auto' : 64 }}
+            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          >
             <nav className="flex items-center">
               <NavLink href="/" icon={<Home className="h-5 w-5"/>}>Home</NavLink>
-              <div className={cn("flex items-center transition-all duration-300 ease-in-out", isNavExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0 overflow-hidden')}>
+              <div className={cn("flex items-center transition-opacity duration-200", isNavExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden')}>
                 <NavLink href="/wall" icon={<MessageSquare className="h-5 w-5"/>} hidden={!showWall}>Wall</NavLink>
                 {user && <NavLink href="/activity" icon={<Activity className="h-5 w-5"/>}>Activity</NavLink>}
                 {canManage && <NavLink href="/manage" icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
@@ -175,7 +179,7 @@ export default function Navbar() {
                 {user && <NavLink href={`/profile/${user.id}`} icon={<User className="h-5 w-5"/>}>Profile</NavLink>}
               </div>
             </nav>
-          </div>
+          </motion.div>
           <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-muted/50 backdrop-blur-sm" onClick={() => setIsNavExpanded(!isNavExpanded)}>
               <ChevronRight className={cn("h-4 w-4 transition-transform", isNavExpanded && "rotate-180")} />
           </Button>
