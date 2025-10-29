@@ -1,9 +1,8 @@
-
 'use client';
 
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2, X, ArrowRight } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2, X, ArrowRight, Copyright, Mail, Phone, MapPin, Twitter, Youtube, Linkedin, Instagram, Facebook } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount, MicroPost as MicroPostType } from '@/lib/types';
@@ -76,6 +75,85 @@ const ViralContentSection = () => {
                 </div>
             </div>
         </section>
+    );
+};
+
+const Footer = () => {
+    return (
+        <footer className="bg-zinc-950/70 text-white pt-16 pb-8">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                     {/* Column 1: Logo and Socials */}
+                     <div className="space-y-4">
+                         <div className="flex items-center space-x-2">
+                             <Film className="h-8 w-8 text-primary" />
+                             <span className="font-bold text-xl">CineVerse</span>
+                         </div>
+                         <p className="text-sm text-muted-foreground">a Walldriyan.inc company</p>
+                         <p className="text-sm text-muted-foreground pt-2">CineVerse is a top-tier content production studio for the platform age.</p>
+                         <div className="flex items-center space-x-3 pt-2">
+                            <Link href="#"><Facebook className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
+                            <Link href="#"><Instagram className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
+                            <Link href="#"><Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
+                            <Link href="#"><Youtube className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
+                            <Link href="#"><Twitter className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
+                         </div>
+                     </div>
+
+                     {/* Column 2: Quick Links */}
+                     <div>
+                         <h3 className="font-semibold text-white mb-4">Quick Links</h3>
+                         <ul className="space-y-2 text-sm">
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">About</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Solutions</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Resources</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Contact</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary flex items-center gap-1">Content Archive <ExternalLink className="h-3 w-3" /></Link></li>
+                         </ul>
+                     </div>
+
+                     {/* Column 3: Solutions */}
+                     <div>
+                         <h3 className="font-semibold text-white mb-4">Solutions</h3>
+                         <ul className="space-y-2 text-sm">
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Viral Exec</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Viral Commerce</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Viral Content</Link></li>
+                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Short Form Videos</Link></li>
+                         </ul>
+                     </div>
+
+                    {/* Column 4: Contact */}
+                    <div>
+                        <h3 className="font-semibold text-white mb-4">Contact</h3>
+                        <ul className="space-y-3 text-sm text-muted-foreground">
+                        <li className="flex items-start gap-2">
+                            <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                            <span>123 Movie Lane,<br/>Hollywood, CA 90210</span>
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <Mail className="h-4 w-4" />
+                            <a href="mailto:info@cineverse.com" className="hover:text-primary">info@cineverse.com</a>
+                        </li>
+                        <li className="flex items-center gap-2">
+                            <Phone className="h-4 w-4" />
+                            <a href="tel:+123456789" className="hover:text-primary">+1 (234) 567-89</a>
+                        </li>
+                        </ul>
+                    </div>
+                 </div>
+
+                 <Separator className="my-8 bg-border/50" />
+
+                 <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
+                    <p className="flex items-center gap-2"><Copyright className="h-4 w-4" /> {new Date().getFullYear()} CineVerse. All rights reserved.</p>
+                     <div className="flex items-center gap-4 mt-4 sm:mt-0">
+                         <Link href="#" className="hover:text-primary">Privacy Policy</Link>
+                         <Link href="#" className="hover:text-primary">Cookie Policy</Link>
+                     </div>
+                 </div>
+            </div>
+        </footer>
     );
 };
 
@@ -353,13 +431,31 @@ export default function HomePageClient({
                         <p className="text-muted-foreground mt-2 text-sm">There are no public groups available at the moment. Check back later!</p>
                     </div>
                 )}
-            </section>
             </>
         )}
         </main>
+        <Footer />
       </div>
     </TooltipProvider>
   );
 }
 
-    
+// Define ExternalLink icon component locally
+const ExternalLink = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg
+    {...props}
+    xmlns="http://www.w3.org/2000/svg"
+    width="24"
+    height="24"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+    <polyline points="15 3 21 3 21 9" />
+    <line x1="10" x2="21" y1="14" y2="3" />
+  </svg>
+);
