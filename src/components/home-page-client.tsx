@@ -3,7 +3,7 @@
 
 import { useState, useTransition, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2, X } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2, X, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount, MicroPost as MicroPostType } from '@/lib/types';
@@ -29,6 +29,55 @@ import { Skeleton } from './ui/skeleton';
 import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
 import MetaSpotlightHero from './meta-spotlight-hero';
+import Image from 'next/image';
+
+const ViralCommerceSection = () => {
+    return (
+        <section className="py-16 md:py-24">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+                <div className="flex items-center justify-center gap-4">
+                    <div className="w-48 h-48 bg-gray-800/50 rounded-2xl flex items-center justify-center p-4">
+                         <Image src="https://placehold.co/150x150/000000/FFFFFF/png?text=Before" alt="Before" width={150} height={150} className="rounded-lg" />
+                    </div>
+                    <ArrowRight className="w-8 h-8 text-yellow-400" />
+                     <div className="w-64 h-64 bg-gray-800/50 rounded-2xl flex items-center justify-center p-4">
+                        <Image src="https://placehold.co/220x220/000000/FFFFFF/png?text=After" alt="After" width={220} height={220} className="rounded-lg" />
+                    </div>
+                </div>
+                <div>
+                    <h2 className="text-3xl md:text-4xl font-bold">Viral Commerce</h2>
+                    <p className="text-yellow-400 font-semibold mt-2">FOR: ECOMMERCE BRANDS, AGENCIES</p>
+                    <h3 className="text-2xl md:text-3xl font-semibold mt-6">Amplify Your Brand's Presence with Scroll-Stopping Motion Ads</h3>
+                    <p className="text-muted-foreground mt-4">
+                        We turn your static assets into dynamic motion ads for every platform and format, ensuring maximum impact and engagement.
+                    </p>
+                    <Button className="mt-8 bg-yellow-400 text-black hover:bg-yellow-500">
+                        Book a Call
+                    </Button>
+                </div>
+            </div>
+        </section>
+    );
+};
+
+const ViralContentSection = () => {
+    return (
+        <section className="py-16 md:py-24">
+            <div className="grid md:grid-cols-2 gap-12 items-center">
+                <div>
+                    <h2 className="text-3xl md:text-4xl font-bold">Viral Content</h2>
+                    <p className="text-yellow-400 font-semibold mt-2">FOR: ANY BRANDS, AGENCIES</p>
+                    <h3 className="text-2xl md:text-3xl font-semibold mt-6">Transform Your Content for Every Platform</h3>
+                </div>
+                 <div className="flex items-center justify-center">
+                    <div className="w-80 h-80 bg-gray-800/50 rounded-2xl flex items-center justify-center p-4">
+                        <Image src="https://placehold.co/300x300/000000/FFFFFF/png?text=Content" alt="Viral Content" width={300} height={300} className="rounded-lg" />
+                    </div>
+                </div>
+            </div>
+        </section>
+    );
+};
 
 
 interface HomePageClientProps {
@@ -98,7 +147,12 @@ export default function HomePageClient({
       <div className="w-full bg-background text-foreground">
         <MetaSpotlightHero posts={posts} />
 
-        <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
+            <ViralCommerceSection />
+            <Separator className="my-8 bg-gray-800" />
+            <ViralContentSection />
+            <Separator className="my-8 bg-gray-800" />
+
           <div className="max-w-4xl mx-auto pb-8 flex items-center justify-between">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <Button asChild variant={'outline'} className={cn(
@@ -307,3 +361,5 @@ export default function HomePageClient({
     </TooltipProvider>
   );
 }
+
+    
