@@ -2,10 +2,9 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import { auth } from '@/auth';
-import { notFound, useRouter } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import { getNotifications, getPosts } from '@/lib/actions';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Bell, Film, Loader2, ChevronsDown } from 'lucide-react';
 import Link from 'next/link';
@@ -16,12 +15,12 @@ import { useSession } from 'next-auth/react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Timeline = ({ children }: { children: React.ReactNode }) => (
-  <ol className="relative border-l border-gray-700">{children}</ol>
+  <ol className="relative border-l border-gray-700 dark:border-gray-700 ml-3">{children}</ol>
 );
 
 const TimelineItem = ({ children, icon }: { children: React.ReactNode; icon: React.ReactNode }) => (
   <li className="mb-10 ml-6">
-    <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-900 ring-8 ring-gray-900">
+    <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-900 ring-8 ring-background">
       {icon}
     </span>
     {children}
@@ -43,16 +42,18 @@ const ActivityItem = ({ time, title, description, link }: { time: string, title:
     </>
   );
 
+  const itemClass = "block rounded-lg p-3 bg-muted/30 hover:bg-muted/60 transition-colors";
+
   if (link) {
     return (
-      <Link href={link} className="block rounded-lg p-3 bg-muted/30 hover:bg-muted/60 transition-colors">
+      <Link href={link} className={itemClass}>
         {content}
       </Link>
     )
   }
 
   return (
-    <div className="rounded-lg p-3 bg-muted/30">
+    <div className={itemClass}>
       {content}
     </div>
   )
@@ -66,54 +67,88 @@ const ActivityGroup = ({ title, icon, fetcher, initialItems, initialTotal }: {
     initialItems: any[];
     initialTotal: number;
 }) => {
-    const [items, setItems] = useState(initialItems);
-    const [page, setPage] = useState(2); // Start from the second page since the first is pre-loaded
+    // We start with the items AFTER the first one, since the first is always displayed.
+    const [items, setItems] = useState<any[]>([]);
+    const [page, setPage] = useState(1); 
     const [hasMore, setHasMore] = useState(initialItems.length < initialTotal);
     const [isPending, startTransition] = useTransition();
 
+    const firstItem = initialItems[0];
+
     const loadMore = () => {
         startTransition(async () => {
-            const { items: newItems, hasMore: newHasMore } = await fetcher(page, 10);
+            // Fetch starting from page 2 if we already have the first item.
+            // If we have no items initially, we start fetching from page 1.
+            const nextPage = page + 1;
+            const { items: newItems, hasMore: newHasMore } = await fetcher(nextPage, 10);
             setItems(prev => [...prev, ...newItems]);
             setHasMore(newHasMore);
-            setPage(prev => prev + 1);
+            setPage(nextPage);
         });
     };
+    
+    // Function to fetch the very first batch of items for the accordion content.
+    const fetchInitialAccordionContent = () => {
+        // Only fetch if we have more items and the accordion is empty
+        if (hasMore && items.length === 0) {
+            startTransition(async () => {
+                const { items: newItems, hasMore: newHasMore } = await fetcher(page + 1, 10);
+                setItems(newItems);
+                setHasMore(newHasMore);
+                setPage(page + 1);
+            });
+        }
+    }
 
     if (initialTotal === 0) return null;
     
     return (
         <TimelineItem icon={icon}>
-            <Card className="bg-background/30 backdrop-blur-sm border-white/10">
-                 <Accordion type="single" collapsible>
-                    <AccordionItem value="item-1" className="border-b-0">
-                         <AccordionTrigger className="p-4 hover:no-underline">
-                             <div className="flex items-center gap-3">
-                                {icon} {title} <span className="ml-2 text-sm font-normal text-muted-foreground">({initialTotal})</span>
-                             </div>
-                         </AccordionTrigger>
-                        <AccordionContent className="px-4 pb-4">
-                            <div className="space-y-4">
-                                {items.map(item => (
-                                    <ActivityItem 
-                                        key={`${title}-${item.id}`}
-                                        time={item.createdAt || item.updatedAt}
-                                        title={title === 'Notifications' ? item.title : <span className="text-primary">{item.title}</span>}
-                                        description={title === 'Notifications' ? item.message : `by ${item.author?.name}`}
-                                        link={title === 'New Posts' ? `/movies/${item.id}` : undefined}
-                                    />
-                                ))}
-                                {hasMore && (
-                                    <Button onClick={loadMore} disabled={isPending} variant="outline" className="w-full">
-                                        {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChevronsDown className="mr-2 h-4 w-4" />}
-                                        Load More
-                                    </Button>
-                                )}
-                            </div>
-                        </AccordionContent>
-                    </AccordionItem>
-                </Accordion>
-            </Card>
+            <div className="mb-3">
+              {firstItem && (
+                 <ActivityItem
+                    key={`${title}-${firstItem.id}`}
+                    time={firstItem.createdAt || firstItem.updatedAt}
+                    title={title === 'Notifications' ? firstItem.title : <span className="text-primary">{firstItem.title}</span>}
+                    description={title === 'Notifications' ? firstItem.message : `by ${firstItem.author?.name}`}
+                    link={title === 'New Posts' ? `/movies/${firstItem.id}` : undefined}
+                />
+              )}
+            </div>
+
+            {initialTotal > 1 && (
+                <Card className="bg-background/30 backdrop-blur-sm border-white/10">
+                    <Accordion type="single" collapsible onValueChange={fetchInitialAccordionContent}>
+                        <AccordionItem value="item-1" className="border-b-0">
+                            <AccordionTrigger className="p-4 hover:no-underline text-sm">
+                                <div className="flex items-center gap-3">
+                                    {icon} View All {initialTotal} {title}
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-4 pb-4">
+                                <div className="space-y-4">
+                                    {isPending && items.length === 0 && <Loader2 className="mx-auto h-6 w-6 animate-spin" />}
+                                    {items.map(item => (
+                                        <ActivityItem
+                                            key={`${title}-${item.id}`}
+                                            time={item.createdAt || item.updatedAt}
+                                            title={title === 'Notifications' ? item.title : <span className="text-primary">{item.title}</span>}
+                                            description={title === 'Notifications' ? item.message : `by ${item.author?.name}`}
+                                            link={title === 'New Posts' ? `/movies/${item.id}` : undefined}
+                                        />
+                                    ))}
+                                    {hasMore && (
+                                        <Button onClick={loadMore} disabled={isPending} variant="outline" className="w-full">
+                                            {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChevronsDown className="mr-2 h-4 w-4" />}
+                                            Load More
+                                        </Button>
+                                    )}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </Card>
+            )}
         </TimelineItem>
     )
 }
@@ -121,7 +156,7 @@ const ActivityGroup = ({ title, icon, fetcher, initialItems, initialTotal }: {
 export default function ActivityPage() {
   const { data: session, status } = useSession();
   const [initialData, setInitialData] = useState<{
-      notifications: Notification[],
+      notifications: (Notification & { author?: any})[],
       posts: Post[],
       totalNotifs: number,
       totalPosts: number,
@@ -130,20 +165,20 @@ export default function ActivityPage() {
 
   useEffect(() => {
     async function fetchInitialData() {
-        setIsLoading(true);
-        const { items: initialNotifs, total: totalNotifs } = await getNotifications({ page: 1, limit: 1 });
-        const { posts: initialPosts, totalPosts } = await getPosts({ page: 1, limit: 1 });
-        setInitialData({
-            notifications: initialNotifs as Notification[],
-            posts: initialPosts as any[],
-            totalNotifs,
-            totalPosts,
-        });
-        setIsLoading(false);
+        if (status === 'authenticated') {
+            setIsLoading(true);
+            const { items: initialNotifs, total: totalNotifs } = await getNotifications({ page: 1, limit: 1 });
+            const { posts: initialPosts, totalPosts } = await getPosts({ page: 1, limit: 1 });
+            setInitialData({
+                notifications: initialNotifs as any[],
+                posts: initialPosts as any[],
+                totalNotifs,
+                totalPosts,
+            });
+            setIsLoading(false);
+        }
     }
-    if (status === 'authenticated') {
-        fetchInitialData();
-    }
+    fetchInitialData();
   }, [status]);
   
   if (status === 'unauthenticated') {
@@ -189,20 +224,24 @@ export default function ActivityPage() {
 
     return (
         <Timeline>
-            <ActivityGroup 
-                title="Notifications"
-                icon={<Bell className="h-4 w-4" />}
-                fetcher={fetchMoreNotifications}
-                initialItems={notifications}
-                initialTotal={totalNotifs}
-            />
-             <ActivityGroup 
-                title="New Posts"
-                icon={<Film className="h-4 w-4" />}
-                fetcher={fetchMorePosts}
-                initialItems={posts}
-                initialTotal={totalPosts}
-            />
+            {totalNotifs > 0 && (
+                <ActivityGroup
+                    title="Notifications"
+                    icon={<Bell className="h-4 w-4" />}
+                    fetcher={fetchMoreNotifications}
+                    initialItems={notifications}
+                    initialTotal={totalNotifs}
+                />
+            )}
+            {totalPosts > 0 && (
+                 <ActivityGroup
+                    title="New Posts"
+                    icon={<Film className="h-4 w-4" />}
+                    fetcher={fetchMorePosts}
+                    initialItems={posts}
+                    initialTotal={totalPosts}
+                />
+            )}
         </Timeline>
     );
   }
