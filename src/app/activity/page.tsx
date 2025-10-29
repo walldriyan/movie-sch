@@ -67,7 +67,6 @@ const ActivityGroup = ({ title, icon, fetcher, initialItems, initialTotal }: {
     initialItems: any[];
     initialTotal: number;
 }) => {
-    // We start with the items AFTER the first one, since the first is always displayed.
     const [items, setItems] = useState<any[]>([]);
     const [page, setPage] = useState(1); 
     const [hasMore, setHasMore] = useState(initialItems.length < initialTotal);
@@ -75,11 +74,8 @@ const ActivityGroup = ({ title, icon, fetcher, initialItems, initialTotal }: {
 
     const firstItem = initialItems[0];
 
-    const loadMore = () => {
+    const loadMore = (nextPage: number) => {
         startTransition(async () => {
-            // Fetch starting from page 2 if we already have the first item.
-            // If we have no items initially, we start fetching from page 1.
-            const nextPage = page + 1;
             const { items: newItems, hasMore: newHasMore } = await fetcher(nextPage, 10);
             setItems(prev => [...prev, ...newItems]);
             setHasMore(newHasMore);
@@ -87,16 +83,9 @@ const ActivityGroup = ({ title, icon, fetcher, initialItems, initialTotal }: {
         });
     };
     
-    // Function to fetch the very first batch of items for the accordion content.
     const fetchInitialAccordionContent = () => {
-        // Only fetch if we have more items and the accordion is empty
-        if (hasMore && items.length === 0) {
-            startTransition(async () => {
-                const { items: newItems, hasMore: newHasMore } = await fetcher(page + 1, 10);
-                setItems(newItems);
-                setHasMore(newHasMore);
-                setPage(page + 1);
-            });
+        if (initialTotal > 1 && items.length === 0) {
+           loadMore(1); 
         }
     }
 
@@ -138,7 +127,7 @@ const ActivityGroup = ({ title, icon, fetcher, initialItems, initialTotal }: {
                                         />
                                     ))}
                                     {hasMore && (
-                                        <Button onClick={loadMore} disabled={isPending} variant="outline" className="w-full">
+                                        <Button onClick={() => loadMore(page + 1)} disabled={isPending} variant="outline" className="w-full">
                                             {isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ChevronsDown className="mr-2 h-4 w-4" />}
                                             Load More
                                         </Button>
@@ -187,13 +176,16 @@ export default function ActivityPage() {
 
   const fetchMoreNotifications = async (page: number, limit: number) => {
       const { items, total } = await getNotifications({ page, limit });
-      return { items, hasMore: page * limit < total };
+      return { items: items.slice(1), hasMore: (page * limit) < total };
   }
 
   const fetchMorePosts = async (page: number, limit: number) => {
-      const { posts, totalPosts } = await getPosts({ page, limit });
-      return { items: posts, hasMore: page * limit < totalPosts };
+      const { posts, totalPosts } = await getPosts({ page: page, limit: limit + (page === 1 ? 1 : 0) });
+      const itemsToReturn = page === 1 ? posts.slice(1) : posts;
+      const hasMore = (page * limit) < totalPosts;
+      return { items: itemsToReturn, hasMore: hasMore };
   }
+
 
   const renderContent = () => {
     if (isLoading || !initialData) {
@@ -228,7 +220,11 @@ export default function ActivityPage() {
                 <ActivityGroup
                     title="Notifications"
                     icon={<Bell className="h-4 w-4" />}
-                    fetcher={fetchMoreNotifications}
+                    fetcher={async (p, l) => {
+                        const { items, total } = await getNotifications({ page: p, limit: l + (p === 1 ? 1 : 0) });
+                        const itemsToReturn = p === 1 ? items.slice(1) : items;
+                        return { items: itemsToReturn, hasMore: (p * l) < total };
+                    }}
                     initialItems={notifications}
                     initialTotal={totalNotifs}
                 />
@@ -237,7 +233,11 @@ export default function ActivityPage() {
                  <ActivityGroup
                     title="New Posts"
                     icon={<Film className="h-4 w-4" />}
-                    fetcher={fetchMorePosts}
+                    fetcher={async (p, l) => {
+                        const { posts, totalPosts } = await getPosts({ page: p, limit: l + (p === 1 ? 1 : 0) });
+                        const itemsToReturn = p === 1 ? posts.slice(1) : posts;
+                        return { items: itemsToReturn, hasMore: ((p - 1) * l + itemsToReturn.length + 1) < totalPosts };
+                    }}
                     initialItems={posts}
                     initialTotal={totalPosts}
                 />
