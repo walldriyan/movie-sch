@@ -20,6 +20,7 @@ import {
   Heart,
   MessageSquare,
   Activity,
+  ChevronRight,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -151,16 +152,33 @@ export default function Navbar() {
       <div className="px-4 flex h-16 items-center justify-between gap-8">
         <div 
             className={cn(
-              "flex items-center gap-4 transition-all duration-300 ease-in-out",
-              isNavExpanded ? 'w-auto' : 'w-16'
+              "flex items-center gap-4 transition-all duration-300 ease-in-out relative"
             )}
-            onMouseEnter={() => setIsNavExpanded(true)}
-            onMouseLeave={() => setIsNavExpanded(false)}
         >
           <Link href="/" onClick={(e) => { e.preventDefault(); handleNavigation('/'); }} className="flex items-center space-x-2 flex-shrink-0">
             <Image src="/logo.png" alt="Logo" width={38} height={38} />
           </Link>
-          {renderNavLinks()}
+          <div className={cn(
+            "flex items-center p-1 rounded-full bg-background/80 border border-border/60 transition-all duration-300 ease-in-out",
+            isNavExpanded ? 'w-auto' : 'w-16'
+          )}>
+            <nav className="flex items-center">
+              <NavLink href="/" icon={<Home className="h-5 w-5"/>}>Home</NavLink>
+              <div className={cn("flex items-center transition-all duration-300 ease-in-out", isNavExpanded ? 'w-auto opacity-100' : 'w-0 opacity-0 overflow-hidden')}>
+                <NavLink href="/wall" icon={<MessageSquare className="h-5 w-5"/>} hidden={!showWall}>Wall</NavLink>
+                {user && <NavLink href="/activity" icon={<Activity className="h-5 w-5"/>}>Activity</NavLink>}
+                {canManage && <NavLink href="/manage" icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
+                {user?.role === ROLES.SUPER_ADMIN && (
+                  <NavLink href="/admin/users" icon={<Shield className="h-5 w-5"/>}>Admin</NavLink>
+                )}
+                {user && <NavLink href="/favorites" icon={<Heart className="h-5 w-5"/>}>Favorites</NavLink>}
+                {user && <NavLink href={`/profile/${user.id}`} icon={<User className="h-5 w-5"/>}>Profile</NavLink>}
+              </div>
+            </nav>
+          </div>
+          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full bg-muted/50 backdrop-blur-sm" onClick={() => setIsNavExpanded(!isNavExpanded)}>
+              <ChevronRight className={cn("h-4 w-4 transition-transform", isNavExpanded && "rotate-180")} />
+          </Button>
         </div>
         <div className="flex items-center justify-end space-x-2 flex-shrink-0">
           {renderUserMenu()}
