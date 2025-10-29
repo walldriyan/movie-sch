@@ -78,7 +78,7 @@ export default function Navbar() {
   const NavLink = ({ href, children, mobile = false, icon, hidden }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode, hidden?: boolean }) => {
     const className = mobile
       ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
-      : `transition-colors hover:text-primary h-auto p-2 ${isActive(href) ? 'text-primary bg-muted' : 'text-foreground/80'}`;
+      : `transition-colors hover:text-primary h-auto px-3 py-2 ${isActive(href) ? 'text-primary bg-muted' : 'text-foreground/80'}`;
       
     return (
       <Button asChild variant="ghost" className={cn("justify-center", className, "flex flex-col items-center h-full", hidden && 'hidden')}>
