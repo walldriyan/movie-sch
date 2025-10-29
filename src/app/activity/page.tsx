@@ -2,7 +2,7 @@ import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import { getNotifications, getPosts } from '@/lib/actions';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Bell, Film, Users } from 'lucide-react';
+import { Bell, Film } from 'lucide-react';
 import Link from 'next/link';
 import ClientRelativeDate from '@/components/client-relative-date';
 
@@ -10,41 +10,51 @@ const Timeline = ({ children }: { children: React.ReactNode }) => (
   <ol className="relative border-l border-gray-700">{children}</ol>
 );
 
-const TimelineItem = ({ children }: { children: React.ReactNode }) => (
-  <li className="mb-10 ml-6">{children}</li>
+const TimelineItem = ({ children, icon }: { children: React.ReactNode; icon: React.ReactNode }) => (
+  <li className="mb-10 ml-6">
+    <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-900 ring-8 ring-gray-900">
+      {icon}
+    </span>
+    {children}
+  </li>
 );
 
-const TimelineIcon = ({ icon }: { icon: React.ReactNode }) => (
-  <span className="absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full bg-blue-900 ring-8 ring-gray-900">
-    {icon}
-  </span>
-);
+const GroupedActivityCard = ({ title, children }: { title: React.ReactNode, children: React.ReactNode }) => (
+  <Card className="bg-background/30 backdrop-blur-sm border-white/10">
+    <CardHeader>
+      <CardTitle className="flex items-center gap-3">{title}</CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-4">
+        {children}
+    </CardContent>
+  </Card>
+)
 
-const TimelineContent = ({ time, title, description, link }: { time: string, title: React.ReactNode, description?: string, link?: string }) => {
+const ActivityItem = ({ time, title, description, link }: { time: string, title: React.ReactNode, description?: string, link?: string }) => {
   const content = (
     <>
-      <div className="mb-1 flex items-center justify-between">
-        <h3 className="flex items-center text-lg font-semibold text-white">
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-white">
           {title}
         </h3>
+        <time className="ml-4 flex-shrink-0 text-xs font-normal text-gray-500">
+          <ClientRelativeDate date={time} />
+        </time>
       </div>
-      <time className="mb-2 block text-sm font-normal leading-none text-gray-500">
-        <ClientRelativeDate date={time} />
-      </time>
-      {description && <p className="text-base font-normal text-gray-400">{description}</p>}
+      {description && <p className="text-sm font-normal text-gray-400 mt-1">{description}</p>}
     </>
   );
 
   if (link) {
     return (
-      <Link href={link} className="block rounded-lg p-4 border border-gray-800 bg-gray-900/50 hover:bg-gray-800/60">
+      <Link href={link} className="block rounded-lg p-3 bg-muted/30 hover:bg-muted/60 transition-colors">
         {content}
       </Link>
     )
   }
 
   return (
-    <div className="rounded-lg p-4 border border-gray-800 bg-gray-900/50">
+    <div className="rounded-lg p-3 bg-muted/30">
       {content}
     </div>
   )
@@ -58,7 +68,7 @@ export default async function ActivityPage() {
 
   const notifications = await getNotifications();
   const { posts: recentPosts } = await getPosts({ limit: 5 });
-
+  
   const hasActivity = notifications.length > 0 || recentPosts.length > 0;
 
   return (
@@ -67,31 +77,37 @@ export default async function ActivityPage() {
 
       {hasActivity ? (
         <Timeline>
-          {notifications.map(notif => (
-            <TimelineItem key={`notif-${notif.id}`}>
-              <TimelineIcon icon={<Bell className="h-3 w-3 text-blue-300" />} />
-              <TimelineContent 
-                time={notif.createdAt as unknown as string}
-                title={notif.title}
-                description={notif.message}
-              />
-            </TimelineItem>
-          ))}
-          {recentPosts.map(post => (
-            <TimelineItem key={`post-${post.id}`}>
-              <TimelineIcon icon={<Film className="h-3 w-3 text-blue-300" />} />
-              <TimelineContent 
-                time={post.updatedAt}
-                title={
-                    <>
-                     New Post: <span className="text-primary ml-2">{post.title}</span>
-                    </>
-                }
-                description={`by ${post.author.name}`}
-                link={`/movies/${post.id}`}
-              />
-            </TimelineItem>
-          ))}
+            {notifications.length > 0 && (
+                <TimelineItem icon={<Bell className="h-3 w-3 text-blue-300" />}>
+                    <GroupedActivityCard title={<>Notifications <span className="ml-2 text-sm font-normal text-muted-foreground">({notifications.length})</span></>}>
+                        {notifications.map(notif => (
+                            <ActivityItem 
+                                key={`notif-${notif.id}`}
+                                time={notif.createdAt as unknown as string}
+                                title={notif.title}
+                                description={notif.message}
+                            />
+                        ))}
+                    </GroupedActivityCard>
+                </TimelineItem>
+            )}
+
+            {recentPosts.length > 0 && (
+                 <TimelineItem icon={<Film className="h-3 w-3 text-blue-300" />}>
+                     <GroupedActivityCard title={<>New Posts <span className="ml-2 text-sm font-normal text-muted-foreground">({recentPosts.length})</span></>}>
+                        {recentPosts.map(post => (
+                            <ActivityItem 
+                                key={`post-${post.id}`}
+                                time={post.updatedAt}
+                                title={<span className="text-primary">{post.title}</span>}
+                                description={`by ${post.author.name}`}
+                                link={`/movies/${post.id}`}
+                            />
+                        ))}
+                    </GroupedActivityCard>
+                 </TimelineItem>
+            )}
+
         </Timeline>
       ) : (
         <Card className="text-center border-dashed">
