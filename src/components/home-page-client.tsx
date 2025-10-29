@@ -28,6 +28,7 @@ import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
 import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
+import MetaSpotlightHero from './meta-spotlight-hero';
 
 
 interface HomePageClientProps {
@@ -95,6 +96,8 @@ export default function HomePageClient({
   return (
     <TooltipProvider>
       <div className="w-full bg-background text-foreground">
+        <MetaSpotlightHero posts={posts} />
+
         <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
           <div className="max-w-4xl mx-auto pb-8 flex items-center justify-between">
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
