@@ -97,6 +97,10 @@ export default function SubtitleEditorPage() {
     // Fix 2: Enter key processing flag එකක් add කරමු
     const isProcessingEnter = useRef(false);
     
+    // CRITICAL FIX: Manual subtitle change tracking
+    const manualSubtitleChangeRef = useRef(false);
+    const manualSubtitleTimerRef = useRef<NodeJS.Timeout | null>(null);
+    
     // PERFORMANCE: Debounce timer for auto-save
     const saveTimerRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
     
@@ -257,18 +261,32 @@ export default function SubtitleEditorPage() {
                     console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
                     
                     setPlaying(false);
-                    setCurrentSubtitle(nextSub);
                     
-                    requestAnimationFrame(() => {
-                        playerRef.current?.seekTo(nextSub.startTime);
-                        
-                        setTimeout(() => {
-                            if (overlayInputRef.current) {
-                                overlayInputRef.current.focus();
-                                overlayInputRef.current.select();
-                            }
-                        }, 150);
-                    });
+                    // CRITICAL FIX: Progress callback එක ignore කරන්න flag එක set කරමු
+                    manualSubtitleChangeRef.current = true;
+                    
+                    // පැරණි timer එක clear කරමු
+                    if (manualSubtitleTimerRef.current) {
+                        clearTimeout(manualSubtitleTimerRef.current);
+                    }
+                    
+                    // Subtitle එක set කර seek කරමු
+                    setCurrentSubtitle(nextSub);
+                    playerRef.current?.seekTo(nextSub.startTime);
+                    
+                    // 500ms යන තුරු progress updates ignore කරමු (video seek complete වෙන්න)
+                    manualSubtitleTimerRef.current = setTimeout(() => {
+                        manualSubtitleChangeRef.current = false;
+                        console.log("--- [Input Event] Manual subtitle change flag එක reset විය.");
+                    }, 500);
+                    
+                    // Focus එක සකසමු
+                    setTimeout(() => {
+                        if (overlayInputRef.current) {
+                            overlayInputRef.current.focus();
+                            overlayInputRef.current.select();
+                        }
+                    }, 100);
                 } else {
                     console.log("--- [Input Event] 'Enter': ඊළඟ subtitle එකක් නොමැත.");
                 }
@@ -286,6 +304,11 @@ export default function SubtitleEditorPage() {
         setPlayed(state.played);
         setCurrentTime(state.playedSeconds);
         setBufferedAmount(state.loadedSeconds);
+
+        // CRITICAL FIX: Manual subtitle change කරලා තිබ්බොත් progress callback එක ignore කරමු
+        if (manualSubtitleChangeRef.current) {
+            return; // Progress updates ignore කරනවා seek එක complete වෙනකම්
+        }
 
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
         
@@ -353,7 +376,21 @@ export default function SubtitleEditorPage() {
         if (targetSub) {
             const targetIndex = subtitles.findIndex(s => s.id === targetSub!.id);
             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}, Index: ${targetIndex}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
+            
+            // CRITICAL FIX: Manual jump වෙලාත් progress ignore කරමු
+            manualSubtitleChangeRef.current = true;
+            
+            if (manualSubtitleTimerRef.current) {
+                clearTimeout(manualSubtitleTimerRef.current);
+            }
+            
+            setCurrentSubtitle(targetSub);
             playerRef.current?.seekTo(targetSub.startTime);
+            
+            manualSubtitleTimerRef.current = setTimeout(() => {
+                manualSubtitleChangeRef.current = false;
+                console.log("--- [Jump] Manual subtitle change flag එක reset විය.");
+            }, 500);
             
             setTimeout(() => {
                 if (overlayInputRef.current) {
