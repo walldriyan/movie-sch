@@ -6,20 +6,13 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Play, Clapperboard, Tv, Folder, List, Star, ThumbsUp, MessageCircle, Heart } from 'lucide-react';
+import { Play, Clapperboard, Tv, Folder, List, Lock } from 'lucide-react';
 import { Skeleton } from './ui/skeleton';
 import type { Post as Movie, Series } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import ClientRelativeDate from './client-relative-date';
 
-interface PostGridProps {
+interface MovieGridProps {
   movies: Movie[];
 }
 
@@ -48,139 +41,110 @@ function CategoryIcon({ type }: { type: Movie['type'] }) {
   );
 }
 
-function PostCard({ post }: { post: Movie }) {
-  const postImageUrl =
-    post.posterUrl ||
+function MovieCard({ movie, index }: { movie: Movie; index: number }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+
+  const movieImageUrl =
+    movie.posterUrl ||
     PlaceHolderImages.find(
       (p) => p.id === 'movie-poster-placeholder'
     )?.imageUrl;
-  
-  const authorAvatarUrl = post.author?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
-  const plainDescription = post.description.replace(/<[^>]+>/g, '');
-  
-  const likers = post.likedBy || [];
-  const totalLikes = post._count?.likedBy || 0;
-  const displayLikers = likers.slice(0, 5);
-  const remainingLikes = totalLikes - displayLikers.length;
+  const authorAvatarUrl = movie.author?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
+
+  const isFirst = index === 0;
+  const series = movie.series as Series | null;
 
   return (
-    <li className="relative flex flex-col gap-4 pb-8">
-        {/* Timeline line */}
-        <div className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-border" />
-        
-        {/* Activity Header */}
-        <div className="relative flex-shrink-0 flex items-center gap-3">
-             <Link href={`/profile/${post.author?.id}`}>
-                <Avatar>
-                    {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={post.author?.name || 'Author'} />}
-                    <AvatarFallback>{post.author?.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
-                </Avatar>
-            </Link>
-             <div className="flex items-center gap-2 text-sm">
-                <Link href={`/profile/${post.author?.id}`} className="font-semibold text-foreground hover:text-primary">
-                    {post.author?.name}
-                </Link>
-                <span className="text-muted-foreground">posted an update</span>
-            </div>
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="text-xs text-muted-foreground ml-auto">
-                        <ClientRelativeDate date={new Date(post.updatedAt)} />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{new Date(post.updatedAt).toLocaleString()}</p>
-                </TooltipContent>
-            </Tooltip>
-        </div>
-        
-        {/* Content Card */}
-        <div className="pl-12 flex-grow space-y-3">
-             <div className="rounded-lg border bg-card text-card-foreground shadow-sm group">
-                {postImageUrl && (
-                  <div className="aspect-[16/9] relative overflow-hidden rounded-t-lg shadow-md max-h-[310px] ">
-                      <Image
-                          src={postImageUrl}
-                          alt={post.title}
-                          fill
-                          sizes="(max-width: 768px) 90vw, 800px"
-                          className="object-cover"
-                      />
-                  </div>
-                )}
-                 <div className="p-3">
-                    <Link href={`/movies/${post.id}`} className="group/link block">
-                        <h2 className="font-serif text-lg font-bold leading-snug group-hover/link:text-primary transition-colors">
-                            {post.title}
-                        </h2>
-                    </Link>
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-3">
-                      {plainDescription}
-                    </p>
-                    <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-4">
-                            {post.imdbRating && (
-                                 <div className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 text-yellow-400" />
-                                    <span>{post.imdbRating?.toFixed(1)}</span>
-                                </div>
-                            )}
-                            {post.duration && (
-                                 <span>{post.duration}</span>
-                            )}
-                        </div>
-                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5">
-                                <ThumbsUp className="w-4 h-4" />
-                                <span>{post._count?.likedBy || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <MessageCircle className="w-4 h-4" />
-                                <span>{post._count?.reviews || 0}</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-             {totalLikes > 0 && (
-                <div className="mt-4 flex items-center gap-3 border-t pt-3">
-                   <div className="flex items-center -space-x-2">
-                        <div className="w-7 h-7 rounded-full bg-red-500/10 border-2 border-red-500 flex items-center justify-center">
-                            <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
-                        </div>
-                        {displayLikers.map(liker => (
-                            <Avatar key={liker.id} className="h-7 w-7 border-2 border-background">
-                                <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
-                                <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
-                            </Avatar>
-                        ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                        {displayLikers[0]?.name}
-                        {remainingLikes > 0 && ` and ${remainingLikes} others liked this.`}
-                        {remainingLikes === 0 && ' liked this.'}
-                    </p>
-                </div>
+    <div
+      key={movie.id}
+      className={cn(
+        'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group min-h-[152px] md:min-h-0',
+        isFirst ? 'md:col-span-2 md:row-span-2' : 
+        (index % 5 === 1 ? 'md:row-span-2' : 'md:col-span-1')
+      )}
+    >
+      <Link
+        href={`/movies/${movie.id}`}
+        className="block h-full w-full relative"
+        aria-label={movie.title}
+      >
+        {!imageLoaded && <Skeleton className="absolute inset-0" />}
+        {movieImageUrl && (
+          <Image
+            src={movieImageUrl}
+            alt={movie.title}
+            fill
+            sizes={isFirst ? "(max-width: 768px) 100vw, 66vw" : "(max-width: 768px) 50vw, 33vw"}
+            className={cn(
+              'object-cover rounded-xl transition-transform duration-300 group-hover:scale-105',
+              imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
-        </div>
-    </li>
+            onLoad={() => setImageLoaded(true)}
+          />
+        )}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
+        
+        {isFirst && <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />}
+        
+        {movie.isLockedByDefault && (
+            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-10">
+                <Button variant="secondary" className="pointer-events-none">
+                    <Lock className="mr-2 h-4 w-4" />
+                    Locked
+                </Button>
+            </div>
+        )}
+
+        {mounted && <CategoryIcon type={movie.type} />}
+
+        {mounted && <div className="absolute bottom-0 left-0 right-0 p-4 text-white z-10 flex items-end justify-between">
+          <div className="[text-shadow:0_1px_3px_rgba(0,0,0,0.8)]">
+            <h3 className={cn("font-bold", isFirst ? "text-lg md:text-xl" : "text-sm md:text-base")}>
+              {movie.title}
+            </h3>
+            <div
+              className="text-white/70 text-xs md:text-sm mt-1 line-clamp-2"
+              dangerouslySetInnerHTML={{ __html: movie.description }}
+            />
+          </div>
+          <Avatar className="h-10 w-10 border-2 border-background flex-shrink-0 ml-4">
+            {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={movie.author.name || 'Author'} />}
+            <AvatarFallback>{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+          </Avatar>
+        </div>}
+      </Link>
+      {mounted && series && series?._count?.posts > 0 && (
+          <Button asChild size="sm" variant="outline" className="absolute bottom-4 left-4 z-20 h-7 rounded-full bg-black/30 backdrop-blur-sm border-white/20 hover:bg-white/20">
+              <Link href={`/series/${series.id}`} onClick={(e) => e.stopPropagation()}>
+                  <List className="h-3 w-3" />
+                  <span>{series._count.posts}</span>
+              </Link>
+          </Button>
+      )}
+    </div>
   );
 }
 
-export default function PostGrid({ movies }: PostGridProps) {
+export default function MovieGrid({ movies }: MovieGridProps) {
   return (
-    <TooltipProvider>
-      <ul>
-        {movies.map((post) => {
-          return (
-            <PostCard
-              key={post.id}
-              post={post as Movie}
-            />
-          );
-        })}
-      </ul>
-    </TooltipProvider>
+    <div className="grid grid-cols-2 md:grid-cols-3 md:auto-rows-[152px] gap-4">
+      {movies.map((movie, index) => {
+        return (
+          <MovieCard
+            key={movie.id}
+            movie={movie as Movie}
+            index={index}
+          />
+        );
+      })}
+    </div>
   );
 }
