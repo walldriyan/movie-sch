@@ -25,8 +25,8 @@ function PostGridCard({ post }: { post: Post }) {
 
   return (
     <Link href={`/movies/${post.id}`} className="group block">
-        <Card className="overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary/30 group-hover:-translate-y-1 h-full flex flex-col bg-muted/30">
-             <div className="aspect-[3/4] relative">
+        <Card className="overflow-hidden transition-all duration-300 h-full flex flex-col bg-muted/30">
+             <div className="aspect-square relative">
                 {postImageUrl && (
                     <Image
                         src={postImageUrl}
