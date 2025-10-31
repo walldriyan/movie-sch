@@ -26,7 +26,7 @@ function PostGridCard({ post }: { post: Post }) {
   return (
     <Link href={`/movies/${post.id}`} className="group block">
         <Card className="overflow-hidden transition-all duration-300 h-full flex flex-col bg-muted/30">
-             <div className="aspect-square relative">
+             <div className="aspect-video relative">
                 {postImageUrl && (
                     <Image
                         src={postImageUrl}
@@ -38,8 +38,9 @@ function PostGridCard({ post }: { post: Post }) {
                 )}
                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
              </div>
-             <CardContent className="p-3 flex-grow flex flex-col">
-                <h3 className="font-semibold text-sm truncate group-hover:text-primary flex-grow">{post.title}</h3>
+             <CardContent className="p-4 flex-grow flex flex-col">
+                <h3 className="font-semibold text-sm group-hover:text-primary flex-grow">{post.title}</h3>
+                 <p className="text-xs text-muted-foreground line-clamp-2 mt-1" dangerouslySetInnerHTML={{ __html: post.description }} />
                 <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground mt-2">
                     <div className="flex items-center gap-1">
                         <Heart className="w-3 h-3" />
