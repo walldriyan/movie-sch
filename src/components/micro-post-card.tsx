@@ -135,7 +135,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const canManage = user && (user.id === post.authorId || user.role === ROLES.SUPER_ADMIN);
 
     return (
-        <Card>
+        <Card className="rounded-2xl">
             <CardContent className="p-4">
                 <div className="flex items-start gap-4">
                     <Link href={`/profile/${post.author.id}`}>
