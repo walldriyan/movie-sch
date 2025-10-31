@@ -1,3 +1,4 @@
+
 'use client';
 
 import React from 'react';
@@ -171,10 +172,9 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
                 {/* Cover Image */}
                 <FormItem>
                   <FormLabel>Cover Image</FormLabel>
-                   <div className="relative aspect-[3/1] w-full bg-muted rounded-md overflow-hidden group">
+                   <div className="relative group aspect-[3/1] w-full bg-muted rounded-md p-2.5">
                       {previewCoverImage ? (
-                          <Image src={previewCoverImage} alt="Cover preview"  fill
-                          style={{ objectFit: 'cover' }} />
+                          <Image src={previewCoverImage} alt="Cover preview"  fill className="object-cover rounded-md" />
                       ) : (
                           <div className="w-full h-full flex items-center justify-center text-muted-foreground">
                               <p>No cover image</p>
