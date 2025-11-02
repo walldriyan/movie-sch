@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import type { User } from '@prisma/client';
@@ -373,3 +374,4 @@ export async function canUserAccessMicroPosts(): Promise<boolean> {
 
   return userMembershipCount > 0;
 }
+
