@@ -1,5 +1,4 @@
 import './globals.css';
-import './fonts.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
