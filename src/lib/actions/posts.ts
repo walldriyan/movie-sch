@@ -10,6 +10,147 @@ import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import prisma from '@/lib/prisma';
 import type { PostFormData } from '@/lib/types';
+import { redis } from '../redis';
+
+function generateCacheKey(options: any): string {
+  const normalized = {
+    page: options.page || 1,
+    limit: options.limit || 10,
+    filters: options.filters ? {
+      sortBy: options.filters.sortBy,
+      genres: options.filters.genres?.sort(),
+      yearRange: options.filters.yearRange,
+      ratingRange: options.filters.ratingRange,
+      timeFilter: options.filters.timeFilter,
+      authorId: options.filters.authorId,
+      type: options.filters.type,
+      lockStatus: options.filters.lockStatus,
+    } : {}
+  };
+  return `posts:${JSON.stringify(normalized, Object.keys(normalized).sort())}`;
+}
+
+async function invalidateCachePattern(pattern: string) {
+  if (!redis) return;
+  try {
+    let cursor = 0;
+    let deletedCount = 0;
+    
+    do {
+      const [newCursor, keys] = await redis.scan(cursor, {
+        match: pattern,
+        count: 100
+      });
+      
+      cursor = newCursor;
+      
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        deletedCount += keys.length;
+      }
+    } while (cursor !== 0);
+    
+    console.log(`[Cache] Invalidated ${deletedCount} keys for pattern "${pattern}"`);
+  } catch (error) {
+    console.error('[Cache] Redis invalidation error:', error);
+  }
+}
+
+export async function invalidatePostsCache(postId?: number, seriesId?: number, authorId?: string) {
+    if (postId) {
+        // More specific invalidation if possible, for now we clear patterns
+        await invalidateCachePattern(`posts:*"id":${postId}*`);
+    }
+    if (seriesId) {
+        await invalidateCachePattern(`posts:*"seriesId":${seriesId}*`);
+    }
+    if (authorId) {
+        await invalidateCachePattern(`posts:*"authorId":"${authorId}"*`);
+    }
+    // Invalidate general lists
+    await invalidateCachePattern(`posts:*`);
+}
+
+async function getWithCacheLock<T>(
+  cacheKey: string,
+  fetchFn: () => Promise<T>,
+  ttl: number = 3600
+): Promise<T> {
+  const lockKey = `lock:${cacheKey}`;
+  const lockTTL = 10; // 10 seconds
+
+  if (redis) {
+    try {
+      const cached = await redis.get<T>(cacheKey);
+      if (cached) {
+        console.log(`[Cache] HIT for key: ${cacheKey}`);
+        return cached;
+      }
+      
+      const locked = await redis.set(lockKey, '1', { ex: lockTTL, nx: true });
+      
+      if (!locked) {
+        await new Promise(resolve => setTimeout(resolve, 200));
+        const retryCache = await redis.get<T>(cacheKey);
+        if (retryCache) return retryCache;
+      }
+    } catch (error) {
+      console.error('[Cache] Redis error:', error);
+    }
+  }
+  
+  console.log(`[Cache] MISS for key: ${cacheKey}`);
+  try {
+    const result = await fetchFn();
+    
+    if (redis) {
+        await redis.set(cacheKey, result, { ex: ttl });
+        await redis.del(lockKey);
+    }
+    
+    return result;
+  } catch (error) {
+    if (redis) await redis.del(lockKey);
+    throw error;
+  }
+}
+
+async function getUserGroupIds(userId: string): Promise<string[]> {
+  const cacheKey = `user:${userId}:groups`;
+  
+  if (redis) {
+    try {
+      const cached = await redis.get<string[]>(cacheKey);
+      if (cached) return cached;
+    } catch (error) {
+      console.error('[Cache] Redis GET error for user groups:', error);
+    }
+  }
+  
+  const members = await prisma.groupMember.findMany({
+    where: { userId, status: 'ACTIVE' },
+    select: { groupId: true },
+  });
+  
+  const groupIds = members.map(m => m.groupId);
+  
+  if (redis) {
+    try {
+      await redis.set(cacheKey, groupIds, { ex: 1800 }); // 30 minutes
+    } catch (error) {
+      console.error('[Cache] Redis SET error for user groups:', error);
+    }
+  }
+  
+  return groupIds;
+}
+
+export async function invalidateUserGroupsCache(userId: string) {
+    if (redis) {
+        const cacheKey = `user:${userId}:groups`;
+        await redis.del(cacheKey);
+    }
+}
 
 
 export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
@@ -48,7 +189,7 @@ export async function deleteUploadedFile(filePath: string | null | undefined) {
     }
 }
 
-export async function getPosts(options: { page?: number; limit?: number, filters?: any } = {}) {
+async function fetchPostsFromDB(options: { page?: number; limit?: number, filters?: any } = {}) {
     const { page = 1, limit = 10, filters = {} } = options;
     const skip = (page - 1) * limit;
     const session = await auth();
@@ -76,10 +217,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         };
 
         if (user) { // Logged-in regular user
-            const userGroupIds = await prisma.groupMember.findMany({
-                where: { userId: user.id, status: 'ACTIVE' },
-                select: { groupId: true },
-            }).then(members => members.map(m => m.groupId));
+            const userGroupIds = await getUserGroupIds(user.id);
 
             whereClause = {
                  OR: [
@@ -161,42 +299,44 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
     }
 
-    const posts = await prisma.post.findMany({
-        where: whereClause,
-        skip: skip,
-        take: limit,
-        orderBy,
-        include: {
-            author: true,
-            series: {
-              include: {
-                posts: {
-                  select: { posterUrl: true },
-                  orderBy: { orderInSeries: 'asc' },
+    const [posts, totalPosts] = await prisma.$transaction([
+      prisma.post.findMany({
+          where: whereClause,
+          skip: skip,
+          take: limit,
+          orderBy,
+          include: {
+              author: true,
+              series: {
+                include: {
+                  posts: {
+                    select: { posterUrl: true },
+                    orderBy: { orderInSeries: 'asc' },
+                  },
+                  _count: {
+                    select: { posts: true }
+                  }
+                }
+              },
+              likedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
                 },
-                _count: {
-                  select: { posts: true }
+                take: 5,
+              },
+              _count: {
+                select: {
+                  likedBy: true,
+                  reviews: true,
                 }
               }
-            },
-            likedBy: {
-              select: {
-                  id: true,
-                  name: true,
-                  image: true,
-              },
-              take: 5,
-            },
-            _count: {
-              select: {
-                likedBy: true,
-                reviews: true,
-              }
-            }
-        },
-    });
-
-    const totalPosts = await prisma.post.count({ where: whereClause });
+          },
+      }),
+      prisma.post.count({ where: whereClause })
+    ]);
+    
     const totalPages = Math.ceil(totalPosts / limit);
 
     return {
@@ -222,6 +362,14 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         totalPosts,
     };
 }
+
+
+export async function getPosts(options: { page?: number; limit?: number, filters?: any } = {}) {
+    const cacheKey = generateCacheKey(options);
+    const result = await getWithCacheLock(cacheKey, () => fetchPostsFromDB(options));
+    return result;
+}
+
 
 export async function getPost(postId: number) {
   const session = await auth();
@@ -294,6 +442,7 @@ export async function incrementViewCount(postId: number) {
                 }
             }
         });
+        await invalidatePostsCache(postId);
         return updatedPost.viewCount;
     } catch (error) {
         console.error(`Failed to increment view count for post ${postId}:`, error);
@@ -392,12 +541,10 @@ export async function savePost(postData: PostFormData, id?: number) {
       })
     ]);
 
-    revalidatePath(`/manage`);
-    revalidatePath(`/movies/${id}`);
   } else {
     await prisma.post.create({ data: { ...data, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } });
-    revalidatePath(`/manage`);
   }
+  await invalidatePostsCache();
   revalidatePath('/');
 }
 
@@ -414,17 +561,14 @@ export async function deletePost(id: number) {
     throw new Error('Post not found');
   }
 
-  const canDelete = 
-    user.role === ROLES.SUPER_ADMIN || 
-    (user.role === ROLES.USER_ADMIN && postToDelete.authorId === user.id);
+  const isAuthor = postToDelete.authorId === user.id;
+  const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
   
-  if (!canDelete) {
+  if (!isAuthor && !isSuperAdmin) {
      throw new Error('Not authorized to delete this post.');
   }
 
-  const isPermanent = user.role === ROLES.SUPER_ADMIN;
-
-  if (isPermanent) {
+  if (isSuperAdmin) {
     await prisma.$transaction([
       prisma.favoritePost.deleteMany({ where: { postId: id } }),
       prisma.review.deleteMany({ where: { postId: id } }),
@@ -434,15 +578,14 @@ export async function deletePost(id: number) {
     ]);
 
     await deleteUploadedFile(postToDelete.posterUrl);
-  } else {
+  } else { // isAuthor but not Super Admin
     await prisma.post.update({
       where: { id },
       data: { status: 'PENDING_DELETION' },
     });
   }
   
-  revalidatePath(`/manage`);
-  revalidatePath(`/movies/${id}`);
+  await invalidatePostsCache();
   revalidatePath('/');
 }
 
@@ -469,32 +612,34 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     const orderBy = { [field]: direction };
 
 
-    const posts = await prisma.post.findMany({
-        where: whereClause,
-        skip: skip,
-        take: limit,
-        orderBy,
-        include: {
-            author: true,
-            group: {
-              select: {
-                name: true,
-              }
-            },
-            _count: {
-              select: { likedBy: true },
-            },
-            series: {
-              include: {
-                _count: {
-                  select: { posts: true }
+    const [posts, totalPosts] = await prisma.$transaction([
+      prisma.post.findMany({
+          where: whereClause,
+          skip: skip,
+          take: limit,
+          orderBy,
+          include: {
+              author: true,
+              group: {
+                select: {
+                  name: true,
+                }
+              },
+              _count: {
+                select: { likedBy: true },
+              },
+              series: {
+                include: {
+                  _count: {
+                    select: { posts: true }
+                  }
                 }
               }
-            }
-        },
-    });
+          },
+      }),
+      prisma.post.count({ where: whereClause })
+    ]);
 
-    const totalPosts = await prisma.post.count({ where: whereClause });
     const totalPages = Math.ceil(totalPosts / limit);
 
     return {
@@ -547,6 +692,7 @@ export async function updatePostStatus(postId: number, status: string) {
     data: { status },
   });
 
+  await invalidatePostsCache();
   revalidatePath('/manage');
   revalidatePath(`/movies/${postId}`);
 }
@@ -608,6 +754,7 @@ export async function toggleLikePost(postId: number, like: boolean) {
     }
   }
 
+  await invalidatePostsCache(postId);
   revalidatePath(`/movies/${postId}`);
 }
 
@@ -645,6 +792,7 @@ export async function toggleFavoritePost(postId: number) {
     });
   }
 
+  await invalidatePostsCache(postId);
   revalidatePath(`/movies/${postId}`);
   revalidatePath('/favorites');
   revalidatePath(`/profile/${userId}`);
@@ -745,6 +893,7 @@ export async function updatePostLockSettings(
     },
   });
 
+  await invalidatePostsCache(postId, post.seriesId ?? undefined, post.authorId);
   revalidatePath(`/manage`);
   if (post.seriesId) {
     revalidatePath(`/series/${post.seriesId}`);

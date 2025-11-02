@@ -3,10 +3,10 @@
 
 import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
-import { auth } from '@/auth';
+import { auth, invalidateUserSessions } from '@/auth';
 import { ROLES, MovieStatus } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
-import { saveImageFromDataUrl, deleteUploadedFile } from './posts';
+import { saveImageFromDataUrl, deleteUploadedFile, invalidateUserGroupsCache } from './posts';
 import { subDays } from 'date-fns';
 
 
@@ -195,6 +195,7 @@ export async function updateUserProfile(
     data: updateData,
   });
 
+  await invalidateUserSessions(userId);
   revalidatePath(`/profile/${userId}`);
 }
 
@@ -245,6 +246,8 @@ export async function updateUserRole(
     },
   });
 
+  await invalidateUserSessions(userId);
+  await invalidateUserGroupsCache(userId);
   revalidatePath('/admin/users');
   revalidatePath(`/profile/${userId}`);
 }
