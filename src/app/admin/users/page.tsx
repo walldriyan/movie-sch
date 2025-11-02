@@ -97,7 +97,8 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   const onSubmit = (data: UserEditFormValues) => {
     startTransition(async () => {
       try {
-        await updateUserRole(user.id, data.role, data.permissionRequestStatus, data.dailyPostLimit || null);
+        const limit = data.dailyPostLimit === '' ? null : data.dailyPostLimit;
+        await updateUserRole(user.id, data.role, data.permissionRequestStatus, limit);
         toast({ title: 'User Updated', description: `${user.name}'s details have been saved.` });
         onUserUpdate();
         setIsOpen(false);
@@ -341,5 +342,7 @@ export default function ManageUsersPage() {
     </div>
   );
 }
+
+    
 
     
