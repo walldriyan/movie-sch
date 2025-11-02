@@ -23,13 +23,26 @@ export const PERMISSIONS = {
 };
 
 export const permissions: Record<string, string[]> = {
-  [ROLES.SUPER_ADMIN]: Object.values(PERMISSIONS), // Super admin gets all permissions
+  [ROLES.SUPER_ADMIN]: [
+    PERMISSIONS['user.create'],
+    PERMISSIONS['user.read'],
+    PERMISSIONS['user.update'],
+    PERMISSIONS['user.delete'],
+    PERMISSIONS['post.create'],
+    PERMISSIONS['post.read'],
+    PERMISSIONS['post.update'],
+    PERMISSIONS['post.delete'],
+    PERMISSIONS['post.hard_delete'],
+    PERMISSIONS['post.approve_deletion'],
+    PERMISSIONS['post.change_status'],
+  ],
   [ROLES.USER_ADMIN]: [
     PERMISSIONS['post.create'],
     PERMISSIONS['post.read'],
     PERMISSIONS['post.update'],
-    PERMISSIONS['post.delete'], // Can only soft-delete
+    PERMISSIONS['post.delete'],
     PERMISSIONS['post.approve_deletion'],
+    PERMISSIONS['post.change_status'],
   ],
   [ROLES.USER]: [
     PERMISSIONS['post.read'], // Can only read public posts
