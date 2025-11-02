@@ -73,6 +73,7 @@ import {
 const userEditSchema = z.object({
   role: z.nativeEnum(ROLES),
   dailyPostLimit: z.string().optional(),
+  permissionRequestStatus: z.enum(['NONE', 'PENDING', 'APPROVED', 'REJECTED']),
 });
 
 type UserEditFormValues = z.infer<typeof userEditSchema>;
@@ -88,18 +89,14 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
     defaultValues: {
       role: user.role as keyof typeof ROLES,
       dailyPostLimit: user.dailyPostLimit?.toString() || '',
+      permissionRequestStatus: (user.permissionRequestStatus as 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED') || 'NONE',
     },
   });
 
   const onSubmit = (data: UserEditFormValues) => {
     startTransition(async () => {
       try {
-        let newStatus: string | null = user.permissionRequestStatus;
-        if (user.permissionRequestStatus === 'PENDING') {
-          newStatus = data.role === ROLES.USER ? 'REJECTED' : 'APPROVED';
-        }
-        
-        await updateUserRole(user.id, data.role, newStatus!, data.dailyPostLimit || null);
+        await updateUserRole(user.id, data.role, data.permissionRequestStatus, data.dailyPostLimit || null);
         toast({ title: 'User Updated', description: `${user.name}'s details have been saved.` });
         onUserUpdate();
         setIsOpen(false);
@@ -121,7 +118,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
         <DialogHeader>
           <DialogTitle>Edit User: {user.name}</DialogTitle>
           <DialogDescription>
-            Modify user role and set content limits.
+            Modify user role, status, and set content limits.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -142,6 +139,29 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
                       {Object.values(ROLES).map((role) => (
                         <SelectItem key={role} value={role}>{role}</SelectItem>
                       ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="permissionRequestStatus"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Permission Status</FormLabel>
+                   <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="NONE">None</SelectItem>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="APPROVED">Approved</SelectItem>
+                      <SelectItem value="REJECTED">Rejected</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage />
