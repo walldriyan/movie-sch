@@ -135,7 +135,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
                   <Select onValueChange={field.onChange} defaultValue={field.value}>
                     <FormControl>
                       <SelectTrigger>
-                        <SelectValue />
+                        <SelectValue placeholder="Select a role" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
@@ -155,7 +155,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
                 <FormItem>
                   <FormLabel>Daily Post Limit</FormLabel>
                    <FormControl>
-                    <Input type="number" placeholder="Default (10)" {...field} />
+                    <Input type="number" placeholder="Default (from settings)" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
