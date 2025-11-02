@@ -72,8 +72,8 @@ import {
 
 const userEditSchema = z.object({
   role: z.nativeEnum(ROLES),
-  dailyPostLimit: z.string().optional(),
   permissionRequestStatus: z.enum(['NONE', 'PENDING', 'APPROVED', 'REJECTED']),
+  dailyPostLimit: z.string().optional(),
 });
 
 type UserEditFormValues = z.infer<typeof userEditSchema>;
@@ -88,8 +88,8 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
     resolver: zodResolver(userEditSchema),
     defaultValues: {
       role: user.role as keyof typeof ROLES,
-      dailyPostLimit: user.dailyPostLimit?.toString() || '',
       permissionRequestStatus: (user.permissionRequestStatus as 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED') || 'NONE',
+      dailyPostLimit: user.dailyPostLimit?.toString() || '',
     },
   });
 
@@ -123,7 +123,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+             <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
@@ -340,3 +340,5 @@ export default function ManageUsersPage() {
     </div>
   );
 }
+
+    
