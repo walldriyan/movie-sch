@@ -578,7 +578,7 @@ export async function deletePost(id: number) {
     ]);
 
     await deleteUploadedFile(postToDelete.posterUrl);
-  } else { // isAuthor but not Super Admin
+  } else { // isAuthor
     await prisma.post.update({
       where: { id },
       data: { status: 'PENDING_DELETION' },
