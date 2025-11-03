@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -161,7 +160,7 @@ export default function Navbar() {
           </Link>
           <motion.div 
             className={cn(
-              "flex items-center p-1 rounded-full bg-background/80 border border-border/60"
+              "flex items-center p-1 rounded-full bg-background/80 border border-border/10 shadow-sm"
             )}
             animate={{ width: isNavExpanded ? 'auto' : 64 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
