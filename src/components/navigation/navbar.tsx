@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -75,9 +76,12 @@ export default function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   const NavLink = ({ href, children, mobile = false, icon, hidden }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode, hidden?: boolean }) => {
+    const activeStyles = "text-primary bg-muted/20 backdrop-blur-sm rounded-full";
+    const inactiveStyles = "text-foreground/80";
+
     const className = mobile
       ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
-      : `transition-colors hover:text-primary h-auto px-3 py-2 ${isActive(href) ? 'text-primary bg-muted' : 'text-foreground/80'}`;
+      : `transition-colors hover:text-primary h-auto px-3 py-2 ${isActive(href) ? activeStyles : inactiveStyles}`;
       
     return (
       <Button asChild variant="ghost" className={cn("justify-center", className, "flex flex-col items-center h-full", hidden && 'hidden')}>
