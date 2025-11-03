@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import UploadSubtitleDialog from '@/components/upload-subtitle-dialog';
+import DOMPurify from 'isomorphic-dompurify';
 
 
 import {
@@ -62,6 +63,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import PostViewsAndLikes from '@/components/post-views-and-likes';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const DetailItem = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: React.ReactNode }) => (
   <div className="flex items-start gap-4">
@@ -200,7 +202,10 @@ export default function MoviePageContent({
   const currentUser = session?.user;
   const effectRan = useRef(false);
 
+  const sanitizedDescription = DOMPurify.sanitize(post.description);
+
   useEffect(() => {
+    let isMounted = true;
     if (process.env.NODE_ENV === 'production' || !effectRan.current) {
         startViewCountTransition(async () => {
             try {
@@ -214,11 +219,12 @@ export default function MoviePageContent({
 
     // Cleanup function to set the ref back to false on unmount
     return () => {
+        isMounted = false;
         if (process.env.NODE_ENV !== 'production') {
             effectRan.current = true;
         }
     };
-  }, [initialPost.id]);
+  }, []); // Empty dependency array ensures this runs only once
 
   // This effect will run only once on mount to set the initial view count
   // And won't re-run to increment it again.
@@ -381,7 +387,7 @@ export default function MoviePageContent({
                   ) : (
                       <div
                           className="prose prose-invert max-w-none text-foreground/80"
-                          dangerouslySetInnerHTML={{ __html: post.description }}
+                          dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                       />
                   )}
 
@@ -461,38 +467,48 @@ export default function MoviePageContent({
                     Responses ({currentReviews.length})
                   </h2>
                   <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
-                    {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                     <motion.div animate={{ rotate: showReviews ? 180 : 0 }} transition={{ duration: 0.2 }}>
+                        <ChevronDown className="w-6 h-6" />
+                     </motion.div>
                   </Button>
                 </div>
                 
-                {showReviews && (
-                  <>
-                    <ReviewForm 
-                      postId={post.id} 
-                      isSubmitting={isSubmittingReview}
-                      onSubmitReview={handleReviewSubmit}
-                      session={session}
-                    />
-                    <Separator className="my-8" />
-                    <div className="space-y-8">
-                      {currentReviews.length > 0 ? (
-                        currentReviews.map((review: any) => (
-                          <ReviewCard 
-                            key={review.id} 
-                            review={review} 
-                            onReviewSubmit={handleReviewSubmit} 
-                            onReviewDelete={handleReviewDelete} 
-                            session={session}
-                          />
-                        ))
-                      ) : (
-                        !isSubmittingReview && (
-                          <p className="text-muted-foreground">Be the first to share your thoughts!</p>
-                        )
-                      )}
-                    </div>
-                  </>
-                )}
+                <AnimatePresence initial={false}>
+                  {showReviews && (
+                    <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden"
+                    >
+                      <ReviewForm 
+                        postId={post.id} 
+                        isSubmitting={isSubmittingReview}
+                        onSubmitReview={handleReviewSubmit}
+                        session={session}
+                      />
+                      <Separator className="my-8" />
+                      <div className="space-y-8">
+                        {currentReviews.length > 0 ? (
+                          currentReviews.map((review: any) => (
+                            <ReviewCard 
+                              key={review.id} 
+                              review={review} 
+                              onReviewSubmit={handleReviewSubmit} 
+                              onReviewDelete={handleReviewDelete} 
+                              session={session}
+                            />
+                          ))
+                        ) : (
+                          !isSubmittingReview && (
+                            <p className="text-muted-foreground">Be the first to share your thoughts!</p>
+                          )
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </section>
             </TabsContent>
             
@@ -596,5 +612,3 @@ export default function MoviePageContent({
     </div>
   );
 }
-
-    
