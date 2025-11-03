@@ -149,7 +149,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
+    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg shadow-lg shadow-black/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
         <div 
             className={cn(
