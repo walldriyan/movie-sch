@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState, useTransition } from 'react';
@@ -35,6 +36,7 @@ export default function ManagePostsClient({
   initialTotalPages, 
   user, 
 }: ManagePostsClientProps) {
+  console.log('[ManageClient] Component rendering.');
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
@@ -52,16 +54,19 @@ export default function ManagePostsClient({
 
 
   useEffect(() => {
+    console.log('[ManageClient] useEffect for routing triggered. searchParams:', searchParams.toString());
     const editId = searchParams.get('edit');
     const create = searchParams.get('create');
 
     const fetchPostToEdit = async (id: string) => {
+      console.log(`[ManageClient] Fetching post to edit with ID: ${id}`);
       const postToEdit = await getPost(Number(id));
       if (postToEdit && (postToEdit.authorId === user.id || user.role === ROLES.SUPER_ADMIN)) {
         setEditingPost(postToEdit as any);
         setView('form');
+        console.log('[ManageClient] Set view to "form" for editing.');
       } else {
-        console.warn(`User ${user.id} tried to edit post ${id} without permission.`);
+        console.warn(`[ManageClient] User ${user.id} tried to edit post ${id} without permission.`);
         router.push('/manage'); // Redirect if no permission
       }
     };
@@ -71,19 +76,23 @@ export default function ManagePostsClient({
     } else if (create === 'true') {
       setEditingPost(null);
       setView('form');
+      console.log('[ManageClient] Set view to "form" for creation.');
     } else {
       setView('list');
       setEditingPost(null);
+      console.log('[ManageClient] Set view to "list".');
     }
   }, [searchParams, user.id, user.role, router]);
 
   const handlePageChange = (page: number) => {
+    console.log(`[ManageClient] handlePageChange called with page: ${page}`);
     const params = new URLSearchParams(searchParams);
     params.set('page', String(page));
     router.push(`${pathname}?${params.toString()}`);
   }
 
   const handleFilterChange = (status: string | null) => {
+    console.log(`[ManageClient] handleFilterChange called with status: ${status}`);
      const params = new URLSearchParams(searchParams);
      params.set('page', '1');
      if (status) {
@@ -95,6 +104,7 @@ export default function ManagePostsClient({
   }
   
   const handleRefresh = () => {
+    console.log('[ManageClient] handleRefresh called.');
     startRefresh(() => {
       router.refresh();
       toast({
@@ -104,14 +114,17 @@ export default function ManagePostsClient({
   }
 
   const handleAddNewPost = () => {
+    console.log('[ManageClient] handleAddNewPost called.');
     router.push('/manage?create=true');
   };
 
   const handleEditPost = (post: Post) => {
+    console.log(`[ManageClient] handleEditPost called for post ID: ${post.id}`);
     router.push(`/manage?edit=${post.id}`);
   };
 
   const handleBackFromForm = () => {
+    console.log('[ManageClient] handleBackFromForm called.');
     router.push('/manage');
   };
 
@@ -119,41 +132,47 @@ export default function ManagePostsClient({
     postData: PostFormData,
     id: number | undefined
   ) => {
+    console.log('[ManageClient] handleFormSubmit called. Submitting post...');
     startSubmit(async () => {
       try {
-        await savePost(postData, id);
+        await onFormSubmit(postData, id);
         toast({
           title: 'Success',
           description: `Post "${postData.title}" has been submitted for approval.`,
         });
+        console.log('[ManageClient] Post submission successful, navigating back.');
         handleBackFromForm(); // Redirect back to the manage page
       } catch (error: any) {
-        console.error("Post submission failed:", error);
+        console.error("[ManageClient] Post submission failed:", error);
         toast({
           variant: 'destructive',
           title: 'Submission Failed',
           description: error.message || "An unexpected error occurred."
         });
+      } finally {
+          console.log('[ManageClient] Post submission action finished.');
       }
     });
   };
 
   const handleDeleteConfirmed = (postId: number) => {
+     console.log(`[ManageClient] handleDeleteConfirmed called for post ID: ${postId}`);
      startRefresh(async () => {
         const postToDelete = posts.find(m => m.id === postId);
         if (postToDelete) {
-        await deletePost(postId);
-        toast({
-            title: 'Success',
-            description: `Post "${postToDelete.title}" action has been processed.`,
-        });
-        router.refresh(); // Refresh the page to get the latest list
+          await deletePost(postId);
+          toast({
+              title: 'Success',
+              description: `Post "${postToDelete.title}" action has been processed.`,
+          });
+          router.refresh(); 
         }
     });
   };
 
 
   const handleStatusChange = (postId: number, newStatus: string) => {
+    console.log(`[ManageClient] handleStatusChange called for post ID: ${postId}, new status: ${newStatus}`);
     startRefresh(async () => {
         try {
             await updatePostStatus(postId, newStatus);
@@ -178,6 +197,7 @@ export default function ManagePostsClient({
     ? initialPosts
     : initialPosts.filter((m) => m.status !== 'PENDING_DELETION');
 
+  console.log(`[ManageClient] Rendering view: ${view}`);
   return (
     <>
         {view === 'list' ? (
