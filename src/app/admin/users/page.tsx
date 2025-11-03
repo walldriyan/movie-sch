@@ -21,15 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
   MoreHorizontal,
@@ -57,173 +48,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
-
-const userEditSchema = z.object({
-  role: z.nativeEnum(ROLES),
-  permissionRequestStatus: z.enum(['NONE', 'PENDING', 'APPROVED', 'REJECTED']),
-  dailyPostLimit: z.string().optional(),
-});
-
-type UserEditFormValues = z.infer<typeof userEditSchema>;
-
-
-function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-
-  const form = useForm<UserEditFormValues>({
-    resolver: zodResolver(userEditSchema),
-    defaultValues: {
-      role: user.role as keyof typeof ROLES,
-      permissionRequestStatus: (user.permissionRequestStatus as 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED') || 'NONE',
-      dailyPostLimit: user.dailyPostLimit?.toString() || '',
-    },
-  });
-  
-  // Reset form values when the dialog is opened with a new user
-  useEffect(() => {
-    if (isOpen) {
-      form.reset({
-        role: user.role as keyof typeof ROLES,
-        permissionRequestStatus: (user.permissionRequestStatus as 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED') || 'NONE',
-        dailyPostLimit: user.dailyPostLimit?.toString() || '',
-      });
-    }
-  }, [isOpen, user, form]);
-
-  const onSubmit = (data: UserEditFormValues) => {
-    startTransition(async () => {
-      try {
-        const limit = data.dailyPostLimit === '' || data.dailyPostLimit === undefined ? null : data.dailyPostLimit;
-        await updateUserRole(user.id, data.role, data.permissionRequestStatus, limit);
-        toast({ title: 'User Updated', description: `${user.name}'s details have been saved.` });
-        onUserUpdate();
-        setIsOpen(false);
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-      }
-    });
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit User
-        </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit User: {user.name}</DialogTitle>
-          <DialogDescription>
-            Modify user role, status, and set content limits.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem className="space-y-3">
-                  <FormLabel>Role</FormLabel>
-                  <FormControl>
-                    <RadioGroup
-                      onValueChange={field.onChange}
-                      defaultValue={field.value}
-                      className="flex flex-col space-y-1"
-                    >
-                      {Object.values(ROLES).map((role) => (
-                        <FormItem key={role} className="flex items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <RadioGroupItem value={role} />
-                          </FormControl>
-                          <FormLabel className="font-normal">
-                            {role}
-                          </FormLabel>
-                        </FormItem>
-                      ))}
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="permissionRequestStatus"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Permission Status</FormLabel>
-                   <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a status" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="NONE">None</SelectItem>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="APPROVED">Approved</SelectItem>
-                      <SelectItem value="REJECTED">Rejected</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="dailyPostLimit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Daily Post Limit</FormLabel>
-                   <FormControl>
-                    <Input type="number" placeholder="Default (from settings)" {...field} />
-                  </FormControl>
-                   <FormDescription>Leave empty to use the default application setting.</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isPending}>
-                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 
 export default function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -369,8 +193,6 @@ export default function ManageUsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <EditUserDialog user={user} onUserUpdate={fetchUsers} />
-                          <DropdownMenuSeparator />
                            <DropdownMenuSub>
                               <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
                               <DropdownMenuPortal>
