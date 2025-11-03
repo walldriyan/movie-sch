@@ -7,6 +7,8 @@ import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
 import Navbar from '@/components/navigation/navbar';
 import SessionProvider from '@/components/auth/session-provider';
+import { SidebarProvider } from '@/components/ui/sidebar';
+import ErrorBoundary from '@/components/error-boundary';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -53,21 +55,23 @@ export default function RootLayout({
       >
         <SessionProvider>
           <LoadingProvider>
-            <GlobalLoadingBar />
-            <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
-              <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
-              <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
-              <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
-            </div>
-            
-            <Navbar />
-            <main className="pt-16">
-           
-              {children}
-            </main>
-            
-            {/* <OnlineUsersWidget /> */}
-            <Toaster />
+            <SidebarProvider>
+                <GlobalLoadingBar />
+                <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
+                  <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
+                  <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
+                  <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
+                </div>
+                
+                <Navbar />
+                <main className="pt-16">
+                    <ErrorBoundary>
+                      {children}
+                    </ErrorBoundary>
+                </main>
+                
+                <Toaster />
+            </SidebarProvider>
           </LoadingProvider>
         </SessionProvider>
       </body>

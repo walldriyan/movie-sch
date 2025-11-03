@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import ReviewCard from '@/components/review-card';
 import ReviewForm from '@/components/review-form';
 import UploadSubtitleDialog from '@/components/upload-subtitle-dialog';
+import DOMPurify from 'isomorphic-dompurify';
 
 
 import {
@@ -201,7 +202,10 @@ export default function MoviePageContent({
   const currentUser = session?.user;
   const effectRan = useRef(false);
 
+  const sanitizedDescription = DOMPurify.sanitize(post.description);
+
   useEffect(() => {
+    let isMounted = true;
     if (process.env.NODE_ENV === 'production' || !effectRan.current) {
         startViewCountTransition(async () => {
             try {
@@ -215,6 +219,7 @@ export default function MoviePageContent({
 
     // Cleanup function to set the ref back to false on unmount
     return () => {
+        isMounted = false;
         if (process.env.NODE_ENV !== 'production') {
             effectRan.current = true;
         }
@@ -382,7 +387,7 @@ export default function MoviePageContent({
                   ) : (
                       <div
                           className="prose prose-invert max-w-none text-foreground/80"
-                          dangerouslySetInnerHTML={{ __html: post.description }}
+                          dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                       />
                   )}
 
@@ -607,5 +612,3 @@ export default function MoviePageContent({
     </div>
   );
 }
-
-    

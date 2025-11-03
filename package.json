@@ -47,6 +47,8 @@
     "@tiptap/react": "^2.6.0",
     "@tiptap/starter-kit": "^2.6.0",
     "@upstash/redis": "^1.33.0",
+    "@upstash/ratelimit": "^1.2.0",
+    "isomorphic-dompurify": "^2.13.0",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

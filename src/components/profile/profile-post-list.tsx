@@ -8,6 +8,7 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Post, User } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface ProfilePostListProps {
   posts: Post[];
@@ -22,6 +23,8 @@ function PostGridCard({ post }: { post: Post }) {
     PlaceHolderImages.find(
       (p) => p.id === 'movie-poster-placeholder'
     )?.imageUrl;
+    
+    const sanitizedDescription = DOMPurify.sanitize(post.description || '');
 
   return (
     <Link href={`/movies/${post.id}`} className="group block">
@@ -40,7 +43,7 @@ function PostGridCard({ post }: { post: Post }) {
              </div>
              <CardContent className="p-4 flex-grow flex flex-col">
                 <h3 className="font-semibold text-sm group-hover:text-primary flex-grow">{post.title}</h3>
-                <div className="text-xs text-muted-foreground line-clamp-1 mt-1" dangerouslySetInnerHTML={{ __html: post.description || ''}} />
+                <div className="text-xs text-muted-foreground line-clamp-1 mt-1" dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
                 <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground mt-2">
                     <div className="flex items-center gap-1">
                         <Heart className="w-3 h-3" />

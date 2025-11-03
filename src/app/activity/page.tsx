@@ -153,21 +153,31 @@ export default function ActivityPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     async function fetchInitialData() {
         if (status === 'authenticated') {
             setIsLoading(true);
-            const { items: initialNotifs, total: totalNotifs } = await getNotifications({ page: 1, limit: 1 });
-            const { posts: initialPosts, totalPosts } = await getPosts({ page: 1, limit: 1 });
-            setInitialData({
-                notifications: initialNotifs as any[],
-                posts: initialPosts as any[],
-                totalNotifs,
-                totalPosts,
-            });
-            setIsLoading(false);
+            const [{ items: initialNotifs, total: totalNotifs }, { posts: initialPosts, totalPosts }] = await Promise.all([
+                getNotifications({ page: 1, limit: 1 }),
+                getPosts({ page: 1, limit: 1 })
+            ]);
+
+            if (isMounted) {
+                setInitialData({
+                    notifications: initialNotifs as any[],
+                    posts: initialPosts as any[],
+                    totalNotifs,
+                    totalPosts,
+                });
+                setIsLoading(false);
+            }
         }
     }
     fetchInitialData();
+
+    return () => {
+        isMounted = false;
+    }
   }, [status]);
   
   if (status === 'unauthenticated') {

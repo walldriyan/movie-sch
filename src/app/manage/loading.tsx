@@ -1,9 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
-import ManageLayout from "@/components/manage/manage-layout";
 
 export default function Loading() {
   return (
-    <ManageLayout>
+    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 mt-2">
         <div className="flex items-center">
             <Skeleton className="h-8 w-48" />
             <Skeleton className="ml-auto h-9 w-[150px] rounded-md" />
@@ -63,6 +62,6 @@ export default function Loading() {
                 </div>
             </div>
         </div>
-    </ManageLayout>
+    </main>
   )
 }

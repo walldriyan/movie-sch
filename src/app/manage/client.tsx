@@ -7,7 +7,6 @@ import { useToast } from '@/hooks/use-toast';
 import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES, MovieStatus } from '@/lib/permissions';
-import ManageLayout from '@/components/manage/manage-layout';
 import PostList from '@/components/manage/post-list';
 import PostForm from '@/components/manage/post-form';
 import type { Session } from 'next-auth';
@@ -52,26 +51,24 @@ export default function ManagePostsClient({
   const { toast } = useToast();
   
   useEffect(() => {
-    // Only run this effect if we are on the manage page
-    if (pathname !== '/manage') {
-      return;
-    }
+    if (pathname !== '/manage') return;
 
     const editId = searchParams.get('edit');
     const create = searchParams.get('create');
 
+    const fetchPostToEdit = async (id: string) => {
+      const postToEdit = await getPost(Number(id));
+      if (postToEdit && (postToEdit.authorId === user.id || user.role === ROLES.SUPER_ADMIN)) {
+        setEditingPost(postToEdit as any);
+        setView('form');
+      } else {
+        console.warn(`User ${user.id} tried to edit post ${id} without permission.`);
+        setView('list');
+      }
+    };
+
     if (editId) {
-      const fetchPostToEdit = async () => {
-        const postToEdit = await getPost(Number(editId));
-        if (postToEdit && (postToEdit.authorId === user.id || user.role === ROLES.SUPER_ADMIN)) {
-          setEditingPost(postToEdit as any);
-          setView('form');
-        } else {
-          console.warn(`User ${user.id} tried to edit post ${editId} without permission.`);
-          setView('list');
-        }
-      };
-      fetchPostToEdit();
+      fetchPostToEdit(editId);
     } else if (create === 'true') {
       setEditingPost(null);
       setView('form');
@@ -81,7 +78,7 @@ export default function ManagePostsClient({
   }, [searchParams, user.id, user.role, pathname]);
 
 
-  const fetchPosts = async (page: number, status: string | null) => {
+  const fetchPosts = React.useCallback(async (page: number, status: string | null) => {
     setIsRefreshing(true);
     startTransition(async () => {
       try {
@@ -106,13 +103,11 @@ export default function ManagePostsClient({
         setIsRefreshing(false);
       }
     });
-  };
+  }, [user.id, user.role, toast]);
   
   useEffect(() => {
-    if (view === 'list') {
-      fetchPosts(currentPage, statusFilter);
-    }
-  }, [currentPage, statusFilter, view]);
+    fetchPosts(currentPage, statusFilter);
+  }, [currentPage, statusFilter, fetchPosts]);
 
   const handleAddNewPost = () => {
     setEditingPost(null);
@@ -226,7 +221,6 @@ export default function ManagePostsClient({
 
   return (
     <>
-      <ManageLayout>
         {view === 'list' ? (
           <>
             <PostList
@@ -292,7 +286,6 @@ export default function ManagePostsClient({
             debugError={undefined}
           />
         )}
-      </ManageLayout>
     </>
   );
 }

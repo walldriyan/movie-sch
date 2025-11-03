@@ -11,9 +11,10 @@ import { Skeleton } from './ui/skeleton';
 import type { Post as Movie, Series } from '@/lib/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Button } from './ui/button';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface MovieGridProps {
-  movies: Movie[];
+  posts: Movie[];
 }
 
 function CategoryIcon({ type }: { type: Movie['type'] }) {
@@ -49,6 +50,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
     setMounted(true);
   }, []);
 
+  const sanitizedDescription = DOMPurify.sanitize(movie.description);
 
   const movieImageUrl =
     movie.posterUrl ||
@@ -87,6 +89,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
               imageLoaded ? 'opacity-100' : 'opacity-0'
             )}
             onLoad={() => setImageLoaded(true)}
+            priority={index < 3} // Priority load first few images
+            quality={75} // Slightly reduce quality to improve load times
           />
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
@@ -112,7 +116,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
             </h3>
             <div
               className="text-white/70 text-xs md:text-sm mt-1 line-clamp-2"
-              dangerouslySetInnerHTML={{ __html: movie.description }}
+              dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
             />
           </div>
           <Avatar className="h-10 w-10 border-2 border-background flex-shrink-0 ml-4">
