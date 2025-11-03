@@ -135,7 +135,7 @@ export default function ManagePostsClient({
     console.log('[ManageClient] handleFormSubmit called. Submitting post...');
     startSubmit(async () => {
       try {
-        await onFormSubmit(postData, id);
+        await savePost(postData, id);
         toast({
           title: 'Success',
           description: `Post "${postData.title}" has been submitted for approval.`,
