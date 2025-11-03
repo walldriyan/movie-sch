@@ -51,55 +51,22 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
 
     const handleLike = (likeAction: 'like' | 'dislike') => {
         if (!currentUser) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication required',
-            description: 'You must be logged in to like or dislike a post.',
-        });
-        return;
+            toast({
+                variant: 'destructive',
+                title: 'Authentication required',
+                description: 'You must be logged in to like or dislike a post.',
+            });
+            return;
         }
-
-        const originalPost = post;
-        const currentIsLiked = post.likedBy?.some(user => user.id === currentUser.id);
-        const currentIsDisliked = post.dislikedBy?.some(user => user.id === currentUser.id);
-
-        let optimisticPost: PostType = { ...post };
-
-        if (likeAction === 'like') {
-        optimisticPost = {
-            ...optimisticPost,
-            likedBy: currentIsLiked 
-            ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) 
-            : [...(optimisticPost.likedBy || []), currentUser as any],
-            dislikedBy: currentIsDisliked 
-            ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) 
-            : optimisticPost.dislikedBy,
-        };
-        } else {
-        optimisticPost = {
-            ...optimisticPost,
-            dislikedBy: currentIsDisliked 
-            ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) 
-            : [...(optimisticPost.dislikedBy || []), currentUser as any],
-            likedBy: currentIsLiked 
-            ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) 
-            : optimisticPost.likedBy,
-        };
-        }
-        
-        optimisticPost._count = {
-        ...optimisticPost._count,
-        likedBy: optimisticPost.likedBy?.length || 0,
-        dislikedBy: optimisticPost.dislikedBy?.length || 0,
-        };
-
-        onPostUpdate(optimisticPost as PostType);
-
         startLikeTransition(async () => {
             try {
                 await toggleLikePost(post.id, likeAction === 'like');
+                toast({
+                    title: 'Success',
+                    description: `Your preference has been updated.`,
+                });
+                router.refresh(); 
             } catch (err: any) {
-                onPostUpdate(originalPost as PostType);
                 toast({
                     variant: 'destructive',
                     title: 'Error',
