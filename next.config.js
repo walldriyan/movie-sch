@@ -36,6 +36,18 @@ const nextConfig = {
       }
     ],
   },
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.ignoreWarnings = [
+        ...(config.ignoreWarnings || []),
+        {
+          module: /@opentelemetry\/instrumentation/,
+          message: /Critical dependency: the request of a dependency is an expression/,
+        },
+      ];
+    }
+    return config;
+  },
 };
 
 module.exports = nextConfig;
