@@ -38,21 +38,20 @@ export default function ManagePostsClient({
   const [posts, setPosts] = useState<Post[]>(initialPosts);
   const [view, setView] = useState<'list' | 'form'>('list');
   const [editingPost, setEditingPost] = useState<Post | null>(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(initialTotalPages);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [statusChangingPostId, setStatusChangingPostId] = useState<number | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string | null>(MovieStatus.PENDING_APPROVAL);
-  const [isPending, startTransition] = useTransition();
-
+  const [isRefreshing, startRefresh] = useTransition();
+  const [isSubmitting, startSubmit] = useTransition();
+  
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
-  useEffect(() => {
-    if (pathname !== '/manage') return;
+  const currentPage = Number(searchParams.get('page')) || 1;
+  const statusFilter = searchParams.get('status') || MovieStatus.PENDING_APPROVAL;
+  const totalPages = initialTotalPages;
 
+
+  useEffect(() => {
     const editId = searchParams.get('edit');
     const create = searchParams.get('create');
 
@@ -63,7 +62,7 @@ export default function ManagePostsClient({
         setView('form');
       } else {
         console.warn(`User ${user.id} tried to edit post ${id} without permission.`);
-        setView('list');
+        router.push('/manage'); // Redirect if no permission
       }
     };
 
@@ -74,72 +73,60 @@ export default function ManagePostsClient({
       setView('form');
     } else {
       setView('list');
+      setEditingPost(null);
     }
-  }, [searchParams, user.id, user.role, pathname]);
+  }, [searchParams, user.id, user.role, router]);
 
+  const handlePageChange = (page: number) => {
+    const params = new URLSearchParams(searchParams);
+    params.set('page', String(page));
+    router.push(`${pathname}?${params.toString()}`);
+  }
 
-  const fetchPosts = React.useCallback(async (page: number, status: string | null) => {
-    setIsRefreshing(true);
-    startTransition(async () => {
-      try {
-        const { posts: postsFromDb, totalPages: newTotalPages } = await getPostsForAdmin({ 
-          page, 
-          limit: 10, 
-          userId: user.id, 
-          userRole: user.role,
-          status,
-        });
-        setPosts(postsFromDb as any);
-        setTotalPages(newTotalPages);
-        setCurrentPage(page);
-      } catch (error) {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'Failed to fetch posts.',
-        });
-        console.error("--- [ManagePostsClient] fetchPosts: Error ---", error);
-      } finally {
-        setIsRefreshing(false);
-      }
-    });
-  }, [user.id, user.role, toast]);
+  const handleFilterChange = (status: string | null) => {
+     const params = new URLSearchParams(searchParams);
+     params.set('page', '1');
+     if (status) {
+       params.set('status', status);
+     } else {
+       params.delete('status');
+     }
+     router.push(`${pathname}?${params.toString()}`);
+  }
   
-  useEffect(() => {
-    fetchPosts(currentPage, statusFilter);
-  }, [currentPage, statusFilter, fetchPosts]);
+  const handleRefresh = () => {
+    startRefresh(() => {
+      router.refresh();
+      toast({
+        title: 'Post list refreshed',
+      });
+    });
+  }
 
   const handleAddNewPost = () => {
-    setEditingPost(null);
-    const url = new URL(window.location.href);
-    url.searchParams.set('create', 'true');
-    url.searchParams.delete('edit');
-    window.history.pushState({}, '', url.toString());
-    setView('form');
+    router.push('/manage?create=true');
   };
 
   const handleEditPost = (post: Post) => {
-    setEditingPost(post);
-    const url = new URL(window.location.href);
-    url.searchParams.set('edit', String(post.id));
-    url.searchParams.delete('create');
-    window.history.pushState({}, '', url.toString());
-    setView('form');
+    router.push(`/manage?edit=${post.id}`);
+  };
+
+  const handleBackFromForm = () => {
+    router.push('/manage');
   };
 
   const handleFormSubmit = (
     postData: PostFormData,
     id: number | undefined
   ) => {
-    startTransition(async () => {
-      console.log("Submitting post...");
+    startSubmit(async () => {
       try {
         await savePost(postData, id);
-        handleBackFromForm(); // Go back to list and clear URL params
         toast({
           title: 'Success',
           description: `Post "${postData.title}" has been submitted for approval.`,
         });
+        handleBackFromForm(); // Redirect back to the manage page
       } catch (error: any) {
         console.error("Post submission failed:", error);
         toast({
@@ -147,77 +134,49 @@ export default function ManagePostsClient({
           title: 'Submission Failed',
           description: error.message || "An unexpected error occurred."
         });
-      } finally {
-        console.log("Post submission action finished.");
       }
     });
   };
 
-  const handleDeleteConfirmed = async (postId: number) => {
-    const postToDelete = posts.find(m => m.id === postId);
-    if (postToDelete) {
-      await deletePost(postId);
-      await fetchPosts(currentPage, statusFilter);
-      toast({
-        title: 'Success',
-        description: `Post "${postToDelete.title}" action has been processed.`,
-      });
-    }
-  };
-
-
-  const handleStatusChange = async (postId: number, newStatus: string) => {
-    setStatusChangingPostId(postId);
-    try {
-      await updatePostStatus(postId, newStatus);
-      await fetchPosts(currentPage, statusFilter);
-      toast({
-        title: 'Status Updated',
-        description: `Post status has been changed to ${newStatus}.`,
-      });
-    } catch (error: any) {
-       toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message || 'Failed to update post status.',
-      });
-      console.error("--- [ManagePostsClient] handleStatusChange: Error ---", error);
-    } finally {
-      setStatusChangingPostId(null);
-    }
-  };
-  
-  const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= totalPages) {
-      setCurrentPage(page);
-    }
-  };
-
-  const handleBackFromForm = () => {
-    const url = new URL(window.location.href);
-    url.searchParams.delete('edit');
-    url.searchParams.delete('create');
-    window.history.pushState({}, '', url.toString());
-    setView('list');
-  };
-  
-  const handleRefresh = () => {
-    fetchPosts(currentPage, statusFilter);
-    toast({
-      title: 'Post list refreshed',
+  const handleDeleteConfirmed = (postId: number) => {
+     startRefresh(async () => {
+        const postToDelete = posts.find(m => m.id === postId);
+        if (postToDelete) {
+        await deletePost(postId);
+        toast({
+            title: 'Success',
+            description: `Post "${postToDelete.title}" action has been processed.`,
+        });
+        router.refresh(); // Refresh the page to get the latest list
+        }
     });
-  }
+  };
 
-  const handleFilterChange = (status: string | null) => {
-    setStatusFilter(status);
-    setCurrentPage(1); // Reset to first page on filter change
-  }
 
+  const handleStatusChange = (postId: number, newStatus: string) => {
+    startRefresh(async () => {
+        try {
+            await updatePostStatus(postId, newStatus);
+            toast({
+                title: 'Status Updated',
+                description: `Post status has been changed to ${newStatus}.`,
+            });
+            router.refresh();
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: error.message || 'Failed to update post status.',
+            });
+        }
+    });
+  };
+  
   const visiblePosts = user?.permissions?.includes(
     PERMISSIONS['post.approve_deletion']
   )
-    ? posts
-    : posts.filter((m) => m.status !== 'PENDING_DELETION');
+    ? initialPosts
+    : initialPosts.filter((m) => m.status !== 'PENDING_DELETION');
 
   return (
     <>
@@ -232,31 +191,27 @@ export default function ManagePostsClient({
               onRefresh={handleRefresh}
               onFilterChange={handleFilterChange}
               isRefreshing={isRefreshing}
-              statusChangingPostId={statusChangingPostId}
+              statusChangingPostId={null} // Simplified, refresh handles this
               currentFilter={statusFilter}
             />
             {totalPages > 1 && !isRefreshing && (
                <Pagination>
                   <PaginationContent>
                     <PaginationItem>
-                      <PaginationPrevious 
-                        href="#" 
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(currentPage - 1);
-                        }}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-                      />
+                      <Button 
+                        variant="ghost" 
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                      >
+                        <PaginationPrevious href="#" />
+                      </Button>
                     </PaginationItem>
                      {Array.from({ length: totalPages }, (_, i) => (
                         <PaginationItem key={i}>
                           <PaginationLink 
                             href="#"
                             isActive={currentPage === i + 1}
-                            onClick={(e) => {
-                              e.preventDefault();
-                              handlePageChange(i + 1);
-                            }}
+                            onClick={() => handlePageChange(i + 1)}
                           >
                             {i + 1}
                           </PaginationLink>
@@ -264,14 +219,13 @@ export default function ManagePostsClient({
                      ))}
 
                     <PaginationItem>
-                      <PaginationNext 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          handlePageChange(currentPage + 1);
-                        }}
-                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
-                      />
+                      <Button
+                        variant="ghost" 
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                      >
+                         <PaginationNext href="#" />
+                      </Button>
                     </PaginationItem>
                   </PaginationContent>
                 </Pagination>
@@ -282,7 +236,7 @@ export default function ManagePostsClient({
             editingPost={editingPost}
             onFormSubmit={handleFormSubmit}
             onBack={handleBackFromForm}
-            isSubmitting={isPending}
+            isSubmitting={isSubmitting}
             debugError={undefined}
           />
         )}
