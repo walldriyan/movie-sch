@@ -64,7 +64,7 @@ export default function RootLayout({
                 </div>
                 
                 <Navbar />
-                <main className="pt-16">
+                <main className="flex flex-col items-center pt-16">
                     <ErrorBoundary>
                       {children}
                     </ErrorBoundary>
