@@ -578,7 +578,8 @@ export async function savePost(postData: PostFormData, id?: number) {
   }
 
   // Revalidate paths to reflect changes
-  await invalidatePostsCache(id, data.seriesId, id ? undefined : userId);
+  revalidatePath('/');
+  revalidatePath('/manage');
 
   console.log(`[Action: savePost] Save process finished for post ID: ${id || 'new'}.`);
 }
@@ -794,7 +795,7 @@ export async function toggleLikePost(postId: number, like: boolean) {
     }
   }
 
-  await invalidatePostsCache(postId, post.seriesId ?? undefined, post.authorId);
+  revalidatePath('/');
 }
 
 export async function toggleFavoritePost(postId: number) {
@@ -935,5 +936,6 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
 
 
