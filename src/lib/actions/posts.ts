@@ -60,17 +60,17 @@ async function invalidateCachePattern(pattern: string) {
 
 export async function invalidatePostsCache(postId?: number, seriesId?: number, authorId?: string) {
     console.log(`[Cache] invalidatePostsCache called with: postId=${postId}, seriesId=${seriesId}, authorId=${authorId}`);
+    revalidatePath('/');
+    revalidatePath('/manage');
     if (postId) {
-        await invalidateCachePattern(`posts:*"id":${postId}*`);
+        revalidatePath(`/movies/${postId}`);
     }
     if (seriesId) {
-        await invalidateCachePattern(`posts:*"seriesId":${seriesId}*`);
+        revalidatePath(`/series/${seriesId}`);
     }
     if (authorId) {
-        await invalidateCachePattern(`posts:*"authorId":"${authorId}"*`);
+        revalidatePath(`/profile/${authorId}`);
     }
-    await invalidateCachePattern(`posts:*`);
-    console.log("[Cache] General posts cache invalidated.");
 }
 
 
@@ -408,21 +408,18 @@ export async function getPost(postId: number) {
         where: { parentId: null },
         include: {
           user: true,
-          replies: { 
+          replies: {
             include: {
               user: true,
-              replies: { 
-                include: {
-                  user: true,
-                  replies: true,
-                }
-              }
+            },
+             orderBy: {
+              createdAt: 'asc'
             }
-          }
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: 'desc',
+        },
       },
       author: true,
       favoritePosts: userId ? { where: { userId } } : false,
@@ -580,11 +577,8 @@ export async function savePost(postData: PostFormData, id?: number) {
     await prisma.post.create({ data: { ...data, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } });
   }
 
-  // A more targeted cache invalidation
-  // await invalidatePostsCache(id, data.seriesId, id ? undefined : userId);
-  revalidatePath('/');
-  revalidatePath('/manage');
-  console.log('[Action: savePost] Revalidated / and /manage paths.');
+  // Revalidate paths to reflect changes
+  await invalidatePostsCache(id, data.seriesId, id ? undefined : userId);
 
   console.log(`[Action: savePost] Save process finished for post ID: ${id || 'new'}.`);
 }
@@ -629,8 +623,7 @@ export async function deletePost(id: number) {
     });
   }
   
-  await invalidatePostsCache();
-  revalidatePath('/');
+  await invalidatePostsCache(id, postToDelete.seriesId ?? undefined, postToDelete.authorId);
   console.log(`[Action: deletePost] Post ${id} processed for deletion. Paths revalidated.`);
 }
 
@@ -740,9 +733,7 @@ export async function updatePostStatus(postId: number, status: string) {
     data: { status },
   });
 
-  await invalidatePostsCache();
-  revalidatePath('/manage');
-  revalidatePath(`/movies/${postId}`);
+  await invalidatePostsCache(postId, postToUpdate.seriesId ?? undefined, postToUpdate.authorId);
   console.log(`[Action: updatePostStatus] Successfully updated post ${postId} to status: ${status}`);
 }
 
@@ -803,8 +794,7 @@ export async function toggleLikePost(postId: number, like: boolean) {
     }
   }
 
-  await invalidatePostsCache(postId);
-  revalidatePath(`/movies/${postId}`);
+  await invalidatePostsCache(postId, post.seriesId ?? undefined, post.authorId);
 }
 
 export async function toggleFavoritePost(postId: number) {
@@ -841,10 +831,7 @@ export async function toggleFavoritePost(postId: number) {
     });
   }
 
-  await invalidatePostsCache(postId);
-  revalidatePath(`/movies/${postId}`);
-  revalidatePath('/favorites');
-  revalidatePath(`/profile/${userId}`);
+  await invalidatePostsCache(postId, undefined, userId);
 }
 
 export async function getFavoritePosts() {
@@ -948,4 +935,5 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
 
