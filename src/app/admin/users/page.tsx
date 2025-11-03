@@ -125,7 +125,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <FormField
+            <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
