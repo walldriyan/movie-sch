@@ -9,9 +9,10 @@ import { getPostsForAdmin } from '@/lib/actions';
 export default async function ManagePostsPage({
   searchParams
 }: {
-  searchParams: { [key: string]: string | string[] | undefined };
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  console.log('[ManagePage] Server Component rendering. Search Params:', searchParams);
+  const resolvedSearchParams = await searchParams;
+  console.log('[ManagePage] Server Component rendering. Search Params:', resolvedSearchParams);
 
   const session = await auth();
   const user = session?.user;
@@ -21,9 +22,9 @@ export default async function ManagePostsPage({
     notFound();
   }
 
-  const page = Number(searchParams?.page) || 1;
+  const page = Number(resolvedSearchParams?.page) || 1;
   const status =
-    (searchParams?.status as string) || MovieStatus.PENDING_APPROVAL;
+    (resolvedSearchParams?.status as string) || MovieStatus.PENDING_APPROVAL;
 
   console.log(`[ManagePage] Fetching posts for admin. Page: ${page}, Status: ${status}`);
   // Fetch initial data on the server with the default filter.
