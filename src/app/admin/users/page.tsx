@@ -70,6 +70,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
 
 const userEditSchema = z.object({
   role: z.nativeEnum(ROLES),
@@ -84,15 +86,6 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  
-  // DEBUG: Log the user object when the dialog is prepared to open
-  useEffect(() => {
-    if (isOpen) {
-      console.log("[DEBUG] EditUserDialog opened for user:", user);
-      const rolesList = Object.values(ROLES);
-      console.log("[DEBUG] Roles list for dropdown:", rolesList);
-    }
-  }, [isOpen, user]);
 
   const form = useForm<UserEditFormValues>({
     resolver: zodResolver(userEditSchema),
@@ -104,7 +97,6 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   });
 
   const onSubmit = (data: UserEditFormValues) => {
-    console.log("[DEBUG] Form submitted with data:", data);
     startTransition(async () => {
       try {
         const limit = data.dailyPostLimit === '' || data.dailyPostLimit === undefined ? null : data.dailyPostLimit;
@@ -113,7 +105,6 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
         onUserUpdate();
         setIsOpen(false);
       } catch (error: any) {
-        console.error("[ERROR] Failed to update user:", error);
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
       }
     });
@@ -140,20 +131,26 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
               control={form.control}
               name="role"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="space-y-3">
                   <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex flex-col space-y-1"
+                    >
                       {Object.values(ROLES).map((role) => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
+                        <FormItem key={role} className="flex items-center space-x-3 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value={role} />
+                          </FormControl>
+                          <FormLabel className="font-normal">
+                            {role}
+                          </FormLabel>
+                        </FormItem>
                       ))}
-                    </SelectContent>
-                  </Select>
+                    </RadioGroup>
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -357,3 +354,4 @@ export default function ManageUsersPage() {
     
 
     
+
