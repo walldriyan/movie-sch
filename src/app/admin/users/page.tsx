@@ -84,6 +84,15 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  
+  // DEBUG: Log the user object when the dialog is prepared to open
+  useEffect(() => {
+    if (isOpen) {
+      console.log("[DEBUG] EditUserDialog opened for user:", user);
+      const rolesList = Object.values(ROLES);
+      console.log("[DEBUG] Roles list for dropdown:", rolesList);
+    }
+  }, [isOpen, user]);
 
   const form = useForm<UserEditFormValues>({
     resolver: zodResolver(userEditSchema),
@@ -95,14 +104,16 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   });
 
   const onSubmit = (data: UserEditFormValues) => {
+    console.log("[DEBUG] Form submitted with data:", data);
     startTransition(async () => {
       try {
-        const limit = data.dailyPostLimit === '' ? null : data.dailyPostLimit;
+        const limit = data.dailyPostLimit === '' || data.dailyPostLimit === undefined ? null : data.dailyPostLimit;
         await updateUserRole(user.id, data.role, data.permissionRequestStatus, limit);
         toast({ title: 'User Updated', description: `${user.name}'s details have been saved.` });
         onUserUpdate();
         setIsOpen(false);
       } catch (error: any) {
+        console.error("[ERROR] Failed to update user:", error);
         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
       }
     });
