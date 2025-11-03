@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import type { User } from '@prisma/client';
+import type { User, Role } from '@prisma/client';
 import { getUsers, updateUserRole } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -92,11 +92,6 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
-  
-  console.log("Edit Dialog for User:", user);
-  const availableRoles = Object.values(ROLES);
-  console.log("Roles list:", availableRoles);
-
 
   const form = useForm<UserEditFormValues>({
     resolver: zodResolver(userEditSchema),
@@ -119,7 +114,6 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   }, [isOpen, user, form]);
 
   const onSubmit = (data: UserEditFormValues) => {
-    console.log("Submitting form data:", data);
     startTransition(async () => {
       try {
         const limit = data.dailyPostLimit === '' || data.dailyPostLimit === undefined ? null : data.dailyPostLimit;
@@ -150,7 +144,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-             <FormField
+            <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
@@ -265,7 +259,7 @@ export default function ManageUsersPage() {
   const handleStatusChange = (user: User, newStatus: string) => {
     startStatusChangeTransition(async () => {
         try {
-            await updateUserRole(user.id, user.role, newStatus, user.dailyPostLimit?.toString() ?? null);
+            await updateUserRole(user.id, user.role as Role, newStatus, user.dailyPostLimit?.toString() ?? null);
             toast({ title: 'Status Updated', description: `${user.name}'s status updated to ${newStatus}`});
             fetchUsers();
         } catch (error: any) {
@@ -273,6 +267,18 @@ export default function ManageUsersPage() {
         }
     });
   }
+
+  const handleRoleChange = (user: User, newRole: Role) => {
+    startStatusChangeTransition(async () => {
+        try {
+            await updateUserRole(user.id, newRole, user.permissionRequestStatus || 'NONE', user.dailyPostLimit?.toString() ?? null);
+            toast({ title: 'Role Updated', description: `${user.name}'s role updated to ${newRole}`});
+            fetchUsers();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -364,6 +370,22 @@ export default function ManageUsersPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <EditUserDialog user={user} onUserUpdate={fetchUsers} />
+                          <DropdownMenuSeparator />
+                           <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                      <DropdownMenuRadioGroup
+                                          value={user.role}
+                                          onValueChange={(newRole) => handleRoleChange(user, newRole as Role)}
+                                      >
+                                        {Object.values(ROLES).map(role => (
+                                           <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
+                                        ))}
+                                      </DropdownMenuRadioGroup>
+                                  </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                          </DropdownMenuSub>
                            <DropdownMenuSub>
                               <DropdownMenuSubTrigger>Change Permission Status</DropdownMenuSubTrigger>
                               <DropdownMenuPortal>
