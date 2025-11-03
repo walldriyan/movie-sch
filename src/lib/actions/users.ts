@@ -4,7 +4,7 @@
 
 import type { User } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
-import { auth, invalidateUserSessions } from '@/auth';
+import { auth } from '@/auth';
 import { ROLES, MovieStatus } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { saveImageFromDataUrl, deleteUploadedFile, invalidateUserGroupsCache } from './posts';
@@ -196,7 +196,6 @@ export async function updateUserProfile(
     data: updateData,
   });
 
-  await invalidateUserSessions(userId);
   revalidatePath(`/profile/${userId}`);
 }
 
@@ -247,7 +246,6 @@ export async function updateUserRole(
     },
   });
 
-  await invalidateUserSessions(userId);
   await invalidateUserGroupsCache(userId);
   revalidatePath('/admin/users');
   revalidatePath(`/profile/${userId}`);
@@ -374,4 +372,5 @@ export async function canUserAccessMicroPosts(): Promise<boolean> {
 
   return userMembershipCount > 0;
 }
+
 
