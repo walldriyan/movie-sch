@@ -205,7 +205,6 @@ export default function MoviePageContent({
   const sanitizedDescription = DOMPurify.sanitize(post.description);
 
   useEffect(() => {
-    let isMounted = true;
     if (process.env.NODE_ENV === 'production' || !effectRan.current) {
         startViewCountTransition(async () => {
             try {
@@ -219,25 +218,22 @@ export default function MoviePageContent({
 
     // Cleanup function to set the ref back to false on unmount
     return () => {
-        isMounted = false;
         if (process.env.NODE_ENV !== 'production') {
             effectRan.current = true;
         }
     };
   }, []); // Empty dependency array ensures this runs only once
 
-  // This effect will run only once on mount to set the initial view count
-  // And won't re-run to increment it again.
   useEffect(() => {
+    // This effect runs only once on mount to set the initial view count
     setViewCount(initialPost.viewCount + 1);
-  }, []); // Empty dependency array
+  }, [initialPost.viewCount]);
 
 
   useEffect(() => {
-    if (post) {
-      setCurrentReviews(post.reviews || []);
-    }
-  }, [post]);
+    setPost(initialPost);
+    setCurrentReviews(initialPost.reviews || []);
+  }, [initialPost]);
 
   if (!post) {
     return (
