@@ -13,9 +13,7 @@ export default async function ManagePostsPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
 
-  const resolvedSearchParams = await searchParams; // ✅ await කරනවා
-
-
+  const resolvedSearchParams = await searchParams;
 
    const session = await auth();
   const user = session?.user;
