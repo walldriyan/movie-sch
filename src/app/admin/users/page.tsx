@@ -48,6 +48,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
@@ -86,6 +92,11 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
   const [isOpen, setIsOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
+  
+  console.log("Edit Dialog for User:", user);
+  const availableRoles = Object.values(ROLES);
+  console.log("Roles list:", availableRoles);
+
 
   const form = useForm<UserEditFormValues>({
     resolver: zodResolver(userEditSchema),
@@ -95,8 +106,20 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
       dailyPostLimit: user.dailyPostLimit?.toString() || '',
     },
   });
+  
+  // Reset form values when the dialog is opened with a new user
+  useEffect(() => {
+    if (isOpen) {
+      form.reset({
+        role: user.role as keyof typeof ROLES,
+        permissionRequestStatus: (user.permissionRequestStatus as 'NONE' | 'PENDING' | 'APPROVED' | 'REJECTED') || 'NONE',
+        dailyPostLimit: user.dailyPostLimit?.toString() || '',
+      });
+    }
+  }, [isOpen, user, form]);
 
   const onSubmit = (data: UserEditFormValues) => {
+    console.log("Submitting form data:", data);
     startTransition(async () => {
       try {
         const limit = data.dailyPostLimit === '' || data.dailyPostLimit === undefined ? null : data.dailyPostLimit;
@@ -127,7 +150,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
+             <FormField
               control={form.control}
               name="role"
               render={({ field }) => (
@@ -187,6 +210,7 @@ function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () =
                    <FormControl>
                     <Input type="number" placeholder="Default (from settings)" {...field} />
                   </FormControl>
+                   <FormDescription>Leave empty to use the default application setting.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -211,6 +235,7 @@ export default function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isChangingStatus, startStatusChangeTransition] = useTransition();
 
   const fetchUsers = async () => {
     setIsRefreshing(true);
@@ -235,6 +260,18 @@ export default function ManageUsersPage() {
   const handleRefreshAndToast = () => {
     fetchUsers();
     toast({ title: 'User list refreshed'});
+  }
+
+  const handleStatusChange = (user: User, newStatus: string) => {
+    startStatusChangeTransition(async () => {
+        try {
+            await updateUserRole(user.id, user.role, newStatus, user.dailyPostLimit?.toString() ?? null);
+            toast({ title: 'Status Updated', description: `${user.name}'s status updated to ${newStatus}`});
+            fetchUsers();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
+    });
   }
 
   return (
@@ -327,6 +364,22 @@ export default function ManageUsersPage() {
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <EditUserDialog user={user} onUserUpdate={fetchUsers} />
+                           <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>Change Permission Status</DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                      <DropdownMenuRadioGroup
+                                          value={user.permissionRequestStatus || 'NONE'}
+                                          onValueChange={(newStatus) => handleStatusChange(user, newStatus)}
+                                      >
+                                          <DropdownMenuRadioItem value="NONE">None</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="PENDING">Pending</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="APPROVED">Approved</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="REJECTED">Rejected</DropdownMenuRadioItem>
+                                      </DropdownMenuRadioGroup>
+                                  </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                          </DropdownMenuSub>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive">
                             Delete User
@@ -350,8 +403,3 @@ export default function ManageUsersPage() {
     </div>
   );
 }
-
-    
-
-    
-
