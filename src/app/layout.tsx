@@ -47,7 +47,7 @@ export default function RootLayout({
       </head>
       <body
         className={cn(
-          'min-h-screen bg-gradient-to-r from-zinc-950/60 via-stone-900/10 to-zinc-950/50  font-sans antialiased relative ',
+          'min-h-screen bg-gradient-to-r from-zinc-950/60 via-stone-900/10 to-zinc-950/50  font-sans antialiased relative overflow-hidden',
           fontSans.variable,
           fontSerif.variable,
           fontSinhala.variable
@@ -64,7 +64,7 @@ export default function RootLayout({
                 </div>
                 
                 <Navbar />
-                <main className="flex flex-col items-center pt-16 w-full">
+                <main className="flex flex-col items-center pt-16 w-full overflow-hidden">
                     <ErrorBoundary>
                       {children}
                     </ErrorBoundary>
