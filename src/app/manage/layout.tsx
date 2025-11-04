@@ -1,5 +1,4 @@
-// This file now simply re-exports the layout from the /manage directory
-// to ensure a single, consistent layout for all admin-related pages.
+
 'use client';
 
 import { useSession } from 'next-auth/react';
@@ -12,7 +11,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarInset,
 } from '@/components/ui/sidebar';
 import { 
     LayoutGrid, 
@@ -38,8 +36,8 @@ export default function ManageLayout({
   
   if (status === 'loading') {
     return (
-      <div className="flex pt-16 w-full">
-        <div className="w-64 h-[calc(100vh-4rem)] border-r p-2">
+      <div className="flex pt-16 w-full h-screen">
+        <div className="w-64 h-full border-r p-2">
             <div className="flex flex-col space-y-2">
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
@@ -60,10 +58,10 @@ export default function ManageLayout({
   const isActive = (path: string) => pathname === path;
 
   return (
-    <div className="flex w-full pt-16">
-      <Sidebar className="h-[calc(100vh-4rem)] top-16">
+    <div className="flex pt-16">
+      <Sidebar className="h-[calc(100vh-4rem)] w-64 fixed top-16">
         <SidebarHeader>
-            <h2 className="text-lg font-semibold">Manage</h2>
+            <h2 className="text-lg font-semibold px-2">Manage</h2>
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
@@ -140,11 +138,11 @@ export default function ManageLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <SidebarInset className="ml-[16rem] overflow-hidden">
-        <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </main>
-      </SidebarInset>
+      <main className="flex-1 ml-64 p-8 overflow-y-auto h-[calc(100vh-4rem)]">
+        <div className="w-full max-w-7xl mx-auto">
+            {children}
+        </div>
+      </main>
     </div>
   );
 }
