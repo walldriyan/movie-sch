@@ -6,11 +6,14 @@
 import * as Sentry from "@sentry/nextjs";
 
 Sentry.init({
-  dsn: "https://d1a262abc902034babd62ceae0eaa12e@o4510267385577472.ingest.us.sentry.io/4510267387740160",
+  dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,
 
+  // Setting this to 1.0 feels like a lot, but it's only on the edge worker
+  profilesSampleRate: 1.0,
+  
   // Enable logs to be sent to Sentry
   enableLogs: true,
 
