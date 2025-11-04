@@ -12,6 +12,7 @@ import { saveImageFromDataUrl } from './posts';
 
 
 export async function uploadExamImage(formData: FormData): Promise<string | null> {
+    console.log(`[SERVER] Step 3: 'uploadExamImage' server action initiated.`);
     const session = await auth();
     if (!session?.user) {
         throw new Error('Not authenticated');
@@ -23,8 +24,11 @@ export async function uploadExamImage(formData: FormData): Promise<string | null
     const dataUrl = await file.arrayBuffer().then(buffer => 
         `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
     );
+    console.log(`[SERVER] Step 4: Calling 'saveImageFromDataUrl' to process the image data.`);
     // Save to a specific folder for exam images
-    return saveImageFromDataUrl(dataUrl, 'exams');
+    const savedUrl = await saveImageFromDataUrl(dataUrl, 'exams');
+    console.log(`[SERVER] Step 4.1: 'saveImageFromDataUrl' returned:`, savedUrl);
+    return savedUrl;
 }
 
 
@@ -37,6 +41,7 @@ const optionSchema = z.object({
 const imageUrlSchema = z.object({
   url: z.string().min(1, "Image URL is required."),
 });
+
 
 const questionSchema = z.object({
   id: z.number().optional(),
@@ -99,7 +104,7 @@ const examSchema = z.object({
 type ExamFormData = z.infer<typeof examSchema>;
 
 export async function createOrUpdateExam(data: ExamFormData, examId?: number | null) {
-    console.log('Submitting data:', data);
+    console.log('--- [Server Action] Received data for create/update ---', JSON.stringify(data, null, 2));
     const session = await auth();
     const user = session?.user;
 
@@ -131,10 +136,15 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         try {
             await prisma.$transaction(async (tx) => {
                 console.log(`Updating exam ID: ${examId}`);
-                const relationData: any = {
-                    post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true },
-                    group: data.groupId ? { connect: { id: data.groupId } } : { disconnect: true }
-                };
+                
+                const relationData: any = {};
+                if (data.assignmentType === 'POST') {
+                    relationData.post = data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true };
+                    relationData.group = { disconnect: true };
+                } else if (data.assignmentType === 'GROUP') {
+                    relationData.group = data.groupId ? { connect: { id: data.groupId } } : { disconnect: true };
+                    relationData.post = { disconnect: true };
+                }
 
                 await tx.exam.update({
                   where: { id: examId },
@@ -221,7 +231,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         console.log("Creating new exam");
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
-            post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
+            post: data.assignmentType === 'POST' && data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
             group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
             questions: {
                 create: data.questions.map(q => ({
@@ -799,3 +809,7 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
 
     return { success: true, newTotalScore };
 }
+
+    
+
+

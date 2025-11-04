@@ -1,7 +1,7 @@
 
 'use client';
 
-import { auth } from '@/auth';
+import { useSession } from 'next-auth/react';
 import { notFound, usePathname } from 'next/navigation';
 import { ROLES } from '@/lib/permissions';
 import {
@@ -11,11 +11,8 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarInset,
-  SidebarTrigger
 } from '@/components/ui/sidebar';
 import { 
-    PanelLeft, 
     LayoutGrid, 
     List,
     Users,
@@ -24,56 +21,80 @@ import {
     Bell,
     Settings,
     MessageSquareWarning, 
+    Shield,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { Skeleton } from '@/components/ui/skeleton';
+import AuthGuard from '@/components/auth/auth-guard';
 
 export default function ManageLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
   const pathname = usePathname();
+  
+  if (status === 'loading') {
+    return (
+      <div className="flex h-screen">
+        <div className="w-64 border-r p-2 bg-background">
+            <div className="flex flex-col space-y-2 p-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+            </div>
+        </div>
+        <div className="flex-1 p-8">
+            <Skeleton className="h-32 w-full" />
+        </div>
+      </div>
+    )
+  }
 
   if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     notFound();
   }
   
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname.startsWith(path) && (pathname === path || pathname.startsWith(`${path}/`));
 
   return (
-    <div className="flex w-full">
-      <Sidebar>
+    <div className="flex h-screen">
+      <Sidebar className="w-64 flex-shrink-0 border-r bg-background">
         <SidebarHeader>
-            <h2 className="text-lg font-semibold">Manage</h2>
+            <h2 className="text-lg font-semibold px-4 pt-4 flex items-center gap-2">
+              <Shield className="h-6 w-6"/>
+              Dashboard
+            </h2>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="mt-4">
           <SidebarMenu>
-            <SidebarMenuItem>
-              <Link href="/manage">
-                <SidebarMenuButton isActive={isActive('/manage')}>
-                  <LayoutGrid />
-                  Posts
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
+            <AuthGuard requiredRole={ROLES.USER_ADMIN}>
+              <SidebarMenuItem>
+                <Link href="/manage">
+                  <SidebarMenuButton isActive={pathname === '/manage'}>
+                    <LayoutGrid className="h-5 w-5" />
+                    Posts
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            </AuthGuard>
              <SidebarMenuItem>
                 <Link href="/manage/series">
                   <SidebarMenuButton isActive={isActive('/manage/series')} disabled>
-                    <List />
+                    <List className="h-5 w-5" />
                     Series
                   </SidebarMenuButton>
                 </Link>
             </SidebarMenuItem>
             
-            {user.role === ROLES.SUPER_ADMIN && (
+            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
               <>
                 <SidebarMenuItem>
                   <Link href="/admin/exams">
                     <SidebarMenuButton isActive={isActive('/admin/exams')}>
-                      <BookCheck />
+                      <BookCheck className="h-5 w-5" />
                       Exams
                     </SidebarMenuButton>
                   </Link>
@@ -81,7 +102,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/users">
                     <SidebarMenuButton isActive={isActive('/admin/users')}>
-                      <Users />
+                      <Users className="h-5 w-5" />
                       Users
                     </SidebarMenuButton>
                   </Link>
@@ -89,7 +110,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/groups">
                     <SidebarMenuButton isActive={isActive('/admin/groups')}>
-                      <Users2 />
+                      <Users2 className="h-5 w-5" />
                       Groups
                     </SidebarMenuButton>
                   </Link>
@@ -97,7 +118,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/notifications">
                     <SidebarMenuButton isActive={isActive('/admin/notifications')}>
-                      <Bell />
+                      <Bell className="h-5 w-5" />
                       Notifications
                     </SidebarMenuButton>
                   </Link>
@@ -105,7 +126,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/feedback">
                     <SidebarMenuButton isActive={isActive('/admin/feedback')}>
-                      <MessageSquareWarning />
+                      <MessageSquareWarning className="h-5 w-5" />
                       Feedback
                     </SidebarMenuButton>
                   </Link>
@@ -113,22 +134,22 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/settings">
                     <SidebarMenuButton isActive={isActive('/admin/settings')}>
-                      <Settings />
+                      <Settings className="h-5 w-5" />
                       Settings
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
               </>
-            )}
+            </AuthGuard>
 
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <SidebarInset>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pt-5 w-full">
-          {children}
-        </main>
-      </SidebarInset>
+      <main className="flex-1 overflow-y-auto p-8">
+        <div className="w-full max-w-7xl mx-auto overflow-x-hidden">
+            {children}
+        </div>
+      </main>
     </div>
   );
 }

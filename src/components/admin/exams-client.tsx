@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useState, useEffect, useTransition, useCallback } from 'react';
@@ -138,6 +139,8 @@ const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number, iInde
         const file = e.target.files?.[0];
         if (!file) return;
         
+        console.log(`[CLIENT] Step 1: File selected for Q${qIndex}, I${iIndex}:`, { name: file.name, size: file.size });
+
         if (file.size > 2 * 1024 * 1024) { // 2MB limit
             toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 2MB.'});
             return;
@@ -148,14 +151,19 @@ const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number, iInde
 
         startUploading(async () => {
             try {
+                console.log(`[CLIENT] Step 2: Calling 'uploadExamImage' server action.`);
                 const uploadedUrl = await uploadExamImage(formData);
+                console.log(`[CLIENT] Step 5: Received URL from server:`, uploadedUrl);
                 if (uploadedUrl) {
                     form.setValue(`questions.${qIndex}.images.${iIndex}.url`, uploadedUrl, { shouldValidate: true, shouldDirty: true });
+                    console.log(`[CLIENT] Step 6: Set form value for questions.${qIndex}.images.${iIndex}.url`);
+                    console.log('[CLIENT] Image uploaded. Current form data:', form.getValues());
                     toast({ title: 'Image Uploaded' });
                 } else {
                     throw new Error('Upload failed to return a URL.');
                 }
             } catch (err: any) {
+                console.error('[CLIENT] Upload Failed:', err);
                 toast({ variant: 'destructive', title: 'Upload Failed', description: err.message });
             }
         });
@@ -221,7 +229,10 @@ const QuestionItem = ({ control, qIndex, removeQuestion, form }: { control: any,
                     <div className="md:col-span-1">
                          <FormField control={control} name={`questions.${qIndex}.type`} render={({ field }) => (
                             <FormItem><FormLabel>Question Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={(value) => {
+                                    field.onChange(value);
+                                    console.log("Question type changed. Current form data:", form.getValues());
+                                }} defaultValue={field.value}>
                                     <FormControl><SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger></FormControl>
                                     <SelectContent>
                                         <SelectItem value="MCQ">Multiple Choice</SelectItem>
@@ -336,23 +347,17 @@ const PostCombobox = ({
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearching, startSearchTransition] = useTransition();
 
-    useEffect(() => {
-        const handler = setTimeout(() => {
-            if (searchQuery.length > 2) {
-                startSearchTransition(async () => {
-                    const fetchedPosts = await searchPostsForExam(searchQuery);
-                    // Combine initial posts and fetched posts, removing duplicates
-                    const allPosts = [...initialPosts, ...fetchedPosts as PostWithGroup[]];
-                    const uniquePosts = Array.from(new Map(allPosts.map(p => [p.id, p])).values());
-                    onPostsChange(uniquePosts);
-                });
-            }
-        }, 500);
-
-        return () => {
-            clearTimeout(handler);
-        };
-    }, [searchQuery, initialPosts, onPostsChange]);
+    const handleSearch = (query: string) => {
+        setSearchQuery(query);
+        if (query.length > 2) {
+            startSearchTransition(async () => {
+                const fetchedPosts = await searchPostsForExam(query);
+                const allPosts = [...initialPosts, ...fetchedPosts as PostWithGroup[]];
+                const uniquePosts = Array.from(new Map(allPosts.map(p => [p.id, p])).values());
+                onPostsChange(uniquePosts);
+            });
+        }
+    };
 
 
     return (
@@ -381,7 +386,7 @@ const PostCombobox = ({
                     <CommandInput 
                         placeholder="Search posts..."
                         value={searchQuery}
-                        onValueChange={setSearchQuery}
+                        onValueChange={handleSearch}
                     />
                     <CommandList>
                         {isSearching && <div className="p-2 text-sm text-center text-muted-foreground">Searching...</div>}
@@ -940,3 +945,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
     </div>
   );
 }
+
+    
+
+

@@ -111,10 +111,7 @@ export default function Navbar() {
         <NavLink href="/" mobile={isMobile} icon={<Home className="h-5 w-5"/>}>Home</NavLink>
         <NavLink href="/wall" mobile={isMobile} icon={<MessageSquare className="h-5 w-5"/>} hidden={!isNavExpanded || !showWall}>Wall</NavLink>
         {user && <NavLink href="/activity" mobile={isMobile} icon={<Activity className="h-5 w-5"/>} hidden={!isNavExpanded}>Activity</NavLink>}
-        {canManage && <NavLink href="/manage" mobile={isMobile} icon={<LayoutGrid className="h-5 w-5"/>} hidden={!isNavExpanded}>Manage</NavLink>}
-        {user?.role === ROLES.SUPER_ADMIN && (
-          <NavLink href="/admin/users" mobile={isMobile} icon={<Shield className="h-5 w-5"/>} hidden={!isNavExpanded}>Admin</NavLink>
-        )}
+        {canManage && <NavLink href="/manage" mobile={isMobile} icon={<Shield className="h-5 w-5"/>} hidden={!isNavExpanded}>Dashboard</NavLink>}
         {user && <NavLink href="/favorites" mobile={isMobile} icon={<Heart className="h-5 w-5"/>} hidden={!isNavExpanded}>Favorites</NavLink>}
         {user && <NavLink href={`/profile/${user.id}`} mobile={isMobile} icon={<User className="h-5 w-5"/>} hidden={!isNavExpanded}>Profile</NavLink>}
       </nav>
@@ -174,10 +171,7 @@ export default function Navbar() {
               <div className={cn("flex items-center gap-1 transition-opacity duration-200", isNavExpanded ? 'opacity-100' : 'opacity-0 w-0 overflow-hidden')}>
                 <NavLink href="/wall" icon={<MessageSquare className="h-5 w-5"/>} hidden={!showWall}>Wall</NavLink>
                 {user && <NavLink href="/activity" icon={<Activity className="h-5 w-5"/>}>Activity</NavLink>}
-                {canManage && <NavLink href="/manage" icon={<LayoutGrid className="h-5 w-5"/>}>Manage</NavLink>}
-                {user?.role === ROLES.SUPER_ADMIN && (
-                  <NavLink href="/admin/users" icon={<Shield className="h-5 w-5"/>}>Admin</NavLink>
-                )}
+                {canManage && <NavLink href="/manage" icon={<Shield className="h-5 w-5"/>}>Dashboard</NavLink>}
                 {user && <NavLink href="/favorites" icon={<Heart className="h-5 w-5"/>}>Favorites</NavLink>}
                 {user && <NavLink href={`/profile/${user.id}`} icon={<User className="h-5 w-5"/>}>Profile</NavLink>}
               </div>

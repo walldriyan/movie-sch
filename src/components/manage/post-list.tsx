@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useTransition } from 'react';
@@ -49,7 +48,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Badge } from '@/components/ui/badge';
 import AuthGuard from '@/components/auth/auth-guard';
-import { PERMISSIONS, MovieStatus } from '@/lib/permissions';
+import { PERMISSIONS, MovieStatus, ROLES } from '@/lib/permissions';
 import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import ClientSideDate from './client-side-date';
@@ -276,7 +275,7 @@ export default function PostList({
                             </DropdownMenuItem>
                           </AuthGuard>
 
-                          <AuthGuard requiredPermissions={[PERMISSIONS['post.change_status']]}>
+                          <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
                              <DropdownMenuSub>
                               <DropdownMenuSubTrigger disabled={statusChangingPostId === post.id}>
                                 Change Status

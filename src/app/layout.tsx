@@ -40,14 +40,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark overflow-x-hidden">
+    <html lang="en" className="dark">
       <head>
         <title>CineVerse Captions</title>
         <meta name="description" content="The universe of movies and subtitles at your fingertips." />
       </head>
       <body
         className={cn(
-          'min-h-screen bg-gradient-to-r from-zinc-950/60 via-stone-900/10 to-zinc-950/50  font-sans antialiased relative ',
+          'min-h-screen bg-gradient-to-r from-zinc-950/60 via-stone-900/10 to-zinc-950/50  font-sans antialiased relative flex flex-col',
           fontSans.variable,
           fontSerif.variable,
           fontSinhala.variable
@@ -64,7 +64,7 @@ export default function RootLayout({
                 </div>
                 
                 <Navbar />
-                <main className="flex flex-col items-center pt-16 w-full">
+                <main className="flex-1 pt-16">
                     <ErrorBoundary>
                       {children}
                     </ErrorBoundary>
