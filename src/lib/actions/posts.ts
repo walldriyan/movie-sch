@@ -236,31 +236,28 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
             visibility: 'PUBLIC',
         };
 
+        if (lockStatus === 'locked') {
+            publicCriteria.isLockedByDefault = true;
+        } else {
+            publicCriteria.isLockedByDefault = false;
+        }
+
         if (user) { // Logged-in regular user
             const userGroupIds = await getUserGroupIds(user.id);
-
-            whereClause = {
-                 OR: [
-                    publicCriteria,
-                    {
-                        status: MovieStatus.PUBLISHED,
-                        visibility: 'GROUP_ONLY',
-                        groupId: { in: userGroupIds },
-                    }
-                ]
+            const groupCriteria: Prisma.PostWhereInput = {
+                status: MovieStatus.PUBLISHED,
+                visibility: 'GROUP_ONLY',
+                groupId: { in: userGroupIds },
+            };
+            if (lockStatus === 'locked') {
+              groupCriteria.isLockedByDefault = true;
+            } else {
+              groupCriteria.isLockedByDefault = false;
             }
+            whereClause = { OR: [publicCriteria, groupCriteria] };
         } else { // Guest
             whereClause = publicCriteria;
         }
-
-        // For non-admins, only show unlocked posts unless they are filtering for locked posts
-        if (lockStatus !== 'locked') {
-            whereClause.isLockedByDefault = false;
-        }
-    }
-    
-    if (lockStatus === 'locked') {
-        whereClause.isLockedByDefault = true;
     }
 
 
@@ -939,6 +936,7 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
 
 
 
