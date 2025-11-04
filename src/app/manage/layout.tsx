@@ -1,7 +1,7 @@
 
 'use client';
 
-import { auth } from '@/auth';
+import { useSession } from 'next-auth/react';
 import { notFound, usePathname } from 'next/navigation';
 import { ROLES } from '@/lib/permissions';
 import {
@@ -12,10 +12,8 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
   SidebarInset,
-  SidebarTrigger
 } from '@/components/ui/sidebar';
 import { 
-    PanelLeft, 
     LayoutGrid, 
     List,
     Users,
@@ -26,16 +24,33 @@ import {
     MessageSquareWarning, 
 } from 'lucide-react';
 import Link from 'next/link';
-import { useSession } from 'next-auth/react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ManageLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const user = session?.user;
   const pathname = usePathname();
+  
+  if (status === 'loading') {
+    return (
+      <div className="flex pt-16">
+        <div className="w-64 h-[calc(100vh-4rem)] border-r p-2">
+            <div className="flex flex-col space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+            </div>
+        </div>
+        <div className="flex-1 p-8">
+            <Skeleton className="h-32 w-full" />
+        </div>
+      </div>
+    )
+  }
 
   if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     notFound();
