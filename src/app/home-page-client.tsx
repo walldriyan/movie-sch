@@ -218,7 +218,6 @@ export default function HomePageClient({
   ]
   
   const isPrivilegedUser = session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
-  const allButtonLockStatus = isPrivilegedUser ? null : 'unlocked';
 
 
   return (
@@ -236,9 +235,9 @@ export default function HomePageClient({
             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                 <Button asChild variant={'outline'} className={cn(
                     "rounded-full hover:bg-gray-800 flex-shrink-0",
-                    !typeFilter && (!lockStatus || lockStatus === 'unlocked') ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                    !typeFilter && !lockStatus ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                 )}>
-                <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: allButtonLockStatus })} scroll={false} className="flex items-center gap-2">
+                <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
                     <Film className="w-4 h-4" />
                     <span>All</span>
                 </Link>
@@ -246,9 +245,9 @@ export default function HomePageClient({
                 {typeFilters.map(filter => (
                     <Button key={filter.value} asChild variant={'outline'} className={cn(
                     "rounded-full hover:bg-gray-800 flex-shrink-0",
-                    typeFilter === filter.value ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                    typeFilter === filter.value && !lockStatus ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                     )}>
-                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus })} scroll={false} className="flex items-center gap-2">
+                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
                         {filter.icon}
                         <span>{filter.label}</span>
                     </Link>
@@ -258,7 +257,7 @@ export default function HomePageClient({
                   "rounded-full hover:bg-gray-800 flex-shrink-0",
                   lockStatus === 'locked' ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
                 )}>
-                  <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: typeFilter, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
+                  <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
                     <Lock className="w-4 h-4" />
                     <span>Locked</span>
                   </Link>
