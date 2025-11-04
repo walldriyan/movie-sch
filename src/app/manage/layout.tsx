@@ -61,7 +61,7 @@ export default function ManageLayout({
 
   return (
     <div className="flex">
-      <Sidebar className="h-screen fixed top-0 w-64 flex-shrink-0">
+      <Sidebar className="h-[calc(100vh-4rem)] fixed top-16 w-64 flex-shrink-0">
         <SidebarHeader>
             <h2 className="text-lg font-semibold px-4 pt-4 flex items-center gap-2">
               <Shield className="h-6 w-6"/>
@@ -143,8 +143,8 @@ export default function ManageLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <main className="ml-64 flex-1 overflow-y-auto">
-        <div className="w-full max-w-7xl mx-auto p-8">
+      <main className="ml-64 flex-1 overflow-y-auto p-8">
+        <div className="w-full max-w-7xl mx-auto">
             {children}
         </div>
       </main>
