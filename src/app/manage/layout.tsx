@@ -1,6 +1,8 @@
 
+'use client';
+
 import { auth } from '@/auth';
-import { notFound } from 'next/navigation';
+import { notFound, usePathname } from 'next/navigation';
 import { ROLES } from '@/lib/permissions';
 import {
   Sidebar,
@@ -12,20 +14,34 @@ import {
   SidebarInset,
   SidebarTrigger
 } from '@/components/ui/sidebar';
-import { PanelLeft, LayoutGrid, List } from 'lucide-react';
+import { 
+    PanelLeft, 
+    LayoutGrid, 
+    List,
+    Users,
+    Users2,
+    BookCheck,
+    Bell,
+    Settings,
+    MessageSquareWarning, 
+} from 'lucide-react';
 import Link from 'next/link';
+import { useSession } from 'next-auth/react';
 
-export default async function ManageLayout({
+export default function ManageLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const { data: session } = useSession();
   const user = session?.user;
+  const pathname = usePathname();
 
   if (!user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role)) {
     notFound();
   }
+  
+  const isActive = (path: string) => pathname === path;
 
   return (
     <div className="flex w-full">
@@ -36,17 +52,75 @@ export default async function ManageLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton href="/manage" isActive>
-                <LayoutGrid />
-                Posts
-              </SidebarMenuButton>
+              <Link href="/manage" passHref legacyBehavior>
+                <SidebarMenuButton isActive={isActive('/manage')}>
+                  <LayoutGrid />
+                  Posts
+                </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <SidebarMenuButton href="#">
-                <List />
-                Series
-              </SidebarMenuButton>
+                <Link href="/manage/series" passHref legacyBehavior>
+                  <SidebarMenuButton isActive={isActive('/manage/series')} disabled>
+                    <List />
+                    Series
+                  </SidebarMenuButton>
+                </Link>
             </SidebarMenuItem>
+            
+            {user.role === ROLES.SUPER_ADMIN && (
+              <>
+                <SidebarMenuItem>
+                  <Link href="/admin/exams" passHref legacyBehavior>
+                    <SidebarMenuButton isActive={isActive('/admin/exams')}>
+                      <BookCheck />
+                      Exams
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/admin/users" passHref legacyBehavior>
+                    <SidebarMenuButton isActive={isActive('/admin/users')}>
+                      <Users />
+                      Users
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/admin/groups" passHref legacyBehavior>
+                    <SidebarMenuButton isActive={isActive('/admin/groups')}>
+                      <Users2 />
+                      Groups
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/admin/notifications" passHref legacyBehavior>
+                    <SidebarMenuButton isActive={isActive('/admin/notifications')}>
+                      <Bell />
+                      Notifications
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/admin/feedback" passHref legacyBehavior>
+                    <SidebarMenuButton isActive={isActive('/admin/feedback')}>
+                      <MessageSquareWarning />
+                      Feedback
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/admin/settings" passHref legacyBehavior>
+                    <SidebarMenuButton isActive={isActive('/admin/settings')}>
+                      <Settings />
+                      Settings
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              </>
+            )}
+
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
