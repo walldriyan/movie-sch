@@ -20,7 +20,7 @@ export const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number
         const file = e.target.files?.[0];
         if (!file) return;
         
-        console.log(`[STEP 4.1] ImageUploader: File selected for Q${qIndex}, I${iIndex}:`, { name: file.name, size: file.size });
+        console.log(`[CLIENT] Step 4.1: File selected for Q${qIndex}, I${iIndex}:`, { name: file.name, size: file.size });
 
         if (file.size > 2 * 1024 * 1024) { // 2MB limit
             toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 2MB.'});
@@ -32,14 +32,17 @@ export const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number
 
         startUploading(async () => {
             try {
-                console.log(`[STEP 5] ImageUploader: Calling 'uploadExamImage' server action.`);
+                console.log(`[CLIENT] Step 5: Calling 'uploadExamImage' server action.`);
                 const uploadedUrl = await uploadExamImage(formData);
-                console.log(`[STEP 6] ImageUploader: Received URL from server:`, uploadedUrl);
+                console.log(`[CLIENT] Step 6: Received URL from server:`, uploadedUrl);
                 if (uploadedUrl) {
-                    const currentImages = form.getValues(`questions.${qIndex}.images`);
-                    currentImages[iIndex] = { url: uploadedUrl };
-                    form.setValue(`questions.${qIndex}.images`, currentImages, { shouldValidate: true, shouldDirty: true });
-                    console.log(`[STEP 7] ImageUploader: Set form value for questions.${qIndex}.images. Full form data:`, form.getValues());
+                    const currentImages = form.getValues(`questions.${qIndex}.images`) || [];
+                    const newImages = [...currentImages];
+                    newImages[iIndex] = { url: uploadedUrl };
+                    
+                    form.setValue(`questions.${qIndex}.images`, newImages, { shouldValidate: true, shouldDirty: true });
+                    
+                    console.log(`[CLIENT] Step 7: Set form value for questions.${qIndex}.images.`, form.getValues());
                     toast({ title: 'Image Uploaded' });
                 } else {
                     throw new Error('Upload failed to return a URL.');

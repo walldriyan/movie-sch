@@ -40,8 +40,8 @@ export const QuestionItem = ({ control, qIndex, removeQuestion, form }: { contro
     const isMultipleChoice = form.watch(`questions.${qIndex}.isMultipleChoice`);
     
     const handleQuestionTypeChange = (value: string) => {
-        console.log(`[STEP 4] QuestionItem: Question type changed for Q${qIndex}. New type: ${value}. Full form data:`, form.getValues());
         form.setValue(`questions.${qIndex}.type`, value);
+        console.log(`[CLIENT] Step 4: Question type changed for Q${qIndex}. New type: ${value}. Full form data:`, form.getValues());
     }
 
     return (

@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useTransition, useCallback, useRef } from 'react';
@@ -73,7 +74,7 @@ const questionSchema = z.object({
   type: z.enum(['MCQ', 'IMAGE_BASED_ANSWER']).default('MCQ'),
   isMultipleChoice: z.boolean().default(false),
   options: z.array(optionSchema),
-  images: z.array(imageUrlSchema),
+  images: z.array(imageUrlSchema).optional().default([]),
 }).superRefine((data, ctx) => {
     if (data.type === 'MCQ') {
         if (data.options.length < 2) {
@@ -91,7 +92,7 @@ const questionSchema = z.object({
             });
         }
     } else if (data.type === 'IMAGE_BASED_ANSWER') {
-        if (data.images.length === 0) {
+        if (!data.images || data.images.length === 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['images'],
@@ -335,7 +336,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [form, toast]);
   
   const onSubmit = useCallback((data: ExamFormValues) => {
-    console.log('[STEP 4] onSubmit: Form submitted. Preparing data for server action.');
+    console.log('[STEP 4] onSubmit: Form submitted. Preparing data for server action.', data);
     startTransition(async () => {
       try {
         await createOrUpdateExam(data, editingExamId);
