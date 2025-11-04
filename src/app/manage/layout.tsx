@@ -21,9 +21,11 @@ import {
     Bell,
     Settings,
     MessageSquareWarning, 
+    Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
+import AuthGuard from '@/components/auth/auth-guard';
 
 export default function ManageLayout({
   children,
@@ -36,8 +38,8 @@ export default function ManageLayout({
   
   if (status === 'loading') {
     return (
-      <div className="flex h-screen pt-16">
-        <div className="w-64 h-full border-r p-2 bg-background">
+      <div className="flex h-screen">
+        <div className="w-64 border-r p-2 bg-background">
             <div className="flex flex-col space-y-2 p-2">
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
@@ -55,19 +57,22 @@ export default function ManageLayout({
     notFound();
   }
   
-  const isActive = (path: string) => pathname === path || (path === '/manage' && pathname.startsWith('/admin'));
+  const isActive = (path: string) => pathname.startsWith(path) && (pathname === path || pathname.startsWith(`${path}/`));
 
   return (
-    <div>
-      <Sidebar className="h-[calc(100vh-4rem)] fixed top-16 w-64 flex-shrink-0">
+    <div className="flex">
+      <Sidebar className="h-screen fixed top-0 w-64 flex-shrink-0">
         <SidebarHeader>
-            <h2 className="text-lg font-semibold px-2">Manage</h2>
+            <h2 className="text-lg font-semibold px-4 pt-4 flex items-center gap-2">
+              <Shield className="h-6 w-6"/>
+              Dashboard
+            </h2>
         </SidebarHeader>
-        <SidebarContent>
+        <SidebarContent className="mt-4">
           <SidebarMenu>
             <SidebarMenuItem>
               <Link href="/manage">
-                <SidebarMenuButton isActive={isActive('/manage')}>
+                <SidebarMenuButton isActive={pathname === '/manage'}>
                   <LayoutGrid className="h-5 w-5" />
                   Posts
                 </SidebarMenuButton>
@@ -82,7 +87,7 @@ export default function ManageLayout({
                 </Link>
             </SidebarMenuItem>
             
-            {user.role === ROLES.SUPER_ADMIN && (
+            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
               <>
                 <SidebarMenuItem>
                   <Link href="/admin/exams">
@@ -133,13 +138,13 @@ export default function ManageLayout({
                   </Link>
                 </SidebarMenuItem>
               </>
-            )}
+            </AuthGuard>
 
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <main className="ml-64 p-8">
-        <div className="w-full max-w-7xl mx-auto">
+      <main className="ml-64 flex-1 overflow-y-auto">
+        <div className="w-full max-w-7xl mx-auto p-8">
             {children}
         </div>
       </main>
