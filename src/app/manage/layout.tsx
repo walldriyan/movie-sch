@@ -60,8 +60,8 @@ export default function ManageLayout({
   const isActive = (path: string) => pathname.startsWith(path) && (pathname === path || pathname.startsWith(`${path}/`));
 
   return (
-    <div className="flex">
-      <Sidebar className="h-[calc(100vh-4rem)] fixed top-16 w-64 flex-shrink-0">
+    <div className="flex h-screen">
+      <Sidebar className="w-64 flex-shrink-0 border-r bg-background">
         <SidebarHeader>
             <h2 className="text-lg font-semibold px-4 pt-4 flex items-center gap-2">
               <Shield className="h-6 w-6"/>
@@ -70,14 +70,16 @@ export default function ManageLayout({
         </SidebarHeader>
         <SidebarContent className="mt-4">
           <SidebarMenu>
-            <SidebarMenuItem>
-              <Link href="/manage">
-                <SidebarMenuButton isActive={pathname === '/manage'}>
-                  <LayoutGrid className="h-5 w-5" />
-                  Posts
-                </SidebarMenuButton>
-              </Link>
-            </SidebarMenuItem>
+            <AuthGuard requiredRole={ROLES.USER_ADMIN}>
+              <SidebarMenuItem>
+                <Link href="/manage">
+                  <SidebarMenuButton isActive={pathname === '/manage'}>
+                    <LayoutGrid className="h-5 w-5" />
+                    Posts
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            </AuthGuard>
              <SidebarMenuItem>
                 <Link href="/manage/series">
                   <SidebarMenuButton isActive={isActive('/manage/series')} disabled>
@@ -143,7 +145,7 @@ export default function ManageLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <main className="ml-64 flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-8">
         <div className="w-full max-w-7xl mx-auto">
             {children}
         </div>
