@@ -36,7 +36,7 @@ export default function ManageLayout({
   
   if (status === 'loading') {
     return (
-      <div className="flex pt-16 w-full h-screen">
+      <div className="flex h-screen">
         <div className="w-64 h-full border-r p-2">
             <div className="flex flex-col space-y-2">
                 <Skeleton className="h-8 w-full" />
@@ -58,8 +58,8 @@ export default function ManageLayout({
   const isActive = (path: string) => pathname === path;
 
   return (
-    <div className="flex pt-16">
-      <Sidebar className="h-[calc(100vh-4rem)] w-64 fixed top-16">
+    <div className="flex h-full">
+      <Sidebar className="h-[calc(100vh-4rem)] fixed top-16 w-64 flex-shrink-0">
         <SidebarHeader>
             <h2 className="text-lg font-semibold px-2">Manage</h2>
         </SidebarHeader>
@@ -138,7 +138,7 @@ export default function ManageLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <main className="flex-1 ml-64 p-8 overflow-y-auto h-[calc(100vh-4rem)]">
+      <main className="flex-1 ml-64 p-8 overflow-y-auto">
         <div className="w-full max-w-7xl mx-auto">
             {children}
         </div>
