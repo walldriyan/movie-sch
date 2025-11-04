@@ -209,54 +209,56 @@ export async function deleteUploadedFile(filePath: string | null | undefined) {
 }
 
 async function fetchPostsFromDB(options: { page?: number; limit?: number, filters?: any } = {}) {
-    console.log('[DB Fetch] fetchPostsFromDB called with options:', JSON.stringify(options, null, 2));
+    console.log('--- DEBUG: fetchPostsFromDB START ---');
+    console.log('[DB Fetch] Received options:', JSON.stringify(options, null, 2));
+
     const { page = 1, limit = 10, filters = {} } = options;
     const skip = (page - 1) * limit;
     const session = await auth();
     const user = session?.user;
     const userRole = user?.role;
+    console.log(`[DB Fetch] User Role: ${userRole || 'Guest'}`);
 
     let whereClause: Prisma.PostWhereInput = {};
     
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
-    
-    // --- Role-Based Access Control Logic ---
-    if (userRole === ROLES.SUPER_ADMIN) {
-        whereClause.status = { not: MovieStatus.PENDING_DELETION };
-    } else if (userRole === ROLES.USER_ADMIN) {
-        whereClause = {
-            OR: [
-                { authorId: user.id, status: { not: MovieStatus.PENDING_DELETION } },
-                { status: MovieStatus.PUBLISHED, visibility: 'PUBLIC' }
-            ],
-        };
-    } else { // Regular user or guest
-        const publicCriteria: Prisma.PostWhereInput = {
-            status: MovieStatus.PUBLISHED,
-            visibility: 'PUBLIC',
-        };
+    console.log(`[DB Fetch] Filter - lockStatus: ${lockStatus}`);
 
+    // --- Role-Based Access Control & Lock Status Logic ---
+    if (userRole === ROLES.SUPER_ADMIN || userRole === ROLES.USER_ADMIN) {
+        // Admins can see all non-deleted posts, lock status is just a filter
+        whereClause.status = { not: MovieStatus.PENDING_DELETION };
+        if (lockStatus === 'locked') {
+            whereClause.isLockedByDefault = true;
+        } else if (lockStatus === 'unlocked') {
+            whereClause.isLockedByDefault = false;
+        }
+        // If lockStatus is undefined, we don't filter by it for admins.
+    } else { // Regular user or guest
+        whereClause.status = MovieStatus.PUBLISHED;
+
+        const publicCriteria: Prisma.PostWhereInput = { visibility: 'PUBLIC' };
         if (lockStatus === 'locked') {
             publicCriteria.isLockedByDefault = true;
         } else {
-            publicCriteria.isLockedByDefault = false;
+            // For guests or regular users, default to showing only unlocked public posts
+             publicCriteria.isLockedByDefault = false;
         }
 
         if (user) { // Logged-in regular user
             const userGroupIds = await getUserGroupIds(user.id);
             const groupCriteria: Prisma.PostWhereInput = {
-                status: MovieStatus.PUBLISHED,
                 visibility: 'GROUP_ONLY',
                 groupId: { in: userGroupIds },
             };
             if (lockStatus === 'locked') {
-              groupCriteria.isLockedByDefault = true;
+                groupCriteria.isLockedByDefault = true;
             } else {
-              groupCriteria.isLockedByDefault = false;
+                groupCriteria.isLockedByDefault = false;
             }
-            whereClause = { OR: [publicCriteria, groupCriteria] };
+            whereClause.OR = [publicCriteria, groupCriteria];
         } else { // Guest
-            whereClause = publicCriteria;
+            whereClause = { ...whereClause, ...publicCriteria };
         }
     }
 
@@ -270,10 +272,11 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
          whereClause.status = {
             in: [MovieStatus.PUBLISHED]
          }
-      } else {
+      } else if (!userRole || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(userRole)) {
+        // Non-admins viewing a profile can't see non-published posts even if includePrivate is true
         whereClause.status = {
-          not: MovieStatus.PENDING_DELETION
-        }
+            in: [MovieStatus.PUBLISHED]
+        };
       }
     }
     
@@ -319,7 +322,7 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
       whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
     }
 
-    console.log('[DB Fetch] Executing Prisma query with where clause:', JSON.stringify(whereClause, null, 2));
+    console.log('[DB Fetch] FINAL whereClause:', JSON.stringify(whereClause, null, 2));
 
     const [posts, totalPosts] = await prisma.$transaction([
       prisma.post.findMany({
@@ -360,8 +363,8 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     ]);
     
     const totalPages = Math.ceil(totalPosts / limit);
-    console.log(`[DB Fetch] Found ${totalPosts} posts, returning ${posts.length} for page ${page}. Total pages: ${totalPages}`);
-
+    console.log(`[DB Fetch] Found ${totalPosts} posts. Returning ${posts.length} for page ${page}. Total pages: ${totalPages}`);
+    console.log('--- DEBUG: fetchPostsFromDB END ---');
     return {
         posts: posts.map((post) => ({
             ...post,
@@ -936,6 +939,7 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
 
 
 
