@@ -346,19 +346,24 @@ const PostCombobox = ({
     const [open, setOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [isSearching, startSearchTransition] = useTransition();
+    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const handleSearch = (query: string) => {
         setSearchQuery(query);
-        if (query.length > 2) {
-            startSearchTransition(async () => {
-                const fetchedPosts = await searchPostsForExam(query);
-                const allPosts = [...initialPosts, ...fetchedPosts as PostWithGroup[]];
-                const uniquePosts = Array.from(new Map(allPosts.map(p => [p.id, p])).values());
-                onPostsChange(uniquePosts);
-            });
+        if (searchTimeoutRef.current) {
+            clearTimeout(searchTimeoutRef.current);
         }
+        searchTimeoutRef.current = setTimeout(() => {
+            if (query.length > 2) {
+                startSearchTransition(async () => {
+                    const fetchedPosts = await searchPostsForExam(query);
+                    const allPosts = [...initialPosts, ...fetchedPosts as PostWithGroup[]];
+                    const uniquePosts = Array.from(new Map(allPosts.map(p => [p.id, p])).values());
+                    onPostsChange(uniquePosts);
+                });
+            }
+        }, 300);
     };
-
 
     return (
         <Popover open={open} onOpenChange={setOpen}>
@@ -854,7 +859,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [form, toast]);
   
   const onSubmit = useCallback((data: ExamFormValues) => {
-    console.log('Submitting data:', data);
+    console.log('Submitting data to server:', data);
     startTransition(async () => {
       try {
         await createOrUpdateExam(data, editingExamId);
@@ -945,7 +950,3 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
     </div>
   );
 }
-
-    
-
-
