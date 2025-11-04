@@ -58,7 +58,7 @@ export default function ManageLayout({
   const isActive = (path: string) => pathname === path;
 
   return (
-    <div className="flex h-full">
+    <div className="pt-16">
       <Sidebar className="h-[calc(100vh-4rem)] fixed top-16 w-64 flex-shrink-0">
         <SidebarHeader>
             <h2 className="text-lg font-semibold px-2">Manage</h2>
@@ -138,7 +138,7 @@ export default function ManageLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <main className="flex-1 ml-64 p-8 overflow-y-auto">
+      <main className="ml-64 p-8">
         <div className="w-full max-w-7xl mx-auto">
             {children}
         </div>
