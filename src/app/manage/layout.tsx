@@ -125,7 +125,7 @@ export default function ManageLayout({
         </SidebarContent>
       </Sidebar>
       <SidebarInset className="ml-[16rem]">
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 w-full">
+        <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </main>
       </SidebarInset>
