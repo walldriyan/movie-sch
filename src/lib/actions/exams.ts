@@ -196,7 +196,6 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                       }
                     } else if (q.type === 'IMAGE_BASED_ANSWER') {
                         console.log(`Processing Image-Based Answer images for question ${q.id}`);
-                        // Delete old images and create new ones
                         await tx.questionImage.deleteMany({ where: { questionId: q.id } });
                         if (q.images && q.images.length > 0) {
                             await tx.questionImage.createMany({
@@ -812,4 +811,5 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
 }
 
     
+
 
