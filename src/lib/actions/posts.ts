@@ -172,7 +172,7 @@ export async function invalidateUserGroupsCache(userId: string) {
 
 
 export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
-  console.log(`[Image Save] Attempting to save image to subfolder: ${subfolder}`);
+  console.log(`[SERVER: STEP 5.3] saveImageFromDataUrl: Saving image to subfolder: ${subfolder}`);
   if (!dataUrl.startsWith('data:image')) {
     console.log(`[Image Save] Provided URL is not a data URL, returning as is: ${dataUrl}`);
     return dataUrl; 
@@ -187,13 +187,13 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
     const directory = join(process.cwd(), `public/uploads/${subfolder}`);
     const path = join(directory, filename);
 
-    console.log(`[Image Save] Preparing to write file to path: ${path}`);
+    console.log(`[SERVER: STEP 5.4] Preparing to write file to path: ${path}`);
     await mkdir(directory, { recursive: true });
     await writeFile(path, buffer);
-    console.log(`[Image Save] Successfully wrote file to path: ${path}`);
+    console.log(`[SERVER: STEP 5.5] Successfully wrote file to path: ${path}`);
 
     const publicUrl = `/uploads/${subfolder}/${filename}`;
-    console.log(`[Image Save] Returning public URL: ${publicUrl}`);
+    console.log(`[SERVER: STEP 5.6] Returning public URL: ${publicUrl}`);
     return publicUrl;
   } catch (error) {
     console.error("[Image Save] Error saving image from data URL:", error);
@@ -959,12 +959,3 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
-
-
-
-
-
-
-
-
-

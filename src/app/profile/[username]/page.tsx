@@ -10,6 +10,7 @@ import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
+import { ROLES } from '@/lib/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -61,8 +62,8 @@ export default async function ProfilePage({
     displaySeries = series || [];
     totalSeriesCount = totalSeries;
   } else if (currentFilter === 'exams') {
-    // Only fetch exams if it's the user's own profile
-    if (isOwnProfile) {
+    // Only fetch exams if it's the user's own profile OR if the logged-in user is a SUPER_ADMIN
+    if (isOwnProfile || loggedInUser?.role === ROLES.SUPER_ADMIN) {
         displayExams = await getExamsForUser(profileUser.id);
     }
   }
@@ -106,4 +107,3 @@ export default async function ProfilePage({
     </>
   );
 }
-
