@@ -2,7 +2,7 @@ import * as Sentry from "@sentry/nextjs";
 
 if (process.env.NEXT_RUNTIME === 'client') {
   Sentry.init({
-    dsn: "https://d1a262abc902034babd62ceae0eaa12e@o4510267385577472.ingest.us.sentry.io/4510267387740160",
+    dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
 
     // Adjust this value in production, or use tracesSampler for greater control
     tracesSampleRate: 1,
@@ -23,9 +23,11 @@ if (process.env.NEXT_RUNTIME === 'client') {
         maskAllText: true,
         blockAllMedia: true,
       }),
+      Sentry.browserProfilingIntegration(),
       Sentry.consoleLoggingIntegration({ levels: ["log", "warn", "error"] }),
     ],
     enableLogs: true,
+    profilesSampleRate: 1.0, // Added for profiling
   });
 }
 
