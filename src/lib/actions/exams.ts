@@ -49,7 +49,7 @@ const questionSchema = z.object({
   type: z.enum(['MCQ', 'IMAGE_BASED_ANSWER']).default('MCQ'),
   isMultipleChoice: z.boolean().default(false),
   options: z.array(optionSchema),
-  images: z.array(imageUrlSchema),
+  images: z.array(imageUrlSchema).optional().default([]),
 }).superRefine((data, ctx) => {
     if (data.type === 'MCQ') {
         if (data.options.length < 2) {
@@ -67,7 +67,7 @@ const questionSchema = z.object({
             });
         }
     } else if (data.type === 'IMAGE_BASED_ANSWER') {
-        if (data.images.length === 0) {
+        if (!data.images || data.images.length === 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
                 path: ['images'],
