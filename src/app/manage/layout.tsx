@@ -44,8 +44,8 @@ export default function ManageLayout({
   const isActive = (path: string) => pathname === path;
 
   return (
-    <div className="flex w-full">
-      <Sidebar>
+    <div className="flex w-full pt-16">
+      <Sidebar className="h-[calc(100vh-4rem)] top-16">
         <SidebarHeader>
             <h2 className="text-lg font-semibold">Manage</h2>
         </SidebarHeader>
@@ -54,7 +54,7 @@ export default function ManageLayout({
             <SidebarMenuItem>
               <Link href="/manage">
                 <SidebarMenuButton isActive={isActive('/manage')}>
-                  <LayoutGrid />
+                  <LayoutGrid className="h-5 w-5" />
                   Posts
                 </SidebarMenuButton>
               </Link>
@@ -62,7 +62,7 @@ export default function ManageLayout({
              <SidebarMenuItem>
                 <Link href="/manage/series">
                   <SidebarMenuButton isActive={isActive('/manage/series')} disabled>
-                    <List />
+                    <List className="h-5 w-5" />
                     Series
                   </SidebarMenuButton>
                 </Link>
@@ -73,7 +73,7 @@ export default function ManageLayout({
                 <SidebarMenuItem>
                   <Link href="/admin/exams">
                     <SidebarMenuButton isActive={isActive('/admin/exams')}>
-                      <BookCheck />
+                      <BookCheck className="h-5 w-5" />
                       Exams
                     </SidebarMenuButton>
                   </Link>
@@ -81,7 +81,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/users">
                     <SidebarMenuButton isActive={isActive('/admin/users')}>
-                      <Users />
+                      <Users className="h-5 w-5" />
                       Users
                     </SidebarMenuButton>
                   </Link>
@@ -89,7 +89,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/groups">
                     <SidebarMenuButton isActive={isActive('/admin/groups')}>
-                      <Users2 />
+                      <Users2 className="h-5 w-5" />
                       Groups
                     </SidebarMenuButton>
                   </Link>
@@ -97,7 +97,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/notifications">
                     <SidebarMenuButton isActive={isActive('/admin/notifications')}>
-                      <Bell />
+                      <Bell className="h-5 w-5" />
                       Notifications
                     </SidebarMenuButton>
                   </Link>
@@ -105,7 +105,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/feedback">
                     <SidebarMenuButton isActive={isActive('/admin/feedback')}>
-                      <MessageSquareWarning />
+                      <MessageSquareWarning className="h-5 w-5" />
                       Feedback
                     </SidebarMenuButton>
                   </Link>
@@ -113,7 +113,7 @@ export default function ManageLayout({
                  <SidebarMenuItem>
                   <Link href="/admin/settings">
                     <SidebarMenuButton isActive={isActive('/admin/settings')}>
-                      <Settings />
+                      <Settings className="h-5 w-5" />
                       Settings
                     </SidebarMenuButton>
                   </Link>
@@ -124,8 +124,8 @@ export default function ManageLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <SidebarInset>
-        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pt-5 w-full">
+      <SidebarInset className="ml-[16rem]">
+        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 w-full">
           {children}
         </main>
       </SidebarInset>
