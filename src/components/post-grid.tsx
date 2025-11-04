@@ -137,10 +137,14 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
   );
 }
 
-export default function MovieGrid({ movies }: MovieGridProps) {
+export default function PostGrid({ posts }: MovieGridProps) {
+  if (!posts) {
+    return null;
+  }
+  
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 md:auto-rows-[152px] gap-4">
-      {movies.map((movie, index) => {
+      {posts.map((movie, index) => {
         return (
           <MovieCard
             key={movie.id}
