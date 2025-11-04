@@ -99,7 +99,7 @@ const examSchema = z.object({
 type ExamFormData = z.infer<typeof examSchema>;
 
 export async function createOrUpdateExam(data: ExamFormData, examId?: number | null) {
-    console.log('Submitting data:', data);
+    console.log('--- [Server Action] Received data for create/update ---', JSON.stringify(data, null, 2));
     const session = await auth();
     const user = session?.user;
 
@@ -131,10 +131,15 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         try {
             await prisma.$transaction(async (tx) => {
                 console.log(`Updating exam ID: ${examId}`);
-                const relationData: any = {
-                    post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true },
-                    group: data.groupId ? { connect: { id: data.groupId } } : { disconnect: true }
-                };
+                
+                const relationData: any = {};
+                if (data.assignmentType === 'POST') {
+                    relationData.post = data.postId ? { connect: { id: parseInt(data.postId, 10) } } : { disconnect: true };
+                    relationData.group = { disconnect: true };
+                } else if (data.assignmentType === 'GROUP') {
+                    relationData.group = data.groupId ? { connect: { id: data.groupId } } : { disconnect: true };
+                    relationData.post = { disconnect: true };
+                }
 
                 await tx.exam.update({
                   where: { id: examId },
@@ -221,7 +226,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
         console.log("Creating new exam");
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
-            post: data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
+            post: data.assignmentType === 'POST' && data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
             group: data.assignmentType === 'GROUP' && data.groupId ? { connect: { id: data.groupId } } : undefined,
             questions: {
                 create: data.questions.map(q => ({
@@ -799,3 +804,5 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
 
     return { success: true, newTotalScore };
 }
+
+    
