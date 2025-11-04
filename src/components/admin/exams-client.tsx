@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useTransition, useCallback, useRef } from 'react';
@@ -53,6 +52,9 @@ import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import Image from 'next/image';
 
+// Import newly created modules
+import { CreateExamForm } from './exam-modules/create-exam-form';
+import { ManageExamsList } from './exam-modules/manage-exams-list';
 
 const optionSchema = z.object({
   id: z.number().optional(),
@@ -63,7 +65,6 @@ const optionSchema = z.object({
 const imageUrlSchema = z.object({
   url: z.string().min(1, "Image URL is required."),
 });
-
 
 const questionSchema = z.object({
   id: z.number().optional(),
@@ -127,532 +128,6 @@ type ExamFormValues = z.infer<typeof examSchema>;
 type PostWithGroup = Post & { group: { name: string } | null };
 type ExamForListing = Awaited<ReturnType<typeof getExamsForAdmin>>[0];
 
-const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number, iIndex: number, form: any }) => {
-    const { toast } = useToast();
-    const [isUploading, startUploading] = useTransition();
-    const fileInputRef = React.useRef<HTMLInputElement>(null);
-    const imageUrl = form.watch(`questions.${qIndex}.images.${iIndex}.url`);
-
-    const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        
-        console.log(`[CLIENT] Step 1: File selected for Q${qIndex}, I${iIndex}:`, { name: file.name, size: file.size });
-
-        if (file.size > 2 * 1024 * 1024) { // 2MB limit
-            toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 2MB.'});
-            return;
-        }
-
-        const formData = new FormData();
-        formData.append('image', file);
-
-        startUploading(async () => {
-            try {
-                console.log(`[CLIENT] Step 2: Calling 'uploadExamImage' server action.`);
-                const uploadedUrl = await uploadExamImage(formData);
-                console.log(`[CLIENT] Step 5: Received URL from server:`, uploadedUrl);
-                if (uploadedUrl) {
-                    form.setValue(`questions.${qIndex}.images.${iIndex}.url`, uploadedUrl, { shouldValidate: true, shouldDirty: true });
-                    console.log(`[CLIENT] Step 6: Set form value for questions.${qIndex}.images.${iIndex}.url`);
-                    console.log('[CLIENT] Image uploaded. Current form data:', form.getValues());
-                    toast({ title: 'Image Uploaded' });
-                } else {
-                    throw new Error('Upload failed to return a URL.');
-                }
-            } catch (err: any) {
-                console.error('[CLIENT] Upload Failed:', err);
-                toast({ variant: 'destructive', title: 'Upload Failed', description: err.message });
-            }
-        });
-    }
-    
-    return (
-        <div className="flex items-center gap-2">
-            <div className="relative w-20 h-20 bg-muted rounded-md flex items-center justify-center overflow-hidden">
-                {isUploading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                ) : imageUrl ? (
-                    <Image src={imageUrl} alt={`Image ${iIndex+1}`} fill className="object-cover" />
-                ) : (
-                    <ImageIcon className="w-6 h-6 text-muted-foreground" />
-                )}
-            </div>
-            <div className="flex-grow">
-                 <FormField 
-                    control={form.control} 
-                    name={`questions.${qIndex}.images.${iIndex}.url`} 
-                    render={({ field }) => (
-                      <FormItem>
-                          <FormControl><Input placeholder={'Paste URL or upload'} {...field} disabled={isUploading}/></FormControl>
-                          <FormMessage />
-                      </FormItem>
-                    )} 
-                />
-                 <Button type="button" variant="outline" size="sm" className="mt-2 w-full" onClick={() => fileInputRef.current?.click()} disabled={isUploading}>
-                    <Upload className="mr-2 h-4 w-4" /> Upload
-                </Button>
-                <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                />
-            </div>
-        </div>
-    );
-};
-
-
-// New component for a single question
-const QuestionItem = ({ control, qIndex, removeQuestion, form }: { control: any, qIndex: number, removeQuestion: (index: number) => void, form: any }) => {
-    const { fields: options, append: appendOption, remove: removeOption } = useFieldArray({ control, name: `questions.${qIndex}.options` });
-    const { fields: images, append: appendImage, remove: removeImage } = useFieldArray({ control, name: `questions.${qIndex}.images` });
-
-    const questionType = form.watch(`questions.${qIndex}.type`);
-    const isMultipleChoice = form.watch(`questions.${qIndex}.isMultipleChoice`);
-
-    return (
-        <Card key={qIndex} className="mb-6 border-dashed">
-             <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Question {qIndex + 1}</CardTitle>
-                <Button type="button" variant="destructive" size="icon" onClick={() => removeQuestion(qIndex)}><Trash2 className="h-4 w-4" /></Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                     <div className="md:col-span-2">
-                         <FormField control={control} name={`questions.${qIndex}.text`} render={({ field }) => (<FormItem><FormLabel>Question Text</FormLabel><FormControl><Textarea placeholder="e.g., What was the spinning top's purpose?" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    </div>
-                    <div className="md:col-span-1">
-                         <FormField control={control} name={`questions.${qIndex}.type`} render={({ field }) => (
-                            <FormItem><FormLabel>Question Type</FormLabel>
-                                <Select onValueChange={(value) => {
-                                    field.onChange(value);
-                                    console.log("Question type changed. Current form data:", form.getValues());
-                                }} defaultValue={field.value}>
-                                    <FormControl><SelectTrigger><SelectValue placeholder="Select a type" /></SelectTrigger></FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="MCQ">Multiple Choice</SelectItem>
-                                        <SelectItem value="IMAGE_BASED_ANSWER">Image-Based Answer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            <FormMessage /></FormItem>
-                         )} />
-                    </div>
-                    <div className="md:col-span-1">
-                         <FormField control={control} name={`questions.${qIndex}.points`} render={({ field }) => (<FormItem><FormLabel>Points</FormLabel><FormControl><Input type="number" placeholder="10" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                    </div>
-               </div>
-               <Separator className="my-4"/>
-
-               {questionType === 'MCQ' ? (
-                <>
-                    <FormField
-                        control={control}
-                        name={`questions.${qIndex}.isMultipleChoice`}
-                        render={({ field }) => (
-                            <FormItem className="flex flex-row items-center space-x-3 space-y-0 mt-4">
-                                <FormControl>
-                                    <Checkbox
-                                        checked={field.value}
-                                        onCheckedChange={(checked) => {
-                                            field.onChange(checked);
-                                            // If switching from multiple to single, uncheck all but the first correct answer
-                                            if (!checked) {
-                                                let foundFirst = false;
-                                                form.getValues(`questions.${qIndex}.options`).forEach((opt: any, oIndex: number) => {
-                                                    if (opt.isCorrect) {
-                                                        if (foundFirst) {
-                                                            form.setValue(`questions.${qIndex}.options.${oIndex}.isCorrect`, false);
-                                                        }
-                                                        foundFirst = true;
-                                                    }
-                                                });
-                                            }
-                                        }}
-                                    />
-                                </FormControl>
-                                <FormLabel className="text-sm font-normal">Allow multiple correct answers</FormLabel>
-                            </FormItem>
-                        )}
-                    />
-                    <h4 className="font-semibold text-sm mt-4">Options</h4>
-                    <div className="space-y-3">
-                    {options.map((option, oIndex) => (
-                        <div key={option.id} className="flex items-center gap-2">
-                            <FormField 
-                                    control={control} 
-                                    name={`questions.${qIndex}.options.${oIndex}.isCorrect`} 
-                                    render={({ field }) => (
-                                        <FormItem className="flex flex-row items-start space-x-3 space-y-0">
-                                            <FormControl>
-                                                <Checkbox 
-                                                    checked={field.value} 
-                                                    onCheckedChange={(checked) => {
-                                                        if (!isMultipleChoice) {
-                                                            // Uncheck all other options
-                                                            form.getValues(`questions.${qIndex}.options`).forEach((opt: any, idx: number) => {
-                                                                if (idx !== oIndex) {
-                                                                    form.setValue(`questions.${qIndex}.options.${idx}.isCorrect`, false);
-                                                                }
-                                                            });
-                                                        }
-                                                        field.onChange(checked);
-                                                    }}
-                                                />
-                                            </FormControl>
-                                            <FormLabel className="text-sm font-normal pt-1">Correct</FormLabel>
-                                        </FormItem>
-                                    )} 
-                                />
-                            <FormField control={control} name={`questions.${qIndex}.options.${oIndex}.text`} render={({ field }) => (<FormItem className="flex-grow"><FormControl><Input placeholder={`Option ${oIndex + 1}`} {...field} /></FormControl></FormItem>)} />
-                                <Button type="button" variant="ghost" size="icon" onClick={() => removeOption(oIndex)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
-                        </div>
-                    ))}
-                    </div>
-                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendOption({ text: '', isCorrect: false })}><PlusCircle className="mr-2 h-4 w-4" />Add Option</Button>
-                </>
-               ) : (
-                <>
-                    <h4 className="font-semibold text-sm">Images for Question</h4>
-                     <div className="space-y-3">
-                        {images.map((image, iIndex) => (
-                             <div key={iIndex} className="flex items-center gap-2">
-                                <QuestionImageUploader qIndex={qIndex} iIndex={iIndex} form={form} />
-                                <Button type="button" variant="ghost" size="icon" onClick={() => removeImage(iIndex)}><Trash2 className="h-4 w-4 text-muted-foreground" /></Button>
-                             </div>
-                        ))}
-                    </div>
-                     <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendImage({ url: '' })}><ImageIcon className="mr-2 h-4 w-4" />Add Image</Button>
-                </>
-               )}
-            </CardContent>
-        </Card>
-    );
-};
-
-const PostCombobox = ({
-    field,
-    initialPosts,
-    onPostsChange,
-}: {
-    field: any,
-    initialPosts: PostWithGroup[],
-    onPostsChange: (posts: PostWithGroup[]) => void,
-}) => {
-    const [open, setOpen] = useState(false);
-    const [searchQuery, setSearchQuery] = useState("");
-    const [isSearching, startSearchTransition] = useTransition();
-    const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    const handleSearch = (query: string) => {
-        setSearchQuery(query);
-        if (searchTimeoutRef.current) {
-            clearTimeout(searchTimeoutRef.current);
-        }
-        searchTimeoutRef.current = setTimeout(() => {
-            if (query.length > 2) {
-                startSearchTransition(async () => {
-                    const fetchedPosts = await searchPostsForExam(query);
-                    const allPosts = [...initialPosts, ...fetchedPosts as PostWithGroup[]];
-                    const uniquePosts = Array.from(new Map(allPosts.map(p => [p.id, p])).values());
-                    onPostsChange(uniquePosts);
-                });
-            }
-        }, 300);
-    };
-
-    return (
-        <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger asChild>
-                <FormControl>
-                    <Button
-                        variant="outline"
-                        role="combobox"
-                        className={cn(
-                            "w-full justify-between",
-                            !field.value && "text-muted-foreground"
-                        )}
-                    >
-                        {field.value
-                            ? initialPosts.find(
-                                (post) => String(post.id) === field.value
-                            )?.title
-                            : "Select a post"}
-                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                    </Button>
-                </FormControl>
-            </PopoverTrigger>
-            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                <Command>
-                    <CommandInput 
-                        placeholder="Search posts..."
-                        value={searchQuery}
-                        onValueChange={handleSearch}
-                    />
-                    <CommandList>
-                        {isSearching && <div className="p-2 text-sm text-center text-muted-foreground">Searching...</div>}
-                        <CommandEmpty>No post found.</CommandEmpty>
-                        <CommandGroup>
-                            {initialPosts.map((post) => (
-                                <CommandItem
-                                    value={post.title}
-                                    key={post.id}
-                                    onSelect={() => {
-                                        field.onChange(String(post.id));
-                                        setOpen(false);
-                                    }}
-                                >
-                                    <Check
-                                        className={cn(
-                                            "mr-2 h-4 w-4",
-                                            String(post.id) === field.value
-                                                ? "opacity-100"
-                                                : "opacity-0"
-                                        )}
-                                    />
-                                    {post.title}
-                                </CommandItem>
-                            ))}
-                        </CommandGroup>
-                    </CommandList>
-                </Command>
-            </PopoverContent>
-        </Popover>
-    );
-}
-
-const CreateExamForm = ({ posts, groups, selectedPost, form, questions, appendQuestion, removeQuestion, isSubmitting, onSubmit, onBack, editingExamId, onPostsChange }: {
-  posts: PostWithGroup[],
-  groups: Group[],
-  selectedPost: PostWithGroup | undefined,
-  form: any,
-  questions: any[],
-  appendQuestion: any,
-  removeQuestion: any,
-  isSubmitting: boolean,
-  onSubmit: (data: ExamFormValues) => void,
-  onBack: () => void,
-  editingExamId: number | null,
-  onPostsChange: (posts: PostWithGroup[]) => void,
-}) => {
-
-  const assignmentType = form.watch('assignmentType');
-  const handleRemoveQuestion = useCallback((index: number) => {
-    removeQuestion(index);
-  }, [removeQuestion]);
-
-  return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        {/* Section 1: Basic Details */}
-        <Card>
-            <CardHeader>
-                <CardTitle>{editingExamId ? 'Edit Exam' : 'Create New Exam'}</CardTitle>
-                <CardDescription>Basic information and settings for the exam.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                <FormField control={form.control} name="title" render={({ field }) => (<FormItem><FormLabel>Exam Title</FormLabel><FormControl><Input placeholder="e.g., 'Inception' plot details quiz" {...field} /></FormControl><FormMessage /></FormItem>)} />
-                <FormField control={form.control} name="description" render={({ field }) => (<FormItem><FormLabel>Description</FormLabel><FormControl><Textarea placeholder="A brief description of what this exam covers." {...field} value={field.value || ''} /></FormControl><FormMessage /></FormItem>)} />
-                
-                <FormField
-                  control={form.control}
-                  name="assignmentType"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>Assign To</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex flex-col space-y-1"
-                        >
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="POST" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Public on Post</FormLabel>
-                          </FormItem>
-                          <FormItem className="flex items-center space-x-3 space-y-0">
-                            <FormControl>
-                              <RadioGroupItem value="GROUP" />
-                            </FormControl>
-                            <FormLabel className="font-normal">Specific User Group</FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField 
-                    control={form.control} 
-                    name="postId" 
-                    render={({ field }) => (
-                      <FormItem>
-                          <FormLabel>Associated Post</FormLabel>
-                          <PostCombobox 
-                              field={field} 
-                              initialPosts={posts} 
-                              onPostsChange={onPostsChange} 
-                          />
-                           <FormDescription>
-                            Optionally associate a post. If assigning to a group, this is not required but can provide context.
-                           </FormDescription>
-                          <FormMessage />
-                      </FormItem>
-                    )} 
-                />
-
-                {assignmentType === 'GROUP' && (
-                   <FormField
-                    control={form.control}
-                    name="groupId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Associated Group</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a group" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            {groups.map(group => (
-                              <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                )}
-            </CardContent>
-        </Card>
-
-        {/* Section 2: Settings */}
-        <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2"><Settings className="h-5 w-5" />Exam Settings</CardTitle><CardDescription>Configuration and rules.</CardDescription></CardHeader>
-            <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                     <FormField control={form.control} name="status" render={({ field }) => (<FormItem><FormLabel>Status</FormLabel><Select onValueChange={field.onChange} defaultValue={field.value}><FormControl><SelectTrigger><SelectValue/></SelectTrigger></FormControl><SelectContent><SelectItem value="DRAFT">Draft</SelectItem><SelectItem value="ACTIVE">Active</SelectItem><SelectItem value="INACTIVE">Inactive</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name="durationMinutes" render={({ field }) => (<FormItem><FormLabel>Duration (Minutes)</FormLabel><FormControl><Input type="number" placeholder="e.g., 30" {...field} value={field.value ?? ''} /></FormControl><FormDescription>Leave empty for no time limit.</FormDescription><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name="attemptsAllowed" render={({ field }) => (<FormItem><FormLabel>Attempts Allowed</FormLabel><FormControl><Input type="number" {...field} /></FormControl><FormDescription>Use 0 for unlimited attempts.</FormDescription><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name="startDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>Start Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}<CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarIcon mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                     <FormField control={form.control} name="endDate" render={({ field }) => (<FormItem className="flex flex-col"><FormLabel>End Date</FormLabel><Popover><PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal",!field.value && "text-muted-foreground")}>{field.value ? (format(field.value, "PPP")) : (<span>Pick a date</span>)}<CalendarIconLucide className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger><PopoverContent className="w-auto p-0" align="start"><CalendarIcon mode="single" selected={field.value ?? undefined} onSelect={field.onChange} initialFocus /></PopoverContent></Popover><FormMessage /></FormItem>)} />
-                </div>
-            </CardContent>
-        </Card>
-
-        {/* Section 3: Questions */}
-        <Card>
-          <CardHeader><CardTitle>Exam Questions</CardTitle><CardDescription>Add questions and options for the exam.</CardDescription></CardHeader>
-          <CardContent>
-            {questions.map((question, qIndex) => (<QuestionItem key={question.id || qIndex} control={form.control} qIndex={qIndex} removeQuestion={handleRemoveQuestion} form={form}/>))}
-            <Button type="button" variant="secondary" onClick={() => appendQuestion({ text: '', points: 10, type: 'MCQ', isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }], images: [] })}><PlusCircle className="mr-2 h-4 w-4" />Add Question</Button>
-          </CardContent>
-        </Card>
-
-        {/* Form Actions */}
-        <div className="flex justify-end sticky bottom-0 py-4 bg-background/80 backdrop-blur-sm gap-2">
-            <Button type="button" variant="ghost" onClick={onBack} disabled={isSubmitting}>Cancel</Button>
-            <Button type="submit" size="lg" disabled={isSubmitting}>
-              {isSubmitting ? <><Loader2 className="mr-2 h-5 w-5 animate-spin" />Saving...</> : <><Save className="mr-2 h-5 w-5" />{editingExamId ? 'Update Exam' : 'Save Exam'}</>}
-            </Button>
-        </div>
-      </form>
-    </Form>
-  )
-}
-
-const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, isDeleting }: { exams: ExamForListing[], onEdit: (id: number) => void, onDelete: (id: number) => void, onExport: (id: number) => void, isLoading: boolean, isDeleting: boolean }) => {
-    
-    const SkeletonRow = () => (
-      <TableRow>
-        <TableCell><Skeleton className="h-5 w-3/4" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-1/2" /></TableCell>
-        <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-        <TableCell><Skeleton className="h-5 w-8" /></TableCell>
-        <TableCell className="text-right"><Skeleton className="h-8 w-8 ml-auto" /></TableCell>
-      </TableRow>
-    );
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Manage Exams</CardTitle>
-                <CardDescription>View, edit, or delete existing exams.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Title</TableHead>
-                            <TableHead>Associated With</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Questions</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading || isDeleting ? (
-                            <>
-                                <SkeletonRow />
-                                <SkeletonRow />
-                                <SkeletonRow />
-                            </>
-                        ) : exams.length > 0 ? exams.map(exam => (
-                            <TableRow key={exam.id}>
-                                <TableCell className="font-medium">{exam.title}</TableCell>
-                                <TableCell className="text-muted-foreground">
-                                    {exam.group ? (
-                                        <div className='flex items-center gap-2'>
-                                            <Folder className="h-4 w-4" />
-                                            <span>{exam.group.name}</span>
-                                        </div>
-                                     ) : exam.post ? (
-                                        <div className='flex items-center gap-2'>
-                                            <FileText className="h-4 w-4" />
-                                            <span>{exam.post.title}</span>
-                                        </div>
-                                    ) : 'N/A'}
-                                </TableCell>
-                                <TableCell><Badge variant={exam.status === 'ACTIVE' ? 'default' : 'secondary'}>{exam.status}</Badge></TableCell>
-                                <TableCell>{exam._count.questions}</TableCell>
-                                <TableCell className="text-right">
-                                     <AlertDialog>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => onEdit(exam.id)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem asChild>
-                                                    <Link href={`/admin/exams/${exam.id}/results`}><BarChart2 className="mr-2 h-4 w-4"/>View Results</Link>
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={() => onExport(exam.id)}><Download className="mr-2 h-4 w-4"/>Export as JSON</DropdownMenuItem>
-                                                <DropdownMenuSeparator />
-                                                <AlertDialogTrigger asChild><DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem></AlertDialogTrigger>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader><AlertDialogTitle>Are you sure?</AlertDialogTitle><AlertDialogDescription>This will permanently delete the exam "{exam.title}" and all its submissions. This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-                                            <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={() => onDelete(exam.id)} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
-                                        </AlertDialogContent>
-                                     </AlertDialog>
-                                </TableCell>
-                            </TableRow>
-                        )) : (
-                            <TableRow><TableCell colSpan={5} className="h-24 text-center">No exams found.</TableCell></TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    )
-}
 
 interface ExamsClientProps {
     initialPosts: PostWithGroup[];
@@ -661,6 +136,7 @@ interface ExamsClientProps {
 }
 
 export default function ExamsClient({ initialPosts, initialGroups, initialExams }: ExamsClientProps) {
+  console.log('[STEP 1] ExamsClient: Component is rendering.');
   const [activeTab, setActiveTab] = useState('manage');
   const [isSubmitting, startTransition] = useTransition();
   const [posts, setPosts] = React.useState<PostWithGroup[]>(initialPosts);
@@ -683,11 +159,9 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
     control: form.control,
     name: 'questions',
   });
-
-  const watchedPostId = form.watch('postId');
-  const selectedPost = React.useMemo(() => posts.find(p => String(p.id) === watchedPostId), [posts, watchedPostId]);
   
   const fetchExams = useCallback(async () => {
+    console.log('[STEP 2] fetchExams: Fetching list of exams.');
     setIsLoadingExams(true);
     try {
       const fetchedExams = await getExamsForAdmin();
@@ -700,9 +174,11 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [toast]);
 
   const handleEdit = useCallback(async (examId: number) => {
+    console.log(`[STEP 3] handleEdit: User clicked edit for exam ID ${examId}.`);
     try {
         const examToEdit = await getExamForEdit(examId);
         if (examToEdit) {
+            console.log(`[STEP 3.1] handleEdit: Successfully fetched exam data for ID ${examId}.`);
             setEditingExamId(examId);
             
             if (examToEdit.postId) {
@@ -743,6 +219,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [form, posts, toast]);
 
   const handleDelete = useCallback((examId: number) => {
+    console.log(`[STEP 3] handleDelete: User clicked delete for exam ID ${examId}.`);
     startTransition(async () => {
       try {
         await deleteExam(examId);
@@ -755,10 +232,10 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [fetchExams, toast]);
 
   const handleExport = useCallback(async (examId: number) => {
+    console.log(`[STEP 3] handleExport: User clicked export for exam ID ${examId}.`);
      try {
         const examToExport = await getExamForEdit(examId);
         if (examToExport) {
-            // Remove IDs and other DB-specific fields for a clean export
             const cleanExam = {
                 title: examToExport.title,
                 description: examToExport.description,
@@ -797,6 +274,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [toast]);
 
   const handleImport = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(`[STEP 3] handleImport: User selected a file to import.`);
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -808,8 +286,8 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
                 throw new Error('Failed to read file content.');
             }
             const importedData = JSON.parse(content);
+            console.log(`[STEP 3.1] handleImport: File parsed successfully.`, importedData);
             
-            // Normalize imported questions data before validation
             const normalizedQuestions = importedData.questions.map((q: any) => ({
                 text: q.text || '',
                 points: q.points || 10,
@@ -857,7 +335,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [form, toast]);
   
   const onSubmit = useCallback((data: ExamFormValues) => {
-    console.log('Submitting data to server:', data);
+    console.log('[STEP 4] onSubmit: Form submitted. Preparing data for server action.');
     startTransition(async () => {
       try {
         await createOrUpdateExam(data, editingExamId);
@@ -868,13 +346,14 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
         setActiveTab('manage');
         await fetchExams();
       } catch (error: any) {
-        console.error('Submission Error:', error);
+        console.error('[ERROR] Submission Error:', error);
         toast({ variant: 'destructive', title: 'Submission Failed', description: error.message });
       }
     });
   }, [editingExamId, fetchExams, form, replaceQuestions, toast]);
 
   const handleNewExamClick = useCallback(() => {
+    console.log(`[STEP 3] handleNewExamClick: User clicked 'Create New Exam'.`);
     form.reset({
         title: '', description: '', assignmentType: 'POST', postId: '', groupId: '', status: 'DRAFT',
         durationMinutes: 30, attemptsAllowed: 1, questions: [{ text: '', points: 10, type: 'MCQ', isMultipleChoice: false, options: [{ text: '', isCorrect: true }, { text: '', isCorrect: false }], images: [] }],
@@ -884,6 +363,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   }, [form]);
 
   const handleBack = useCallback(() => {
+    console.log(`[STEP 3] handleBack: User clicked 'Cancel' in form.`);
     form.reset();
     setEditingExamId(null);
     replaceQuestions([]);
@@ -931,7 +411,6 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
             <CreateExamForm 
               posts={posts}
               groups={groups}
-              selectedPost={selectedPost}
               form={form}
               questions={questions}
               appendQuestion={appendQuestion}

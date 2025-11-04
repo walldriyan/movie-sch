@@ -12,7 +12,7 @@ import { saveImageFromDataUrl } from './posts';
 
 
 export async function uploadExamImage(formData: FormData): Promise<string | null> {
-    console.log(`[SERVER] Step 3: 'uploadExamImage' server action initiated.`);
+    console.log(`[SERVER: STEP 5.1] 'uploadExamImage' server action initiated.`);
     const session = await auth();
     if (!session?.user) {
         throw new Error('Not authenticated');
@@ -24,10 +24,9 @@ export async function uploadExamImage(formData: FormData): Promise<string | null
     const dataUrl = await file.arrayBuffer().then(buffer => 
         `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
     );
-    console.log(`[SERVER] Step 4: Calling 'saveImageFromDataUrl' to process the image data.`);
-    // Save to a specific folder for exam images
+    console.log(`[SERVER: STEP 5.2] Calling 'saveImageFromDataUrl' to process the image data.`);
     const savedUrl = await saveImageFromDataUrl(dataUrl, 'exams');
-    console.log(`[SERVER] Step 4.1: 'saveImageFromDataUrl' returned:`, savedUrl);
+    console.log(`[SERVER: STEP 5.3] 'saveImageFromDataUrl' returned URL:`, savedUrl);
     return savedUrl;
 }
 
@@ -104,7 +103,7 @@ const examSchema = z.object({
 type ExamFormData = z.infer<typeof examSchema>;
 
 export async function createOrUpdateExam(data: ExamFormData, examId?: number | null) {
-    console.log('--- [Server Action] Received data for create/update ---', JSON.stringify(data, null, 2));
+    console.log('[SERVER: STEP 5] createOrUpdateExam action started. Received data:', JSON.stringify(data, null, 2));
     const session = await auth();
     const user = session?.user;
 
@@ -135,7 +134,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
     if (examId) { // Update an existing exam
         try {
             await prisma.$transaction(async (tx) => {
-                console.log(`Updating exam ID: ${examId}`);
+                console.log(`[SERVER] Updating exam ID: ${examId}`);
                 
                 const relationData: any = {};
                 if (data.assignmentType === 'POST') {
@@ -158,7 +157,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 const questionsToUpdateIds = questionsToUpdate.map(q => q.id).filter(Boolean) as number[];
                 const questionsToDeleteIds = existingQuestionIds.filter(id => !questionsToUpdateIds.includes(id));
                 
-                console.log('Questions to Delete IDs:', questionsToDeleteIds);
+                console.log('[SERVER] Questions to Delete IDs:', questionsToDeleteIds);
                 if (questionsToDeleteIds.length > 0) {
                      await tx.submissionAnswer.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
                      await tx.questionImage.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
@@ -166,10 +165,10 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                      await tx.question.deleteMany({ where: { id: { in: questionsToDeleteIds } } });
                 }
 
-                console.log('Questions to Update:', questionsToUpdate);
+                console.log('[SERVER] Questions to Update:', questionsToUpdate);
                 for (const q of questionsToUpdate) {
                     if (!q.id) continue;
-                    console.log(`Updating question ID: ${q.id}`);
+                    console.log(`[SERVER] Updating question ID: ${q.id}`);
 
                     await tx.question.update({
                         where: { id: q.id },
@@ -177,7 +176,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     });
                     
                     if (q.type === 'MCQ') {
-                      console.log(`Processing MCQ options for question ${q.id}`);
+                      console.log(`[SERVER] Processing MCQ options for question ${q.id}`);
                       const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true }})).map(o => o.id);
                       const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
                       const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
@@ -195,7 +194,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                           }
                       }
                     } else if (q.type === 'IMAGE_BASED_ANSWER') {
-                        console.log(`Processing Image-Based Answer images for question ${q.id}`);
+                        console.log(`[SERVER] Processing Image-Based Answer images for question ${q.id}`);
                         await tx.questionImage.deleteMany({ where: { questionId: q.id } });
                         if (q.images && q.images.length > 0) {
                             await tx.questionImage.createMany({
@@ -205,10 +204,10 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     }
                 }
 
-                console.log('Questions to Create:', questionsToCreate);
+                console.log('[SERVER] Questions to Create:', questionsToCreate);
                 if (questionsToCreate.length > 0) {
                     for (const q of questionsToCreate) {
-                         console.log('Creating new question:', q.text);
+                         console.log('[SERVER] Creating new question:', q.text);
                          await tx.question.create({
                             data: {
                                 examId: examId,
@@ -224,11 +223,11 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                 }
             });
         } catch (e: any) {
-            console.error("Transaction failed:", e);
+            console.error("[SERVER ERROR] Transaction failed:", e);
             throw e;
         }
     } else { // Create a new exam
-        console.log("Creating new exam");
+        console.log("[SERVER] Creating new exam");
         const createData: Prisma.ExamCreateInput = {
             ...baseExamData,
             post: data.assignmentType === 'POST' && data.postId ? { connect: { id: parseInt(data.postId, 10) } } : undefined,
@@ -809,8 +808,3 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
 
     return { success: true, newTotalScore };
 }
-
-    
-
-
-
