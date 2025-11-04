@@ -1,9 +1,3 @@
-// This file is intentionally left empty.
-// The layout from src/app/manage/layout.tsx will be used for all admin routes.
-export default function EmptyAdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  return <>{children}</>;
-}
+// This file now simply re-exports the layout from the /manage directory
+// to ensure a single, consistent layout for all admin-related pages.
+export { default } from '../manage/layout';
