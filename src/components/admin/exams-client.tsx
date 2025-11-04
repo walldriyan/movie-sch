@@ -138,6 +138,8 @@ const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number, iInde
         const file = e.target.files?.[0];
         if (!file) return;
         
+        console.log(`[CLIENT] Step 1: File selected for Q${qIndex}, I${iIndex}:`, { name: file.name, size: file.size });
+
         if (file.size > 2 * 1024 * 1024) { // 2MB limit
             toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 2MB.'});
             return;
@@ -148,14 +150,18 @@ const QuestionImageUploader = ({ qIndex, iIndex, form }: { qIndex: number, iInde
 
         startUploading(async () => {
             try {
+                console.log(`[CLIENT] Step 2: Calling 'uploadExamImage' server action.`);
                 const uploadedUrl = await uploadExamImage(formData);
+                console.log(`[CLIENT] Step 5: Received URL from server:`, uploadedUrl);
                 if (uploadedUrl) {
                     form.setValue(`questions.${qIndex}.images.${iIndex}.url`, uploadedUrl, { shouldValidate: true, shouldDirty: true });
+                    console.log(`[CLIENT] Step 6: Set form value for questions.${qIndex}.images.${iIndex}.url`);
                     toast({ title: 'Image Uploaded' });
                 } else {
                     throw new Error('Upload failed to return a URL.');
                 }
             } catch (err: any) {
+                console.error('[CLIENT] Upload Failed:', err);
                 toast({ variant: 'destructive', title: 'Upload Failed', description: err.message });
             }
         });

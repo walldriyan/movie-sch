@@ -1,5 +1,4 @@
 
-
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -12,6 +11,7 @@ import { saveImageFromDataUrl } from './posts';
 
 
 export async function uploadExamImage(formData: FormData): Promise<string | null> {
+    console.log(`[SERVER] Step 3: 'uploadExamImage' server action initiated.`);
     const session = await auth();
     if (!session?.user) {
         throw new Error('Not authenticated');
@@ -23,8 +23,11 @@ export async function uploadExamImage(formData: FormData): Promise<string | null
     const dataUrl = await file.arrayBuffer().then(buffer => 
         `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
     );
+    console.log(`[SERVER] Step 4: Calling 'saveImageFromDataUrl' to process the image data.`);
     // Save to a specific folder for exam images
-    return saveImageFromDataUrl(dataUrl, 'exams');
+    const savedUrl = await saveImageFromDataUrl(dataUrl, 'exams');
+    console.log(`[SERVER] Step 4.1: 'saveImageFromDataUrl' returned:`, savedUrl);
+    return savedUrl;
 }
 
 
