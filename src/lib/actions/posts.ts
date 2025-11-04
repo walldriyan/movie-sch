@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -851,7 +852,7 @@ export async function getFavoritePosts() {
   const userId = session.user.id;
 
   const favoritePosts = await prisma.favoritePost.findMany({
-    where: { userId },
+    where: { userId, post: { status: 'PUBLISHED' } },
     include: {
       post: {
         include: {
@@ -862,6 +863,20 @@ export async function getFavoritePosts() {
                   select: { posts: true }
                 }
               }
+            },
+           likedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                },
+                take: 5,
+            },
+            _count: {
+                select: {
+                    likedBy: true,
+                    reviews: true,
+                }
             }
         },
       },
@@ -944,6 +959,7 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
 
 
 
