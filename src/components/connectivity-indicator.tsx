@@ -1,35 +1,25 @@
+
 'use client';
 
 import React from 'react';
 import { useConnectivity } from '@/context/connectivity-context';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Wifi, WifiOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Circle } from 'lucide-react';
 
 export default function ConnectivityIndicator() {
   const { isOnline } = useConnectivity();
 
   return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div className="flex h-10 w-10 items-center justify-center">
-            <span className="relative flex h-3 w-3">
-              {isOnline ? (
-                <>
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                </>
-              ) : (
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
-              )}
-            </span>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{isOnline ? 'Online' : 'Offline'}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
+    <span
+      className="absolute right-0 top-0 block h-3 w-3 rounded-full border-2 border-background"
+      title={isOnline ? 'Online' : 'Offline'}
+    >
+      <Circle
+        className={cn(
+          'h-full w-full',
+          isOnline ? 'fill-green-500 text-green-500' : 'fill-red-500 text-red-500'
+        )}
+      />
+    </span>
   );
 }

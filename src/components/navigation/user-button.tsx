@@ -29,6 +29,7 @@ import { ROLES } from '@/lib/permissions';
 import { Skeleton } from '../ui/skeleton';
 import { doSignOut } from '@/lib/actions';
 import { useFormStatus } from 'react-dom';
+import ConnectivityIndicator from '../connectivity-indicator';
 
 
 function LogoutButton() {
@@ -93,16 +94,19 @@ export default function UserButton() {
           variant="ghost"
           className="relative h-10 rounded-full px-2 space-x-2 justify-start"
         >
-          <Avatar className="cursor-pointer h-8 w-8">
-            <AvatarImage
-              src={user.image || userAvatarPlaceholder?.imageUrl}
-              alt={user.name || 'User'}
-              data-ai-hint="person face"
-            />
-            <AvatarFallback>
-              {user.name?.charAt(0).toUpperCase() || 'U'}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="cursor-pointer h-8 w-8">
+              <AvatarImage
+                src={user.image || userAvatarPlaceholder?.imageUrl}
+                alt={user.name || 'User'}
+                data-ai-hint="person face"
+              />
+              <AvatarFallback>
+                {user.name?.charAt(0).toUpperCase() || 'U'}
+              </AvatarFallback>
+            </Avatar>
+            <ConnectivityIndicator />
+          </div>
           <div className="flex-col items-start hidden md:flex">
             <span className="text-xs font-medium">{user.name}</span>
             <Badge
