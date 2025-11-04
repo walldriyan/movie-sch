@@ -1,4 +1,5 @@
-
+// This file now simply re-exports the layout from the /manage directory
+// to ensure a single, consistent layout for all admin-related pages.
 'use client';
 
 import { useSession } from 'next-auth/react';
@@ -37,7 +38,7 @@ export default function ManageLayout({
   
   if (status === 'loading') {
     return (
-      <div className="flex pt-16">
+      <div className="flex pt-16 w-full">
         <div className="w-64 h-[calc(100vh-4rem)] border-r p-2">
             <div className="flex flex-col space-y-2">
                 <Skeleton className="h-8 w-full" />
@@ -139,7 +140,7 @@ export default function ManageLayout({
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
-      <SidebarInset className="ml-[16rem]">
+      <SidebarInset className="ml-[16rem] overflow-hidden">
         <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           {children}
         </main>
