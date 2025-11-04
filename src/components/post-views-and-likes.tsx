@@ -9,7 +9,7 @@ export default function PostViewsAndLikes({ post, viewCount }: { post: Post, vie
   const likers = post.likedBy || [];
   const displayLikers = likers.slice(0, 3);
   const remainingLikersCount = (post._count?.likedBy || 0) > 3 ? (post._count?.likedBy || 0) - 3 : 0;
-  const hasLikesOrViews = (post._count?.likedBy || 0) > 0 || viewCount > 0;
+  const hasLikesOrViews = (post._count?.likedBy || 0) > 0 || (viewCount || 0) > 0;
 
   if (!hasLikesOrViews) return null;
 
@@ -32,7 +32,7 @@ export default function PostViewsAndLikes({ post, viewCount }: { post: Post, vie
             <div className="relative z-[-1] flex h-12 w-12 items-center justify-center rounded-full border-2 border-background bg-muted">
                  <div className="flex flex-col items-center gap-0.5 text-xs font-bold text-muted-foreground">
                     <Eye className="h-4 w-4" />
-                    <span className="text-[10px]">{viewCount.toLocaleString()}</span>
+                    <span className="text-[10px]">{(viewCount || 0).toLocaleString()}</span>
                 </div>
             </div>
 
