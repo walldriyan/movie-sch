@@ -252,12 +252,15 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
         } else { // Guest
             whereClause = publicCriteria;
         }
+
+        // For non-admins, only show unlocked posts unless they are filtering for locked posts
+        if (lockStatus !== 'locked') {
+            whereClause.isLockedByDefault = false;
+        }
     }
     
     if (lockStatus === 'locked') {
         whereClause.isLockedByDefault = true;
-    } else if (lockStatus === 'unlocked' || (lockStatus === undefined && userRole !== ROLES.SUPER_ADMIN)) {
-        whereClause.isLockedByDefault = false;
     }
 
 
@@ -936,6 +939,7 @@ export async function updatePostLockSettings(
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
 
 
 
