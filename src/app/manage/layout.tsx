@@ -36,9 +36,9 @@ export default function ManageLayout({
   
   if (status === 'loading') {
     return (
-      <div className="flex h-screen">
-        <div className="w-64 h-full border-r p-2">
-            <div className="flex flex-col space-y-2">
+      <div className="flex h-screen pt-16">
+        <div className="w-64 h-full border-r p-2 bg-background">
+            <div className="flex flex-col space-y-2 p-2">
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
@@ -55,10 +55,10 @@ export default function ManageLayout({
     notFound();
   }
   
-  const isActive = (path: string) => pathname === path;
+  const isActive = (path: string) => pathname === path || (path === '/manage' && pathname.startsWith('/admin'));
 
   return (
-    <div className="pt-16">
+    <div>
       <Sidebar className="h-[calc(100vh-4rem)] fixed top-16 w-64 flex-shrink-0">
         <SidebarHeader>
             <h2 className="text-lg font-semibold px-2">Manage</h2>
