@@ -52,7 +52,7 @@ export default function ManageLayout({
         <SidebarContent>
           <SidebarMenu>
             <SidebarMenuItem>
-              <Link href="/manage" passHref legacyBehavior>
+              <Link href="/manage">
                 <SidebarMenuButton isActive={isActive('/manage')}>
                   <LayoutGrid />
                   Posts
@@ -60,7 +60,7 @@ export default function ManageLayout({
               </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <Link href="/manage/series" passHref legacyBehavior>
+                <Link href="/manage/series">
                   <SidebarMenuButton isActive={isActive('/manage/series')} disabled>
                     <List />
                     Series
@@ -71,7 +71,7 @@ export default function ManageLayout({
             {user.role === ROLES.SUPER_ADMIN && (
               <>
                 <SidebarMenuItem>
-                  <Link href="/admin/exams" passHref legacyBehavior>
+                  <Link href="/admin/exams">
                     <SidebarMenuButton isActive={isActive('/admin/exams')}>
                       <BookCheck />
                       Exams
@@ -79,7 +79,7 @@ export default function ManageLayout({
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <Link href="/admin/users" passHref legacyBehavior>
+                  <Link href="/admin/users">
                     <SidebarMenuButton isActive={isActive('/admin/users')}>
                       <Users />
                       Users
@@ -87,7 +87,7 @@ export default function ManageLayout({
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <Link href="/admin/groups" passHref legacyBehavior>
+                  <Link href="/admin/groups">
                     <SidebarMenuButton isActive={isActive('/admin/groups')}>
                       <Users2 />
                       Groups
@@ -95,7 +95,7 @@ export default function ManageLayout({
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <Link href="/admin/notifications" passHref legacyBehavior>
+                  <Link href="/admin/notifications">
                     <SidebarMenuButton isActive={isActive('/admin/notifications')}>
                       <Bell />
                       Notifications
@@ -103,7 +103,7 @@ export default function ManageLayout({
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <Link href="/admin/feedback" passHref legacyBehavior>
+                  <Link href="/admin/feedback">
                     <SidebarMenuButton isActive={isActive('/admin/feedback')}>
                       <MessageSquareWarning />
                       Feedback
@@ -111,7 +111,7 @@ export default function ManageLayout({
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <Link href="/admin/settings" passHref legacyBehavior>
+                  <Link href="/admin/settings">
                     <SidebarMenuButton isActive={isActive('/admin/settings')}>
                       <Settings />
                       Settings
