@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { Prisma } from '@prisma/client';
@@ -10,6 +11,164 @@ import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import prisma from '@/lib/prisma';
 import type { PostFormData } from '@/lib/types';
+import { redis } from '../redis';
+
+function generateCacheKey(options: any): string {
+  const normalized = {
+    page: options.page || 1,
+    limit: options.limit || 10,
+    filters: options.filters ? {
+      sortBy: options.filters.sortBy,
+      genres: options.filters.genres?.sort(),
+      yearRange: options.filters.yearRange,
+      ratingRange: options.filters.ratingRange,
+      timeFilter: options.filters.timeFilter,
+      authorId: options.filters.authorId,
+      type: options.filters.type,
+      lockStatus: options.filters.lockStatus,
+    } : {}
+  };
+  return `posts:${JSON.stringify(normalized, Object.keys(normalized).sort())}`;
+}
+
+async function invalidateCachePattern(pattern: string) {
+  if (!redis) return;
+  try {
+    console.log(`[Cache Invalidation] Starting invalidation for pattern: ${pattern}`);
+    let cursor = 0;
+    let deletedCount = 0;
+    
+    do {
+      const [newCursor, keys] = await redis.scan(cursor, {
+        match: pattern,
+        count: 100
+      });
+      
+      cursor = newCursor;
+      
+      if (keys.length > 0) {
+        await redis.del(...keys);
+        deletedCount += keys.length;
+      }
+    } while (cursor !== 0);
+    
+    console.log(`[Cache Invalidation] Invalidated ${deletedCount} keys for pattern "${pattern}"`);
+  } catch (error) {
+    console.error('[Cache Invalidation] Redis invalidation error:', error);
+  }
+}
+
+export async function invalidatePostsCache(postId?: number, seriesId?: number, authorId?: string) {
+    console.log(`[Cache] invalidatePostsCache called with: postId=${postId}, seriesId=${seriesId}, authorId=${authorId}`);
+    revalidatePath('/');
+    revalidatePath('/manage');
+    if (postId) {
+        revalidatePath(`/movies/${postId}`);
+    }
+    if (seriesId) {
+        revalidatePath(`/series/${seriesId}`);
+    }
+    if (authorId) {
+        revalidatePath(`/profile/${authorId}`);
+    }
+}
+
+
+async function getWithCacheLock<T>(
+  cacheKey: string,
+  fetchFn: () => Promise<T>,
+  ttl: number = 3600,
+  maxRetries = 3
+): Promise<T> {
+  if (redis) {
+    try {
+      const cached = await redis.get<T>(cacheKey);
+      if (cached) {
+        console.log(`[Cache] HIT for key: ${cacheKey}`);
+        return cached;
+      }
+    } catch (error) {
+      console.error('[Cache] Redis GET error:', error);
+    }
+  }
+
+  const lockKey = `lock:${cacheKey}`;
+  const lockTTL = 10; // 10 seconds
+
+  if (redis) {
+    try {
+      const locked = await redis.set(lockKey, '1', { ex: lockTTL, nx: true });
+      
+      if (!locked) {
+        for (let i = 0; i < maxRetries; i++) {
+            await new Promise(r => setTimeout(r, 100 * (i + 1))); // Exponential backoff
+            const retryCache = await redis.get<T>(cacheKey);
+            if (retryCache) {
+              console.log(`[Cache] HIT on retry for key: ${cacheKey}`);
+              return retryCache;
+            }
+        }
+        console.warn(`[Cache] Could not acquire lock or find cache after retries for key: ${cacheKey}. Fetching directly.`);
+      }
+    } catch (error) {
+        console.error('[Cache] Redis SET lock error:', error);
+    }
+  }
+  
+  console.log(`[Cache] MISS for key: ${cacheKey}`);
+  try {
+    const result = await fetchFn();
+    
+    if (redis) {
+        await redis.set(cacheKey, result, { ex: ttl });
+        console.log(`[Cache] SET for key: ${cacheKey}`);
+        await redis.del(lockKey);
+    }
+    
+    return result;
+  } catch (error) {
+    if (redis) await redis.del(lockKey);
+    throw error;
+  }
+}
+
+async function getUserGroupIds(userId: string): Promise<string[]> {
+  const cacheKey = `user:${userId}:groups`;
+  
+  if (redis) {
+    try {
+      const cached = await redis.get<string[]>(cacheKey);
+      if (cached) return cached;
+    } catch (error) {
+      console.error('[Cache] Redis GET error for user groups:', error);
+    }
+  }
+  
+  const members = await prisma.groupMember.findMany({
+    where: { userId, status: 'ACTIVE' },
+    select: { groupId: true },
+  });
+  
+  const groupIds = members.map(m => m.groupId);
+  
+  if (redis) {
+    try {
+      await redis.set(cacheKey, groupIds, { ex: 1800 }); // 30 minutes
+    } catch (error) {
+      console.error('[Cache] Redis SET error for user groups:', error);
+    }
+  }
+  
+  return groupIds;
+}
+
+export async function invalidateUserGroupsCache(userId: string) {
+    if (redis) {
+        const cacheKey = `user:${userId}:groups`;
+        await redis.del(cacheKey);
+        console.log(`[Cache] Invalidated user groups cache for userId: ${userId}`);
+    }
+}
 
 
 export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
@@ -43,12 +202,14 @@ export async function deleteUploadedFile(filePath: string | null | undefined) {
     try {
         const fullPath = join(process.cwd(), 'public', filePath);
         await unlink(fullPath);
+        console.log(`[File System] Deleted file: ${fullPath}`);
     } catch (error) {
         console.error(`Failed to delete file: ${filePath}`, error);
     }
 }
 
-export async function getPosts(options: { page?: number; limit?: number, filters?: any } = {}) {
+async function fetchPostsFromDB(options: { page?: number; limit?: number, filters?: any } = {}) {
+    console.log('[DB Fetch] fetchPostsFromDB called with options:', JSON.stringify(options, null, 2));
     const { page = 1, limit = 10, filters = {} } = options;
     const skip = (page - 1) * limit;
     const session = await auth();
@@ -76,10 +237,7 @@ export async function getPosts(options: { page?: number; limit?: number, filters
         };
 
         if (user) { // Logged-in regular user
-            const userGroupIds = await prisma.groupMember.findMany({
-                where: { userId: user.id, status: 'ACTIVE' },
-                select: { groupId: true },
-            }).then(members => members.map(m => m.groupId));
+            const userGroupIds = await getUserGroupIds(user.id);
 
             whereClause = {
                  OR: [
@@ -161,43 +319,48 @@ export async function getPosts(options: { page?: number; limit?: number, filters
       whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
     }
 
-    const posts = await prisma.post.findMany({
-        where: whereClause,
-        skip: skip,
-        take: limit,
-        orderBy,
-        include: {
-            author: true,
-            series: {
-              include: {
-                posts: {
-                  select: { posterUrl: true },
-                  orderBy: { orderInSeries: 'asc' },
+    console.log('[DB Fetch] Executing Prisma query with where clause:', JSON.stringify(whereClause, null, 2));
+
+    const [posts, totalPosts] = await prisma.$transaction([
+      prisma.post.findMany({
+          where: whereClause,
+          skip: skip,
+          take: limit,
+          orderBy,
+          include: {
+              author: true,
+              series: {
+                include: {
+                  posts: {
+                    select: { posterUrl: true },
+                    orderBy: { orderInSeries: 'asc' },
+                  },
+                  _count: {
+                    select: { posts: true }
+                  }
+                }
+              },
+              likedBy: {
+                select: {
+                    id: true,
+                    name: true,
+                    image: true,
                 },
-                _count: {
-                  select: { posts: true }
+                take: 5,
+              },
+              _count: {
+                select: {
+                  likedBy: true,
+                  reviews: true,
                 }
               }
-            },
-            likedBy: {
-              select: {
-                  id: true,
-                  name: true,
-                  image: true,
-              },
-              take: 5,
-            },
-            _count: {
-              select: {
-                likedBy: true,
-                reviews: true,
-              }
-            }
-        },
-    });
-
-    const totalPosts = await prisma.post.count({ where: whereClause });
+          },
+      }),
+      prisma.post.count({ where: whereClause })
+    ]);
+    
     const totalPages = Math.ceil(totalPosts / limit);
+    console.log(`[DB Fetch] Found ${totalPosts} posts, returning ${posts.length} for page ${page}. Total pages: ${totalPages}`);
 
     return {
         posts: posts.map((post) => ({
@@ -223,7 +386,18 @@ export async function getPosts(options: { page?: number; limit?: number, filters
     };
 }
 
+
+export async function getPosts(options: { page?: number; limit?: number, filters?: any } = {}) {
+    const cacheKey = generateCacheKey(options);
+    // Disabling cache for this specific high-level fetch to avoid complexity during debugging
+    // const result = await getWithCacheLock(cacheKey, () => fetchPostsFromDB(options));
+    const result = await fetchPostsFromDB(options);
+    return result;
+}
+
+
 export async function getPost(postId: number) {
+  console.log(`[Action: getPost] Fetching post with ID: ${postId}`);
   const session = await auth();
   const userId = session?.user?.id;
 
@@ -234,21 +408,18 @@ export async function getPost(postId: number) {
         where: { parentId: null },
         include: {
           user: true,
-          replies: { 
+          replies: {
             include: {
               user: true,
-              replies: { 
-                include: {
-                  user: true,
-                  replies: true,
-                }
-              }
+            },
+             orderBy: {
+              createdAt: 'asc'
             }
-          }
+          },
         },
         orderBy: {
-          createdAt: 'desc'
-        }
+          createdAt: 'desc',
+        },
       },
       author: true,
       favoritePosts: userId ? { where: { userId } } : false,
@@ -270,12 +441,16 @@ export async function getPost(postId: number) {
     },
   });
   
-  if (!post) return null;
+  if (!post) {
+      console.log(`[Action: getPost] Post with ID ${postId} not found.`);
+      return null;
+  }
   
   const subtitles = await prisma.subtitle.findMany({
     where: { postId: postId },
   });
-
+  
+  console.log(`[Action: getPost] Successfully fetched post "${post.title}".`);
   return {
     ...post,
     genres: post.genres ? post.genres.split(',') : [],
@@ -294,6 +469,7 @@ export async function incrementViewCount(postId: number) {
                 }
             }
         });
+        // await invalidatePostsCache(postId); // Re-enabled if needed, but might be too aggressive
         return updatedPost.viewCount;
     } catch (error) {
         console.error(`Failed to increment view count for post ${postId}:`, error);
@@ -303,6 +479,7 @@ export async function incrementViewCount(postId: number) {
 }
 
 export async function savePost(postData: PostFormData, id?: number) {
+  console.log(`[Action: savePost] Starting save process. ID: ${id || 'new'}`);
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error('User not authenticated');
@@ -316,13 +493,13 @@ export async function savePost(postData: PostFormData, id?: number) {
 
   // --- Start Daily Post Limit Check ---
   if (!id) { // Only check for new posts, not edits
+    console.log('[Action: savePost] Checking daily post limit.');
     const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' }});
     const defaultLimit = defaultLimitSetting ? parseInt(defaultLimitSetting.value, 10) : 10;
     
-    // User-specific limit overrides the default
     const postLimit = user.dailyPostLimit ?? defaultLimit;
 
-    if (postLimit > 0) { // A limit of 0 means unlimited
+    if (postLimit > 0) { 
       const twentyFourHoursAgo = subDays(new Date(), 1);
       const userPostCount = await prisma.post.count({
         where: {
@@ -334,14 +511,17 @@ export async function savePost(postData: PostFormData, id?: number) {
       });
 
       if (userPostCount >= postLimit) {
+        console.error(`[Action: savePost] User ${userId} has reached daily post limit of ${postLimit}.`);
         throw new Error(`You have reached your daily post limit of ${postLimit}.`);
       }
+      console.log(`[Action: savePost] User ${userId} has ${postLimit - userPostCount} posts remaining.`);
     }
   }
   // --- End Daily Post Limit Check ---
 
   let finalPosterUrl = postData.posterUrl;
   if (postData.posterUrl && postData.posterUrl.startsWith('data:image')) {
+    console.log('[Action: savePost] Saving new poster image from data URL.');
     finalPosterUrl = await saveImageFromDataUrl(postData.posterUrl, 'posts');
   }
   
@@ -371,11 +551,11 @@ export async function savePost(postData: PostFormData, id?: number) {
   const status = MovieStatus.PENDING_APPROVAL;
 
   if (id) {
+    console.log(`[Action: savePost] Updating existing post with ID: ${id}`);
     const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) {
         throw new Error('Post not found');
     }
-    // Only delete the old poster if a new one is uploaded and they are different
     if (finalPosterUrl && finalPosterUrl !== existingPost.posterUrl) {
       await deleteUploadedFile(existingPost.posterUrl);
     }
@@ -392,16 +572,20 @@ export async function savePost(postData: PostFormData, id?: number) {
       })
     ]);
 
-    revalidatePath(`/manage`);
-    revalidatePath(`/movies/${id}`);
   } else {
+    console.log('[Action: savePost] Creating new post.');
     await prisma.post.create({ data: { ...data, status: status, authorId: userId, mediaLinks: { create: postData.mediaLinks } } });
-    revalidatePath(`/manage`);
   }
+
+  // Revalidate paths to reflect changes
   revalidatePath('/');
+  revalidatePath('/manage');
+
+  console.log(`[Action: savePost] Save process finished for post ID: ${id || 'new'}.`);
 }
 
 export async function deletePost(id: number) {
+  console.log(`[Action: deletePost] Attempting to delete post with ID: ${id}`);
   const session = await auth();
   const user = session?.user;
 
@@ -414,17 +598,15 @@ export async function deletePost(id: number) {
     throw new Error('Post not found');
   }
 
-  const canDelete = 
-    user.role === ROLES.SUPER_ADMIN || 
-    (user.role === ROLES.USER_ADMIN && postToDelete.authorId === user.id);
+  const isAuthor = postToDelete.authorId === user.id;
+  const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
   
-  if (!canDelete) {
+  if (!isAuthor && !isSuperAdmin) {
      throw new Error('Not authorized to delete this post.');
   }
 
-  const isPermanent = user.role === ROLES.SUPER_ADMIN;
-
-  if (isPermanent) {
+  if (isSuperAdmin) {
+    console.log(`[Action: deletePost] Super Admin ${user.id} is hard deleting post ${id}.`);
     await prisma.$transaction([
       prisma.favoritePost.deleteMany({ where: { postId: id } }),
       prisma.review.deleteMany({ where: { postId: id } }),
@@ -434,21 +616,22 @@ export async function deletePost(id: number) {
     ]);
 
     await deleteUploadedFile(postToDelete.posterUrl);
-  } else {
+  } else { // isAuthor
+    console.log(`[Action: deletePost] Author ${user.id} is soft deleting post ${id}.`);
     await prisma.post.update({
       where: { id },
       data: { status: 'PENDING_DELETION' },
     });
   }
   
-  revalidatePath(`/manage`);
-  revalidatePath(`/movies/${id}`);
-  revalidatePath('/');
+  await invalidatePostsCache(id, postToDelete.seriesId ?? undefined, postToDelete.authorId);
+  console.log(`[Action: deletePost] Post ${id} processed for deletion. Paths revalidated.`);
 }
 
 
 export async function getPostsForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null, sortBy?: string } = {}) {
     const { page = 1, limit = 10, userId, userRole, status, sortBy = 'createdAt-desc' } = options;
+    console.log('[Action: getPostsForAdmin] Fetching posts for admin view with options:', options);
     const skip = (page - 1) * limit;
     
     if (!userId || !userRole) {
@@ -469,33 +652,36 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
     const orderBy = { [field]: direction };
 
 
-    const posts = await prisma.post.findMany({
-        where: whereClause,
-        skip: skip,
-        take: limit,
-        orderBy,
-        include: {
-            author: true,
-            group: {
-              select: {
-                name: true,
-              }
-            },
-            _count: {
-              select: { likedBy: true },
-            },
-            series: {
-              include: {
-                _count: {
-                  select: { posts: true }
+    const [posts, totalPosts] = await prisma.$transaction([
+      prisma.post.findMany({
+          where: whereClause,
+          skip: skip,
+          take: limit,
+          orderBy,
+          include: {
+              author: true,
+              group: {
+                select: {
+                  name: true,
+                }
+              },
+              _count: {
+                select: { likedBy: true },
+              },
+              series: {
+                include: {
+                  _count: {
+                    select: { posts: true }
+                  }
                 }
               }
-            }
-        },
-    });
+          },
+      }),
+      prisma.post.count({ where: whereClause })
+    ]);
 
-    const totalPosts = await prisma.post.count({ where: whereClause });
     const totalPages = Math.ceil(totalPosts / limit);
+    console.log(`[Action: getPostsForAdmin] Found ${totalPosts} posts. Returning page ${page} of ${totalPages}.`);
 
     return {
         posts: posts.map((post) => ({
@@ -522,6 +708,7 @@ export async function getPostsForAdmin(options: { page?: number; limit?: number,
 
 
 export async function updatePostStatus(postId: number, status: string) {
+  console.log(`[Action: updatePostStatus] Attempting to update post ${postId} to status: ${status}`);
   const session = await auth();
   if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
     throw new Error('Not authorized to change post status.');
@@ -547,8 +734,8 @@ export async function updatePostStatus(postId: number, status: string) {
     data: { status },
   });
 
-  revalidatePath('/manage');
-  revalidatePath(`/movies/${postId}`);
+  await invalidatePostsCache(postId, postToUpdate.seriesId ?? undefined, postToUpdate.authorId);
+  console.log(`[Action: updatePostStatus] Successfully updated post ${postId} to status: ${status}`);
 }
 
 export async function toggleLikePost(postId: number, like: boolean) {
@@ -608,7 +795,7 @@ export async function toggleLikePost(postId: number, like: boolean) {
     }
   }
 
-  revalidatePath(`/movies/${postId}`);
+  revalidatePath('/');
 }
 
 export async function toggleFavoritePost(postId: number) {
@@ -645,9 +832,7 @@ export async function toggleFavoritePost(postId: number) {
     });
   }
 
-  revalidatePath(`/movies/${postId}`);
-  revalidatePath('/favorites');
-  revalidatePath(`/profile/${userId}`);
+  await invalidatePostsCache(postId, undefined, userId);
 }
 
 export async function getFavoritePosts() {
@@ -745,8 +930,12 @@ export async function updatePostLockSettings(
     },
   });
 
+  await invalidatePostsCache(postId, post.seriesId ?? undefined, post.authorId);
   revalidatePath(`/manage`);
   if (post.seriesId) {
     revalidatePath(`/series/${post.seriesId}`);
   }
 }
+
+
+

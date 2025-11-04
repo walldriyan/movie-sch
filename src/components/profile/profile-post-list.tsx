@@ -3,19 +3,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Star, VideoOff, Pencil, ThumbsUp, MessageCircle, Heart } from 'lucide-react';
+import { Heart, MessageCircle, Pencil, VideoOff } from 'lucide-react';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import type { Post, User } from '@/lib/types';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import ClientRelativeDate from '@/components/client-relative-date';
+import DOMPurify from 'isomorphic-dompurify';
 
 interface ProfilePostListProps {
   posts: Post[];
@@ -24,135 +17,46 @@ interface ProfilePostListProps {
   profileUser: User;
 }
 
-function PostCard({ post, isOwnProfile, currentFilter, profileUser }: { post: Post, isOwnProfile: boolean, currentFilter: string, profileUser: User }) {
+function PostGridCard({ post }: { post: Post }) {
     const postImageUrl =
     post.posterUrl ||
     PlaceHolderImages.find(
       (p) => p.id === 'movie-poster-placeholder'
     )?.imageUrl;
-
-  const authorAvatarUrl = post.author?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
-
-  const plainDescription = post.description.replace(/<[^>]+>/g, '');
-  
-  const likers = post.likedBy || [];
-  const totalLikes = post._count?.likedBy || 0;
-  const displayLikers = likers.slice(0, 5);
-  const remainingLikes = totalLikes - displayLikers.length;
-  
-  const postAuthor = currentFilter === 'favorites' ? post.author : profileUser;
-
+    
+    const sanitizedDescription = DOMPurify.sanitize(post.description || '');
 
   return (
-    <li className="relative flex flex-col gap-4 pb-8">
-        {/* Timeline line */}
-        <div className="absolute left-5 top-5 -ml-px h-full w-0.5 bg-border" />
-        
-        {/* Activity Header */}
-        <div className="relative flex-shrink-0 flex items-center gap-3">
-             <Link href={`/profile/${postAuthor?.id}`}>
-                <Avatar>
-                    {postAuthor?.image && <AvatarImage src={postAuthor.image} alt={postAuthor?.name || 'Author'} />}
-                    <AvatarFallback>{postAuthor?.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
-                </Avatar>
-            </Link>
-             <div className="flex items-center gap-2 text-sm">
-                <Link href={`/profile/${postAuthor?.id}`} className="font-semibold text-foreground hover:text-primary">
-                    {postAuthor?.name}
-                </Link>
-                <span className="text-muted-foreground">
-                    {currentFilter === 'favorites' ? 'favorited an update' : 'posted an update'}
-                </span>
-            </div>
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="text-xs text-muted-foreground ml-auto">
-                        <ClientRelativeDate date={new Date(post.updatedAt)} />
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{new Date(post.updatedAt).toLocaleString()}</p>
-                </TooltipContent>
-            </Tooltip>
-        </div>
-        
-        {/* Content Card */}
-        <div className="pl-12 flex-grow space-y-3">
-             <div className="rounded-lg border bg-card text-card-foreground shadow-sm group">
+    <Link href={`/movies/${post.id}`} className="group block">
+        <Card className="overflow-hidden transition-all duration-300 h-full flex flex-col bg-muted/30">
+             <div className="aspect-[2/1] relative">
                 {postImageUrl && (
-                  <div className="aspect-[16/9] relative overflow-hidden rounded-t-lg shadow-md max-h-[310px] ">
-                      <Image
-                          src={postImageUrl}
-                          alt={post.title}
-                          fill
-                          sizes="(max-width: 768px) 90vw, 800px"
-                          className="object-cover"
-                      />
-                       {isOwnProfile && currentFilter === 'posts' && (
-                        <Button asChild size="icon" variant="ghost" className="absolute top-2 right-2 h-8 w-8 bg-black/50 hover:bg-black/70">
-                            <Link href={`/manage?edit=${post.id}`}>
-                            <Pencil className="h-4 w-4" />
-                            </Link>
-                        </Button>
-                        )}
-                  </div>
+                    <Image
+                        src={postImageUrl}
+                        alt={post.title}
+                        fill
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                        className="object-cover"
+                    />
                 )}
-                 <div className="p-3">
-                    <Link href={`/movies/${post.id}`} className="group/link block">
-                        <h2 className="font-serif text-lg font-bold leading-snug group-hover/link:text-primary transition-colors">
-                            {post.title}
-                        </h2>
-                    </Link>
-                    <p className="mt-1 text-sm text-muted-foreground line-clamp-3">
-                      {plainDescription}
-                    </p>
-                    <div className="flex items-center justify-between mt-3 text-sm text-muted-foreground">
-                        <div className="flex items-center space-x-4">
-                            {post.imdbRating && (
-                                 <div className="flex items-center gap-1">
-                                    <Star className="w-4 h-4 text-yellow-400" />
-                                    <span>{post.imdbRating?.toFixed(1)}</span>
-                                </div>
-                            )}
-                            {post.duration && (
-                                 <span>{post.duration}</span>
-                            )}
-                        </div>
-                         <div className="flex items-center gap-4">
-                            <div className="flex items-center gap-1.5">
-                                <ThumbsUp className="w-4 h-4" />
-                                <span>{post._count?.likedBy || 0}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5">
-                                <MessageCircle className="w-4 h-4" />
-                                <span>{post._count?.reviews || 0}</span>
-                            </div>
-                        </div>
+                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+             </div>
+             <CardContent className="p-4 flex-grow flex flex-col">
+                <h3 className="font-semibold text-sm group-hover:text-primary flex-grow">{post.title}</h3>
+                <div className="text-xs text-muted-foreground line-clamp-1 mt-1" dangerouslySetInnerHTML={{ __html: sanitizedDescription }} />
+                <div className="flex items-center justify-end gap-3 text-xs text-muted-foreground mt-2">
+                    <div className="flex items-center gap-1">
+                        <Heart className="w-3 h-3" />
+                        <span>{post._count?.likedBy || 0}</span>
+                    </div>
+                     <div className="flex items-center gap-1">
+                        <MessageCircle className="w-3 h-3" />
+                        <span>{post._count?.reviews || 0}</span>
                     </div>
                 </div>
-            </div>
-             {totalLikes > 0 && (
-                <div className="flex items-center gap-3 border-t pt-3">
-                   <div className="flex items-center -space-x-2">
-                        <div className="w-7 h-7 rounded-full bg-red-500/10 border-2 border-red-500 flex items-center justify-center">
-                            <Heart className="w-4 h-4 text-red-500" fill="currentColor" />
-                        </div>
-                        {displayLikers.map(liker => (
-                            <Avatar key={liker.id} className="h-7 w-7 border-2 border-background">
-                                <AvatarImage src={liker.image || ''} alt={liker.name || 'user'} />
-                                <AvatarFallback>{liker.name?.charAt(0) || 'U'}</AvatarFallback>
-                            </Avatar>
-                        ))}
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                        {displayLikers[0]?.name}
-                        {remainingLikes > 0 && ` and ${remainingLikes} others liked this.`}
-                        {remainingLikes === 0 && ' liked this.'}
-                    </p>
-                </div>
-            )}
-        </div>
-    </li>
+             </CardContent>
+        </Card>
+    </Link>
   );
 }
 
@@ -171,24 +75,26 @@ export default function ProfilePostList({ posts, isOwnProfile, currentFilter, pr
               ? `${profileUser.name} hasn't posted any content yet.`
               : `No favorite content to display.`}
           </p>
+           {isOwnProfile && currentFilter === 'posts' && (
+                <Button asChild className="mt-4">
+                    <Link href="/manage?create=true">
+                        <Pencil className="mr-2 h-4 w-4" /> Create First Post
+                    </Link>
+                </Button>
+           )}
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <TooltipProvider>
-      <ul>
-        {posts.map((post: any) => (
-            <PostCard 
-                key={`${currentFilter}-${post.id}`} 
-                post={post}
-                isOwnProfile={isOwnProfile}
-                currentFilter={currentFilter}
-                profileUser={profileUser}
-            />
-        ))}
-      </ul>
-    </TooltipProvider>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {posts.map((post: any) => (
+          <PostGridCard 
+              key={`${currentFilter}-${post.id}`} 
+              post={post}
+          />
+      ))}
+    </div>
   );
 }

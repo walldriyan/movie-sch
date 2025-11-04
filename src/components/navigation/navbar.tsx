@@ -76,9 +76,12 @@ export default function Navbar() {
   const isActive = (path: string) => pathname === path;
 
   const NavLink = ({ href, children, mobile = false, icon, hidden }: { href: string, children: React.ReactNode, mobile?: boolean, icon: React.ReactNode, hidden?: boolean }) => {
+    const activeStyles = "text-primary bg-muted/20 backdrop-blur-sm";
+    const inactiveStyles = "text-foreground/80";
+
     const className = mobile
       ? `text-lg font-medium flex items-center ${isActive(href) ? 'text-primary' : ''}`
-      : `transition-colors hover:text-primary h-auto px-3 py-2 ${isActive(href) ? 'text-primary bg-muted' : 'text-foreground/80'}`;
+      : `transition-colors hover:text-primary h-auto px-3 py-2 rounded-full ${isActive(href) ? activeStyles : inactiveStyles}`;
       
     return (
       <Button asChild variant="ghost" className={cn("justify-center", className, "flex flex-col items-center h-full", hidden && 'hidden')}>
@@ -149,7 +152,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg border-b border-white/10 z-header">
+    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg shadow-lg shadow-black/10 z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-8">
         <div 
             className={cn(
@@ -161,7 +164,7 @@ export default function Navbar() {
           </Link>
           <motion.div 
             className={cn(
-              "flex items-center p-1 rounded-full bg-background/80 border border-border/60"
+              "flex items-center p-1 rounded-full bg-background/80 border border-border/10 shadow-sm"
             )}
             animate={{ width: isNavExpanded ? 'auto' : 64 }}
             transition={{ type: 'spring', stiffness: 400, damping: 30 }}

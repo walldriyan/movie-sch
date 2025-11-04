@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import React, { useTransition } from 'react';
@@ -52,55 +51,22 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
 
     const handleLike = (likeAction: 'like' | 'dislike') => {
         if (!currentUser) {
-        toast({
-            variant: 'destructive',
-            title: 'Authentication required',
-            description: 'You must be logged in to like or dislike a post.',
-        });
-        return;
+            toast({
+                variant: 'destructive',
+                title: 'Authentication required',
+                description: 'You must be logged in to like or dislike a post.',
+            });
+            return;
         }
-
-        const originalPost = post;
-        const currentIsLiked = post.likedBy?.some(user => user.id === currentUser.id);
-        const currentIsDisliked = post.dislikedBy?.some(user => user.id === currentUser.id);
-
-        let optimisticPost: PostType = { ...post };
-
-        if (likeAction === 'like') {
-        optimisticPost = {
-            ...optimisticPost,
-            likedBy: currentIsLiked 
-            ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) 
-            : [...(optimisticPost.likedBy || []), currentUser as any],
-            dislikedBy: currentIsDisliked 
-            ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) 
-            : optimisticPost.dislikedBy,
-        };
-        } else {
-        optimisticPost = {
-            ...optimisticPost,
-            dislikedBy: currentIsDisliked 
-            ? optimisticPost.dislikedBy?.filter(u => u.id !== currentUser.id) 
-            : [...(optimisticPost.dislikedBy || []), currentUser as any],
-            likedBy: currentIsLiked 
-            ? optimisticPost.likedBy?.filter(u => u.id !== currentUser.id) 
-            : optimisticPost.likedBy,
-        };
-        }
-        
-        optimisticPost._count = {
-        ...optimisticPost._count,
-        likedBy: optimisticPost.likedBy?.length || 0,
-        dislikedBy: optimisticPost.dislikedBy?.length || 0,
-        };
-
-        onPostUpdate(optimisticPost as PostType);
-
         startLikeTransition(async () => {
             try {
                 await toggleLikePost(post.id, likeAction === 'like');
+                toast({
+                    title: 'Success',
+                    description: `Your preference has been updated.`,
+                });
+                router.refresh(); 
             } catch (err: any) {
-                onPostUpdate(originalPost as PostType);
                 toast({
                     variant: 'destructive',
                     title: 'Error',
@@ -164,7 +130,11 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
     const isFavorited = currentUser && post.favoritePosts?.some(fav => fav.userId === currentUser.id);
     const isLiked = currentUser && post.likedBy?.some(user => user.id === currentUser.id);
     const isDisliked = currentUser && post.dislikedBy?.some(user => user.id === currentUser.id);
-    const canManage = currentUser && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role);
+    
+    const canManage = currentUser && (
+        currentUser.id === post.authorId || 
+        [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role)
+    );
     
     const showInteractiveButtons = sessionStatus === 'authenticated' && currentUser;
     const showLoadingState = sessionStatus === 'loading';
@@ -218,7 +188,7 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
                 <Share2 className="w-5 h-5 text-muted-foreground" />
             </Button>
             
-            <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
+            {canManage && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon">
@@ -238,7 +208,7 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
                         </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
-            </AuthGuard>
+            )}
         </div>
     );
 }

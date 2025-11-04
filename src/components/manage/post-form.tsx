@@ -82,7 +82,7 @@ type PostFormValues = z.infer<typeof postSchema>;
 type PostWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface PostFormProps {
   editingPost: PostWithLinks | null;
-  onFormSubmit: (postData: PostFormData, id?: number) => Promise<void>;
+  onFormSubmit: (postData: PostFormData, id?: number) => void;
   onBack: () => void;
   isSubmitting: boolean;
   debugError?: any;
@@ -187,6 +187,7 @@ export default function PostForm({
   isSubmitting,
   debugError,
 }: PostFormProps) {
+  console.log('[PostForm] Component rendering. Editing post:', editingPost ? editingPost.id : 'new');
   const posterFileInputRef = React.useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
@@ -196,6 +197,7 @@ export default function PostForm({
 
   useEffect(() => {
     async function fetchData() {
+        console.log('[PostForm] useEffect fetching initial data...');
         try {
             setIsLoadingStatus(true);
             const [seriesData, groupData, statusData] = await Promise.all([
@@ -203,14 +205,16 @@ export default function PostForm({
                 getGroupsForForm(),
                 getPostCreationStatus()
             ]);
+            console.log('[PostForm] Fetched data:', { seriesData, groupData, statusData });
             setSeriesList(seriesData);
             setGroups(groupData as any);
             setPostStatus(statusData);
         } catch (error) {
-            console.error("Failed to fetch initial form data:", error);
+            console.error("[PostForm] Failed to fetch initial form data:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load necessary form data.'});
         } finally {
             setIsLoadingStatus(false);
+            console.log('[PostForm] Finished fetching initial data.');
         }
     }
     fetchData();
@@ -278,30 +282,31 @@ export default function PostForm({
   });
 
   const handleSubmit = (values: PostFormValues) => {
-      const postData: PostFormData = {
-        title: values.title,
-        description: values.description,
-        posterUrl: values.posterUrl || null,
-        year: values.year || null,
-        duration: values.duration || null,
-        genres: values.genres || [],
-        directors: values.directors || null,
-        mainCast: values.mainCast || null,
-        imdbRating: values.imdbRating || null,
-        rottenTomatoesRating: values.rottenTomatoesRating || null,
-        googleRating: values.googleRating || null,
-        status: editingPost?.status || 'DRAFT',
-        viewCount: editingPost?.viewCount || 0,
-        mediaLinks: values.mediaLinks,
-        type: values.type,
-        seriesId: values.seriesId,
-        orderInSeries: values.orderInSeries,
-        visibility: values.visibility,
-        groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
-        isLockedByDefault: values.isLockedByDefault,
-        requiresExamToUnlock: values.requiresExamToUnlock,
-      };
-      onFormSubmit(postData, editingPost?.id);
+    console.log('[PostForm] handleSubmit called with values:', values);
+    const postData: PostFormData = {
+      title: values.title,
+      description: values.description,
+      posterUrl: values.posterUrl || null,
+      year: values.year || null,
+      duration: values.duration || null,
+      genres: values.genres || [],
+      directors: values.directors || null,
+      mainCast: values.mainCast || null,
+      imdbRating: values.imdbRating || null,
+      rottenTomatoesRating: values.rottenTomatoesRating || null,
+      googleRating: values.googleRating || null,
+      status: editingPost?.status || 'DRAFT',
+      viewCount: editingPost?.viewCount || 0,
+      mediaLinks: values.mediaLinks,
+      type: values.type,
+      seriesId: values.seriesId,
+      orderInSeries: values.orderInSeries,
+      visibility: values.visibility,
+      groupId: values.visibility === 'GROUP_ONLY' ? values.groupId : null,
+      isLockedByDefault: values.isLockedByDefault,
+      requiresExamToUnlock: values.requiresExamToUnlock,
+    };
+    onFormSubmit(postData, editingPost?.id);
   };
 
   const handleFileChange = (
@@ -882,3 +887,4 @@ export default function PostForm({
     </div>
   );
 }
+

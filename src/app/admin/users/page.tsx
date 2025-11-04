@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useEffect, useTransition } from 'react';
-import type { User } from '@prisma/client';
+import type { User, Role } from '@prisma/client';
 import { getUsers, updateUserRole } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
 import {
@@ -20,15 +21,6 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import {
   MoreHorizontal,
@@ -47,140 +39,21 @@ import {
   DropdownMenuLabel,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuPortal
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { ROLES } from '@/lib/permissions';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-const userEditSchema = z.object({
-  role: z.nativeEnum(ROLES),
-  dailyPostLimit: z.string().optional(),
-});
-
-type UserEditFormValues = z.infer<typeof userEditSchema>;
-
-
-function EditUserDialog({ user, onUserUpdate }: { user: User; onUserUpdate: () => void }) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [isPending, startTransition] = useTransition();
-  const { toast } = useToast();
-
-  const form = useForm<UserEditFormValues>({
-    resolver: zodResolver(userEditSchema),
-    defaultValues: {
-      role: user.role as keyof typeof ROLES,
-      dailyPostLimit: user.dailyPostLimit?.toString() || '',
-    },
-  });
-
-  const onSubmit = (data: UserEditFormValues) => {
-    startTransition(async () => {
-      try {
-        let newStatus: string | null = user.permissionRequestStatus;
-        if (user.permissionRequestStatus === 'PENDING') {
-          newStatus = data.role === ROLES.USER ? 'REJECTED' : 'APPROVED';
-        }
-        
-        await updateUserRole(user.id, data.role, newStatus!, data.dailyPostLimit || null);
-        toast({ title: 'User Updated', description: `${user.name}'s details have been saved.` });
-        onUserUpdate();
-        setIsOpen(false);
-      } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-      }
-    });
-  };
-
-  return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-          <Edit className="mr-2 h-4 w-4" />
-          Edit User
-        </DropdownMenuItem>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Edit User: {user.name}</DialogTitle>
-          <DialogDescription>
-            Modify user role and set content limits.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <FormField
-              control={form.control}
-              name="role"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Role</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {Object.values(ROLES).map((role) => (
-                        <SelectItem key={role} value={role}>{role}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="dailyPostLimit"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Daily Post Limit</FormLabel>
-                   <FormControl>
-                    <Input type="number" placeholder="Default (10)" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isPending}>
-                 {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save Changes
-              </Button>
-            </DialogFooter>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 
 export default function ManageUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const { toast } = useToast();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isChangingStatus, startStatusChangeTransition] = useTransition();
 
   const fetchUsers = async () => {
     setIsRefreshing(true);
@@ -206,6 +79,30 @@ export default function ManageUsersPage() {
     fetchUsers();
     toast({ title: 'User list refreshed'});
   }
+
+  const handleStatusChange = (user: User, newStatus: string) => {
+    startStatusChangeTransition(async () => {
+        try {
+            await updateUserRole(user.id, user.role as Role, newStatus, user.dailyPostLimit?.toString() ?? null);
+            toast({ title: 'Status Updated', description: `${user.name}'s status updated to ${newStatus}`});
+            fetchUsers();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
+    });
+  }
+
+  const handleRoleChange = (user: User, newRole: Role) => {
+    startStatusChangeTransition(async () => {
+        try {
+            await updateUserRole(user.id, newRole, user.permissionRequestStatus || 'NONE', user.dailyPostLimit?.toString() ?? null);
+            toast({ title: 'Role Updated', description: `${user.name}'s role updated to ${newRole}`});
+            fetchUsers();
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -296,7 +193,37 @@ export default function ManageUsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <EditUserDialog user={user} onUserUpdate={fetchUsers} />
+                           <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                      <DropdownMenuRadioGroup
+                                          value={user.role}
+                                          onValueChange={(newRole) => handleRoleChange(user, newRole as Role)}
+                                      >
+                                        {Object.values(ROLES).map(role => (
+                                           <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
+                                        ))}
+                                      </DropdownMenuRadioGroup>
+                                  </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                          </DropdownMenuSub>
+                           <DropdownMenuSub>
+                              <DropdownMenuSubTrigger>Change Permission Status</DropdownMenuSubTrigger>
+                              <DropdownMenuPortal>
+                                  <DropdownMenuSubContent>
+                                      <DropdownMenuRadioGroup
+                                          value={user.permissionRequestStatus || 'NONE'}
+                                          onValueChange={(newStatus) => handleStatusChange(user, newStatus)}
+                                      >
+                                          <DropdownMenuRadioItem value="NONE">None</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="PENDING">Pending</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="APPROVED">Approved</DropdownMenuRadioItem>
+                                          <DropdownMenuRadioItem value="REJECTED">Rejected</DropdownMenuRadioItem>
+                                      </DropdownMenuRadioGroup>
+                                  </DropdownMenuSubContent>
+                              </DropdownMenuPortal>
+                          </DropdownMenuSub>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive">
                             Delete User

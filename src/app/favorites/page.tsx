@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/tooltip";
 import { format, formatRelative } from 'date-fns';
 import ClientRelativeDate from '@/components/client-relative-date';
+import DOMPurify from 'isomorphic-dompurify';
 
 export default async function FavoritesPage() {
   const session = await auth();
@@ -75,7 +76,8 @@ export default async function FavoritesPage() {
               
               const authorAvatarUrl = post.author?.image || authorAvatarPlaceholder?.imageUrl;
               const postDate = new Date(post.updatedAt);
-              
+              const sanitizedDescription = DOMPurify.sanitize(post.description);
+
               return (
                 <article key={post.id}>
                   <div className="flex items-center space-x-3 mb-4 text-sm">
@@ -118,7 +120,7 @@ export default async function FavoritesPage() {
                       </Link>
                       <div
                         className="prose prose-sm prose-invert text-muted-foreground mt-2 line-clamp-2 [&_img]:hidden"
-                        dangerouslySetInnerHTML={{ __html: post.description }}
+                        dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                       />
                     </div>
                     <div className="col-span-4">

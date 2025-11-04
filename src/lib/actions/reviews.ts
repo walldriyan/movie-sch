@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
+import { invalidatePostsCache } from './posts';
 
 
 export async function createReview(
@@ -43,7 +44,7 @@ export async function createReview(
     },
   });
 
-  revalidatePath(`/movies/${postId}`);
+  await invalidatePostsCache(postId);
 
   return newReview as ReviewWithParent & { user: User, replies: (ReviewWithParent & { user: User })[] };
 }
@@ -83,5 +84,5 @@ export async function deleteReview(reviewId: number) {
         where: { id: reviewId },
     });
 
-    revalidatePath(`/movies/${review.postId}`);
+    await invalidatePostsCache(review.postId);
 }
