@@ -5,16 +5,16 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
-import type { Group, GroupMember, User, Role as MemberRole } from '@prisma/client';
+import type { Group, GroupMember, User, GroupRole } from '@prisma/client';
 import { saveImageFromDataUrl, deleteUploadedFile } from './posts';
 
 
 export async function uploadGroupProfileImage(formData: FormData): Promise<string | null> {
     const file = formData.get('image') as File;
     if (!file || file.size === 0) {
-      return null;
+        return null;
     }
-    const dataUrl = await file.arrayBuffer().then(buffer => 
+    const dataUrl = await file.arrayBuffer().then(buffer =>
         `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
     );
     return saveImageFromDataUrl(dataUrl, 'groups/avatars');
@@ -23,9 +23,9 @@ export async function uploadGroupProfileImage(formData: FormData): Promise<strin
 export async function uploadGroupCoverImage(formData: FormData): Promise<string | null> {
     const file = formData.get('image') as File;
     if (!file || file.size === 0) {
-      return null;
+        return null;
     }
-    const dataUrl = await file.arrayBuffer().then(buffer => 
+    const dataUrl = await file.arrayBuffer().then(buffer =>
         `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
     );
     return saveImageFromDataUrl(dataUrl, 'groups/covers');
@@ -42,8 +42,8 @@ export async function getGroups() {
     const groups = await prisma.group.findMany({
         include: {
             _count: {
-                select: { 
-                    members: { where: { status: 'ACTIVE' }}
+                select: {
+                    members: { where: { status: 'ACTIVE' } }
                 },
             },
         },
@@ -75,7 +75,7 @@ export async function getGroups() {
             pendingRequests: pendingCountsMap.get(group.id) || 0,
         },
     }));
-    
+
     return groupsWithAllCounts;
 }
 
@@ -126,7 +126,7 @@ export async function getGroupDetails(groupId: string) {
                 include: {
                     user: true,
                 },
-                 orderBy: {
+                orderBy: {
                     joinedAt: 'asc'
                 }
             },
@@ -135,71 +135,71 @@ export async function getGroupDetails(groupId: string) {
 }
 
 export async function updateGroup(
-  groupId: string,
-  data: {
-    name?: string;
-    description?: string | null;
-    profilePhoto?: string | null;
-    coverPhoto?: string | null;
-  }
+    groupId: string,
+    data: {
+        name?: string;
+        description?: string | null;
+        profilePhoto?: string | null;
+        coverPhoto?: string | null;
+    }
 ) {
-  const session = await auth();
-  if (!session?.user) {
-      throw new Error('Not authenticated');
-  }
+    const session = await auth();
+    if (!session?.user) {
+        throw new Error('Not authenticated');
+    }
 
-  const group = await prisma.group.findUnique({ where: { id: groupId }});
-  if (!group) {
-      throw new Error('Group not found');
-  }
-  
-  const canUpdate = session.user.role === ROLES.SUPER_ADMIN || session.user.id === group.createdById;
-  if (!canUpdate) {
-      throw new Error('Not authorized');
-  }
-  
-  const currentGroup = await prisma.group.findUnique({
-    where: { id: groupId },
-    select: { profilePhoto: true, coverPhoto: true },
-  });
+    const group = await prisma.group.findUnique({ where: { id: groupId } });
+    if (!group) {
+        throw new Error('Group not found');
+    }
 
-  if (!currentGroup) {
-      throw new Error('Group not found');
-  }
+    const canUpdate = session.user.role === ROLES.SUPER_ADMIN || session.user.id === group.createdById;
+    if (!canUpdate) {
+        throw new Error('Not authorized');
+    }
 
-  let finalProfilePhoto = data.profilePhoto;
-  if (data.profilePhoto && data.profilePhoto.startsWith('data:image')) {
-      finalProfilePhoto = await saveImageFromDataUrl(data.profilePhoto, 'groups/avatars');
-      if (currentGroup.profilePhoto && currentGroup.profilePhoto.startsWith('/uploads/')) {
-        await deleteUploadedFile(currentGroup.profilePhoto);
-      }
-  }
+    const currentGroup = await prisma.group.findUnique({
+        where: { id: groupId },
+        select: { profilePhoto: true, coverPhoto: true },
+    });
 
-  let finalCoverPhoto = data.coverPhoto;
-  if (data.coverPhoto && data.coverPhoto.startsWith('data:image')) {
-      finalCoverPhoto = await saveImageFromDataUrl(data.coverPhoto, 'groups/covers');
-      if (currentGroup.coverPhoto && currentGroup.coverPhoto.startsWith('/uploads/')) {
-        await deleteUploadedFile(currentGroup.coverPhoto);
-      }
-  }
+    if (!currentGroup) {
+        throw new Error('Group not found');
+    }
 
-  const updateData = {
-    name: data.name,
-    description: data.description,
-    profilePhoto: finalProfilePhoto,
-    coverPhoto: finalCoverPhoto,
-  };
+    let finalProfilePhoto = data.profilePhoto;
+    if (data.profilePhoto && data.profilePhoto.startsWith('data:image')) {
+        finalProfilePhoto = await saveImageFromDataUrl(data.profilePhoto, 'groups/avatars');
+        if (currentGroup.profilePhoto && currentGroup.profilePhoto.startsWith('/uploads/')) {
+            await deleteUploadedFile(currentGroup.profilePhoto);
+        }
+    }
 
-  await prisma.group.update({
-    where: { id: groupId },
-    data: updateData,
-  });
+    let finalCoverPhoto = data.coverPhoto;
+    if (data.coverPhoto && data.coverPhoto.startsWith('data:image')) {
+        finalCoverPhoto = await saveImageFromDataUrl(data.coverPhoto, 'groups/covers');
+        if (currentGroup.coverPhoto && currentGroup.coverPhoto.startsWith('/uploads/')) {
+            await deleteUploadedFile(currentGroup.coverPhoto);
+        }
+    }
 
-  revalidatePath(`/admin/groups`);
-  revalidatePath(`/groups/${groupId}`);
+    const updateData = {
+        name: data.name,
+        description: data.description,
+        profilePhoto: finalProfilePhoto,
+        coverPhoto: finalCoverPhoto,
+    };
+
+    await prisma.group.update({
+        where: { id: groupId },
+        data: updateData,
+    });
+
+    revalidatePath(`/admin/groups`);
+    revalidatePath(`/groups/${groupId}`);
 }
 
-export async function updateGroupMembers(groupId: string, newMemberIds: string[], memberRoles: Record<string, MemberRole>) {
+export async function updateGroupMembers(groupId: string, newMemberIds: string[], memberRoles: Record<string, GroupRole>) {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
@@ -238,7 +238,7 @@ export async function updateGroupMembers(groupId: string, newMemberIds: string[]
             })),
         }));
     }
-    
+
     // Update existing member roles
     for (const member of membersToUpdate) {
         transactions.push(prisma.groupMember.update({
@@ -256,9 +256,9 @@ export async function updateGroupMembers(groupId: string, newMemberIds: string[]
 
 
     if (transactions.length > 0) {
-      await prisma.$transaction(transactions);
+        await prisma.$transaction(transactions);
     }
-    
+
     revalidatePath('/admin/groups');
     revalidatePath(`/groups/${groupId}`);
 }
@@ -271,7 +271,7 @@ export async function getGroupForProfile(groupId: string) {
         where: { id: groupId },
         include: {
             _count: {
-                select: { members: { where: { status: 'ACTIVE' }} },
+                select: { members: { where: { status: 'ACTIVE' } } },
             },
             members: {
                 where: { status: 'ACTIVE' },
@@ -302,7 +302,7 @@ export async function getGroupForProfile(groupId: string) {
     if (!group) {
         return null;
     }
-    
+
     let isMember = false;
     let membershipStatus: 'ACTIVE' | 'PENDING' | null = null;
 
@@ -320,16 +320,16 @@ export async function getGroupForProfile(groupId: string) {
             membershipStatus = membership.status;
         }
     }
-    
+
     const canViewPosts = group.visibility === 'PUBLIC' || isMember;
 
     const posts = canViewPosts ? await prisma.post.findMany({
-        where: { 
+        where: {
             groupId: groupId,
             status: 'PUBLISHED',
             OR: [
                 { visibility: 'PUBLIC' },
-                { 
+                {
                     visibility: 'GROUP_ONLY',
                     AND: isMember ? [{}] : [{ id: { equals: -1 } }], // Block if not a member
                 }
@@ -337,7 +337,7 @@ export async function getGroupForProfile(groupId: string) {
         },
         include: {
             author: true,
-             likedBy: {
+            likedBy: {
                 select: {
                     id: true,
                     name: true,
@@ -367,37 +367,37 @@ export async function getGroupForProfile(groupId: string) {
 
 
 export async function getPublicGroups(limit = 10) {
-  const groups = await prisma.group.findMany({
-    where: {
-      visibility: 'PUBLIC',
-    },
-    include: {
-      _count: {
-        select: { members: { where: { status: 'ACTIVE' } } },
-      },
-      posts: {
-        take: 1,
-        select: {
-          posterUrl: true,
+    const groups = await prisma.group.findMany({
+        where: {
+            visibility: 'PUBLIC',
+        },
+        include: {
+            _count: {
+                select: { members: { where: { status: 'ACTIVE' } } },
+            },
+            posts: {
+                take: 1,
+                select: {
+                    posterUrl: true,
+                },
+                orderBy: {
+                    createdAt: 'desc',
+                },
+            },
         },
         orderBy: {
-          createdAt: 'desc',
+            members: {
+                _count: 'desc',
+            },
         },
-      },
-    },
-    orderBy: {
-      members: {
-        _count: 'desc',
-      },
-    },
-    take: limit,
-  });
-  return groups.map(group => ({
-    ...group,
-    createdAt: group.createdAt.toISOString(),
-    updatedAt: group.updatedAt.toISOString(),
-    posts: group.posts.map(post => ({...post}))
-  }));
+        take: limit,
+    });
+    return groups.map(group => ({
+        ...group,
+        createdAt: group.createdAt.toISOString(),
+        updatedAt: group.updatedAt.toISOString(),
+        posts: group.posts.map(post => ({ ...post }))
+    }));
 }
 
 export async function requestToJoinGroup(groupId: string) {
@@ -411,7 +411,7 @@ export async function requestToJoinGroup(groupId: string) {
     if (!group) {
         throw new Error("Group not found.");
     }
-    
+
     const existingMembership = await prisma.groupMember.findUnique({
         where: { userId_groupId: { userId: user.id, groupId: groupId } }
     });
@@ -493,11 +493,11 @@ export async function manageGroupJoinRequest(groupId: string, userId: string, ac
     const session = await auth();
     const actor = session?.user;
 
-    const group = await prisma.group.findUnique({ where: { id: groupId }, include: { members: { where: { role: 'ADMIN' }}}});
+    const group = await prisma.group.findUnique({ where: { id: groupId }, include: { members: { where: { role: 'ADMIN' } } } });
     if (!group) {
         throw new Error("Group not found");
     }
-    
+
     const canManage = actor?.role === ROLES.SUPER_ADMIN || group.createdById === actor?.id || group.members.some(m => m.userId === actor?.id);
     if (!canManage) {
         throw new Error("Not authorized to manage requests for this group.");
@@ -521,7 +521,7 @@ export async function manageGroupJoinRequest(groupId: string, userId: string, ac
         });
     } else { // REJECT
         await prisma.groupMember.delete({
-             where: { userId_groupId: { userId, groupId } },
+            where: { userId_groupId: { userId, groupId } },
         });
     }
 

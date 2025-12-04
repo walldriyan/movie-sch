@@ -5,11 +5,24 @@ import {cn} from '@/lib/utils';
 const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'textarea'>>(
   ({className, ...props}, ref) => {
     
-    const handleInput = (event: React.FormEvent<HTMLTextAreaElement>) => {
-      const textarea = event.currentTarget;
-      textarea.style.height = 'auto'; // Reset height to recalculate
-      textarea.style.height = `${textarea.scrollHeight}px`; // Set to scroll height
-    };
+    React.useEffect(() => {
+      const textarea = (ref as React.RefObject<HTMLTextAreaElement>)?.current;
+      if (textarea) {
+        const handleInput = () => {
+          textarea.style.height = 'auto'; // Reset height to recalculate
+          textarea.style.height = `${textarea.scrollHeight}px`; // Set to scroll height
+        };
+        
+        textarea.addEventListener('input', handleInput);
+        
+        // Initial resize
+        handleInput();
+
+        return () => {
+          textarea.removeEventListener('input', handleInput);
+        };
+      }
+    }, [ref]);
 
     return (
       <textarea
@@ -18,7 +31,6 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'tex
           className
         )}
         ref={ref}
-        onInput={handleInput}
         {...props}
       />
     );

@@ -40,6 +40,7 @@ import React, { useState } from 'react';
 import AuthGuard from '../auth/auth-guard';
 import { canUserAccessMicroPosts } from '@/lib/actions/users';
 import { motion } from 'framer-motion';
+import ConnectivityIndicator from '../connectivity-indicator';
 
 
 export default function Navbar() {

@@ -1,6 +1,9 @@
 
 
-import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam as PrismaExam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption, JsonValue, SubmissionAnswer as PrismaSubmissionAnswer, MicroPost as PrismaMicroPost, MicroPostLike as PrismaMicroPostLike, MicroPostComment as PrismaMicroPostComment, MicroPostImage as PrismaMicroPostImage, Category, Tag } from "@prisma/client";
+import type { Post as PrismaPost, Review as PrismaReview, Subtitle as PrismaSubtitle, User as PrismaUser, FavoritePost as PrismaFavoritePost, Episode, MetaData, Series as PrismaSeries, Group as PrismaGroup, GroupMember as PrismaGroupMember, Exam as PrismaExam, ExamSubmission as PrismaSubmission, Question as PrismaQuestion, QuestionOption as PrismaOption, SubmissionAnswer as PrismaSubmissionAnswer, MicroPost as PrismaMicroPost, MicroPostLike as PrismaMicroPostLike, MicroPostComment as PrismaMicroPostComment, MicroPostImage as PrismaMicroPostImage, Category, Tag } from "@prisma/client";
+
+// Define JsonValue type locally
+export type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
 
 export enum PostType {
   MOVIE = 'MOVIE',
@@ -39,7 +42,7 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres' | 'subtitles'> & {
   dislikedBy?: User[];
   episodes?: Episode[];
   metaData?: MetaData[];
-   _count?: {
+  _count?: {
     likedBy: number;
     reviews: number;
   };
@@ -76,14 +79,14 @@ export type GroupWithCount = PrismaGroup & {
 };
 
 export type GroupForProfile = PrismaGroup & {
-    posts: Post[];
-    isMember: boolean;
-    membershipStatus: 'ACTIVE' | 'PENDING' | null;
-    _count: {
-        members: number;
-    };
-    members: { user: Pick<User, 'id' | 'name' | 'image'> }[];
-    createdBy: Pick<User, 'id' | 'name' | 'image'> | null;
+  posts: Post[];
+  isMember: boolean;
+  membershipStatus: 'ACTIVE' | 'PENDING' | null;
+  _count: {
+    members: number;
+  };
+  members: { user: Pick<User, 'id' | 'name' | 'image'> }[];
+  createdBy: Pick<User, 'id' | 'name' | 'image'> | null;
 };
 
 export type GroupForEditing = Pick<PrismaGroup, 'id' | 'name' | 'description' | 'profilePhoto' | 'coverPhoto'> & {
@@ -99,11 +102,11 @@ export type ExamResultSubmission = PrismaSubmission & {
 };
 
 export type ExamWithSubmissions = PrismaExam & {
-    post: { title: string } | null;
-    group: { name: string } | null;
-    _count: { questions: number };
-    questions: { points: number }[];
-    submissions: PrismaSubmission[];
+  post: { title: string } | null;
+  group: { name: string } | null;
+  _count: { questions: number };
+  questions: { points: number }[];
+  submissions: PrismaSubmission[];
 };
 
 // Micro-post Types
