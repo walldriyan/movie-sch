@@ -33,6 +33,9 @@ const nextConfig = {
     return process.env.VERCEL_GIT_COMMIT_SHA || `build-${Date.now()}`;
   },
 
+  // Handle ESM modules in server components
+  serverExternalPackages: ['jsdom', 'parse5', 'isomorphic-dompurify'],
+
   // ================================================================
   // IMAGE OPTIMIZATION
   // ================================================================

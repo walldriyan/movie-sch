@@ -3,6 +3,13 @@
  * Run with: npm run health-check
  */
 
+import { config } from 'dotenv';
+import { resolve } from 'path';
+
+// Load environment variables from .env and .env.local
+config({ path: resolve(process.cwd(), '.env') });
+config({ path: resolve(process.cwd(), '.env.local') });
+
 import { checkDatabaseHealth } from '../src/lib/prisma';
 import { checkRedisHealth } from '../src/lib/redis';
 
