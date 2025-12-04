@@ -40,32 +40,7 @@ function generateCacheKey(options: any): string {
   return `posts:${JSON.stringify(normalized, Object.keys(normalized).sort())}`;
 }
 
-async function invalidateCachePattern(pattern: string) {
-  if (!redis) return;
-  try {
-    console.log(`[Cache Invalidation] Starting invalidation for pattern: ${pattern}`);
-    let cursor = 0;
-    let deletedCount = 0;
-
-    do {
-      const [newCursor, keys] = await redis.scan(cursor, {
-        match: pattern,
-        count: 100
-      });
-
-      cursor = newCursor;
-
-      if (keys.length > 0) {
-        await redis.del(...keys);
-        deletedCount += keys.length;
-      }
-    } while (cursor !== 0);
-
-    console.log(`[Cache Invalidation] Invalidated ${deletedCount} keys for pattern "${pattern}"`);
-  } catch (error) {
-    console.error('[Cache Invalidation] Redis invalidation error:', error);
-  }
-}
+const invalidateCachePattern = redisInvalidatePattern;
 
 export async function invalidatePostsCache(postId?: number, seriesId?: number, authorId?: string) {
   console.log(`[Cache] invalidatePostsCache called with: postId=${postId}, seriesId=${seriesId}, authorId=${authorId}`);
