@@ -1,23 +1,48 @@
-
+// Load environment variables first
 require('dotenv').config();
+
 const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 });
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  /* config options here */
+  // ================================================================
+  // PRODUCTION OPTIMIZATION
+  // ================================================================
+
+  // Disable build errors for faster iteration (remove in strict production)
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: process.env.NODE_ENV !== 'production' || process.env.SKIP_TYPE_CHECK === 'true',
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: process.env.NODE_ENV !== 'production' || process.env.SKIP_LINT === 'true',
   },
+
+  // Output configuration for Vercel
+  output: process.env.VERCEL ? undefined : 'standalone',
+
+  // Compression
+  compress: true,
+
+  // Power pages with headers
+  poweredByHeader: false,
+
+  // Generate unique build IDs
+  generateBuildId: async () => {
+    return process.env.VERCEL_GIT_COMMIT_SHA || `build-${Date.now()}`;
+  },
+
+  // ================================================================
+  // IMAGE OPTIMIZATION
+  // ================================================================
   images: {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60,
+    minimumCacheTTL: 60 * 60 * 24 * 7, // 7 days cache
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {
         protocol: 'https',
@@ -39,11 +64,91 @@ const nextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'lh3.googleusercontent.com', // Google OAuth profile images
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com', // GitHub avatars
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.supabase.co', // Supabase storage
+        port: '',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
         hostname: '**',
-      }
+      },
     ],
   },
-  webpack: (config, { isServer }) => {
+
+  // ================================================================
+  // SECURITY HEADERS
+  // ================================================================
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin',
+          },
+        ],
+      },
+      // Cache static assets
+      {
+        source: '/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      // Cache images
+      {
+        source: '/uploads/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400, stale-while-revalidate=604800',
+          },
+        ],
+      },
+    ];
+  },
+
+  // ================================================================
+  // WEBPACK CONFIGURATION
+  // ================================================================
+  webpack: (config, { isServer, dev }) => {
+    // Ignore OpenTelemetry warnings
     if (isServer) {
       config.ignoreWarnings = [
         ...(config.ignoreWarnings || []),
@@ -53,8 +158,46 @@ const nextConfig = {
         },
       ];
     }
+
+    // Production optimizations
+    if (!dev) {
+      // Tree shaking
+      config.optimization = {
+        ...config.optimization,
+        usedExports: true,
+        sideEffects: true,
+      };
+    }
+
     return config;
+  },
+
+  // ================================================================
+  // EXPERIMENTAL FEATURES
+  // ================================================================
+  experimental: {
+    // Server Actions are stable in Next.js 15
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
+    // Optimize package imports
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-icons',
+      'date-fns',
+      'framer-motion',
+    ],
+  },
+
+  // ================================================================
+  // LOGGING
+  // ================================================================
+  logging: {
+    fetches: {
+      fullUrl: process.env.NODE_ENV === 'development',
+    },
   },
 };
 
+// Apply bundle analyzer wrapper
 module.exports = withBundleAnalyzer(nextConfig);

@@ -11,7 +11,16 @@ import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join } from 'path';
 import prisma from '@/lib/prisma';
 import type { PostFormData } from '@/lib/types';
-import { redis } from '../redis';
+import {
+  redis,
+  redisAvailable,
+  getFromCache,
+  setInCache,
+  deleteFromCache,
+  invalidateCachePattern as redisInvalidatePattern,
+  getWithCacheLock
+} from '../redis';
+import { handleError, DatabaseError, AuthenticationError, AuthorizationError } from '../errors';
 
 function generateCacheKey(options: any): string {
   const normalized = {
@@ -37,21 +46,21 @@ async function invalidateCachePattern(pattern: string) {
     console.log(`[Cache Invalidation] Starting invalidation for pattern: ${pattern}`);
     let cursor = 0;
     let deletedCount = 0;
-    
+
     do {
       const [newCursor, keys] = await redis.scan(cursor, {
         match: pattern,
         count: 100
       });
-      
+
       cursor = newCursor;
-      
+
       if (keys.length > 0) {
         await redis.del(...keys);
         deletedCount += keys.length;
       }
     } while (cursor !== 0);
-    
+
     console.log(`[Cache Invalidation] Invalidated ${deletedCount} keys for pattern "${pattern}"`);
   } catch (error) {
     console.error('[Cache Invalidation] Redis invalidation error:', error);
@@ -59,18 +68,18 @@ async function invalidateCachePattern(pattern: string) {
 }
 
 export async function invalidatePostsCache(postId?: number, seriesId?: number, authorId?: string) {
-    console.log(`[Cache] invalidatePostsCache called with: postId=${postId}, seriesId=${seriesId}, authorId=${authorId}`);
-    revalidatePath('/');
-    revalidatePath('/manage');
-    if (postId) {
-        revalidatePath(`/movies/${postId}`);
-    }
-    if (seriesId) {
-        revalidatePath(`/series/${seriesId}`);
-    }
-    if (authorId) {
-        revalidatePath(`/profile/${authorId}`);
-    }
+  console.log(`[Cache] invalidatePostsCache called with: postId=${postId}, seriesId=${seriesId}, authorId=${authorId}`);
+  revalidatePath('/');
+  revalidatePath('/manage');
+  if (postId) {
+    revalidatePath(`/movies/${postId}`);
+  }
+  if (seriesId) {
+    revalidatePath(`/series/${seriesId}`);
+  }
+  if (authorId) {
+    revalidatePath(`/profile/${authorId}`);
+  }
 }
 
 
@@ -98,33 +107,33 @@ async function getWithCacheLock<T>(
   if (redis) {
     try {
       const locked = await redis.set(lockKey, '1', { ex: lockTTL, nx: true });
-      
+
       if (!locked) {
         for (let i = 0; i < maxRetries; i++) {
-            await new Promise(r => setTimeout(r, 100 * (i + 1))); // Exponential backoff
-            const retryCache = await redis.get<T>(cacheKey);
-            if (retryCache) {
-              console.log(`[Cache] HIT on retry for key: ${cacheKey}`);
-              return retryCache;
-            }
+          await new Promise(r => setTimeout(r, 100 * (i + 1))); // Exponential backoff
+          const retryCache = await redis.get<T>(cacheKey);
+          if (retryCache) {
+            console.log(`[Cache] HIT on retry for key: ${cacheKey}`);
+            return retryCache;
+          }
         }
         console.warn(`[Cache] Could not acquire lock or find cache after retries for key: ${cacheKey}. Fetching directly.`);
       }
     } catch (error) {
-        console.error('[Cache] Redis SET lock error:', error);
+      console.error('[Cache] Redis SET lock error:', error);
     }
   }
-  
+
   console.log(`[Cache] MISS for key: ${cacheKey}`);
   try {
     const result = await fetchFn();
-    
+
     if (redis) {
-        await redis.set(cacheKey, result, { ex: ttl });
-        console.log(`[Cache] SET for key: ${cacheKey}`);
-        await redis.del(lockKey);
+      await redis.set(cacheKey, result, { ex: ttl });
+      console.log(`[Cache] SET for key: ${cacheKey}`);
+      await redis.del(lockKey);
     }
-    
+
     return result;
   } catch (error) {
     if (redis) await redis.del(lockKey);
@@ -134,7 +143,7 @@ async function getWithCacheLock<T>(
 
 async function getUserGroupIds(userId: string): Promise<string[]> {
   const cacheKey = `user:${userId}:groups`;
-  
+
   if (redis) {
     try {
       const cached = await redis.get<string[]>(cacheKey);
@@ -143,14 +152,14 @@ async function getUserGroupIds(userId: string): Promise<string[]> {
       console.error('[Cache] Redis GET error for user groups:', error);
     }
   }
-  
+
   const members = await prisma.groupMember.findMany({
     where: { userId, status: 'ACTIVE' },
     select: { groupId: true },
   });
-  
+
   const groupIds = members.map(m => m.groupId);
-  
+
   if (redis) {
     try {
       await redis.set(cacheKey, groupIds, { ex: 1800 }); // 30 minutes
@@ -158,16 +167,16 @@ async function getUserGroupIds(userId: string): Promise<string[]> {
       console.error('[Cache] Redis SET error for user groups:', error);
     }
   }
-  
+
   return groupIds;
 }
 
 export async function invalidateUserGroupsCache(userId: string) {
-    if (redis) {
-        const cacheKey = `user:${userId}:groups`;
-        await redis.del(cacheKey);
-        console.log(`[Cache] Invalidated user groups cache for userId: ${userId}`);
-    }
+  if (redis) {
+    const cacheKey = `user:${userId}:groups`;
+    await redis.del(cacheKey);
+    console.log(`[Cache] Invalidated user groups cache for userId: ${userId}`);
+  }
 }
 
 
@@ -175,14 +184,14 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
   console.log(`[SERVER: STEP 5.3] saveImageFromDataUrl: Saving image to subfolder: ${subfolder}`);
   if (!dataUrl.startsWith('data:image')) {
     console.log(`[Image Save] Provided URL is not a data URL, returning as is: ${dataUrl}`);
-    return dataUrl; 
+    return dataUrl;
   }
 
   try {
     const fileType = dataUrl.substring(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
     const base64Data = dataUrl.substring(dataUrl.indexOf(',') + 1);
     const buffer = Buffer.from(base64Data, 'base64');
-    
+
     const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${fileType}`;
     const directory = join(process.cwd(), `public/uploads/${subfolder}`);
     const path = join(directory, filename);
@@ -202,206 +211,206 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
 }
 
 export async function deleteUploadedFile(filePath: string | null | undefined) {
-    if (!filePath || !filePath.startsWith('/uploads/')) {
-        return; 
-    }
-    try {
-        const fullPath = join(process.cwd(), 'public', filePath);
-        await unlink(fullPath);
-        console.log(`[File System] Deleted file: ${fullPath}`);
-    } catch (error) {
-        console.error(`Failed to delete file: ${filePath}`, error);
-    }
+  if (!filePath || !filePath.startsWith('/uploads/')) {
+    return;
+  }
+  try {
+    const fullPath = join(process.cwd(), 'public', filePath);
+    await unlink(fullPath);
+    console.log(`[File System] Deleted file: ${fullPath}`);
+  } catch (error) {
+    console.error(`Failed to delete file: ${filePath}`, error);
+  }
 }
 
 async function fetchPostsFromDB(options: { page?: number; limit?: number, filters?: any } = {}) {
-    console.log('--- DEBUG: fetchPostsFromDB START ---');
-    console.log('[DB Fetch] Received options:', JSON.stringify(options, null, 2));
+  console.log('--- DEBUG: fetchPostsFromDB START ---');
+  console.log('[DB Fetch] Received options:', JSON.stringify(options, null, 2));
 
-    const { page = 1, limit = 10, filters = {} } = options;
-    const skip = (page - 1) * limit;
-    const session = await auth();
-    const user = session?.user;
-    const userRole = user?.role;
-    console.log(`[DB Fetch] User Role: ${userRole || 'Guest'}`);
+  const { page = 1, limit = 10, filters = {} } = options;
+  const skip = (page - 1) * limit;
+  const session = await auth();
+  const user = session?.user;
+  const userRole = user?.role;
+  console.log(`[DB Fetch] User Role: ${userRole || 'Guest'}`);
 
-    let whereClause: Prisma.PostWhereInput = {};
-    
-    const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
-    console.log(`[DB Fetch] Filter - lockStatus: ${lockStatus}`);
+  let whereClause: Prisma.PostWhereInput = {};
 
-    // --- Role-Based Access Control & Lock Status Logic ---
-    if (userRole === ROLES.SUPER_ADMIN || userRole === ROLES.USER_ADMIN) {
-        // Admins can see all non-deleted posts, lock status is just a filter
-        whereClause.status = { not: MovieStatus.PENDING_DELETION };
-        if (lockStatus === 'locked') {
-            whereClause.isLockedByDefault = true;
-        } else if (lockStatus === 'unlocked') {
-            whereClause.isLockedByDefault = false;
-        }
-        // If lockStatus is undefined, we don't filter by it for admins.
-    } else { // Regular user or guest
-        whereClause.status = MovieStatus.PUBLISHED;
+  const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
+  console.log(`[DB Fetch] Filter - lockStatus: ${lockStatus}`);
 
-        const publicCriteria: Prisma.PostWhereInput = { visibility: 'PUBLIC' };
-        if (lockStatus === 'locked') {
-            publicCriteria.isLockedByDefault = true;
-        } else {
-            // For guests or regular users, default to showing only unlocked public posts
-             publicCriteria.isLockedByDefault = false;
-        }
+  // --- Role-Based Access Control & Lock Status Logic ---
+  if (userRole === ROLES.SUPER_ADMIN || userRole === ROLES.USER_ADMIN) {
+    // Admins can see all non-deleted posts, lock status is just a filter
+    whereClause.status = { not: MovieStatus.PENDING_DELETION };
+    if (lockStatus === 'locked') {
+      whereClause.isLockedByDefault = true;
+    } else if (lockStatus === 'unlocked') {
+      whereClause.isLockedByDefault = false;
+    }
+    // If lockStatus is undefined, we don't filter by it for admins.
+  } else { // Regular user or guest
+    whereClause.status = MovieStatus.PUBLISHED;
 
-        if (user) { // Logged-in regular user
-            const userGroupIds = await getUserGroupIds(user.id);
-            const groupCriteria: Prisma.PostWhereInput = {
-                visibility: 'GROUP_ONLY',
-                groupId: { in: userGroupIds },
-            };
-            if (lockStatus === 'locked') {
-                groupCriteria.isLockedByDefault = true;
-            } else {
-                groupCriteria.isLockedByDefault = false;
-            }
-            whereClause.OR = [publicCriteria, groupCriteria];
-        } else { // Guest
-            whereClause = { ...whereClause, ...publicCriteria };
-        }
+    const publicCriteria: Prisma.PostWhereInput = { visibility: 'PUBLIC' };
+    if (lockStatus === 'locked') {
+      publicCriteria.isLockedByDefault = true;
+    } else {
+      // For guests or regular users, default to showing only unlocked public posts
+      publicCriteria.isLockedByDefault = false;
     }
 
-
-    // Apply additional filters
-    let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
-
-    if (authorId) {
-      whereClause.authorId = authorId;
-      if (!includePrivate) {
-         whereClause.status = {
-            in: [MovieStatus.PUBLISHED]
-         }
-      } else if (!userRole || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(userRole)) {
-        // Non-admins viewing a profile can't see non-published posts even if includePrivate is true
-        whereClause.status = {
-            in: [MovieStatus.PUBLISHED]
-        };
+    if (user) { // Logged-in regular user
+      const userGroupIds = await getUserGroupIds(user.id);
+      const groupCriteria: Prisma.PostWhereInput = {
+        visibility: 'GROUP_ONLY',
+        groupId: { in: userGroupIds },
+      };
+      if (lockStatus === 'locked') {
+        groupCriteria.isLockedByDefault = true;
+      } else {
+        groupCriteria.isLockedByDefault = false;
       }
+      whereClause.OR = [publicCriteria, groupCriteria];
+    } else { // Guest
+      whereClause = { ...whereClause, ...publicCriteria };
     }
-    
-    if (sortBy) {
-      const [field, direction] = sortBy.split('-');
-      if (['updatedAt', 'imdbRating', 'createdAt'].includes(field) && ['asc', 'desc'].includes(direction)) {
-        orderBy = { [field]: direction as 'asc' | 'desc' };
+  }
+
+
+  // Apply additional filters
+  let orderBy: Prisma.PostOrderByWithRelationInput | Prisma.PostOrderByWithRelationInput[] = { updatedAt: 'desc' };
+
+  if (authorId) {
+    whereClause.authorId = authorId;
+    if (!includePrivate) {
+      whereClause.status = {
+        in: [MovieStatus.PUBLISHED]
       }
-    }
-
-    if (genres && genres.length > 0) {
-        whereClause.genres = {
-            hasSome: genres,
-        };
-    }
-
-    if (yearRange) {
-      whereClause.year = {
-        gte: yearRange[0],
-        lte: yearRange[1],
+    } else if (!userRole || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(userRole)) {
+      // Non-admins viewing a profile can't see non-published posts even if includePrivate is true
+      whereClause.status = {
+        in: [MovieStatus.PUBLISHED]
       };
     }
-    
-    if (ratingRange) {
-      whereClause.imdbRating = {
-        gte: ratingRange[0],
-        lte: ratingRange[1],
-      };
+  }
+
+  if (sortBy) {
+    const [field, direction] = sortBy.split('-');
+    if (['updatedAt', 'imdbRating', 'createdAt'].includes(field) && ['asc', 'desc'].includes(direction)) {
+      orderBy = { [field]: direction as 'asc' | 'desc' };
     }
+  }
 
-    if (timeFilter && timeFilter !== 'all') {
-      const now = new Date();
-      if (timeFilter === 'today') {
-        whereClause.createdAt = { gte: startOfDay(now), lte: endOfDay(now) };
-      } else if (timeFilter === 'this_week') {
-        whereClause.createdAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
-      } else if (timeFilter === 'this_month') {
-        whereClause.createdAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
-      }
-    }
-
-    if (type && ['MOVIE', 'TV_SERIES', 'OTHER'].includes(type)) {
-      whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
-    }
-
-    console.log('[DB Fetch] FINAL whereClause:', JSON.stringify(whereClause, null, 2));
-
-    const [posts, totalPosts] = await prisma.$transaction([
-      prisma.post.findMany({
-          where: whereClause,
-          skip: skip,
-          take: limit,
-          orderBy,
-          include: {
-              author: true,
-              series: {
-                include: {
-                  posts: {
-                    select: { posterUrl: true },
-                    orderBy: { orderInSeries: 'asc' },
-                  },
-                  _count: {
-                    select: { posts: true }
-                  }
-                }
-              },
-              likedBy: {
-                select: {
-                    id: true,
-                    name: true,
-                    image: true,
-                },
-                take: 5,
-              },
-              _count: {
-                select: {
-                  likedBy: true,
-                  reviews: true,
-                }
-              }
-          },
-      }),
-      prisma.post.count({ where: whereClause })
-    ]);
-    
-    const totalPages = Math.ceil(totalPosts / limit);
-    console.log(`[DB Fetch] Found ${totalPosts} posts. Returning ${posts.length} for page ${page}. Total pages: ${totalPages}`);
-    console.log('--- DEBUG: fetchPostsFromDB END ---');
-    return {
-        posts: posts.map((post) => ({
-            ...post,
-            createdAt: post.createdAt.toISOString(),
-            updatedAt: post.updatedAt.toISOString(),
-            publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
-            author: {
-                ...post.author,
-                createdAt: post.author.createdAt.toISOString(),
-                updatedAt: post.author.updatedAt.toISOString(),
-                emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
-            },
-            series: post.series ? {
-                ...post.series,
-                createdAt: post.series.createdAt.toISOString(),
-                updatedAt: post.series.updatedAt.toISOString(),
-                 posts: post.series.posts, 
-            } : null,
-        })),
-        totalPages,
-        totalPosts,
+  if (genres && genres.length > 0) {
+    whereClause.genres = {
+      hasSome: genres,
     };
+  }
+
+  if (yearRange) {
+    whereClause.year = {
+      gte: yearRange[0],
+      lte: yearRange[1],
+    };
+  }
+
+  if (ratingRange) {
+    whereClause.imdbRating = {
+      gte: ratingRange[0],
+      lte: ratingRange[1],
+    };
+  }
+
+  if (timeFilter && timeFilter !== 'all') {
+    const now = new Date();
+    if (timeFilter === 'today') {
+      whereClause.createdAt = { gte: startOfDay(now), lte: endOfDay(now) };
+    } else if (timeFilter === 'this_week') {
+      whereClause.createdAt = { gte: startOfWeek(now), lte: endOfWeek(now) };
+    } else if (timeFilter === 'this_month') {
+      whereClause.createdAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
+    }
+  }
+
+  if (type && ['MOVIE', 'TV_SERIES', 'OTHER'].includes(type)) {
+    whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
+  }
+
+  console.log('[DB Fetch] FINAL whereClause:', JSON.stringify(whereClause, null, 2));
+
+  const [posts, totalPosts] = await prisma.$transaction([
+    prisma.post.findMany({
+      where: whereClause,
+      skip: skip,
+      take: limit,
+      orderBy,
+      include: {
+        author: true,
+        series: {
+          include: {
+            posts: {
+              select: { posterUrl: true },
+              orderBy: { orderInSeries: 'asc' },
+            },
+            _count: {
+              select: { posts: true }
+            }
+          }
+        },
+        likedBy: {
+          select: {
+            id: true,
+            name: true,
+            image: true,
+          },
+          take: 5,
+        },
+        _count: {
+          select: {
+            likedBy: true,
+            reviews: true,
+          }
+        }
+      },
+    }),
+    prisma.post.count({ where: whereClause })
+  ]);
+
+  const totalPages = Math.ceil(totalPosts / limit);
+  console.log(`[DB Fetch] Found ${totalPosts} posts. Returning ${posts.length} for page ${page}. Total pages: ${totalPages}`);
+  console.log('--- DEBUG: fetchPostsFromDB END ---');
+  return {
+    posts: posts.map((post) => ({
+      ...post,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
+      author: {
+        ...post.author,
+        createdAt: post.author.createdAt.toISOString(),
+        updatedAt: post.author.updatedAt.toISOString(),
+        emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
+      },
+      series: post.series ? {
+        ...post.series,
+        createdAt: post.series.createdAt.toISOString(),
+        updatedAt: post.series.updatedAt.toISOString(),
+        posts: post.series.posts,
+      } : null,
+    })),
+    totalPages,
+    totalPosts,
+  };
 }
 
 
 export async function getPosts(options: { page?: number; limit?: number, filters?: any } = {}) {
-    const cacheKey = generateCacheKey(options);
-    // Disabling cache for this specific high-level fetch to avoid complexity during debugging
-    // const result = await getWithCacheLock(cacheKey, () => fetchPostsFromDB(options));
-    const result = await fetchPostsFromDB(options);
-    return result;
+  const cacheKey = generateCacheKey(options);
+  // Disabling cache for this specific high-level fetch to avoid complexity during debugging
+  // const result = await getWithCacheLock(cacheKey, () => fetchPostsFromDB(options));
+  const result = await fetchPostsFromDB(options);
+  return result;
 }
 
 
@@ -421,7 +430,7 @@ export async function getPost(postId: number) {
             include: {
               user: true,
             },
-             orderBy: {
+            orderBy: {
               createdAt: 'asc'
             }
           },
@@ -449,16 +458,16 @@ export async function getPost(postId: number) {
       _count: true,
     },
   });
-  
+
   if (!post) {
-      console.log(`[Action: getPost] Post with ID ${postId} not found.`);
-      return null;
+    console.log(`[Action: getPost] Post with ID ${postId} not found.`);
+    return null;
   }
-  
+
   const subtitles = await prisma.subtitle.findMany({
     where: { postId: postId },
   });
-  
+
   console.log(`[Action: getPost] Successfully fetched post "${post.title}".`);
   return {
     ...post,
@@ -469,22 +478,22 @@ export async function getPost(postId: number) {
 
 
 export async function incrementViewCount(postId: number) {
-    try {
-        const updatedPost = await prisma.post.update({
-            where: { id: postId },
-            data: {
-                viewCount: {
-                    increment: 1
-                }
-            }
-        });
-        // await invalidatePostsCache(postId); // Re-enabled if needed, but might be too aggressive
-        return updatedPost.viewCount;
-    } catch (error) {
-        console.error(`Failed to increment view count for post ${postId}:`, error);
-        // We re-throw the error so the client-side catch block can handle it.
-        throw error;
-    }
+  try {
+    const updatedPost = await prisma.post.update({
+      where: { id: postId },
+      data: {
+        viewCount: {
+          increment: 1
+        }
+      }
+    });
+    // await invalidatePostsCache(postId); // Re-enabled if needed, but might be too aggressive
+    return updatedPost.viewCount;
+  } catch (error) {
+    console.error(`Failed to increment view count for post ${postId}:`, error);
+    // We re-throw the error so the client-side catch block can handle it.
+    throw error;
+  }
 }
 
 export async function savePost(postData: PostFormData, id?: number) {
@@ -503,12 +512,12 @@ export async function savePost(postData: PostFormData, id?: number) {
   // --- Start Daily Post Limit Check ---
   if (!id) { // Only check for new posts, not edits
     console.log('[Action: savePost] Checking daily post limit.');
-    const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' }});
+    const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' } });
     const defaultLimit = defaultLimitSetting ? parseInt(defaultLimitSetting.value, 10) : 10;
-    
+
     const postLimit = user.dailyPostLimit ?? defaultLimit;
 
-    if (postLimit > 0) { 
+    if (postLimit > 0) {
       const twentyFourHoursAgo = subDays(new Date(), 1);
       const userPostCount = await prisma.post.count({
         where: {
@@ -533,7 +542,7 @@ export async function savePost(postData: PostFormData, id?: number) {
     console.log('[Action: savePost] Saving new poster image from data URL.');
     finalPosterUrl = await saveImageFromDataUrl(postData.posterUrl, 'posts');
   }
-  
+
   const data: any = {
     title: postData.title,
     description: postData.description,
@@ -563,21 +572,21 @@ export async function savePost(postData: PostFormData, id?: number) {
     console.log(`[Action: savePost] Updating existing post with ID: ${id}`);
     const existingPost = await prisma.post.findUnique({ where: { id } });
     if (!existingPost) {
-        throw new Error('Post not found');
+      throw new Error('Post not found');
     }
     if (finalPosterUrl && finalPosterUrl !== existingPost.posterUrl) {
       await deleteUploadedFile(existingPost.posterUrl);
     }
-    
+
     await prisma.$transaction([
       prisma.mediaLink.deleteMany({ where: { postId: id } }),
-      prisma.post.update({ 
-          where: { id }, 
-          data: { 
-            ...data, 
-            status: status, 
-            mediaLinks: { create: postData.mediaLinks } 
-          }
+      prisma.post.update({
+        where: { id },
+        data: {
+          ...data,
+          status: status,
+          mediaLinks: { create: postData.mediaLinks }
+        }
       })
     ]);
 
@@ -601,7 +610,7 @@ export async function deletePost(id: number) {
   if (!user) {
     throw new Error('Not authorized.');
   }
-  
+
   const postToDelete = await prisma.post.findUnique({ where: { id } });
   if (!postToDelete) {
     throw new Error('Post not found');
@@ -609,9 +618,9 @@ export async function deletePost(id: number) {
 
   const isAuthor = postToDelete.authorId === user.id;
   const isSuperAdmin = user.role === ROLES.SUPER_ADMIN;
-  
+
   if (!isAuthor && !isSuperAdmin) {
-     throw new Error('Not authorized to delete this post.');
+    throw new Error('Not authorized to delete this post.');
   }
 
   if (isSuperAdmin) {
@@ -632,87 +641,87 @@ export async function deletePost(id: number) {
       data: { status: 'PENDING_DELETION' },
     });
   }
-  
+
   await invalidatePostsCache(id, postToDelete.seriesId ?? undefined, postToDelete.authorId);
   console.log(`[Action: deletePost] Post ${id} processed for deletion. Paths revalidated.`);
 }
 
 
 export async function getPostsForAdmin(options: { page?: number; limit?: number, userId?: string, userRole?: string, status?: string | null, sortBy?: string } = {}) {
-    const { page = 1, limit = 10, userId, userRole, status, sortBy = 'createdAt-desc' } = options;
-    console.log('[Action: getPostsForAdmin] Fetching posts for admin view with options:', options);
-    const skip = (page - 1) * limit;
-    
-    if (!userId || !userRole) {
-        throw new Error("User ID and role are required");
-    }
+  const { page = 1, limit = 10, userId, userRole, status, sortBy = 'createdAt-desc' } = options;
+  console.log('[Action: getPostsForAdmin] Fetching posts for admin view with options:', options);
+  const skip = (page - 1) * limit;
 
-    let whereClause: Prisma.PostWhereInput = {};
+  if (!userId || !userRole) {
+    throw new Error("User ID and role are required");
+  }
 
-    if (userRole === ROLES.USER_ADMIN) {
-        whereClause = { authorId: userId };
-    }
+  let whereClause: Prisma.PostWhereInput = {};
 
-    if(status) {
-      whereClause.status = status;
-    }
+  if (userRole === ROLES.USER_ADMIN) {
+    whereClause = { authorId: userId };
+  }
 
-    const [field, direction] = sortBy.split('-');
-    const orderBy = { [field]: direction };
+  if (status) {
+    whereClause.status = status;
+  }
+
+  const [field, direction] = sortBy.split('-');
+  const orderBy = { [field]: direction };
 
 
-    const [posts, totalPosts] = await prisma.$transaction([
-      prisma.post.findMany({
-          where: whereClause,
-          skip: skip,
-          take: limit,
-          orderBy,
+  const [posts, totalPosts] = await prisma.$transaction([
+    prisma.post.findMany({
+      where: whereClause,
+      skip: skip,
+      take: limit,
+      orderBy,
+      include: {
+        author: true,
+        group: {
+          select: {
+            name: true,
+          }
+        },
+        _count: {
+          select: { likedBy: true },
+        },
+        series: {
           include: {
-              author: true,
-              group: {
-                select: {
-                  name: true,
-                }
-              },
-              _count: {
-                select: { likedBy: true },
-              },
-              series: {
-                include: {
-                  _count: {
-                    select: { posts: true }
-                  }
-                }
-              }
-          },
-      }),
-      prisma.post.count({ where: whereClause })
-    ]);
+            _count: {
+              select: { posts: true }
+            }
+          }
+        }
+      },
+    }),
+    prisma.post.count({ where: whereClause })
+  ]);
 
-    const totalPages = Math.ceil(totalPosts / limit);
-    console.log(`[Action: getPostsForAdmin] Found ${totalPosts} posts. Returning page ${page} of ${totalPages}.`);
+  const totalPages = Math.ceil(totalPosts / limit);
+  console.log(`[Action: getPostsForAdmin] Found ${totalPosts} posts. Returning page ${page} of ${totalPages}.`);
 
-    return {
-        posts: posts.map((post) => ({
-            ...post,
-            createdAt: post.createdAt.toISOString(),
-            updatedAt: post.updatedAt.toISOString(),
-            publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
-            author: {
-                ...post.author,
-                createdAt: post.author.createdAt.toISOString(),
-                updatedAt: post.author.updatedAt.toISOString(),
-                emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
-            },
-            series: post.series ? {
-                ...post.series,
-                createdAt: post.series.createdAt.toISOString(),
-                updatedAt: post.series.updatedAt.toISOString(),
-            } : null,
-        })),
-        totalPages,
-        totalPosts,
-    };
+  return {
+    posts: posts.map((post) => ({
+      ...post,
+      createdAt: post.createdAt.toISOString(),
+      updatedAt: post.updatedAt.toISOString(),
+      publishedAt: post.publishedAt ? post.publishedAt.toISOString() : null,
+      author: {
+        ...post.author,
+        createdAt: post.author.createdAt.toISOString(),
+        updatedAt: post.author.updatedAt.toISOString(),
+        emailVerified: post.author.emailVerified ? post.author.emailVerified.toISOString() : null,
+      },
+      series: post.series ? {
+        ...post.series,
+        createdAt: post.series.createdAt.toISOString(),
+        updatedAt: post.series.updatedAt.toISOString(),
+      } : null,
+    })),
+    totalPages,
+    totalPosts,
+  };
 }
 
 
@@ -726,15 +735,15 @@ export async function updatePostStatus(postId: number, status: string) {
   if (!Object.values(MovieStatus).includes(status as any)) {
     throw new Error(`Invalid status: ${status}`);
   }
-  
+
   const postToUpdate = await prisma.post.findUnique({ where: { id: postId } });
   if (!postToUpdate) {
     throw new Error('Post not found');
   }
-  
+
   if (session.user.role === ROLES.USER_ADMIN) {
     if (postToUpdate.authorId !== session.user.id) {
-       throw new Error('You can only manage status for your own posts.');
+      throw new Error('You can only manage status for your own posts.');
     }
   }
 
@@ -749,7 +758,7 @@ export async function updatePostStatus(postId: number, status: string) {
 
 export async function toggleLikePost(postId: number, like: boolean) {
   const session = await auth();
- 
+
 
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
@@ -768,7 +777,7 @@ export async function toggleLikePost(postId: number, like: boolean) {
   const isLiked = post.likedBy.some(user => user.id === userId);
   const isDisliked = post.dislikedBy.some(user => user.id === userId);
 
-  if (like) { 
+  if (like) {
     if (isLiked) {
       await prisma.post.update({
         where: { id: postId },
@@ -781,11 +790,11 @@ export async function toggleLikePost(postId: number, like: boolean) {
         where: { id: postId },
         data: {
           likedBy: { connect: { id: userId } },
-          dislikedBy: { disconnect: isDisliked ? { id: userId } : undefined }, 
+          dislikedBy: { disconnect: isDisliked ? { id: userId } : undefined },
         },
       });
     }
-  } else { 
+  } else {
     if (isDisliked) {
       await prisma.post.update({
         where: { id: postId },
@@ -798,7 +807,7 @@ export async function toggleLikePost(postId: number, like: boolean) {
         where: { id: postId },
         data: {
           dislikedBy: { connect: { id: userId } },
-          likedBy: { disconnect: isLiked ? { id: userId } : undefined }, 
+          likedBy: { disconnect: isLiked ? { id: userId } : undefined },
         },
       });
     }
@@ -857,27 +866,27 @@ export async function getFavoritePosts() {
       post: {
         include: {
           author: true,
-           series: {
-              include: {
-                _count: {
-                  select: { posts: true }
-                }
+          series: {
+            include: {
+              _count: {
+                select: { posts: true }
               }
-            },
-           likedBy: {
-                select: {
-                    id: true,
-                    name: true,
-                    image: true,
-                },
-                take: 5,
-            },
-            _count: {
-                select: {
-                    likedBy: true,
-                    reviews: true,
-                }
             }
+          },
+          likedBy: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+            take: 5,
+          },
+          _count: {
+            select: {
+              likedBy: true,
+              reviews: true,
+            }
+          }
         },
       },
     },
@@ -893,33 +902,33 @@ export async function getFavoritePosts() {
 }
 
 export async function searchPostsForExam(query: string) {
-    const session = await auth();
-    if (!session?.user) {
-        throw new Error('Not authenticated');
-    }
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error('Not authenticated');
+  }
 
-    const posts = await prisma.post.findMany({
-        where: {
-            title: {
-                contains: query,
-                mode: 'insensitive',
-            },
-            status: 'PUBLISHED', // Only allow exams for published posts
-        },
-        take: 10,
-        orderBy: {
-            createdAt: 'desc',
-        },
-        include: {
-            group: {
-                select: {
-                    name: true
-                }
-            }
+  const posts = await prisma.post.findMany({
+    where: {
+      title: {
+        contains: query,
+        mode: 'insensitive',
+      },
+      status: 'PUBLISHED', // Only allow exams for published posts
+    },
+    take: 10,
+    orderBy: {
+      createdAt: 'desc',
+    },
+    include: {
+      group: {
+        select: {
+          name: true
         }
-    });
+      }
+    }
+  });
 
-    return posts;
+  return posts;
 }
 
 export async function updatePostLockSettings(
@@ -944,7 +953,7 @@ export async function updatePostLockSettings(
   if (!isAuthor && !isAdmin) {
     throw new Error("Not authorized to update this post's lock settings.");
   }
-  
+
   await prisma.post.update({
     where: { id: postId },
     data: {
