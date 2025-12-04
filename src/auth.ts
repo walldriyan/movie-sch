@@ -252,40 +252,7 @@ export const authConfig: NextAuthConfig = {
     },
   },
 
-  cookies: {
-    sessionToken: {
-      name: isProduction
-        ? `__Secure-authjs.session-token`
-        : `authjs.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: isProduction,
-      },
-    },
-    callbackUrl: {
-      name: isProduction
-        ? `__Secure-authjs.callback-url`
-        : `authjs.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: isProduction,
-      },
-    },
-    csrfToken: {
-      name: isProduction
-        ? `__Host-authjs.csrf-token`
-        : `authjs.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: isProduction,
-      },
-    },
-  },
+
 
   debug: process.env.NODE_ENV === 'development',
 
