@@ -36,7 +36,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const [isLikePending, startLikeTransition] = useTransition();
     const [isDeletePending, startDeleteTransition] = useTransition();
     const [isBookmarked, setIsBookmarked] = useState(false);
-    
+
     const [isExpanded, setIsExpanded] = useState(false);
     const [isTruncated, setIsTruncated] = useState(false);
     const contentRef = useRef<HTMLParagraphElement>(null);
@@ -44,7 +44,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
 
     const postImage = post.images?.[0]?.url;
     const hasLiked = post.likes?.some(like => like.userId === user?.id) ?? false;
-    
+
     const likeCount = post?._count?.likes ?? 0;
 
     useEffect(() => {
@@ -53,12 +53,14 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
         }
     }, [post.content]);
 
-     useEffect(() => {
-        // Check localStorage on mount to set initial bookmark state
-        const savedPosts = JSON.parse(localStorage.getItem('bookmarkedMicroPosts') || '[]');
-        setIsBookmarked(savedPosts.includes(post.id));
+    useEffect(() => {
+        // Check localStorage on mount to set initial bookmark state (SSR safe)
+        if (typeof window !== 'undefined') {
+            const savedPosts = JSON.parse(localStorage.getItem('bookmarkedMicroPosts') || '[]');
+            setIsBookmarked(savedPosts.includes(post.id));
+        }
     }, [post.id]);
-    
+
     const handleCommentCountChange = useCallback((count: number) => {
         setPost(currentPost => {
             if (currentPost._count.comments === count) {
@@ -98,7 +100,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                 await toggleMicroPostLike(post.id);
             } catch (error) {
                 toast({ variant: 'destructive', title: 'Something went wrong.' });
-                 setPost(initialPost);
+                setPost(initialPost);
             }
         });
     };
@@ -106,15 +108,15 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const handleBookmark = () => {
         const savedPosts: string[] = JSON.parse(localStorage.getItem('bookmarkedMicroPosts') || '[]');
         const isCurrentlyBookmarked = savedPosts.includes(post.id);
-        
+
         let updatedSavedPosts: string[];
 
         if (isCurrentlyBookmarked) {
             updatedSavedPosts = savedPosts.filter(id => id !== post.id);
-            toast({ title: "Bookmark removed"});
+            toast({ title: "Bookmark removed" });
         } else {
             updatedSavedPosts = [...savedPosts, post.id];
-            toast({ title: "Post bookmarked"});
+            toast({ title: "Post bookmarked" });
         }
 
         localStorage.setItem('bookmarkedMicroPosts', JSON.stringify(updatedSavedPosts));
@@ -127,7 +129,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                 await deleteMicroPost(post.id);
                 toast({ title: "Post Deleted" });
             } catch (error: any) {
-                 toast({ variant: 'destructive', title: "Error", description: error.message });
+                toast({ variant: 'destructive', title: "Error", description: error.message });
             }
         })
     }
@@ -153,8 +155,8 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             <span className="text-sm text-muted-foreground">·</span>
                             <ClientRelativeDate date={post.createdAt} />
                         </div>
-                        
-                        <p 
+
+                        <p
                             ref={contentRef}
                             className={cn(
                                 "mt-2 whitespace-pre-wrap",
@@ -164,7 +166,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             {post.content}
                         </p>
                         {isTruncated && (
-                            <button 
+                            <button
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 className="text-primary text-sm font-semibold mt-1"
                             >
@@ -174,14 +176,14 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
 
 
                         {postImage && (
-                             <div className="mt-3 relative aspect-video max-h-[400px] w-full overflow-hidden rounded-xl border">
-                                <Image 
-                                    src={postImage} 
-                                    alt="Post image" 
+                            <div className="mt-3 relative aspect-video max-h-[400px] w-full overflow-hidden rounded-xl border">
+                                <Image
+                                    src={postImage}
+                                    alt="Post image"
                                     fill
                                     className="object-cover"
                                 />
-                             </div>
+                            </div>
                         )}
 
                         <div className="mt-3 flex flex-wrap gap-2">
@@ -209,7 +211,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                         <span className="text-xs">{likeCount}</span>
                                     </div>
                                     <div className="flex items-center gap-1.5">
-                                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
                                             <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-primary text-primary")} />
                                         </Button>
                                     </div>
@@ -225,7 +227,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             </AccordionItem>
                         </Accordion>
                     </div>
-                     {canManage && (
+                    {canManage && (
                         <AlertDialog>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -248,7 +250,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                     </AlertDialogTrigger>
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                             <AlertDialogContent>
+                            <AlertDialogContent>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -258,13 +260,13 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                     <AlertDialogAction onClick={handleDelete} disabled={isDeletePending} className="bg-destructive hover:bg-destructive/80">
-                                         {isDeletePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                        {isDeletePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                         Continue
                                     </AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
-                     )}
+                    )}
                 </div>
             </CardContent>
         </Card>

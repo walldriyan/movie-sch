@@ -66,6 +66,58 @@ export const authConfig: NextAuthConfig = {
             return null;
           }
 
+          // =============================================
+          // SUPERUSER AUTHENTICATION FROM ENV FILE
+          // =============================================
+          // Check if credentials match superuser from .env file
+          const superuserEmail = process.env.SUPERUSER_EMAIL;
+          const superuserPassword = process.env.SUPERUSER_PASSWORD;
+
+          if (
+            superuserEmail &&
+            superuserPassword &&
+            email === superuserEmail &&
+            password === superuserPassword
+          ) {
+            // Find or create superuser in database to prevent "user not found" errors
+            let dbSuperuser = await prisma.user.findUnique({
+              where: { email: superuserEmail },
+            });
+
+            if (!dbSuperuser) {
+              // Create superuser in database with hashed password
+              const hashedPassword = await bcrypt.hash(superuserPassword, 12);
+              dbSuperuser = await prisma.user.create({
+                data: {
+                  email: superuserEmail,
+                  name: 'Super Admin',
+                  password: hashedPassword,
+                  role: 'SUPER_ADMIN',
+                  status: 'ACTIVE',
+                },
+              });
+            } else if (dbSuperuser.role !== 'SUPER_ADMIN') {
+              // Update existing user to SUPER_ADMIN role
+              dbSuperuser = await prisma.user.update({
+                where: { email: superuserEmail },
+                data: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
+              });
+            }
+
+            // Return superuser with database ID and SUPER_ADMIN role
+            return {
+              id: dbSuperuser.id,
+              name: dbSuperuser.name || 'Super Admin',
+              email: dbSuperuser.email,
+              image: dbSuperuser.image,
+              role: ROLES.SUPER_ADMIN,
+              permissions: permissions[ROLES.SUPER_ADMIN] || [],
+            } as User;
+          }
+
+          // =============================================
+          // REGULAR USER AUTHENTICATION FROM DATABASE
+          // =============================================
           const user = await prisma.user.findUnique({
             where: { email },
           });
@@ -88,7 +140,7 @@ export const authConfig: NextAuthConfig = {
             return null;
           }
 
-          console.log(`[Auth] User ${email} authenticated successfully`);
+          console.log(`[Auth] User ${email} authenticated successfully from database`);
 
           // Add permissions to the user object
           return {

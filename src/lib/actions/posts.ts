@@ -58,64 +58,6 @@ export async function invalidatePostsCache(postId?: number, seriesId?: number, a
 }
 
 
-async function getWithCacheLock<T>(
-  cacheKey: string,
-  fetchFn: () => Promise<T>,
-  ttl: number = 3600,
-  maxRetries = 3
-): Promise<T> {
-  if (redis) {
-    try {
-      const cached = await redis.get<T>(cacheKey);
-      if (cached) {
-        console.log(`[Cache] HIT for key: ${cacheKey}`);
-        return cached;
-      }
-    } catch (error) {
-      console.error('[Cache] Redis GET error:', error);
-    }
-  }
-
-  const lockKey = `lock:${cacheKey}`;
-  const lockTTL = 10; // 10 seconds
-
-  if (redis) {
-    try {
-      const locked = await redis.set(lockKey, '1', { ex: lockTTL, nx: true });
-
-      if (!locked) {
-        for (let i = 0; i < maxRetries; i++) {
-          await new Promise(r => setTimeout(r, 100 * (i + 1))); // Exponential backoff
-          const retryCache = await redis.get<T>(cacheKey);
-          if (retryCache) {
-            console.log(`[Cache] HIT on retry for key: ${cacheKey}`);
-            return retryCache;
-          }
-        }
-        console.warn(`[Cache] Could not acquire lock or find cache after retries for key: ${cacheKey}. Fetching directly.`);
-      }
-    } catch (error) {
-      console.error('[Cache] Redis SET lock error:', error);
-    }
-  }
-
-  console.log(`[Cache] MISS for key: ${cacheKey}`);
-  try {
-    const result = await fetchFn();
-
-    if (redis) {
-      await redis.set(cacheKey, result, { ex: ttl });
-      console.log(`[Cache] SET for key: ${cacheKey}`);
-      await redis.del(lockKey);
-    }
-
-    return result;
-  } catch (error) {
-    if (redis) await redis.del(lockKey);
-    throw error;
-  }
-}
-
 async function getUserGroupIds(userId: string): Promise<string[]> {
   const cacheKey = `user:${userId}:groups`;
 
