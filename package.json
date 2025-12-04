@@ -24,7 +24,13 @@
     "db:local": "copy prisma\\schema.sqlite.prisma prisma\\schema.prisma && prisma generate && prisma db push",
     "db:prod": "prisma generate && prisma migrate deploy",
     "health-check": "tsx scripts/health-check.ts",
-    "clean": "rimraf .next node_modules/.cache"
+    "performance-test": "tsx scripts/performance-test.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:ci": "jest --ci --coverage --passWithNoTests",
+    "clean": "rimraf .next node_modules/.cache",
+    "precommit": "npm run lint && npm run typecheck && npm run test:ci"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.4.1",
