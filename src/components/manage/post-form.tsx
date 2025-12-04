@@ -96,7 +96,7 @@ function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, se
 
   const handleCreateSeries = () => {
     if (!searchQuery) return;
-    
+
     startTransition(async () => {
       try {
         const newSeries = await createSeries(searchQuery);
@@ -124,8 +124,8 @@ function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, se
           >
             {field.value
               ? seriesList.find(
-                  (s) => s.id === field.value
-                )?.title
+                (s) => s.id === field.value
+              )?.title
               : "Select a series (optional)"}
             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
           </Button>
@@ -133,22 +133,22 @@ function SeriesCombobox({ field, seriesList, onSeriesCreated }: { field: any, se
       </PopoverTrigger>
       <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
         <Command>
-          <CommandInput 
-            placeholder="Search series or create new..." 
+          <CommandInput
+            placeholder="Search series or create new..."
             value={searchQuery}
             onValueChange={setSearchQuery}
           />
           <CommandList>
             <CommandEmpty>
-               <Button
-                  onClick={handleCreateSeries}
-                  disabled={isPending || !searchQuery}
-                  variant="outline"
-                  className="w-full"
-                >
-                  <PlusCircle className="mr-2 h-4 w-4" />
-                  Create "{searchQuery}"
-                </Button>
+              <Button
+                onClick={handleCreateSeries}
+                disabled={isPending || !searchQuery}
+                variant="outline"
+                className="w-full"
+              >
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create "{searchQuery}"
+              </Button>
             </CommandEmpty>
             <CommandGroup>
               {seriesList.map((s) => (
@@ -197,29 +197,28 @@ export default function PostForm({
 
   useEffect(() => {
     async function fetchData() {
-        console.log('[PostForm] useEffect fetching initial data...');
-        try {
-            setIsLoadingStatus(true);
-            const [seriesData, groupData, statusData] = await Promise.all([
-                getSeries(),
-                getGroupsForForm(),
-                getPostCreationStatus()
-            ]);
-            console.log('[PostForm] Fetched data:', { seriesData, groupData, statusData });
-            setSeriesList(seriesData);
-            setGroups(groupData as any);
-            setPostStatus(statusData);
-        } catch (error) {
-            console.error("[PostForm] Failed to fetch initial form data:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load necessary form data.'});
-        } finally {
-            setIsLoadingStatus(false);
-            console.log('[PostForm] Finished fetching initial data.');
-        }
+      console.log('[PostForm] useEffect fetching initial data...');
+      try {
+        setIsLoadingStatus(true);
+        const [seriesData, groupData, statusData] = await Promise.all([
+          getSeries(),
+          getGroupsForForm(),
+          getPostCreationStatus()
+        ]);
+        console.log('[PostForm] Fetched data:', { seriesData, groupData, statusData });
+        setSeriesList(seriesData);
+        setGroups(groupData as Group[]);
+        setPostStatus(statusData);
+      } catch (error) {
+        console.error("[PostForm] Failed to fetch initial form data:", error);
+      } finally {
+        setIsLoadingStatus(false);
+        console.log('[PostForm] Finished fetching initial data.');
+      }
     }
     fetchData();
-  }, [toast]);
-  
+  }, []); // Empty dependency array - only run once on mount
+
   const handleSeriesCreated = (newSeries: any) => {
     setSeriesList((prev) => [...prev, newSeries]);
   }
@@ -228,49 +227,49 @@ export default function PostForm({
     resolver: zodResolver(postSchema),
     defaultValues: editingPost
       ? {
-          title: editingPost.title,
-          posterUrl: editingPost.posterUrl || '',
-          description: editingPost.description,
-          year: editingPost.year || undefined,
-          duration: editingPost.duration || '',
-          genres: editingPost.genres || [],
-          directors: editingPost.directors || '',
-          mainCast: editingPost.mainCast || '',
-          imdbRating: editingPost.imdbRating || undefined,
-          rottenTomatoesRating: editingPost.rottenTomatoesRating || undefined,
-          googleRating: editingPost.googleRating || undefined,
-          mediaLinks: editingPost.mediaLinks || [],
-          type: editingPost.type as 'MOVIE' | 'TV_SERIES' | 'OTHER',
-          seriesId: editingPost.seriesId || undefined,
-          orderInSeries: editingPost.orderInSeries || undefined,
-          visibility: editingPost.visibility as 'PUBLIC' | 'GROUP_ONLY',
-          groupId: editingPost.groupId || undefined,
-          isLockedByDefault: editingPost.isLockedByDefault || false,
-          requiresExamToUnlock: editingPost.requiresExamToUnlock || false,
-        }
+        title: editingPost.title,
+        posterUrl: editingPost.posterUrl || '',
+        description: editingPost.description,
+        year: editingPost.year || undefined,
+        duration: editingPost.duration || '',
+        genres: editingPost.genres || [],
+        directors: editingPost.directors || '',
+        mainCast: editingPost.mainCast || '',
+        imdbRating: editingPost.imdbRating || undefined,
+        rottenTomatoesRating: editingPost.rottenTomatoesRating || undefined,
+        googleRating: editingPost.googleRating || undefined,
+        mediaLinks: editingPost.mediaLinks || [],
+        type: editingPost.type as 'MOVIE' | 'TV_SERIES' | 'OTHER',
+        seriesId: editingPost.seriesId || undefined,
+        orderInSeries: editingPost.orderInSeries || undefined,
+        visibility: editingPost.visibility as 'PUBLIC' | 'GROUP_ONLY',
+        groupId: editingPost.groupId || undefined,
+        isLockedByDefault: editingPost.isLockedByDefault || false,
+        requiresExamToUnlock: editingPost.requiresExamToUnlock || false,
+      }
       : {
-          title: '',
-          posterUrl: '',
-          description: '',
-          year: new Date().getFullYear(),
-          duration: '',
-          genres: [],
-          directors: '',
-          mainCast: '',
-          imdbRating: 0,
-          rottenTomatoesRating: undefined,
-          googleRating: undefined,
-          mediaLinks: [],
-          type: 'MOVIE',
-          seriesId: undefined,
-          orderInSeries: undefined,
-          visibility: 'PUBLIC',
-          groupId: undefined,
-          isLockedByDefault: false,
-          requiresExamToUnlock: false,
-        },
+        title: '',
+        posterUrl: '',
+        description: '',
+        year: new Date().getFullYear(),
+        duration: '',
+        genres: [],
+        directors: '',
+        mainCast: '',
+        imdbRating: 0,
+        rottenTomatoesRating: undefined,
+        googleRating: undefined,
+        mediaLinks: [],
+        type: 'MOVIE',
+        seriesId: undefined,
+        orderInSeries: undefined,
+        visibility: 'PUBLIC',
+        groupId: undefined,
+        isLockedByDefault: false,
+        requiresExamToUnlock: false,
+      },
   });
-  
+
   const { control, formState, watch } = form;
   const posterUrlValue = watch('posterUrl');
   const postType = watch('type');
@@ -336,7 +335,7 @@ export default function PostForm({
     };
     reader.readAsDataURL(file);
   };
-  
+
   return (
     <div className="max-w-3xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
@@ -348,9 +347,9 @@ export default function PostForm({
             {editingPost ? 'Edit Post' : 'Add New Post'}
           </h1>
         </div>
-      </div> 
+      </div>
 
-       {!editingPost && ( // Only show for new posts
+      {!editingPost && ( // Only show for new posts
         <div className="mb-8">
           {isLoadingStatus ? (
             <div className="flex items-center gap-4 rounded-lg border p-4">
@@ -364,8 +363,8 @@ export default function PostForm({
               <Info className="h-4 w-4" />
               <AlertTitle>Daily Post Status</AlertTitle>
               <AlertDescription>
-                Your daily limit is {postStatus.limit === 0 ? 'unlimited' : `${postStatus.limit} posts`}. 
-                You have created {postStatus.count} posts today. 
+                Your daily limit is {postStatus.limit === 0 ? 'unlimited' : `${postStatus.limit} posts`}.
+                You have created {postStatus.count} posts today.
                 {postStatus.limit > 0 && ` You can create ${postStatus.remaining} more posts.`}
               </AlertDescription>
             </Alert>
@@ -465,62 +464,62 @@ export default function PostForm({
               Post Details
             </h3>
 
-             <FormField
+            <FormField
+              control={form.control}
+              name="type"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Content Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a content type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {(['MOVIE', 'TV_SERIES', 'OTHER'] as const).map((type) => (
+                        <SelectItem key={type} value={type}>{type.replace('_', ' ')}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
                 control={form.control}
-                name="type"
+                name="seriesId"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Content Type</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a content type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {(['MOVIE', 'TV_SERIES', 'OTHER'] as const).map((type) => (
-                           <SelectItem key={type} value={type}>{type.replace('_', ' ')}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <FormItem className="flex flex-col">
+                    <FormLabel>Series</FormLabel>
+                    <SeriesCombobox field={field} seriesList={seriesList} onSeriesCreated={handleSeriesCreated} />
                     <FormMessage />
                   </FormItem>
                 )}
               />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <FormField
-                  control={form.control}
-                  name="seriesId"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>Series</FormLabel>
-                       <SeriesCombobox field={field} seriesList={seriesList} onSeriesCreated={handleSeriesCreated}/>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                 <FormField
-                  control={form.control}
-                  name="orderInSeries"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Order in Series</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="e.g., 1"
-                          {...field}
-                          value={field.value ?? ''}
-                          className="bg-transparent border-input"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+              <FormField
+                control={form.control}
+                name="orderInSeries"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Order in Series</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 1"
+                        {...field}
+                        value={field.value ?? ''}
+                        className="bg-transparent border-input"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
-            
+
             {(postType === 'MOVIE' || postType === 'TV_SERIES') && (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -535,7 +534,7 @@ export default function PostForm({
                             type="number"
                             placeholder="2024"
                             {...field}
-                             value={field.value ?? ''}
+                            value={field.value ?? ''}
                             className="bg-transparent border-input"
                           />
                         </FormControl>
@@ -565,45 +564,45 @@ export default function PostForm({
                   />
                 </div>
                 <FormField
-                    control={form.control}
-                    name="directors"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-muted-foreground">
-                          Director(s) (comma-separated)
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Christopher Nolan"
-                            {...field}
-                            value={field.value || ''}
-                            className="bg-transparent border-input"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="mainCast"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-muted-foreground">
-                          Main Cast (comma-separated)
-                        </FormLabel>
-                        <FormControl>
-                          <Input
-                            placeholder="Cillian Murphy, Emily Blunt"
-                            {...field}
-                            value={field.value || ''}
-                            className="bg-transparent border-input"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  control={form.control}
+                  name="directors"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">
+                        Director(s) (comma-separated)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Christopher Nolan"
+                          {...field}
+                          value={field.value || ''}
+                          className="bg-transparent border-input"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="mainCast"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-muted-foreground">
+                        Main Cast (comma-separated)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Cillian Murphy, Emily Blunt"
+                          {...field}
+                          value={field.value || ''}
+                          className="bg-transparent border-input"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 <FormField
                   control={form.control}
                   name="genres"
@@ -613,7 +612,7 @@ export default function PostForm({
                         Genres
                       </FormLabel>
                       <FormControl>
-                        <GenreInput 
+                        <GenreInput
                           value={field.value || []}
                           onChange={field.onChange}
                           placeholder="Select one or more genres"
@@ -640,7 +639,7 @@ export default function PostForm({
                             type="number"
                             step="0.1"
                             {...field}
-                             value={field.value ?? ''}
+                            value={field.value ?? ''}
                             className="bg-transparent border-input"
                           />
                         </FormControl>
@@ -669,7 +668,7 @@ export default function PostForm({
                       </FormItem>
                     )}
                   />
-                    <FormField
+                  <FormField
                     control={form.control}
                     name="googleRating"
                     render={({ field }) => (
@@ -694,104 +693,104 @@ export default function PostForm({
               </>
             )}
           </div>
-          
-           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
-              <h3 className="text-lg font-semibold text-muted-foreground">
-                Access Control
-              </h3>
-               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                 <FormField
-                    control={form.control}
-                    name="visibility"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Visibility</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select visibility" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                          <SelectItem value="PUBLIC">
-                              <div className="flex items-center gap-2"><Eye className="h-4 w-4" /> Public</div>
-                          </SelectItem>
-                          <SelectItem value="GROUP_ONLY">
-                              <div className="flex items-center gap-2"><Users className="h-4 w-4" /> Group Only</div>
-                          </SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  {visibility === 'GROUP_ONLY' && (
-                    <FormField
-                      control={form.control}
-                      name="groupId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Group</FormLabel>
-                          <Select 
-                              onValueChange={(value) => {
-                                field.onChange(value || null);
-                              }}
-                              defaultValue={field.value || ""}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a group" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {groups.length > 0 ? groups.map(group => (
-                                <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
-                              )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  )}
-              </div>
+
+          <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
+            <h3 className="text-lg font-semibold text-muted-foreground">
+              Access Control
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="visibility"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Visibility</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select visibility" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="PUBLIC">
+                          <div className="flex items-center gap-2"><Eye className="h-4 w-4" /> Public</div>
+                        </SelectItem>
+                        <SelectItem value="GROUP_ONLY">
+                          <div className="flex items-center gap-2"><Users className="h-4 w-4" /> Group Only</div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {visibility === 'GROUP_ONLY' && (
                 <FormField
                   control={form.control}
-                  name="isLockedByDefault"
+                  name="groupId"
                   render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel className="flex items-center gap-2"><Lock className="h-4 w-4"/> Lock Post by Default</FormLabel>
-                        <FormDescription>If on, this post will be locked until explicitly unlocked (e.g., by a previous exam).</FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
+                    <FormItem>
+                      <FormLabel>Group</FormLabel>
+                      <Select
+                        onValueChange={(value) => {
+                          field.onChange(value || null);
+                        }}
+                        defaultValue={field.value || ""}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a group" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {groups.length > 0 ? groups.map(group => (
+                            <SelectItem key={group.id} value={group.id}>{group.name}</SelectItem>
+                          )) : <p className="p-2 text-xs text-muted-foreground">No groups available.</p>}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />
-                 <FormField
-                  control={form.control}
-                  name="requiresExamToUnlock"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                      <div className="space-y-0.5">
-                        <FormLabel className="flex items-center gap-2"><Unlock className="h-4 w-4"/> Exam Unlocks Next Post</FormLabel>
-                        <FormDescription>If on, passing this post's exam will unlock the next post in the series.</FormDescription>
-                      </div>
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                        />
-                      </FormControl>
-                    </FormItem>
-                  )}
-                />
-           </div>
+              )}
+            </div>
+            <FormField
+              control={form.control}
+              name="isLockedByDefault"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel className="flex items-center gap-2"><Lock className="h-4 w-4" /> Lock Post by Default</FormLabel>
+                    <FormDescription>If on, this post will be locked until explicitly unlocked (e.g., by a previous exam).</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="requiresExamToUnlock"
+              render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                  <div className="space-y-0.5">
+                    <FormLabel className="flex items-center gap-2"><Unlock className="h-4 w-4" /> Exam Unlocks Next Post</FormLabel>
+                    <FormDescription>If on, passing this post's exam will unlock the next post in the series.</FormDescription>
+                  </div>
+                  <FormControl>
+                    <Switch
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
 
           <div className="space-y-4 pt-8 border-t border-dashed border-gray-700">
             <h3 className="text-lg font-semibold text-muted-foreground">
@@ -810,7 +809,7 @@ export default function PostForm({
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select type" />
-                              </SelectTrigger>
+                            </SelectTrigger>
                           </FormControl>
                           <SelectContent>
                             <SelectItem value="trailer">Trailer</SelectItem>
@@ -821,7 +820,7 @@ export default function PostForm({
                       </FormItem>
                     )}
                   />
-                   <FormField
+                  <FormField
                     control={control}
                     name={`mediaLinks.${index}.url`}
                     render={({ field }) => (
@@ -853,7 +852,7 @@ export default function PostForm({
               <Plus className="mr-2 h-4 w-4" /> Add Link
             </Button>
           </div>
-          
+
           {debugError && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -863,12 +862,12 @@ export default function PostForm({
               </AlertDescription>
             </Alert>
           )}
-          
+
           <div className="flex justify-end pt-4">
-            <Button 
-                type="submit" 
-                size="lg" 
-                disabled={isSubmitting}
+            <Button
+              type="submit"
+              size="lg"
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <>
