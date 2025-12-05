@@ -17,8 +17,6 @@ import {
     X,
     ChevronLeft,
     ChevronRight,
-    PanelLeftClose,
-    PanelLeft,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
@@ -66,10 +64,9 @@ export default function LeftSidebar() {
 
     if (shouldHide) return null;
 
-    const sidebarWidth = isCollapsed ? 'w-[70px]' : 'w-[220px]';
-    const mainPadding = isCollapsed ? '70px' : '220px';
+    const sidebarWidth = isCollapsed ? 'w-[60px]' : 'w-[200px]';
 
-    // Suno-style NavItem - medium bold font
+    // Suno-style NavItem
     const NavItem = ({
         href,
         icon: Icon,
@@ -89,14 +86,14 @@ export default function LeftSidebar() {
                 href={href}
                 title={isCollapsed ? label : undefined}
                 className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors",
-                    "hover:bg-secondary",
-                    active ? "text-foreground font-semibold bg-secondary" : "text-muted-foreground font-medium",
-                    isCollapsed && "justify-center px-2"
+                    "flex items-center gap-3 px-2 py-2 rounded transition-colors",
+                    "hover:text-foreground",
+                    active ? "text-foreground font-medium" : "text-muted-foreground",
+                    isCollapsed && "justify-center"
                 )}
             >
                 <Icon className="w-5 h-5 flex-shrink-0" />
-                {!isCollapsed && <span className="text-[14px]">{label}</span>}
+                {!isCollapsed && <span className="text-[15px]">{label}</span>}
             </Link>
         );
     };
@@ -137,9 +134,8 @@ export default function LeftSidebar() {
                     sidebarWidth,
                     mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
                 )}
-                style={{ '--sidebar-width': mainPadding } as React.CSSProperties}
             >
-                {/* Logo - SUNO style */}
+                {/* Logo - SUNO style with arrow toggle */}
                 <div className={cn(
                     "px-3 py-4 flex items-center",
                     isCollapsed ? "justify-center" : "justify-between"
@@ -154,10 +150,10 @@ export default function LeftSidebar() {
                     {!isCollapsed && (
                         <button
                             onClick={toggleCollapse}
-                            className="text-muted-foreground hover:text-foreground p-1.5 hover:bg-secondary rounded"
+                            className="text-muted-foreground hover:text-foreground p-1"
                             title="Collapse sidebar"
                         >
-                            <PanelLeftClose className="w-4 h-4" />
+                            <ChevronLeft className="w-4 h-4" />
                         </button>
                     )}
                 </div>
@@ -166,103 +162,101 @@ export default function LeftSidebar() {
                 {isCollapsed && (
                     <button
                         onClick={toggleCollapse}
-                        className="mx-auto mb-2 text-muted-foreground hover:text-foreground p-2 hover:bg-secondary rounded"
+                        className="mx-auto mb-3 text-muted-foreground hover:text-foreground p-1"
                         title="Expand sidebar"
                     >
-                        <PanelLeft className="w-4 h-4" />
+                        <ChevronRight className="w-4 h-4" />
                     </button>
                 )}
 
-                {/* User Profile Area */}
-                {user && !isCollapsed && (
-                    <div className="px-2 py-2 border-b border-border mb-2">
-                        <Link
-                            href={`/profile/${user.id}`}
-                            className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary transition-colors"
-                        >
-                            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-semibold text-white">
-                                {user.name?.charAt(0) || 'U'}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <span className="text-sm font-semibold truncate block">{user.name || 'User'}</span>
-                                <span className="text-xs text-muted-foreground">View profile</span>
-                            </div>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                        </Link>
+                {/* Main Navigation - grouped like Suno */}
+                <nav className="flex-1 px-2">
+                    {/* Group 1: Main */}
+                    <div className="space-y-1">
+                        <NavItem href="/" icon={Home} label="Home" />
+                        {user && <NavItem href="/create" icon={Plus} label="Create" />}
+                        <NavItem href="/explore" icon={Compass} label="Explore" />
+                        {user && <NavItem href="/wall" icon={MessageSquare} label="Wall" />}
                     </div>
-                )}
 
-                {/* Collapsed user avatar */}
-                {user && isCollapsed && (
-                    <div className="px-2 py-2 flex justify-center border-b border-border mb-2">
-                        <Link
-                            href={`/profile/${user.id}`}
-                            title={user.name || 'Profile'}
-                            className="w-9 h-9 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-semibold text-white hover:opacity-80"
-                        >
-                            {user.name?.charAt(0) || 'U'}
-                        </Link>
-                    </div>
-                )}
-
-                {/* Main Navigation */}
-                <nav className="flex-1 px-2 py-2 space-y-1">
-                    <NavItem href="/" icon={Home} label="Home" />
-
-                    {user && (
-                        <NavItem href="/create" icon={Plus} label="Create" />
-                    )}
-
-                    <NavItem href="/explore" icon={Compass} label="Explore" />
-
-                    {user && (
-                        <NavItem href="/wall" icon={MessageSquare} label="Wall" />
-                    )}
-
-                    {/* Browse Section */}
-                    <div className="pt-4">
-                        {!isCollapsed && (
-                            <div className="px-3 py-1 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-                                Browse
-                            </div>
-                        )}
+                    {/* Group 2: Content - with gap */}
+                    <div className="space-y-1 mt-4">
                         <NavItem href="/movies" icon={Film} label="Movies" />
                         <NavItem href="/series" icon={Tv} label="Series" />
                         <NavItem href="/search" icon={Search} label="Search" />
                     </div>
 
-                    {/* User Section */}
+                    {/* Group 3: User - with gap */}
                     {user && (
-                        <div className="pt-4">
-                            {!isCollapsed && (
-                                <div className="px-3 py-1 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-                                    Library
-                                </div>
-                            )}
+                        <div className="space-y-1 mt-4">
                             <NavItem href="/favorites" icon={Heart} label="Favorites" />
                             <NavItem href="/activity" icon={Activity} label="Activity" />
                             <NavItem href="/notifications" icon={Bell} label="Notifications" />
                         </div>
                     )}
+                </nav>
 
-                    {/* Admin Section */}
+                {/* ========== BOTTOM SECTION ========== */}
+                <div className="mt-auto border-t border-border">
+                    {/* Admin Dashboard - if admin */}
                     {canManage && (
-                        <div className="pt-4">
-                            {!isCollapsed && (
-                                <div className="px-3 py-1 text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-wider">
-                                    Admin
-                                </div>
-                            )}
-                            <NavItem href="/manage" icon={Shield} label="Dashboard" />
+                        <div className="px-2 py-2">
+                            <Link
+                                href="/manage"
+                                title={isCollapsed ? "Dashboard" : undefined}
+                                className={cn(
+                                    "flex items-center gap-3 px-2 py-2 rounded transition-colors",
+                                    "hover:text-foreground",
+                                    isActive('/manage') ? "text-foreground font-medium" : "text-muted-foreground",
+                                    isCollapsed && "justify-center"
+                                )}
+                            >
+                                <Shield className="w-5 h-5 flex-shrink-0" />
+                                {!isCollapsed && (
+                                    <>
+                                        <span className="text-[15px] flex-1">Dashboard</span>
+                                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                                    </>
+                                )}
+                            </Link>
                         </div>
                     )}
-                </nav>
+
+                    {/* User Profile - AT THE VERY BOTTOM */}
+                    {user && !isCollapsed && (
+                        <div className="px-2 py-3 border-t border-border">
+                            <Link
+                                href={`/profile/${user.id}`}
+                                className="flex items-center gap-3 px-2 py-2 rounded hover:bg-secondary/50 transition-colors"
+                            >
+                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-medium text-white">
+                                    {user.name?.charAt(0) || 'U'}
+                                </div>
+                                <span className="text-[15px] text-muted-foreground flex-1 truncate">{user.name || 'User'}</span>
+                                <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                            </Link>
+                        </div>
+                    )}
+
+                    {/* Collapsed user avatar at bottom */}
+                    {user && isCollapsed && (
+                        <div className="px-2 py-3 flex justify-center border-t border-border">
+                            <Link
+                                href={`/profile/${user.id}`}
+                                title={user.name || 'Profile'}
+                                className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-medium text-white hover:opacity-80"
+                            >
+                                {user.name?.charAt(0) || 'U'}
+                            </Link>
+                        </div>
+                    )}
+                </div>
             </aside>
 
-            {/* Dynamic main content padding - CSS variable */}
+            {/* Dynamic main content padding */}
             <style jsx global>{`
                 main {
-                    padding-left: ${isCollapsed ? '70px' : '220px'} !important;
+                    padding-left: ${isCollapsed ? '60px' : '200px'} !important;
                 }
                 @media (max-width: 768px) {
                     main {

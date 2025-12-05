@@ -91,8 +91,8 @@ const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex =
 const HeroSection = () => {
     return (
         <section className="relative pt-16 pb-8">
-            {/* Suno-style Hero Banner - taller like Suno Studio banner */}
-            <div className="relative mx-3 rounded-xl overflow-hidden" style={{ aspectRatio: '21/8', minHeight: '350px' }}>
+            {/* Suno-style Hero Banner - correct aspect ratio */}
+            <div className="relative mx-3 rounded-xl overflow-hidden" style={{ aspectRatio: '21/7', minHeight: '260px' }}>
                 {/* Background Image - music studio style */}
                 <Image
                     src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&q=80"
