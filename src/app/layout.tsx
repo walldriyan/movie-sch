@@ -41,12 +41,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <title>CineVerse Captions</title>
         <meta name="description" content="The universe of movies and subtitles at your fingertips." />
       </head>
       <body
+        suppressHydrationWarning
         className={cn(
           'min-h-screen bg-gradient-to-r from-zinc-950/60 via-stone-900/10 to-zinc-950/50  font-sans antialiased relative flex flex-col',
           fontSans.variable,
@@ -58,21 +59,21 @@ export default function RootLayout({
           <LoadingProvider>
             <ConnectivityProvider>
               <SidebarProvider>
-                  <GlobalLoadingBar />
-                  <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
-                    <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
-                    <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
-                    <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
-                  </div>
-                  
-                  <Navbar />
-                  <main className="flex-1 pt-16">
-                      <ErrorBoundary>
-                        {children}
-                      </ErrorBoundary>
-                  </main>
-                  
-                  <Toaster />
+                <GlobalLoadingBar />
+                <div className="absolute inset-0 pointer-events-none overflow-x-hidden" aria-hidden="true">
+                  <div className="absolute -top-1/4 left-0 w-[50rem] h-[50rem] rounded-full bg-yellow-950/90 filter blur-3xl opacity-5"></div>
+                  <div className="absolute -bottom-1/4 -right-1/4 w-[50rem] h-[50rem] rounded-full bg-blue-900/50 filter blur-3xl opacity-[0.08]"></div>
+                  <div className="absolute -bottom-1/2 left-1/4 w-[40rem] h-[40rem] rounded-full bg-green-900/50 filter blur-3xl opacity-[0.07]"></div>
+                </div>
+
+                <Navbar />
+                <main className="flex-1 pt-16">
+                  <ErrorBoundary>
+                    {children}
+                  </ErrorBoundary>
+                </main>
+
+                <Toaster />
               </SidebarProvider>
             </ConnectivityProvider>
           </LoadingProvider>
