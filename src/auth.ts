@@ -85,8 +85,8 @@ export const authConfig: NextAuthConfig = {
             });
 
             if (!dbSuperuser) {
-              // Create superuser in database with hashed password
-              const hashedPassword = await bcrypt.hash(superuserPassword, 12);
+              // Create superuser in database with hashed password (cost 10 for performance)
+              const hashedPassword = await bcrypt.hash(superuserPassword, 10);
               dbSuperuser = await prisma.user.create({
                 data: {
                   email: superuserEmail,
