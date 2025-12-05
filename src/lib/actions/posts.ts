@@ -291,10 +291,13 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     }
   }
 
+  // For SQLite: Use contains with OR for each genre
+  // For PostgreSQL: Could use hasSome, but contains works for both
   if (genres && genres.length > 0) {
-    whereClause.genres = {
-      hasSome: genres,
-    };
+    whereClause.OR = [
+      ...(whereClause.OR || []),
+      ...genres.map((genre: string) => ({ genres: { contains: genre } }))
+    ];
   }
 
   if (yearRange) {
@@ -898,9 +901,10 @@ export async function searchPostsForExam(query: string) {
 
   const posts = await prisma.post.findMany({
     where: {
+      // Note: mode: 'insensitive' is PostgreSQL only, removing for SQLite compatibility
+      // In production PostgreSQL, add mode: 'insensitive' back
       title: {
         contains: query,
-        mode: 'insensitive',
       },
       status: 'PUBLISHED', // Only allow exams for published posts
     },

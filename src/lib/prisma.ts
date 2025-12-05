@@ -1,5 +1,8 @@
 import { PrismaClient } from '@prisma/client';
 
+// Declare EdgeRuntime for type checking
+declare const EdgeRuntime: string | undefined;
+
 // Extend NodeJS global type to prevent memory leaks
 declare global {
   // eslint-disable-next-line no-var
@@ -8,6 +11,7 @@ declare global {
 
 // Check if we're in Edge runtime (middleware)
 const isEdgeRuntime = typeof EdgeRuntime !== 'undefined';
+
 
 // Connection pool configuration for production
 const prismaClientSingleton = () => {
