@@ -91,7 +91,7 @@ function CreateCard({ option }: { option: CreateOption }) {
                     {/* Top - Button */}
                     <div className="flex justify-end">
                         <div className={cn(
-                            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
+                            "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
                             "bg-white text-black hover:bg-white/90"
                         )}>
                             {option.icon}
@@ -164,19 +164,19 @@ export default function CreatePage() {
                 <div className="mt-16 text-center">
                     <p className="text-white/40 text-sm mb-6">Or explore other options</p>
                     <div className="flex flex-wrap items-center justify-center gap-3">
-                        <Button variant="outline" size="sm" className="rounded-full border-white/10 hover:bg-white/5" asChild>
+                        <Button variant="outline" size="sm" className="rounded-md border-white/10 hover:bg-white/5" asChild>
                             <Link href="/manage">
                                 <Zap className="w-4 h-4 mr-2" />
                                 Dashboard
                             </Link>
                         </Button>
-                        <Button variant="outline" size="sm" className="rounded-full border-white/10 hover:bg-white/5" asChild>
+                        <Button variant="outline" size="sm" className="rounded-md border-white/10 hover:bg-white/5" asChild>
                             <Link href="/explore">
                                 <BookOpen className="w-4 h-4 mr-2" />
                                 Explore Content
                             </Link>
                         </Button>
-                        <Button variant="outline" size="sm" className="rounded-full border-white/10 hover:bg-white/5" asChild>
+                        <Button variant="outline" size="sm" className="rounded-md border-white/10 hover:bg-white/5" asChild>
                             <Link href="/">
                                 <Users className="w-4 h-4 mr-2" />
                                 Community

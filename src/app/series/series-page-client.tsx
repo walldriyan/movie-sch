@@ -142,7 +142,7 @@ export default function SeriesPageClient({
 
                         {/* Create Button */}
                         <Button
-                            className="rounded-full bg-white text-black hover:bg-white/90 ml-2"
+                            className="rounded-md bg-white text-black hover:bg-white/90 ml-2"
                             onClick={() => router.push('/manage?create=true')}
                         >
                             <Plus className="h-4 w-4 mr-2" />

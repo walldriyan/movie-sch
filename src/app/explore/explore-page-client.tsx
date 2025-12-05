@@ -1,7 +1,9 @@
 'use client';
 
-import { useState, useTransition, useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, useTransition, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import Image from 'next/image';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -11,7 +13,10 @@ import {
     Folder,
     Compass,
     Loader2,
-    SlidersHorizontal
+    SlidersHorizontal,
+    Sparkles,
+    TrendingUp,
+    Play
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PostGrid from '@/components/post-grid';
@@ -30,7 +35,7 @@ import {
     SheetTitle,
     SheetTrigger,
 } from '@/components/ui/sheet';
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+import { Pagination, PaginationContent, PaginationItem } from '@/components/ui/pagination';
 
 interface ExplorePageClientProps {
     initialPosts: any[];
@@ -71,7 +76,7 @@ export default function ExplorePageClient({
             type: searchParams.type,
             genre: searchParams.genre,
             year: searchParams.year,
-            page: '1', // Reset to page 1 on filter change
+            page: '1',
             ...updates
         };
 
@@ -123,145 +128,186 @@ export default function ExplorePageClient({
             "min-h-screen bg-background transition-opacity duration-200",
             isPending && "opacity-60 pointer-events-none"
         )}>
-            <div className="max-w-7xl mx-auto px-4 py-8">
-                {/* Header */}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-3">
-                        <Compass className="h-8 w-8 text-primary" />
-                        <h1 className="text-3xl font-bold">Explore</h1>
-                        {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
+            {/* Hero Section - Suno.com Style */}
+            <div className="relative pt-20 pb-12">
+                {/* Background gradients */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 left-1/3 w-96 h-96 bg-primary/15 rounded-full blur-3xl" />
+                    <div className="absolute top-10 right-1/4 w-80 h-80 bg-purple-500/10 rounded-full blur-3xl" />
+                </div>
+
+                <div className="relative max-w-4xl mx-auto px-4 text-center">
+                    {/* Badge */}
+                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-sm">
+                        <Compass className="w-4 h-4 text-primary" />
+                        <span className="text-sm font-medium text-white/80">Discover Content</span>
                     </div>
 
-                    {/* Search Form */}
-                    <form onSubmit={handleSearch} className="flex gap-2 w-full md:w-auto">
-                        <div className="relative flex-1 md:w-80">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    {/* Headline */}
+                    <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 leading-tight tracking-tight">
+                        Explore & Discover
+                    </h1>
+
+                    {/* Description */}
+                    <p className="text-lg text-white/50 max-w-xl mx-auto mb-8">
+                        Find your next favorite movie, TV series, or discover trending content from our community.
+                    </p>
+
+                    {/* Search Form - Centered */}
+                    <form onSubmit={handleSearch} className="flex gap-2 max-w-xl mx-auto">
+                        <div className="relative flex-1">
+                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
                             <Input
-                                placeholder="Search movies, series..."
+                                placeholder="Search movies, series, documentaries..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 bg-muted/50 border-0"
+                                className="pl-12 h-12 bg-white/5 border-white/10 rounded-lg text-white placeholder:text-white/40 focus:bg-white/10 focus:border-white/20"
                             />
                         </div>
-                        <Button type="submit" variant="default">
+                        <Button type="submit" className="h-12 px-6 rounded-lg bg-white text-black hover:bg-white/90">
                             Search
                         </Button>
                     </form>
                 </div>
+            </div>
 
-                {/* Filters */}
-                <div className="flex flex-wrap items-center gap-3 mb-8">
-                    {/* Type filters - inline buttons */}
-                    <div className="flex gap-2 overflow-x-auto no-scrollbar">
-                        {typeFilters.map((filter) => {
-                            const Icon = filter.icon;
-                            const isActive = (searchParams.type || 'all') === filter.value;
-                            return (
-                                <Button
-                                    key={filter.value}
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleFilterChange('type', filter.value)}
-                                    className={cn(
-                                        "rounded-full flex items-center gap-2 transition-all",
-                                        isActive
-                                            ? "bg-primary text-primary-foreground border-primary"
-                                            : "bg-muted/50 border-muted hover:bg-muted"
-                                    )}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                    {filter.label}
-                                </Button>
-                            );
-                        })}
+            {/* Main Content */}
+            <div className="max-w-7xl mx-auto px-4 pb-12">
+                {/* Filter Bar - Suno.com Style */}
+                <div className="mb-8 rounded-xl overflow-hidden bg-gradient-to-br from-card/60 via-card/40 to-card/30 backdrop-blur-sm border border-white/5 p-4">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        {/* Type filters */}
+                        <div className="flex gap-2 overflow-x-auto no-scrollbar">
+                            {typeFilters.map((filter) => {
+                                const Icon = filter.icon;
+                                const isActive = (searchParams.type || 'all') === filter.value;
+                                return (
+                                    <Button
+                                        key={filter.value}
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => handleFilterChange('type', filter.value)}
+                                        className={cn(
+                                            "rounded-md flex items-center gap-2 transition-all",
+                                            isActive
+                                                ? "bg-white text-black hover:bg-white/90"
+                                                : "text-white/70 hover:text-white hover:bg-white/10"
+                                        )}
+                                    >
+                                        <Icon className="h-4 w-4" />
+                                        {filter.label}
+                                    </Button>
+                                );
+                            })}
+                        </div>
+
+                        {/* More filters + Loading indicator */}
+                        <div className="flex items-center gap-2">
+                            {isPending && <Loader2 className="h-4 w-4 animate-spin text-white/50" />}
+
+                            <Sheet>
+                                <SheetTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="rounded-md gap-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white/90">
+                                        <SlidersHorizontal className="h-4 w-4" />
+                                        Filters
+                                        {(searchParams.genre || searchParams.year) && (
+                                            <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded-full text-xs">
+                                                {[searchParams.genre, searchParams.year].filter(Boolean).length}
+                                            </span>
+                                        )}
+                                    </Button>
+                                </SheetTrigger>
+                                <SheetContent>
+                                    <SheetHeader>
+                                        <SheetTitle>Filters</SheetTitle>
+                                        <SheetDescription>
+                                            Refine your search with additional filters
+                                        </SheetDescription>
+                                    </SheetHeader>
+                                    <div className="space-y-6 mt-6">
+                                        {/* Genre filter */}
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Genre</label>
+                                            <Select
+                                                value={searchParams.genre || 'all'}
+                                                onValueChange={(value) => handleFilterChange('genre', value)}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="All Genres" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Genres</SelectItem>
+                                                    {GENRES.map((genre) => (
+                                                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {/* Year filter */}
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium">Year</label>
+                                            <Select
+                                                value={searchParams.year || 'all'}
+                                                onValueChange={(value) => handleFilterChange('year', value)}
+                                            >
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="All Years" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="all">All Years</SelectItem>
+                                                    {YEARS.map((year) => (
+                                                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {/* Clear button */}
+                                        <Button
+                                            variant="outline"
+                                            className="w-full"
+                                            onClick={() => navigateWithTransition('/explore')}
+                                        >
+                                            Clear All Filters
+                                        </Button>
+                                    </div>
+                                </SheetContent>
+                            </Sheet>
+                        </div>
                     </div>
-
-                    {/* More filters */}
-                    <Sheet>
-                        <SheetTrigger asChild>
-                            <Button variant="outline" size="sm" className="rounded-full gap-2">
-                                <SlidersHorizontal className="h-4 w-4" />
-                                Filters
-                                {(searchParams.genre || searchParams.year) && (
-                                    <span className="ml-1 px-1.5 py-0.5 bg-primary text-primary-foreground rounded-full text-xs">
-                                        {[searchParams.genre, searchParams.year].filter(Boolean).length}
-                                    </span>
-                                )}
-                            </Button>
-                        </SheetTrigger>
-                        <SheetContent>
-                            <SheetHeader>
-                                <SheetTitle>Filters</SheetTitle>
-                                <SheetDescription>
-                                    Refine your search with additional filters
-                                </SheetDescription>
-                            </SheetHeader>
-                            <div className="space-y-6 mt-6">
-                                {/* Genre filter */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Genre</label>
-                                    <Select
-                                        value={searchParams.genre || 'all'}
-                                        onValueChange={(value) => handleFilterChange('genre', value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="All Genres" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Genres</SelectItem>
-                                            {GENRES.map((genre) => (
-                                                <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Year filter */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Year</label>
-                                    <Select
-                                        value={searchParams.year || 'all'}
-                                        onValueChange={(value) => handleFilterChange('year', value)}
-                                    >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="All Years" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Years</SelectItem>
-                                            {YEARS.map((year) => (
-                                                <SelectItem key={year} value={year}>{year}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-
-                                {/* Clear button */}
-                                <Button
-                                    variant="outline"
-                                    className="w-full"
-                                    onClick={() => navigateWithTransition('/explore')}
-                                >
-                                    Clear All Filters
-                                </Button>
-                            </div>
-                        </SheetContent>
-                    </Sheet>
                 </div>
 
                 {/* Results */}
                 {initialPosts.length === 0 ? (
                     <div className="text-center py-20">
-                        <Compass className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                        <h2 className="text-2xl font-semibold mb-2">No Results Found</h2>
-                        <p className="text-muted-foreground mb-6">
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+                            <Compass className="h-10 w-10 text-white/30" />
+                        </div>
+                        <h2 className="text-2xl font-semibold mb-2 text-white">No Results Found</h2>
+                        <p className="text-white/50 mb-6 max-w-md mx-auto">
                             Try adjusting your search or filters to find what you're looking for.
                         </p>
-                        <Button onClick={() => navigateWithTransition('/explore')}>
+                        <Button
+                            onClick={() => navigateWithTransition('/explore')}
+                            className="rounded-md bg-white text-black hover:bg-white/90"
+                        >
                             Clear Filters
                         </Button>
                     </div>
                 ) : (
                     <>
+                        {/* Results Header */}
+                        <div className="flex items-center gap-2 mb-6">
+                            <TrendingUp className="w-5 h-5 text-primary" />
+                            <h2 className="text-lg font-semibold text-white">
+                                {searchParams.q ? `Results for "${searchParams.q}"` : 'Trending Now'}
+                            </h2>
+                            <span className="text-white/40 text-sm">
+                                ({initialPosts.length} items)
+                            </span>
+                        </div>
+
                         <PostGrid posts={initialPosts} />
 
                         {/* Pagination */}
@@ -274,13 +320,13 @@ export default function ExplorePageClient({
                                             size="sm"
                                             disabled={currentPage <= 1}
                                             onClick={() => handlePageChange(currentPage - 1)}
-                                            className="gap-1"
+                                            className="rounded-md"
                                         >
                                             Previous
                                         </Button>
                                     </PaginationItem>
                                     <PaginationItem>
-                                        <span className="px-4 py-2 text-sm">
+                                        <span className="px-4 py-2 text-sm text-white/60">
                                             Page {currentPage} of {totalPages}
                                         </span>
                                     </PaginationItem>
@@ -290,7 +336,7 @@ export default function ExplorePageClient({
                                             size="sm"
                                             disabled={currentPage >= totalPages}
                                             onClick={() => handlePageChange(currentPage + 1)}
-                                            className="gap-1"
+                                            className="rounded-md"
                                         >
                                             Next
                                         </Button>
