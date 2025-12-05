@@ -62,7 +62,7 @@ export default function LeftSidebar() {
 
     // Hide sidebar on certain pages
     const shouldHide = useMemo(() => {
-        const hiddenPaths = ['/login', '/register', '/admin'];
+        const hiddenPaths = ['/login', '/register', '/admin', '/manage'];
         return hiddenPaths.some(p => pathname.startsWith(p));
     }, [pathname]);
 

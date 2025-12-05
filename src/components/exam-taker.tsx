@@ -1,16 +1,16 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
@@ -34,16 +34,28 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const formRef = useRef<HTMLFormElement | null>(null);
 
-    const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    // Memoized format time function
+    const formatTime = useCallback((seconds: number) => {
+        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
+        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
+        const s = (seconds % 60).toString().padStart(2, '0');
+        return `${h}:${m}:${s}`;
+    }, []);
+
+    // Memoized submit handler
+    const handleFormSubmit = useCallback(async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        if (isSubmitting) return;
+
         setIsSubmitting(true);
         if (timerRef.current) {
             clearInterval(timerRef.current);
         }
 
         const formData = new FormData(event.currentTarget);
-        
+
         const answers: Record<string, string | string[]> = {};
         formData.forEach((value, key) => {
             if (key.startsWith('question-')) {
@@ -65,7 +77,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             answers,
             timeTakenSeconds: timeTaken,
         };
-        
+
         try {
             const newSubmission = await submitExam(exam.id, payload);
             if (newSubmission) {
@@ -73,13 +85,13 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             } else {
                 throw new Error("Submission failed to return a result.");
             }
-        } catch(error) {
-             console.error("--- [Client] Submission Error ---", error);
-             setIsSubmitting(false);
-             alert("There was an error submitting your exam. Please try again.");
+        } catch (error) {
+            console.error("--- [Client] Submission Error ---", error);
+            setIsSubmitting(false);
+            alert("There was an error submitting your exam. Please try again.");
         }
-    };
-    
+    }, [exam.id, timeTaken, isSubmitting, router]);
+
     useEffect(() => {
         if (!hasStarted || !exam.durationMinutes || isSubmitting) {
             if (timerRef.current) {
@@ -93,10 +105,10 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             setTimeLeft(prevTime => {
                 if (prevTime <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    const formElement = document.querySelector('form');
-                    if (formElement && !isSubmitting) {
-                       setIsSubmitting(true);
-                       formElement.requestSubmit();
+                    // Auto-submit using form ref
+                    if (formRef.current && !isSubmitting) {
+                        setIsSubmitting(true);
+                        formRef.current.requestSubmit();
                     }
                     return 0;
                 }
@@ -114,27 +126,20 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         };
     }, [hasStarted, exam.durationMinutes, showWarning, isSubmitting]);
 
-    const formatTime = (seconds: number) => {
-        const h = Math.floor(seconds / 3600).toString().padStart(2, '0');
-        const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
-        const s = (seconds % 60).toString().padStart(2, '0');
-        return `${h}:${m}:${s}`;
-    };
-
-    const handleStart = () => {
+    const handleStart = useCallback(() => {
         setTimeTaken(0);
         setHasStarted(true);
-    };
+    }, []);
 
 
     if (!hasStarted) {
         return (
-             <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8 flex items-center justify-center">
+            <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8 flex items-center justify-center">
                 <Card className="max-w-2xl w-full">
                     <CardHeader>
                         <CardTitle className="text-3xl font-bold font-serif">{exam.title}</CardTitle>
                         <CardDescription className="flex items-center gap-4 pt-2">
-                             {exam.durationMinutes && (
+                            {exam.durationMinutes && (
                                 <span className="flex items-center gap-1.5">
                                     <Timer className="h-4 w-4" /> {exam.durationMinutes} minutes
                                 </span>
@@ -143,8 +148,8 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
-                         {exam.description && <p className="pt-2 text-muted-foreground">{exam.description}</p>}
-                          <Alert className="mt-6">
+                        {exam.description && <p className="pt-2 text-muted-foreground">{exam.description}</p>}
+                        <Alert className="mt-6">
                             <AlertCircle className="h-4 w-4" />
                             <AlertTitle>Instructions</AlertTitle>
                             <AlertDescription>
@@ -154,7 +159,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                     <li>Ensure you have a stable internet connection.</li>
                                 </ul>
                             </AlertDescription>
-                         </Alert>
+                        </Alert>
                     </CardContent>
                     <CardFooter>
                         <Button size="lg" onClick={handleStart}>
@@ -179,21 +184,21 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                 <Card>
                     <CardHeader>
                         <div className="flex justify-between items-center">
-                             <div>
+                            <div>
                                 <CardTitle className="text-3xl font-bold font-serif">{exam.title}</CardTitle>
                                 <CardDescription className="pt-2">{exam.questions.length} questions</CardDescription>
-                             </div>
+                            </div>
                         </div>
                     </CardHeader>
-                    <form onSubmit={handleFormSubmit}>
+                    <form ref={formRef} onSubmit={handleFormSubmit}>
                         <CardContent className="space-y-8">
                             {exam.questions.map((question, qIndex) => (
                                 <div key={question.id}>
-                                    <Separator className={qIndex > 0 ? 'mb-8' : ''}/>
+                                    <Separator className={qIndex > 0 ? 'mb-8' : ''} />
                                     <div className="font-semibold text-lg">{qIndex + 1}. {question.text}</div>
                                     <p className="text-sm text-muted-foreground mb-4">{question.points} points</p>
-                                    
-                                     {question.type === 'IMAGE_BASED_ANSWER' && question.images && (
+
+                                    {question.type === 'IMAGE_BASED_ANSWER' && question.images && (
                                         <div className="mb-4 grid grid-cols-2 gap-4">
                                             {question.images.map(image => (
                                                 <div key={image.id} className="relative aspect-video">
@@ -238,19 +243,19 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                             ))}
                         </CardContent>
                         <CardFooter>
-                           <Button type="submit" size="lg" disabled={isSubmitting}>
-                              {isSubmitting ? (
-                                  <>
-                                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                      Submitting...
-                                  </>
-                              ) : (
-                                  <>
-                                      <Send className="mr-2 h-4 w-4" />
-                                      Submit Exam
-                                  </>
-                              )}
-                          </Button>
+                            <Button type="submit" size="lg" disabled={isSubmitting}>
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Submitting...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Send className="mr-2 h-4 w-4" />
+                                        Submit Exam
+                                    </>
+                                )}
+                            </Button>
                         </CardFooter>
                     </form>
                 </Card>
