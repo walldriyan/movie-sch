@@ -53,7 +53,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import ClientSideDate from './client-side-date';
 
-type PostWithDetails = Post & { author: User, _count: { likedBy: number }};
+type PostWithDetails = Post & { author: User, _count: { likedBy: number } };
 
 interface PostListProps {
   posts: PostWithDetails[];
@@ -113,22 +113,10 @@ export default function PostList({
         return 'outline';
     }
   };
-  
+
   return (
     <>
-      <div className="flex items-center">
-        <h1 className="font-semibold text-lg md:text-2xl">Manage Posts</h1>
-        <AuthGuard 
-          requiredPermissions={[PERMISSIONS['post.create']]}
-          fallback={<Skeleton className="ml-auto h-9 w-[150px] rounded-full" />}
-        >
-          <Button className="ml-auto" size="sm" onClick={onAddNew}>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Add New Post
-          </Button>
-        </AuthGuard>
-      </div>
-      <Card>
+      <Card className="border-white/5 bg-card/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
@@ -139,7 +127,7 @@ export default function PostList({
             </div>
             <div className='flex items-center gap-2'>
               {isRefreshing ? (
-                  <Skeleton className="h-8 w-28" />
+                <Skeleton className="h-8 w-28" />
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -195,8 +183,8 @@ export default function PostList({
                     }
                   >
                     <TableCell className="font-medium">
-                       <div className="flex items-center gap-3">
-                         {post.posterUrl ? (
+                      <div className="flex items-center gap-3">
+                        {post.posterUrl ? (
                           <Image
                             alt={post.title}
                             className="aspect-square rounded-md object-cover flex-shrink-0"
@@ -215,18 +203,18 @@ export default function PostList({
                         >
                           {post.title}
                         </Link>
-                       </div>
+                      </div>
                     </TableCell>
-                     <TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 hidden sm:flex">
-                            <AvatarImage src={post.author.image || ''} alt={post.author.name || ''} />
-                            <AvatarFallback>{post.author.name?.charAt(0) || 'U'}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{post.author.name}</div>
-                            <div className="text-xs text-muted-foreground hidden md:block">{post.author.email}</div>
-                          </div>
+                        <Avatar className="h-9 w-9 hidden sm:flex">
+                          <AvatarImage src={post.author.image || ''} alt={post.author.name || ''} />
+                          <AvatarFallback>{post.author.name?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{post.author.name}</div>
+                          <div className="text-xs text-muted-foreground hidden md:block">{post.author.email}</div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -239,19 +227,19 @@ export default function PostList({
                       )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                       <ClientSideDate date={post.createdAt} />
+                      <ClientSideDate date={post.createdAt} />
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-right">
-                       <div className="flex justify-end items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{post.viewCount}</span>
-                          </div>
-                           <div className="flex items-center gap-1">
-                            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{post._count.likedBy}</span>
-                          </div>
+                      <div className="flex justify-end items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{post.viewCount}</span>
                         </div>
+                        <div className="flex items-center gap-1">
+                          <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{post._count.likedBy}</span>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -276,7 +264,7 @@ export default function PostList({
                           </AuthGuard>
 
                           <AuthGuard requiredRole={ROLES.SUPER_ADMIN}>
-                             <DropdownMenuSub>
+                            <DropdownMenuSub>
                               <DropdownMenuSubTrigger disabled={statusChangingPostId === post.id}>
                                 Change Status
                               </DropdownMenuSubTrigger>
@@ -302,7 +290,7 @@ export default function PostList({
                             </DropdownMenuSub>
                             <DropdownMenuSeparator />
                           </AuthGuard>
-                          
+
                           <AuthGuard
                             requiredPermissions={[PERMISSIONS['post.delete']]}
                           >
