@@ -65,7 +65,7 @@ const createOptions: CreateOption[] = [
         title: 'Collection / Group',
         description: 'Organize content into themed collections',
         icon: <Folder className="w-5 h-5" />,
-        href: '/groups?create=true',
+        href: '/admin/groups',
         color: 'text-orange-400',
         bgColor: 'bg-orange-500/10 hover:bg-orange-500/20',
         image: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=600&h=400&fit=crop',

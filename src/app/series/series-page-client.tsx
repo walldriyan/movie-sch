@@ -3,7 +3,7 @@
 import { useTransition, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Tv, Loader2 } from 'lucide-react';
+import { Tv, Loader2, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import PostGrid from '@/components/post-grid';
 import {
@@ -89,7 +89,7 @@ export default function SeriesPageClient({
             "min-h-screen bg-background transition-opacity duration-200",
             isPending && "opacity-60 pointer-events-none"
         )}>
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            <div className="max-w-7xl mx-auto px-4 pt-20 pb-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3">
@@ -98,7 +98,7 @@ export default function SeriesPageClient({
                         {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
                     </div>
 
-                    {/* Quick filters */}
+                    {/* Quick filters + Create Button */}
                     <div className="flex items-center gap-2">
                         <Select
                             value={searchParams.genre || 'all'}
@@ -139,6 +139,15 @@ export default function SeriesPageClient({
                                 Clear
                             </Button>
                         )}
+
+                        {/* Create Button */}
+                        <Button
+                            className="rounded-full bg-white text-black hover:bg-white/90 ml-2"
+                            onClick={() => router.push('/manage?create=true')}
+                        >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Create
+                        </Button>
                     </div>
                 </div>
 
