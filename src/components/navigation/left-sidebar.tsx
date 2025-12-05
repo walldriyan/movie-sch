@@ -134,8 +134,7 @@ export default function LeftSidebar() {
         <aside className={cn(
             "fixed left-0 top-16 h-[calc(100vh-4rem)] w-[72px] z-40",
             "bg-background/60 backdrop-blur-xl",
-            "hidden md:flex flex-col items-center py-2",
-            "shadow-[4px_0_15px_-3px_rgba(0,0,0,0.4)]"
+            "hidden md:flex flex-col items-center py-2"
         )}>
             {/* Main Navigation */}
             <nav className="flex flex-col items-center w-full space-y-1 px-2">
