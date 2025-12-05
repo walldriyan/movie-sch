@@ -1,26 +1,58 @@
 
 'use client';
 
-import React, { useState, useTransition, useEffect, useRef } from 'react';
+import React, { useState, useTransition, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Image as ImageIcon, X, MessageSquare, Sparkles, Send, Hash, Folder } from 'lucide-react';
+import {
+  Image as ImageIcon, X, MessageSquare, Sparkles, Send,
+  Heart, MessageCircle, Bookmark, MoreHorizontal, Search,
+  Clock, TrendingUp, Trash2, Plus, PenLine
+} from 'lucide-react';
 import type { MicroPost } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createMicroPost, getAllCategories, getAllTags, getMicroPostCreationStatus } from '@/lib/actions';
+import { createMicroPost, getAllTags, toggleMicroPostLike, deleteMicroPost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { Textarea } from './ui/textarea';
 import { Form, FormControl, FormField, FormItem } from './ui/form';
-import { CategoryInput } from '@/components/manage/category-input';
 import { TagInput } from '@/components/manage/tag-input';
-import MicroPostCard from './micro-post-card';
-import { Badge } from './ui/badge';
+import { Input } from './ui/input';
+import Link from 'next/link';
+import ClientRelativeDate from './client-relative-date';
+import { cn } from '@/lib/utils';
+import { ROLES } from '@/lib/permissions';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from './ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from './ui/alert-dialog';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
+import MicroPostComments from './micro-post-comments';
 
 
 interface WallClientProps {
@@ -28,88 +60,231 @@ interface WallClientProps {
 }
 
 const microPostSchema = z.object({
-  content: z.string().min(1, 'Post content cannot be empty.').max(2000, 'Post cannot exceed 2000 characters.'),
-  categories: z.array(z.string()).optional(),
+  content: z.string().min(1, 'Content required').max(2000),
   tags: z.array(z.string()).optional(),
   image: z.instanceof(File).optional()
-    .refine(file => !file || file.size <= 1024 * 1024, 'Image must be less than 1MB.'),
+    .refine(file => !file || file.size <= 1024 * 1024, 'Max 1MB'),
 });
 
 type MicroPostFormValues = z.infer<typeof microPostSchema>;
 
+const TIME_FILTERS = [
+  { value: 'all', label: 'All' },
+  { value: 'today', label: 'Today' },
+  { value: 'week', label: 'Week' },
+  { value: 'month', label: 'Month' },
+];
 
-function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost) => void }) {
+
+// ========================================
+// POST CARD COMPONENT
+// ========================================
+function PostCard({ post: initialPost, onDelete }: { post: MicroPost; onDelete: (id: string) => void }) {
+  const { data: session } = useSession();
+  const user = session?.user;
+  const { toast } = useToast();
+  const [post, setPost] = useState(initialPost);
+  const [isLikePending, startLikeTransition] = useTransition();
+  const [isDeletePending, startDeleteTransition] = useTransition();
+
+  const postImage = post.images?.[0]?.url;
+  const hasLiked = post.likes?.some(like => like.userId === user?.id) ?? false;
+  const likeCount = post._count?.likes || 0;
+  const commentCount = post._count?.comments || 0;
+  const canManage = user && (user.id === post.authorId || user.role === ROLES.SUPER_ADMIN);
+
+  const handleLike = () => {
+    if (!user) {
+      toast({ variant: 'destructive', title: 'Please log in to like' });
+      return;
+    }
+    startLikeTransition(async () => {
+      const newLikeCount = hasLiked ? likeCount - 1 : likeCount + 1;
+      const newLikes = hasLiked
+        ? post.likes.filter(like => like.userId !== user.id)
+        : [...post.likes, { userId: user.id, microPostId: post.id, id: '', createdAt: new Date() }];
+      setPost(p => ({ ...p, likes: newLikes, _count: { ...p._count, likes: newLikeCount } }));
+      try {
+        await toggleMicroPostLike(post.id);
+      } catch {
+        setPost(initialPost);
+      }
+    });
+  };
+
+  const handleDelete = () => {
+    startDeleteTransition(async () => {
+      try {
+        await deleteMicroPost(post.id);
+        onDelete(post.id);
+        toast({ title: 'Post deleted' });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
+      }
+    });
+  };
+
+  const handleCommentCountChange = useCallback((count: number) => {
+    setPost(p => ({ ...p, _count: { ...p._count, comments: count } }));
+  }, []);
+
+  return (
+    <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-all">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4">
+        <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src={post.author.image || ''} />
+            <AvatarFallback className="bg-gradient-to-br from-purple-500/30 to-pink-500/30 text-white/80 text-sm">
+              {post.author.name?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <p className="font-medium text-white text-sm">{post.author.name}</p>
+            <span className="text-[11px] text-white/40 block">
+              <ClientRelativeDate date={post.createdAt} />
+            </span>
+          </div>
+        </Link>
+
+        {canManage && (
+          <AlertDialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/30 hover:text-white/60">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <AlertDialogTrigger asChild>
+                  <DropdownMenuItem className="text-red-400">
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Delete
+                  </DropdownMenuItem>
+                </AlertDialogTrigger>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete post?</AlertDialogTitle>
+                <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={isDeletePending} className="bg-red-500 hover:bg-red-600">
+                  {isDeletePending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="px-4 pb-3">
+        <p className="text-white/80 text-[14px] whitespace-pre-wrap leading-relaxed">{post.content}</p>
+        {post.tags && post.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2">
+            {post.tags.map(tag => (
+              <span key={tag.id} className="text-[11px] text-purple-400">#{tag.name}</span>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Image */}
+      {postImage && (
+        <div className="relative aspect-[16/9] mx-4 mb-3 rounded-lg overflow-hidden">
+          <Image src={postImage} alt="Post" fill className="object-cover" />
+        </div>
+      )}
+
+      {/* Actions */}
+      <div className="px-4 pb-3">
+        <Accordion type="single" collapsible>
+          <AccordionItem value="comments" className="border-0">
+            <div className="flex items-center gap-5 py-2 border-t border-white/[0.05]">
+              <button
+                onClick={handleLike}
+                disabled={isLikePending}
+                className={cn(
+                  "flex items-center gap-1.5 transition-colors",
+                  hasLiked ? "text-red-400" : "text-white/40 hover:text-red-400"
+                )}
+              >
+                <Heart className={cn("h-[18px] w-[18px]", hasLiked && "fill-current")} />
+                {likeCount > 0 && <span className="text-xs">{likeCount}</span>}
+              </button>
+
+              <AccordionTrigger className="p-0 hover:no-underline [&>svg]:hidden">
+                <div className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors">
+                  <MessageCircle className="h-[18px] w-[18px]" />
+                  {commentCount > 0 && <span className="text-xs">{commentCount}</span>}
+                </div>
+              </AccordionTrigger>
+
+              <button className="text-white/40 hover:text-white/70 transition-colors ml-auto">
+                <Bookmark className="h-[18px] w-[18px]" />
+              </button>
+            </div>
+
+            <AccordionContent className="pt-2">
+              <MicroPostComments postId={post.id} onCommentCountChange={handleCommentCountChange} />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </div>
+    </div>
+  );
+}
+
+
+// ========================================
+// CREATE POST DIALOG
+// ========================================
+function CreatePostDialog({ onPostCreated }: { onPostCreated: (post: MicroPost) => void }) {
   const { data: session } = useSession();
   const user = session?.user;
   const { toast } = useToast();
   const [isSubmitting, startTransition] = useTransition();
-  const [allCategories, setAllCategories] = useState<string[]>([]);
-  const [allTags, setAllTags] = useState<string[]>([]);
+  const [open, setOpen] = useState(false);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [allTags, setAllTags] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const [postStatus, setPostStatus] = useState<{ limit: number; count: number; remaining: number } | null>(null);
-  const [isLoadingStatus, setIsLoadingStatus] = useState(true);
-
-  const fetchPostStatus = async () => {
-    try {
-      setIsLoadingStatus(true);
-      const statusData = await getMicroPostCreationStatus();
-      setPostStatus(statusData);
-    } catch (error) {
-      console.error("Failed to fetch post status:", error);
-    } finally {
-      setIsLoadingStatus(false);
-    }
-  }
 
   useEffect(() => {
-    fetchPostStatus();
-    const fetchInitialData = async () => {
+    const fetchTags = async () => {
       try {
-        const [categoriesData, tagsData] = await Promise.all([
-          getAllCategories(),
-          getAllTags(),
-        ]);
-        setAllCategories(categoriesData.map(c => c.name));
+        const tagsData = await getAllTags();
         setAllTags(tagsData.map(t => t.name));
       } catch (error) {
-        console.error("Failed to fetch categories/tags", error);
+        console.error("Failed to fetch tags", error);
       }
     };
-    fetchInitialData();
+    fetchTags();
   }, []);
 
   const form = useForm<MicroPostFormValues>({
     resolver: zodResolver(microPostSchema),
-    defaultValues: {
-      content: '',
-      categories: [],
-      tags: [],
-      image: undefined,
-    }
+    defaultValues: { content: '', tags: [], image: undefined }
   });
 
   const contentValue = form.watch('content');
-  const categoriesValue = form.watch('categories') || [];
-  const tagsValue = form.watch('tags') || [];
-
-  const userAvatar = user?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
+  const userAvatar = user?.image || PlaceHolderImages.find(img => img.id === 'avatar-4')?.imageUrl;
 
   if (!user) return null;
 
-  const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (file) {
       if (file.size > 1024 * 1024) {
-        toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 1MB.' });
+        toast({ variant: 'destructive', title: 'File too large' });
         return;
       }
       form.setValue('image', file);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
+      reader.onloadend = () => setPreviewImage(reader.result as string);
       reader.readAsDataURL(file);
     }
   };
@@ -117,218 +292,262 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
   const removeImage = () => {
     setPreviewImage(null);
     form.setValue('image', undefined);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const onSubmit = (values: MicroPostFormValues) => {
     startTransition(async () => {
       const formData = new FormData();
       formData.append('content', values.content);
-      if (values.categories) formData.append('categories', values.categories.join(','));
       if (values.tags) formData.append('tags', values.tags.join(','));
       if (values.image) formData.append('image', values.image);
 
       try {
         const newPost = await createMicroPost(formData);
         onPostCreated(newPost);
-        toast({ title: 'Success', description: 'Your post has been published.' });
+        toast({ title: 'Posted!' });
         form.reset();
         setPreviewImage(null);
-        if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto';
-        }
-        await fetchPostStatus();
+        setOpen(false);
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
       }
     });
-  }
-
-  const canPost = postStatus ? postStatus.remaining > 0 || postStatus.limit === 0 : false;
-  const maxChars = 2000;
+  };
 
   return (
-    <div className="rounded-xl border border-white/[0.06] overflow-hidden mb-6">
-      {/* Status Bar */}
-      {!isLoadingStatus && postStatus && (
-        <div className="px-5 py-3 border-b border-white/[0.06] text-xs text-white/40">
-          {postStatus.limit === 0
-            ? '✨ Unlimited posts'
-            : `📊 ${postStatus.remaining}/${postStatus.limit} posts remaining`}
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <div className="group cursor-pointer rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] p-5 transition-all hover:bg-white/[0.04]">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
+              <PenLine className="h-5 w-5 text-purple-400" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-white text-sm">Share a thought</h3>
+              <p className="text-[12px] text-white/40">Write something to the community</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-end">
+            <span className="text-xs text-white/30 group-hover:text-purple-400 transition-colors">Create →</span>
+          </div>
         </div>
-      )}
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Create Post</DialogTitle>
+        </DialogHeader>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="p-5">
-          <div className="flex gap-4">
-            <Avatar className="h-10 w-10 flex-shrink-0">
-              <AvatarImage src={userAvatar} />
-              <AvatarFallback className="bg-white/[0.06] text-white/50">{user?.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+            <div className="flex gap-3">
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={userAvatar} />
+                <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+              </Avatar>
 
-            <div className="flex-1">
               <FormField
                 control={form.control}
                 name="content"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="flex-1">
                     <FormControl>
                       <Textarea
                         {...field}
-                        ref={(e) => {
-                          field.ref(e);
-                          textareaRef.current = e;
-                        }}
                         placeholder="What's on your mind?"
-                        className="w-full bg-transparent border-0 focus-visible:ring-0 p-0 text-[15px] text-white placeholder:text-white/25 resize-none min-h-[80px]"
-                        disabled={!canPost || isSubmitting}
+                        className="min-h-[120px] resize-none"
                       />
                     </FormControl>
                   </FormItem>
                 )}
               />
+            </div>
 
-              {/* Image Preview */}
-              {previewImage && (
-                <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden mt-3">
-                  <Image src={previewImage} alt="Preview" fill className="object-cover" />
-                  <button
-                    type="button"
-                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center"
-                    onClick={removeImage}
-                  >
-                    <X className="h-3.5 w-3.5 text-white" />
-                  </button>
-                </div>
-              )}
+            {previewImage && (
+              <div className="relative w-28 h-28 rounded-lg overflow-hidden">
+                <Image src={previewImage} alt="" fill className="object-cover" />
+                <button
+                  type="button"
+                  className="absolute top-1 right-1 h-6 w-6 rounded-full bg-black/70 flex items-center justify-center"
+                  onClick={removeImage}
+                >
+                  <X className="h-3 w-3 text-white" />
+                </button>
+              </div>
+            )}
 
-              {/* Selected Categories & Tags Display */}
-              {(categoriesValue.length > 0 || tagsValue.length > 0) && (
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {categoriesValue.map((cat) => (
-                    <Badge key={cat} variant="secondary" className="bg-white/[0.06] text-white/60 border-0 text-xs">
-                      <Folder className="h-3 w-3 mr-1" />{cat}
-                    </Badge>
-                  ))}
-                  {tagsValue.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="bg-white/[0.06] text-white/60 border-0 text-xs">
-                      <Hash className="h-3 w-3 mr-1" />{tag}
-                    </Badge>
-                  ))}
-                </div>
-              )}
-
-              {/* Hidden Category/Tag Inputs - still functional but not visible */}
-              <div className="hidden">
-                <FormField
-                  control={form.control}
-                  name="categories"
-                  render={({ field }) => (
-                    <CategoryInput
-                      allCategories={allCategories}
-                      value={field.value || []}
-                      onChange={field.onChange}
-                      placeholder="Categories"
-                    />
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="tags"
-                  render={({ field }) => (
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
                     <TagInput
                       allTags={allTags}
                       value={field.value || []}
                       onChange={field.onChange}
-                      placeholder="Tags"
+                      placeholder="Add tags..."
                     />
-                  )}
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Actions Bar */}
-          <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/[0.06]">
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                className="h-9 w-9 rounded-lg hover:bg-white/[0.06] flex items-center justify-center transition-colors"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={!canPost || isSubmitting}
-              >
-                <ImageIcon className="h-[18px] w-[18px] text-white/40" />
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={handleImageChange}
-              />
-
-              <span className="text-[11px] text-white/25 ml-2">
-                {contentValue.length}/{maxChars}
-              </span>
-            </div>
-
-            <Button
-              type="submit"
-              disabled={isSubmitting || !canPost || contentValue.length === 0}
-              size="sm"
-              className="rounded-lg bg-white/[0.08] hover:bg-white/[0.12] text-white/80 hover:text-white border-0 h-9 px-4 gap-2"
-            >
-              {isSubmitting ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  <Send className="h-3.5 w-3.5" />
-                  <span>Post</span>
-                </>
+                  </FormControl>
+                </FormItem>
               )}
-            </Button>
-          </div>
-        </form>
-      </Form>
-    </div>
+            />
+
+            <div className="flex items-center justify-between pt-3 border-t">
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" size="icon" onClick={() => fileInputRef.current?.click()}>
+                  <ImageIcon className="h-5 w-5" />
+                </Button>
+                <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleImageChange} />
+                <span className="text-xs text-muted-foreground">{contentValue.length}/2000</span>
+              </div>
+
+              <Button type="submit" disabled={isSubmitting || contentValue.length === 0} className="gap-2">
+                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                Post
+              </Button>
+            </div>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
   );
 }
 
+
+// ========================================
+// MAIN WALL COMPONENT
+// ========================================
 export default function WallClient({ initialMicroPosts }: WallClientProps) {
   const [posts, setPosts] = useState<MicroPost[]>(initialMicroPosts);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [timeFilter, setTimeFilter] = useState('all');
 
   const handlePostCreated = (newPost: MicroPost) => {
-    setPosts(currentPosts => [newPost, ...currentPosts]);
+    setPosts(current => [newPost, ...current]);
   };
 
+  const handlePostDeleted = (postId: string) => {
+    setPosts(current => current.filter(p => p.id !== postId));
+  };
+
+  const filteredPosts = useMemo(() => {
+    let result = [...posts];
+
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(post =>
+        post.content.toLowerCase().includes(query) ||
+        post.author.name?.toLowerCase().includes(query) ||
+        post.tags?.some(tag => tag.name.toLowerCase().includes(query))
+      );
+    }
+
+    if (timeFilter !== 'all') {
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      result = result.filter(post => {
+        const postDate = new Date(post.createdAt);
+        switch (timeFilter) {
+          case 'today': return postDate >= startOfToday;
+          case 'week': return postDate >= new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          case 'month': return postDate >= new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          default: return true;
+        }
+      });
+    }
+
+    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  }, [posts, searchQuery, timeFilter]);
+
   return (
-    <div className="min-h-screen">
-      {/* Hero */}
-      <div className="pt-20 pb-8 text-center">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] text-white/40 text-xs mb-4">
-          <MessageSquare className="w-3.5 h-3.5" />
-          <span>Community Feed</span>
+    <div className="h-[calc(100vh-60px)] flex flex-col">
+      {/* Fixed Hero Section */}
+      <div className="flex-shrink-0 pt-16 pb-8 text-center relative">
+        {/* Background Glow */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-purple-500/[0.08] rounded-full blur-[100px]" />
+          <div className="absolute top-1/3 left-1/3 w-[400px] h-[300px] bg-pink-500/[0.05] rounded-full blur-[80px]" />
         </div>
-        <h1 className="text-3xl font-bold text-white mb-2">The Wall</h1>
-        <p className="text-white/35 text-sm">Share your thoughts with the community</p>
+
+        <div className="relative">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/60 text-xs mb-6">
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Share Something New</span>
+          </div>
+
+          {/* Headline */}
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
+            <span className="text-white">What would you like to </span>
+            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
+              share today
+            </span>
+            <span className="text-white">?</span>
+          </h1>
+
+          {/* Description */}
+          <p className="text-white/50 text-sm md:text-base max-w-lg mx-auto mb-8">
+            Connect with the community. Share your thoughts, ideas, or discoveries.
+          </p>
+
+          {/* Search */}
+          <div className="max-w-md mx-auto relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+            <Input
+              type="text"
+              placeholder="Search posts, users, tags..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-11 pl-11 bg-white/[0.03] border-white/[0.08] rounded-xl"
+            />
+          </div>
+
+          {/* Filters */}
+          <div className="flex items-center justify-center gap-2 mt-5">
+            {TIME_FILTERS.map(filter => (
+              <button
+                key={filter.value}
+                onClick={() => setTimeFilter(filter.value)}
+                className={cn(
+                  "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
+                  timeFilter === filter.value
+                    ? "bg-white/[0.1] text-white"
+                    : "text-white/40 hover:text-white/60"
+                )}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Content - Centered */}
-      <div className="w-full max-w-xl mx-auto px-4 pb-12">
-        <CreateMicroPost onPostCreated={handlePostCreated} />
+      {/* Scrollable Posts Container */}
+      <div className="flex-1 overflow-y-auto px-4 pb-8">
+        <div className="max-w-5xl mx-auto">
+          {/* Create Card + Posts Grid */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {/* Create Post Card */}
+            <CreatePostDialog onPostCreated={handlePostCreated} />
 
-        <div className="space-y-4">
-          {posts.length > 0 ? (
-            posts.map(post => <MicroPostCard key={post.id} post={post} />)
-          ) : (
-            <div className="text-center py-16 rounded-xl border border-white/[0.06]">
-              <Sparkles className="h-8 w-8 text-white/15 mx-auto mb-4" />
-              <p className="text-white/50 font-medium">The Wall is Quiet...</p>
-              <p className="text-white/30 text-sm mt-1">Be the first to share!</p>
-            </div>
-          )}
+            {/* Posts */}
+            {filteredPosts.length > 0 ? (
+              filteredPosts.map(post => (
+                <PostCard key={post.id} post={post} onDelete={handlePostDeleted} />
+              ))
+            ) : (
+              <div className="md:col-span-2 lg:col-span-2 text-center py-16 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+                <MessageSquare className="h-10 w-10 text-white/15 mx-auto mb-4" />
+                <p className="text-white/50 font-medium">
+                  {searchQuery ? 'No posts found' : 'No posts yet'}
+                </p>
+                <p className="text-white/30 text-sm mt-1">
+                  {searchQuery ? 'Try different keywords' : 'Be the first to share!'}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
