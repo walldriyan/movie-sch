@@ -364,17 +364,17 @@ export default function HomePageClient({
                                 <DropdownMenuLabel>Sort by</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="newest" checked={sortBy === 'updatedAt-desc' || !sortBy}>
+                                    <DropdownMenuRadioItem value="newest">
                                         <Clock className="mr-2 h-4 w-4" /> Newest
                                     </DropdownMenuRadioItem>
                                 </Link>
                                 <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="oldest" checked={sortBy === 'updatedAt-asc'}>
+                                    <DropdownMenuRadioItem value="oldest">
                                         <Clock className="mr-2 h-4 w-4" /> Oldest
                                     </DropdownMenuRadioItem>
                                 </Link>
                                 <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="imdb" checked={sortBy === 'imdbRating-desc'}>
+                                    <DropdownMenuRadioItem value="imdb">
                                         <Star className="mr-2 h-4 w-4" /> IMDb Rating
                                     </DropdownMenuRadioItem>
                                 </Link>
@@ -383,22 +383,22 @@ export default function HomePageClient({
                                 <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="today" checked={timeFilter === 'today'}>
+                                    <DropdownMenuRadioItem value="today">
                                         <Calendar className="mr-2 h-4 w-4" /> Today
                                     </DropdownMenuRadioItem>
                                 </Link>
                                 <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="this_week" checked={timeFilter === 'this_week'}>
+                                    <DropdownMenuRadioItem value="this_week">
                                         <Calendar className="mr-2 h-4 w-4" /> This Week
                                     </DropdownMenuRadioItem>
                                 </Link>
                                 <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="this_month" checked={timeFilter === 'this_month'}>
+                                    <DropdownMenuRadioItem value="this_month">
                                         <Calendar className="mr-2 h-4 w-4" /> This Month
                                     </DropdownMenuRadioItem>
                                 </Link>
                                 <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="all" checked={timeFilter === 'all' || !timeFilter}>
+                                    <DropdownMenuRadioItem value="all">
                                         <Calendar className="mr-2 h-4 w-4" /> All Time
                                     </DropdownMenuRadioItem>
                                 </Link>

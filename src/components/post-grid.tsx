@@ -114,7 +114,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
           )}
 
           {/* Series count */}
-          {mounted && series && series?._count?.posts > 0 && (
+          {mounted && series && series._count && series._count.posts > 0 && (
             <div className="absolute bottom-2 left-2 z-10">
               <div className="flex items-center gap-1 bg-secondary/90 backdrop-blur-sm px-2 py-1 rounded text-xs text-muted-foreground">
                 <List className="h-3 w-3" />
