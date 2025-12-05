@@ -1,6 +1,5 @@
 'use client';
 
-import { Button } from '@/components/ui/button';
 import {
     Home,
     User,
@@ -11,53 +10,35 @@ import {
     Compass,
     Film,
     Tv,
-    Loader2,
+    Search,
+    Plus,
+    Bell,
+    Menu,
+    X,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
-import React, { useMemo, useTransition, useCallback, useState, useEffect } from 'react';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-// Cache session data to avoid re-checking on every render
-let cachedUser: any = null;
-let cacheTimestamp = 0;
-const CACHE_DURATION = 30000; // 30 seconds
+import React, { useMemo, useCallback, useState } from 'react';
+import { siteConfig } from '@/config/site.config';
+import { Button } from '@/components/ui/button';
+import UserButton from './user-button';
+import CreateButton from './create-button';
+import Image from 'next/image';
 
 export default function LeftSidebar() {
     const { data: session, status } = useSession();
     const pathname = usePathname();
-    const [isPending, startTransition] = useTransition();
-    const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
+    const [mobileOpen, setMobileOpen] = useState(false);
 
-    // Cache user data for 30 seconds to prevent repeated auth checks
-    const user = useMemo(() => {
-        const now = Date.now();
-        if (session?.user) {
-            cachedUser = session.user;
-            cacheTimestamp = now;
-            return session.user;
-        }
-        // Use cached user if within cache duration
-        if (cachedUser && now - cacheTimestamp < CACHE_DURATION) {
-            return cachedUser;
-        }
-        return null;
-    }, [session?.user]);
-
+    const user = session?.user;
     const canManage = useMemo(() =>
         user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role),
         [user]
     );
 
-    // Clear navigation state when pathname changes
-    useEffect(() => {
-        setNavigatingTo(null);
-    }, [pathname]);
-
-    // Check if path is active
     const isActive = useCallback((path: string) => pathname === path, [pathname]);
 
     // Hide sidebar on certain pages
@@ -68,113 +49,158 @@ export default function LeftSidebar() {
 
     if (shouldHide) return null;
 
-    // NavItem component with Link for prefetching and instant navigation
+    // Suno-style NavItem - horizontal icon + text
     const NavItem = ({
         href,
         icon: Icon,
         label,
-        show = true
+        show = true,
+        badge,
     }: {
         href: string;
         icon: React.ElementType;
         label: string;
         show?: boolean;
+        badge?: string;
     }) => {
         if (!show) return null;
-
         const active = isActive(href);
-        const isNavigating = navigatingTo === href && isPending;
 
         return (
-            <TooltipProvider delayDuration={100}>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Link
-                            href={href}
-                            prefetch={true}
-                            onClick={(e) => {
-                                if (active) {
-                                    e.preventDefault();
-                                    return;
-                                }
-                                setNavigatingTo(href);
-                                startTransition(() => {
-                                    // Navigation happens via Link, transition just tracks state
-                                });
-                            }}
-                            className={cn(
-                                "w-full h-auto py-3 px-2 flex flex-col items-center justify-center gap-1 rounded-lg transition-all",
-                                "hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
-                                active && "bg-white/10 text-primary",
-                                isNavigating && "opacity-70"
-                            )}
-                        >
-                            {isNavigating ? (
-                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                            ) : (
-                                <Icon className={cn("h-5 w-5", active && "text-primary")} />
-                            )}
-                            <span className={cn(
-                                "text-[10px] font-medium leading-tight text-center",
-                                active ? "text-primary" : "text-muted-foreground"
-                            )}>
-                                {label}
-                            </span>
-                        </Link>
-                    </TooltipTrigger>
-                    <TooltipContent side="right" className="bg-zinc-800 text-white border-zinc-700">
-                        {label}
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+            <Link
+                href={href}
+                className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm transition-colors",
+                    "hover:bg-secondary",
+                    active ? "text-foreground font-medium bg-secondary" : "text-muted-foreground"
+                )}
+            >
+                <Icon className="w-5 h-5 flex-shrink-0" />
+                <span className="truncate">{label}</span>
+                {badge && (
+                    <span className="ml-auto text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded">
+                        {badge}
+                    </span>
+                )}
+            </Link>
         );
     };
 
     return (
-        <aside className={cn(
-            "fixed left-0 top-16 h-[calc(100vh-4rem)] w-[72px] z-40",
-            "bg-transparent",
-            "hidden md:flex flex-col items-center py-2"
-        )}>
-            {/* Main Navigation */}
-            <nav className="flex flex-col items-center w-full space-y-1 px-2">
-                <NavItem href="/" icon={Home} label="Home" />
-                <NavItem href="/explore" icon={Compass} label="Explore" />
-
-                {/* Wall - show for all logged in users */}
-                {user && <NavItem href="/wall" icon={MessageSquare} label="Wall" />}
-
-                {/* Divider */}
-                <div className="w-8 h-px bg-white/10 my-2" />
-
-                <NavItem href="/movies" icon={Film} label="Movies" />
-                <NavItem href="/series" icon={Tv} label="Series" />
-
-                {user && (
-                    <>
-                        {/* Divider */}
-                        <div className="w-8 h-px bg-white/10 my-2" />
-
-                        <NavItem href="/activity" icon={Activity} label="Activity" />
-                        <NavItem href="/favorites" icon={Heart} label="Favorites" />
-                        {canManage && (
-                            <NavItem href="/manage" icon={Shield} label="Dashboard" />
-                        )}
-                    </>
-                )}
-            </nav>
-
-            {/* Bottom section - Profile */}
-            {user && (
-                <div className="mt-auto pb-4 w-full px-2">
-                    <div className="w-8 h-px bg-white/10 mx-auto mb-2" />
-                    <NavItem
-                        href={`/profile/${user.id}`}
-                        icon={User}
-                        label="You"
-                    />
+        <>
+            {/* Absolute positioned top-right controls */}
+            <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
+                {/* Search placeholder */}
+                <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary rounded-md text-muted-foreground text-sm">
+                    <span>Create your own content</span>
                 </div>
+
+                {canManage && <CreateButton />}
+
+                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
+                    <Search className="w-5 h-5" />
+                </Button>
+
+                {status === 'authenticated' && user ? (
+                    <UserButton />
+                ) : (
+                    <Button asChild size="sm">
+                        <Link href="/login">Login</Link>
+                    </Button>
+                )}
+            </div>
+
+            {/* Mobile menu button */}
+            <button
+                className="fixed top-4 left-4 z-50 md:hidden p-2 hover:bg-secondary rounded-md"
+                onClick={() => setMobileOpen(!mobileOpen)}
+            >
+                {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+
+            {/* Sidebar */}
+            <aside className={cn(
+                "fixed left-0 top-0 h-screen w-[200px] z-40",
+                "bg-background border-r border-border",
+                "flex flex-col overflow-y-auto",
+                // Mobile: hidden by default, shown when mobileOpen
+                mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
+                "transition-transform duration-200"
+            )}>
+                {/* Logo */}
+                <div className="p-4 flex items-center gap-2">
+                    <Link href="/" className="flex items-center gap-2">
+                        <Image src="/logo.png" alt="Logo" width={28} height={28} />
+                        <span className="font-bold text-lg">{siteConfig.name}</span>
+                    </Link>
+                    <button className="ml-auto text-muted-foreground hover:text-foreground">
+                        <span className="text-lg">‹</span>
+                    </button>
+                </div>
+
+                {/* User Profile Area */}
+                {user && (
+                    <div className="px-3 py-2">
+                        <Link
+                            href={`/profile/${user.id}`}
+                            className="flex items-center gap-3 p-2 rounded-md hover:bg-secondary transition-colors"
+                        >
+                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-medium text-white">
+                                {user.name?.charAt(0) || 'U'}
+                            </div>
+                            <span className="text-sm font-medium truncate">{user.name || 'User'}</span>
+                        </Link>
+                    </div>
+                )}
+
+                {/* Main Navigation */}
+                <nav className="flex-1 px-2 py-2 space-y-1">
+                    <NavItem href="/" icon={Home} label="Home" />
+
+                    {user && (
+                        <>
+                            <NavItem href="/create" icon={Plus} label="Create" badge="+" />
+                        </>
+                    )}
+
+                    <NavItem href="/explore" icon={Compass} label="Explore" />
+
+                    {user && (
+                        <NavItem href="/wall" icon={MessageSquare} label="Wall" />
+                    )}
+
+                    {/* Content Section */}
+                    <div className="pt-4">
+                        <NavItem href="/movies" icon={Film} label="Movies" />
+                        <NavItem href="/series" icon={Tv} label="Series" />
+                        <NavItem href="/search" icon={Search} label="Search" />
+                    </div>
+
+                    {/* User Section */}
+                    {user && (
+                        <div className="pt-4">
+                            <NavItem href="/favorites" icon={Heart} label="Favorites" />
+                            <NavItem href="/activity" icon={Activity} label="Activity" />
+                            <NavItem href="/notifications" icon={Bell} label="Notifications" />
+                        </div>
+                    )}
+
+                    {/* Admin Section */}
+                    {canManage && (
+                        <div className="pt-4">
+                            <NavItem href="/manage" icon={Shield} label="Dashboard" />
+                        </div>
+                    )}
+                </nav>
+            </aside>
+
+            {/* Mobile overlay */}
+            {mobileOpen && (
+                <div
+                    className="fixed inset-0 bg-black/50 z-30 md:hidden"
+                    onClick={() => setMobileOpen(false)}
+                />
             )}
-        </aside>
+        </>
     );
 }

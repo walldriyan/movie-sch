@@ -85,247 +85,66 @@ const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex =
 };
 
 // ========================================
-// HERO SECTION - Safari Tabs 3D Style
+// HERO SECTION - Suno.com Style with Rounded Banner
 // ========================================
 const HeroSection = () => {
-    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-    const heroRef = useRef<HTMLDivElement>(null);
-
-    useEffect(() => {
-        const handleMouseMove = (e: MouseEvent) => {
-            if (heroRef.current) {
-                const rect = heroRef.current.getBoundingClientRect();
-                const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
-                const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
-                setMousePosition({ x: x * 15, y: y * 10 });
-            }
-        };
-
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
-    }, []);
-
-    const floatingCards = [
-        { title: "Los Angeles Times", subtitle: "Arts & Culture Magazine", position: 'left' as const, delay: 0, zIndex: 8 },
-        { title: "Färs - Poetic Objects", subtitle: "NEW COLLECTION", position: 'left' as const, delay: 200, zIndex: 12 },
-        { title: "Mush Studios", subtitle: "Creative Design Agency", position: 'center' as const, delay: 100, zIndex: 15 },
-        { title: "On modular - Teenage", subtitle: "Electronics Magazine", position: 'right' as const, delay: 300, zIndex: 10 },
-        { title: "RONAN BOUROULIEC", subtitle: "GOOD MOODS Furniture", position: 'right' as const, delay: 150, zIndex: 14 },
-    ];
-
     return (
-        <section ref={heroRef} className="relative min-h-[85vh] overflow-hidden">
-            {/* Pure Black with subtle Dark Maroon gradient mix */}
-            <div className="absolute inset-0">
-                {/* Pure black base */}
-                <div className="absolute inset-0 bg-[#080808]" />
-
-                {/* Very subtle dark maroon gradient orbs - almost invisible */}
+        <section className="relative pt-8 pb-12">
+            {/* Suno-style Hero Banner with Rounded Corners */}
+            <div className="relative mx-4 rounded-2xl overflow-hidden" style={{ minHeight: '320px' }}>
+                {/* Gradient Background - like Suno's v5 banner */}
                 <div
-                    className="absolute top-1/4 left-1/3 w-[700px] h-[700px] rounded-full opacity-20 blur-[180px]"
+                    className="absolute inset-0"
                     style={{
-                        background: 'radial-gradient(circle, hsl(350, 40%, 8%) 0%, transparent 70%)',
-                        transform: `translate(${mousePosition.x * 2}px, ${mousePosition.y * 2}px)`,
-                        transition: 'transform 0.3s ease-out'
+                        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #e94560 75%, #ff6b6b 100%)',
                     }}
                 />
-                <div
-                    className="absolute bottom-1/4 right-1/3 w-[600px] h-[600px] rounded-full opacity-15 blur-[160px]"
-                    style={{
-                        background: 'radial-gradient(circle, hsl(355, 35%, 10%) 0%, transparent 70%)',
-                        transform: `translate(${-mousePosition.x * 1.5}px, ${-mousePosition.y * 1.5}px)`,
-                        transition: 'transform 0.3s ease-out'
-                    }}
-                />
-                <div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full opacity-12 blur-[200px]"
-                    style={{ background: 'radial-gradient(circle, hsl(0, 30%, 7%) 0%, transparent 60%)' }}
-                />
 
-                {/* Subtle noise texture */}
-                <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
-            </div>
+                {/* Large decorative text overlay - like "v5" in Suno */}
+                <div className="absolute right-0 top-0 bottom-0 flex items-center opacity-30">
+                    <span className="text-[200px] md:text-[300px] font-black text-white/20 leading-none select-none" style={{ transform: 'translateX(20%)' }}>
+                        v5
+                    </span>
+                </div>
 
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
-                <div className="grid lg:grid-cols-2 gap-16 items-center min-h-[60vh]">
-                    {/* Left Content */}
-                    <div className="space-y-8 z-20">
-                        {/* Premium Badge */}
-                        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0a0a0a] border border-[#1a1a1a] text-neutral-400 text-sm font-medium">
-                            <Sparkles className="w-4 h-4 text-rose-900/80" />
-                            <span>{siteConfig.tagline}</span>
-                        </div>
-
-                        {/* Main Headline with Premium Typography */}
-                        <div className="space-y-6">
-                            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
-                                <span className="bg-gradient-to-br from-neutral-100 via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
-                                    {siteConfig.hero.headline}
-                                </span>
-                            </h1>
-                            <p className="text-2xl sm:text-3xl font-medium text-neutral-400">
-                                {siteConfig.hero.subheadline}
-                            </p>
-                            <p className="text-lg text-neutral-500 max-w-lg leading-relaxed">
-                                {siteConfig.hero.description}
-                            </p>
-                        </div>
-
-                        {/* Premium CTA Buttons */}
-                        <div className="flex flex-wrap gap-4 pt-4">
-                            <Button
-                                size="lg"
-                                className="h-14 px-10 text-base font-semibold bg-gradient-to-r from-rose-950 to-rose-900 hover:from-rose-900 hover:to-rose-800 text-white transition-all duration-300 group border-0"
-                                asChild
-                            >
-                                <Link href={siteConfig.hero.cta.primary.href}>
-                                    {siteConfig.hero.cta.primary.text}
-                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                                </Link>
-                            </Button>
-                            <Button
-                                size="lg"
-                                variant="outline"
-                                className="h-14 px-10 text-base font-semibold border-[#1a1a1a] bg-[#0a0a0a] hover:bg-[#111111] text-neutral-300 transition-all duration-300"
-                                asChild
-                            >
-                                <Link href={siteConfig.hero.cta.secondary.href}>
-                                    {siteConfig.hero.cta.secondary.text}
-                                </Link>
-                            </Button>
-                        </div>
-
-                        {/* Premium Stats */}
-                        <div className="flex flex-wrap gap-10 pt-8 border-t border-[#151515]">
-                            {siteConfig.hero.stats.map((stat, index) => (
-                                <div key={index} className="text-center sm:text-left group">
-                                    <div className="text-3xl sm:text-4xl font-bold text-neutral-200 group-hover:text-rose-800/90 transition-all">
-                                        {stat.value}
-                                    </div>
-                                    <div className="text-sm text-neutral-600 mt-1">{stat.label}</div>
-                                </div>
-                            ))}
-                        </div>
+                {/* Content overlay */}
+                <div className="relative z-10 p-8 md:p-12 flex flex-col justify-center h-full" style={{ minHeight: '320px' }}>
+                    {/* Badge */}
+                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-pink-500/90 text-white text-xs font-medium w-fit mb-6">
+                        <Sparkles className="w-3 h-3" />
+                        <span>NEW MODEL</span>
                     </div>
 
-                    {/* Right Content - 3D Floating Cards Showcase */}
-                    <div className="relative hidden lg:flex items-center justify-center h-[500px]" style={{ perspective: '1500px' }}>
-                        {/* 3D Card Container */}
-                        <div
-                            className="relative w-full h-full"
-                            style={{
-                                transformStyle: 'preserve-3d',
-                                transform: `rotateX(${mousePosition.y * 0.5}deg) rotateY(${mousePosition.x * 0.5}deg)`,
-                                transition: 'transform 0.1s ease-out'
-                            }}
+                    {/* Headline */}
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white max-w-lg leading-tight mb-4">
+                        {siteConfig.hero.headline}
+                    </h1>
+
+                    {/* Description */}
+                    <p className="text-white/70 text-sm md:text-base max-w-md mb-6 leading-relaxed">
+                        {siteConfig.hero.description}
+                    </p>
+
+                    {/* CTA Button */}
+                    <div>
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-white text-black hover:bg-white/90 font-medium"
+                            asChild
                         >
-                            {/* Background Cards (blur effect) */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                                {/* Card 1 - Far Left */}
-                                <div
-                                    className="absolute w-48 h-64 rounded-xl bg-[#0a0a0a] border border-[#151515] shadow-2xl overflow-hidden animate-float-slow"
-                                    style={{
-                                        transform: 'translateX(-180px) translateZ(-100px) rotateY(25deg)',
-                                        animationDelay: '0s'
-                                    }}
-                                >
-                                    <div className="h-32 bg-[#0d0d0d]" />
-                                    <div className="p-3 space-y-2">
-                                        <div className="h-3 w-3/4 bg-[#181818] rounded" />
-                                        <div className="h-2 w-1/2 bg-[#141414] rounded" />
-                                    </div>
-                                </div>
-
-                                {/* Card 2 - Left */}
-                                <div
-                                    className="absolute w-52 h-72 rounded-2xl bg-[#0a0a0a] border border-[#181818] shadow-2xl overflow-hidden animate-float"
-                                    style={{
-                                        transform: 'translateX(-100px) translateZ(-50px) rotateY(15deg)',
-                                        animationDelay: '0.5s'
-                                    }}
-                                >
-                                    <div className="h-36 bg-gradient-to-br from-rose-950/20 to-[#0d0d0d] flex items-center justify-center">
-                                        <BookOpen className="w-12 h-12 text-rose-900/40" />
-                                    </div>
-                                    <div className="p-4 space-y-3">
-                                        <h3 className="font-bold text-neutral-400 text-sm">Featured Articles</h3>
-                                        <p className="text-xs text-neutral-600">Curated content collection</p>
-                                        <div className="flex gap-1">
-                                            {[1, 2, 3].map(i => <div key={i} className="w-6 h-6 rounded-full bg-[#151515]" />)}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Card 3 - Center (Main) */}
-                                <div
-                                    className="absolute w-60 h-80 rounded-2xl bg-[#0a0a0a] border border-rose-950/30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9)] overflow-hidden animate-float-slow z-20 group"
-                                    style={{
-                                        transform: 'translateZ(50px)',
-                                        animationDelay: '0.2s'
-                                    }}
-                                >
-                                    <div className="h-44 bg-gradient-to-br from-rose-950/30 via-[#0d0d0d] to-[#0a0a0a] flex items-center justify-center relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-[#0c0c0c]/50" />
-                                        <Sparkles className="w-16 h-16 text-rose-900/50 group-hover:text-rose-800/60 transition-colors" />
-                                    </div>
-                                    <div className="p-5 space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-rose-900/70" />
-                                            <span className="text-xs text-rose-900/60 font-medium">TRENDING</span>
-                                        </div>
-                                        <h3 className="font-bold text-neutral-300 text-lg leading-tight">Discover Premium Content</h3>
-                                        <p className="text-sm text-neutral-500">Explore curated articles and resources</p>
-                                    </div>
-                                    {/* Hover glow */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-rose-950/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                </div>
-
-                                {/* Card 4 - Right */}
-                                <div
-                                    className="absolute w-52 h-72 rounded-2xl bg-[#0a0a0a] border border-[#181818] shadow-2xl overflow-hidden animate-float"
-                                    style={{
-                                        transform: 'translateX(100px) translateZ(-50px) rotateY(-15deg)',
-                                        animationDelay: '0.7s'
-                                    }}
-                                >
-                                    <div className="h-36 bg-[#0d0d0d] flex items-center justify-center">
-                                        <Users className="w-12 h-12 text-neutral-700/50" />
-                                    </div>
-                                    <div className="p-4 space-y-3">
-                                        <h3 className="font-bold text-neutral-400 text-sm">Top Creators</h3>
-                                        <p className="text-xs text-neutral-600">Meet our community</p>
-                                        <div className="flex -space-x-2">
-                                            {[1, 2, 3, 4].map(i => <div key={i} className="w-7 h-7 rounded-full bg-[#151515] border-2 border-[#0a0a0a]" />)}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Card 5 - Far Right */}
-                                <div
-                                    className="absolute w-48 h-64 rounded-xl bg-[#0a0a0a] border border-[#151515] shadow-2xl overflow-hidden animate-float-slow"
-                                    style={{
-                                        transform: 'translateX(180px) translateZ(-100px) rotateY(-25deg)',
-                                        animationDelay: '0.3s'
-                                    }}
-                                >
-                                    <div className="h-32 bg-[#0d0d0d]" />
-                                    <div className="p-3 space-y-2">
-                                        <div className="h-3 w-3/4 bg-[#181818] rounded" />
-                                        <div className="h-2 w-1/2 bg-[#141414] rounded" />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Floating glow orbs - very subtle dark maroon */}
-                            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-rose-950/10 rounded-full blur-3xl animate-pulse" />
-                            <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-rose-900/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
-                        </div>
+                            <Link href={siteConfig.hero.cta.primary.href}>
+                                {siteConfig.hero.cta.primary.text}
+                            </Link>
+                        </Button>
                     </div>
                 </div>
-            </div>
 
-            {/* Bottom fade to content */}
-            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+                {/* Scroll up indicator - like Suno */}
+                <button className="absolute top-4 right-4 w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors">
+                    <span className="text-lg">^</span>
+                </button>
+            </div>
         </section>
     );
 };
@@ -335,7 +154,7 @@ const HeroSection = () => {
 // ========================================
 const Footer = () => {
     return (
-        <footer className="bg-background border-t border-transparent mt-16">
+        <footer className="bg-background border-t border-border mt-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                     {/* Brand Column */}

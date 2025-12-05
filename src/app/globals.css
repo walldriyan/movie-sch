@@ -6,52 +6,52 @@
 
 @layer base {
   :root {
-    /* Pure Black with subtle Dark Maroon gradient mix */
-    --background: 0 0% 3%;
-    --foreground: 0 0% 92%;
+    /* Minimalistic Grayscale - Pure Dark Grays Only */
+    --background: 0 0% 6%;
+    --foreground: 0 0% 90%;
 
-    --card: 0 0% 4%;
-    --card-foreground: 0 0% 92%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 90%;
 
-    --popover: 0 0% 3%;
-    --popover-foreground: 0 0% 92%;
+    --popover: 0 0% 7%;
+    --popover-foreground: 0 0% 90%;
 
-    /* Dark maroon accent - subtle */
-    --primary: 0 60% 45%;
-    --primary-foreground: 0 0% 98%;
+    /* Gray accent - no color */
+    --primary: 0 0% 85%;
+    --primary-foreground: 0 0% 8%;
 
-    --secondary: 0 5% 8%;
-    --secondary-foreground: 0 0% 88%;
+    --secondary: 0 0% 12%;
+    --secondary-foreground: 0 0% 85%;
 
-    --muted: 0 3% 7%;
+    --muted: 0 0% 11%;
     --muted-foreground: 0 0% 50%;
 
-    --accent: 350 8% 10%;
-    --accent-foreground: 0 0% 92%;
+    --accent: 0 0% 14%;
+    --accent-foreground: 0 0% 90%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 50% 45%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Almost invisible borders */
-    --border: 0 0% 8%;
-    --input: 0 0% 8%;
-    --ring: 0 50% 40%;
+    /* Visible but subtle borders */
+    --border: 0 0% 16%;
+    --input: 0 0% 16%;
+    --ring: 0 0% 70%;
 
-    --radius: 1rem;
+    --radius: 0.5rem;
 
-    --chart-1: 0 60% 45%;
-    --chart-2: 350 50% 35%;
-    --chart-3: 340 40% 25%;
-    --chart-4: 10 55% 50%;
-    --chart-5: 355 65% 55%;
+    --chart-1: 0 0% 75%;
+    --chart-2: 0 0% 60%;
+    --chart-3: 0 0% 45%;
+    --chart-4: 0 0% 80%;
+    --chart-5: 0 0% 55%;
 
-    /* Sidebar matching pure black - seamless */
-    --sidebar-background: 0 0% 3%;
+    /* Sidebar seamless */
+    --sidebar-background: 0 0% 6%;
     --sidebar-foreground: 0 0% 70%;
-    --sidebar-border: 0 0% 6%;
-    --sidebar-accent: 350 5% 7%;
-    --sidebar-accent-foreground: 0 0% 92%;
-    --sidebar-ring: 0 50% 40%;
+    --sidebar-border: 0 0% 14%;
+    --sidebar-accent: 0 0% 11%;
+    --sidebar-accent-foreground: 0 0% 90%;
+    --sidebar-ring: 0 0% 70%;
 
     /* Z-index hierarchy */
     --z-index-header: 50;
