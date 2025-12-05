@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import ClientRelativeDate from '@/components/client-relative-date';
 import { MessageCircle, Heart, Share2, MoreHorizontal, Edit, Trash2, Loader2, Bookmark } from 'lucide-react';
-import type { MicroPost as MicroPostType, User, MicroPostImage, Category, Tag, MicroPostLike } from '@/lib/types';
+import type { MicroPost as MicroPostType } from '@/lib/types';
 import { useSession } from 'next-auth/react';
 import { toggleMicroPostLike, deleteMicroPost } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
@@ -236,7 +236,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                    <EditMicroPostDialog post={post} onUpdate={setPost}>
+                                    <EditMicroPostDialog post={post} onUpdate={(updatedPost) => setPost(updatedPost as typeof post)}>
                                         <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                                             <Edit className="mr-2 h-4 w-4" />
                                             <span>Edit</span>

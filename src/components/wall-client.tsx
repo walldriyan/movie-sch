@@ -176,13 +176,13 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
                   <FormItem>
                     <FormControl>
                       <Textarea
+                        {...field}
                         ref={(e) => {
                           field.ref(e);
                           textareaRef.current = e;
                         }}
                         placeholder="What's on your mind?"
                         className="w-full bg-transparent border-0 focus-visible:ring-0 p-0 text-[15px] text-white placeholder:text-white/25 resize-none min-h-[80px]"
-                        {...field}
                         disabled={!canPost || isSubmitting}
                       />
                     </FormControl>
