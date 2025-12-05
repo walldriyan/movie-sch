@@ -11,52 +11,64 @@ import {
     Compass,
     Film,
     Tv,
+    Loader2,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
-import { useRouter, usePathname } from 'next/navigation';
-import { useLoading } from '@/context/loading-context';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { ROLES } from '@/lib/permissions';
 import { cn } from '@/lib/utils';
-import React from 'react';
-import { canUserAccessMicroPosts } from '@/lib/actions/users';
+import React, { useMemo, useTransition, useCallback, useState, useEffect } from 'react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+// Cache session data to avoid re-checking on every render
+let cachedUser: any = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 30000; // 30 seconds
 
 export default function LeftSidebar() {
     const { data: session, status } = useSession();
-    const router = useRouter();
     const pathname = usePathname();
-    const { withLoading } = useLoading();
-    const [showWall, setShowWall] = React.useState(false);
-    const user = session?.user;
-    const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
+    const [isPending, startTransition] = useTransition();
+    const [navigatingTo, setNavigatingTo] = useState<string | null>(null);
 
-    React.useEffect(() => {
-        async function checkWallAccess() {
-            if (status === 'authenticated') {
-                const canAccess = await canUserAccessMicroPosts();
-                setShowWall(canAccess);
-            } else {
-                setShowWall(false);
-            }
+    // Cache user data for 30 seconds to prevent repeated auth checks
+    const user = useMemo(() => {
+        const now = Date.now();
+        if (session?.user) {
+            cachedUser = session.user;
+            cacheTimestamp = now;
+            return session.user;
         }
-        checkWallAccess();
-    }, [status]);
+        // Use cached user if within cache duration
+        if (cachedUser && now - cacheTimestamp < CACHE_DURATION) {
+            return cachedUser;
+        }
+        return null;
+    }, [session?.user]);
 
-    const handleNavigation = (href: string) => {
-        withLoading(async () => {
-            router.push(href);
-            await Promise.resolve();
-        });
-    };
+    const canManage = useMemo(() =>
+        user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role),
+        [user]
+    );
 
-    const isActive = (path: string) => pathname === path;
+    // Clear navigation state when pathname changes
+    useEffect(() => {
+        setNavigatingTo(null);
+    }, [pathname]);
+
+    // Check if path is active
+    const isActive = useCallback((path: string) => pathname === path, [pathname]);
 
     // Hide sidebar on certain pages
-    const hiddenPaths = ['/login', '/register', '/admin'];
-    const shouldHide = hiddenPaths.some(p => pathname.startsWith(p));
+    const shouldHide = useMemo(() => {
+        const hiddenPaths = ['/login', '/register', '/admin'];
+        return hiddenPaths.some(p => pathname.startsWith(p));
+    }, [pathname]);
 
     if (shouldHide) return null;
 
+    // NavItem component with Link for prefetching and instant navigation
     const NavItem = ({
         href,
         icon: Icon,
@@ -71,28 +83,44 @@ export default function LeftSidebar() {
         if (!show) return null;
 
         const active = isActive(href);
+        const isNavigating = navigatingTo === href && isPending;
 
         return (
             <TooltipProvider delayDuration={100}>
                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button
-                            variant="ghost"
+                        <Link
+                            href={href}
+                            prefetch={true}
+                            onClick={(e) => {
+                                if (active) {
+                                    e.preventDefault();
+                                    return;
+                                }
+                                setNavigatingTo(href);
+                                startTransition(() => {
+                                    // Navigation happens via Link, transition just tracks state
+                                });
+                            }}
                             className={cn(
                                 "w-full h-auto py-3 px-2 flex flex-col items-center justify-center gap-1 rounded-lg transition-all",
-                                "hover:bg-white/10",
-                                active && "bg-white/10 text-primary"
+                                "hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                                active && "bg-white/10 text-primary",
+                                isNavigating && "opacity-70"
                             )}
-                            onClick={() => handleNavigation(href)}
                         >
-                            <Icon className={cn("h-5 w-5", active && "text-primary")} />
+                            {isNavigating ? (
+                                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                            ) : (
+                                <Icon className={cn("h-5 w-5", active && "text-primary")} />
+                            )}
                             <span className={cn(
                                 "text-[10px] font-medium leading-tight text-center",
                                 active ? "text-primary" : "text-muted-foreground"
                             )}>
                                 {label}
                             </span>
-                        </Button>
+                        </Link>
                     </TooltipTrigger>
                     <TooltipContent side="right" className="bg-zinc-800 text-white border-zinc-700">
                         {label}
@@ -113,7 +141,9 @@ export default function LeftSidebar() {
             <nav className="flex flex-col items-center w-full space-y-1 px-2">
                 <NavItem href="/" icon={Home} label="Home" />
                 <NavItem href="/explore" icon={Compass} label="Explore" />
-                <NavItem href="/wall" icon={MessageSquare} label="Wall" show={showWall} />
+
+                {/* Wall - show for all logged in users */}
+                {user && <NavItem href="/wall" icon={MessageSquare} label="Wall" />}
 
                 {/* Divider */}
                 <div className="w-8 h-px bg-white/10 my-2" />
