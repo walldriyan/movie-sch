@@ -137,97 +137,97 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
     const canManage = user && (user.id === post.authorId || user.role === ROLES.SUPER_ADMIN);
 
     return (
-        <Card className="rounded-2xl">
-            <CardContent className="p-4">
-                <div className="flex items-start gap-4">
-                    <Link href={`/profile/${post.author.id}`}>
-                        <Avatar>
-                            <AvatarImage src={post.author.image || ''} alt={post.author.name || ''} />
-                            <AvatarFallback>{post.author.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
-                        </Avatar>
-                    </Link>
+        <div className="rounded-xl bg-white/[0.02] border border-white/5 p-5">
+            <div className="flex items-start gap-4">
+                <Link href={`/profile/${post.author.id}`}>
+                    <Avatar className="h-10 w-10 border border-white/10">
+                        <AvatarImage src={post.author.image || ''} alt={post.author.name || ''} />
+                        <AvatarFallback className="bg-white/5 text-white/60">{post.author.name?.charAt(0).toUpperCase() || 'U'}</AvatarFallback>
+                    </Avatar>
+                </Link>
 
-                    <div className="flex-grow">
-                        <div className="flex items-center gap-2">
-                            <Link href={`/profile/${post.author.id}`} className="font-semibold hover:underline">
-                                {post.author.name}
-                            </Link>
-                            <span className="text-sm text-muted-foreground">·</span>
-                            <ClientRelativeDate date={post.createdAt} />
-                        </div>
-
-                        <p
-                            ref={contentRef}
-                            className={cn(
-                                "mt-2 whitespace-pre-wrap",
-                                !isExpanded && "line-clamp-4"
-                            )}
-                        >
-                            {post.content}
-                        </p>
-                        {isTruncated && (
-                            <button
-                                onClick={() => setIsExpanded(!isExpanded)}
-                                className="text-primary text-sm font-semibold mt-1"
-                            >
-                                {isExpanded ? 'Show less' : 'Show more'}
-                            </button>
-                        )}
-
-
-                        {postImage && (
-                            <div className="mt-3 relative aspect-video max-h-[400px] w-full overflow-hidden rounded-xl border">
-                                <Image
-                                    src={postImage}
-                                    alt="Post image"
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                        )}
-
-                        <div className="mt-3 flex flex-wrap gap-2">
-                            {post.categories.map(category => (
-                                <Badge key={category.id} variant="secondary">{category.name}</Badge>
-                            ))}
-                            {post.tags.map(tag => (
-                                <Badge key={tag.id} variant="outline">#{tag.name}</Badge>
-                            ))}
-                        </div>
-
-                        <Accordion type="single" collapsible className="w-full mt-2">
-                            <AccordionItem value={post.id} className="border-b-0">
-                                <div className="flex justify-between items-center text-muted-foreground">
-                                    <AccordionTrigger className="py-0 hover:no-underline">
-                                        <div className="flex items-center gap-1.5 p-2 rounded-md hover:bg-accent">
-                                            <MessageCircle className="h-4 w-4" />
-                                            <span className="text-xs">{commentCount}</span>
-                                        </div>
-                                    </AccordionTrigger>
-                                    <div className="flex items-center gap-1.5">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike} disabled={isLikePending}>
-                                            <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
-                                        </Button>
-                                        <span className="text-xs">{likeCount}</span>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
-                                            <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-primary text-primary")} />
-                                        </Button>
-                                    </div>
-                                    <div className="flex items-center gap-1.5">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                                            <Share2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <AccordionContent>
-                                    <MicroPostComments postId={post.id} onCommentCountChange={handleCommentCountChange} />
-                                </AccordionContent>
-                            </AccordionItem>
-                        </Accordion>
+                <div className="flex-grow">
+                    <div className="flex items-center gap-2">
+                        <Link href={`/profile/${post.author.id}`} className="font-semibold hover:underline">
+                            {post.author.name}
+                        </Link>
+                        <span className="text-sm text-muted-foreground">·</span>
+                        <ClientRelativeDate date={post.createdAt} />
                     </div>
-                    {canManage && (
+
+                    <p
+                        ref={contentRef}
+                        className={cn(
+                            "mt-2 whitespace-pre-wrap",
+                            !isExpanded && "line-clamp-4"
+                        )}
+                    >
+                        {post.content}
+                    </p>
+                    {isTruncated && (
+                        <button
+                            onClick={() => setIsExpanded(!isExpanded)}
+                            className="text-primary text-sm font-semibold mt-1"
+                        >
+                            {isExpanded ? 'Show less' : 'Show more'}
+                        </button>
+                    )}
+
+
+                    {postImage && (
+                        <div className="mt-3 relative aspect-video max-h-[400px] w-full overflow-hidden rounded-xl border">
+                            <Image
+                                src={postImage}
+                                alt="Post image"
+                                fill
+                                className="object-cover"
+                            />
+                        </div>
+                    )}
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        {post.categories.map(category => (
+                            <Badge key={category.id} variant="secondary">{category.name}</Badge>
+                        ))}
+                        {post.tags.map(tag => (
+                            <Badge key={tag.id} variant="outline">#{tag.name}</Badge>
+                        ))}
+                    </div>
+
+                    <Accordion type="single" collapsible className="w-full mt-2">
+                        <AccordionItem value={post.id} className="border-b-0">
+                            <div className="flex justify-between items-center text-muted-foreground">
+                                <AccordionTrigger className="py-0 hover:no-underline">
+                                    <div className="flex items-center gap-1.5 p-2 rounded-md hover:bg-accent">
+                                        <MessageCircle className="h-4 w-4" />
+                                        <span className="text-xs">{commentCount}</span>
+                                    </div>
+                                </AccordionTrigger>
+                                <div className="flex items-center gap-1.5">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleLike} disabled={isLikePending}>
+                                        <Heart className={cn("h-4 w-4", hasLiked && "fill-red-500 text-red-500")} />
+                                    </Button>
+                                    <span className="text-xs">{likeCount}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={handleBookmark}>
+                                        <Bookmark className={cn("h-4 w-4", isBookmarked && "fill-primary text-primary")} />
+                                    </Button>
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                                        <Share2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                            <AccordionContent>
+                                <MicroPostComments postId={post.id} onCommentCountChange={handleCommentCountChange} />
+                            </AccordionContent>
+                        </AccordionItem>
+                    </Accordion>
+                </div>
+                {
+                    canManage && (
                         <AlertDialog>
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
@@ -267,8 +267,7 @@ export default function MicroPostCard({ post: initialPost }: MicroPostCardProps)
                             </AlertDialogContent>
                         </AlertDialog>
                     )}
-                </div>
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
 }

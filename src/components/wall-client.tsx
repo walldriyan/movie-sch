@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Image as ImageIcon, X, Info } from 'lucide-react';
+import { Image as ImageIcon, X, Info, MessageSquare, Sparkles } from 'lucide-react';
 import type { User, MicroPost as MicroPostType, MicroPost } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -21,7 +21,6 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from './ui/form';
 import { CategoryInput } from '@/components/manage/category-input';
 import { TagInput } from '@/components/manage/tag-input';
 import MicroPostCard from './micro-post-card';
-import { Alert, AlertDescription, AlertTitle } from './ui/alert';
 import { Skeleton } from './ui/skeleton';
 
 
@@ -150,148 +149,155 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
   const maxChars = 2000;
 
   return (
-    <Card className="mb-8">
-      <CardContent className="p-4">
-        <div className="mb-4">
-          {isLoadingStatus ? (
-            <div className="flex items-center gap-4 rounded-lg border p-4">
-              <Skeleton className="h-6 w-6 rounded-full" />
-              <div className="space-y-2 flex-grow">
-                <Skeleton className="h-4 w-3/4" />
-              </div>
-            </div>
-          ) : postStatus ? (
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertTitle className="text-sm text-muted-foreground">Daily Micro-Post Status</AlertTitle>
-              <AlertDescription className="text-xs text-muted-foreground">
-                Your daily limit is {postStatus.limit === 0 ? 'unlimited' : `${postStatus.limit} posts`}.
-                You have created {postStatus.count} posts today.
-                {postStatus.limit > 0 && ` You can create ${postStatus.remaining} more posts.`}
-              </AlertDescription>
-            </Alert>
-          ) : null}
+    <div className="rounded-xl bg-white/[0.02] border border-white/5 p-5 mb-6">
+      {/* Status Badge */}
+      {isLoadingStatus ? (
+        <div className="flex items-center gap-3 mb-4">
+          <Skeleton className="h-4 w-4 rounded-full" />
+          <Skeleton className="h-3 w-48" />
         </div>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
-            <Avatar>
-              <AvatarImage src={userAvatar} />
-              <AvatarFallback>{user?.name?.charAt(0) || 'U'}</AvatarFallback>
-            </Avatar>
-            <div className="w-full space-y-4">
-              <FormField
-                control={form.control}
-                name="content"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Textarea
-                        ref={(e) => {
-                          field.ref(e);
-                          textareaRef.current = e;
-                        }}
-                        placeholder="What's happening?"
-                        className="w-full bg-transparent border-input focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-offset-0 p-2 text-base"
-                        rows={2}
-                        {...field}
-                        disabled={!canPost || isSubmitting}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              {previewImage && (
-                <div className="relative w-48 h-32 border rounded-md">
-                  <Image src={previewImage} alt="Image preview" fill className="object-cover rounded-md" />
-                  <Button variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full" onClick={removeImage}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
+      ) : postStatus && (
+        <div className="flex items-center gap-2 text-xs text-white/40 mb-4">
+          <Info className="h-3 w-3" />
+          <span>
+            {postStatus.limit === 0 ? 'Unlimited posts' : `${postStatus.remaining} of ${postStatus.limit} posts remaining today`}
+          </span>
+        </div>
+      )}
+
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
+          <Avatar className="h-10 w-10 border border-white/10">
+            <AvatarImage src={userAvatar} />
+            <AvatarFallback className="bg-white/5 text-white/60">{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+          </Avatar>
+          <div className="w-full space-y-4">
+            <FormField
+              control={form.control}
+              name="content"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <Textarea
+                      ref={(e) => {
+                        field.ref(e);
+                        textareaRef.current = e;
+                      }}
+                      placeholder="What's on your mind?"
+                      className="w-full bg-transparent border-0 focus-visible:ring-0 p-0 text-base text-white placeholder:text-white/30 resize-none"
+                      rows={2}
+                      {...field}
+                      disabled={!canPost || isSubmitting}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
               )}
-              <FormField
-                control={form.control}
-                name="categories"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <CategoryInput
-                        allCategories={allCategories}
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        placeholder="Add categories..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <TagInput
-                        allTags={allTags}
-                        value={field.value || []}
-                        onChange={field.onChange}
-                        placeholder="Add tags..."
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="flex justify-between items-center pt-2">
-                <div className="flex gap-1 text-muted-foreground items-center">
-                  <Button variant="ghost" size="icon" type="button" onClick={() => fileInputRef.current?.click()} disabled={!canPost || isSubmitting}>
-                    <ImageIcon className="h-5 w-5" />
-                  </Button>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleImageChange}
-                  />
-                  <div className="text-xs text-muted-foreground ml-2">
-                    <span>{contentValue.length}</span> / <span>{maxChars}</span>
-                  </div>
-                </div>
-                <Button type="submit" disabled={isSubmitting || !canPost}>
-                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Post
+            />
+            {previewImage && (
+              <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border border-white/10">
+                <Image src={previewImage} alt="Image preview" fill className="object-cover" />
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 hover:bg-black/70"
+                  onClick={removeImage}
+                >
+                  <X className="h-4 w-4 text-white" />
                 </Button>
               </div>
+            )}
+            <FormField
+              control={form.control}
+              name="categories"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <CategoryInput
+                      allCategories={allCategories}
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      placeholder="Add categories..."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="tags"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <TagInput
+                      allTags={allTags}
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      placeholder="Add tags..."
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <div className="flex justify-between items-center pt-2 border-t border-white/5">
+              <div className="flex gap-2 items-center">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  type="button"
+                  className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/5"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={!canPost || isSubmitting}
+                >
+                  <ImageIcon className="h-4 w-4" />
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleImageChange}
+                />
+                <span className="text-xs text-white/30">
+                  {contentValue.length}/{maxChars}
+                </span>
+              </div>
+              <Button
+                type="submit"
+                disabled={isSubmitting || !canPost}
+                className="rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0 h-8 px-4"
+              >
+                {isSubmitting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
+                Post
+              </Button>
             </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+          </div>
+        </form>
+      </Form>
+    </div>
   );
 }
 
 function WallSkeleton() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {[...Array(3)].map((_, i) => (
-        <Card key={i}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-4">
-              <Skeleton className="h-10 w-10 rounded-full" />
-              <div className="flex-grow space-y-3">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-3 w-16" />
-                </div>
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-5/6" />
-                <Skeleton className="aspect-video w-full rounded-xl" />
+        <div key={i} className="rounded-xl bg-white/[0.02] border border-white/5 p-5">
+          <div className="flex items-start gap-4">
+            <Skeleton className="h-10 w-10 rounded-full" />
+            <div className="flex-grow space-y-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-16" />
               </div>
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-5/6" />
+              <Skeleton className="aspect-video w-full rounded-lg" />
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ))}
     </div>
   )
@@ -307,22 +313,51 @@ export default function WallClient({ initialMicroPosts }: WallClientProps) {
   };
 
   return (
-    <main className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-      <CreateMicroPost onPostCreated={handlePostCreated} />
-      <div className="space-y-8">
-        {posts.length > 0 ? (
-          posts.map(post => <MicroPostCard key={post.id} post={post} />)
-        ) : (
-          <div className="text-center py-16 border-2 border-dashed rounded-lg">
-            <h1 className="font-serif text-2xl font-bold text-muted-foreground">
-              The Wall is Quiet...
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Be the first to post something!
-            </p>
+    <div className="min-h-screen bg-background">
+      {/* Hero Section */}
+      <div className="relative pt-20 pb-8">
+        {/* Background Gradients */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
+          <div className="absolute top-10 right-1/4 w-56 h-56 bg-purple-500/8 rounded-full blur-3xl" />
+        </div>
+
+        <div className="relative max-w-xl mx-auto px-4">
+          {/* Badge */}
+          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/5 mb-4">
+            <MessageSquare className="w-4 h-4 text-white/60" />
+            <span className="text-xs font-medium text-white/60">Community Feed</span>
           </div>
-        )}
+
+          {/* Title */}
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            The Wall
+          </h1>
+          <p className="text-white/50 text-sm max-w-md">
+            Share your thoughts with the community
+          </p>
+        </div>
       </div>
-    </main>
+
+      {/* Content */}
+      <main className="max-w-xl mx-auto px-4 pb-12">
+        <CreateMicroPost onPostCreated={handlePostCreated} />
+        <div className="space-y-4">
+          {posts.length > 0 ? (
+            posts.map(post => <MicroPostCard key={post.id} post={post} />)
+          ) : (
+            <div className="text-center py-16 rounded-xl bg-white/[0.02] border border-white/5">
+              <Sparkles className="h-12 w-12 mx-auto text-white/20 mb-4" />
+              <h2 className="text-xl font-semibold text-white/70 mb-2">
+                The Wall is Quiet...
+              </h2>
+              <p className="text-sm text-white/40">
+                Be the first to share something!
+              </p>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
