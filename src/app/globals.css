@@ -6,52 +6,52 @@
 
 @layer base {
   :root {
-    /* 97% Black with subtle Brown/Gray Mix - Seamless Dark Theme */
-    --background: 20 8% 5%;
-    --foreground: 30 10% 90%;
+    /* Pure Black with subtle Dark Maroon gradient mix */
+    --background: 0 0% 3%;
+    --foreground: 0 0% 92%;
 
-    --card: 20 8% 6%;
-    --card-foreground: 30 10% 90%;
+    --card: 0 0% 4%;
+    --card-foreground: 0 0% 92%;
 
-    --popover: 20 8% 5%;
-    --popover-foreground: 30 10% 90%;
+    --popover: 0 0% 3%;
+    --popover-foreground: 0 0% 92%;
 
-    /* Warm gold/amber accent - subtle */
-    --primary: 35 70% 50%;
-    --primary-foreground: 20 8% 5%;
+    /* Dark maroon accent - subtle */
+    --primary: 0 60% 45%;
+    --primary-foreground: 0 0% 98%;
 
-    --secondary: 20 6% 10%;
-    --secondary-foreground: 30 8% 85%;
+    --secondary: 0 5% 8%;
+    --secondary-foreground: 0 0% 88%;
 
-    --muted: 20 5% 9%;
-    --muted-foreground: 25 8% 45%;
+    --muted: 0 3% 7%;
+    --muted-foreground: 0 0% 50%;
 
-    --accent: 22 8% 11%;
-    --accent-foreground: 30 10% 90%;
+    --accent: 350 8% 10%;
+    --accent-foreground: 0 0% 92%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Very subtle borders - almost invisible */
-    --border: 20 5% 10%;
-    --input: 20 5% 10%;
-    --ring: 35 70% 50%;
+    /* Almost invisible borders */
+    --border: 0 0% 8%;
+    --input: 0 0% 8%;
+    --ring: 0 50% 40%;
 
     --radius: 1rem;
 
-    --chart-1: 35 70% 50%;
-    --chart-2: 25 50% 35%;
-    --chart-3: 20 35% 25%;
-    --chart-4: 40 60% 55%;
-    --chart-5: 30 75% 60%;
+    --chart-1: 0 60% 45%;
+    --chart-2: 350 50% 35%;
+    --chart-3: 340 40% 25%;
+    --chart-4: 10 55% 50%;
+    --chart-5: 355 65% 55%;
 
-    /* Sidebar matching background - seamless */
-    --sidebar-background: 20 8% 5%;
-    --sidebar-foreground: 25 10% 70%;
-    --sidebar-border: 20 5% 8%;
-    --sidebar-accent: 22 8% 9%;
-    --sidebar-accent-foreground: 30 10% 90%;
-    --sidebar-ring: 35 70% 45%;
+    /* Sidebar matching pure black - seamless */
+    --sidebar-background: 0 0% 3%;
+    --sidebar-foreground: 0 0% 70%;
+    --sidebar-border: 0 0% 6%;
+    --sidebar-accent: 350 5% 7%;
+    --sidebar-accent-foreground: 0 0% 92%;
+    --sidebar-ring: 0 50% 40%;
 
     /* Z-index hierarchy */
     --z-index-header: 50;

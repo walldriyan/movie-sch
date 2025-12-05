@@ -115,35 +115,35 @@ const HeroSection = () => {
 
     return (
         <section ref={heroRef} className="relative min-h-[85vh] overflow-hidden">
-            {/* 97% Black with subtle Brown/Gray Mix Background */}
+            {/* Pure Black with subtle Dark Maroon gradient mix */}
             <div className="absolute inset-0">
-                {/* Pure dark base */}
-                <div className="absolute inset-0 bg-background" />
+                {/* Pure black base */}
+                <div className="absolute inset-0 bg-[#080808]" />
 
-                {/* Very subtle warm gradient orbs - almost invisible */}
+                {/* Very subtle dark maroon gradient orbs - almost invisible */}
                 <div
-                    className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full opacity-15 blur-[150px]"
+                    className="absolute top-1/4 left-1/3 w-[700px] h-[700px] rounded-full opacity-20 blur-[180px]"
                     style={{
-                        background: 'radial-gradient(circle, hsl(25, 15%, 12%) 0%, transparent 70%)',
+                        background: 'radial-gradient(circle, hsl(350, 40%, 8%) 0%, transparent 70%)',
                         transform: `translate(${mousePosition.x * 2}px, ${mousePosition.y * 2}px)`,
                         transition: 'transform 0.3s ease-out'
                     }}
                 />
                 <div
-                    className="absolute bottom-1/4 right-1/3 w-[500px] h-[500px] rounded-full opacity-12 blur-[120px]"
+                    className="absolute bottom-1/4 right-1/3 w-[600px] h-[600px] rounded-full opacity-15 blur-[160px]"
                     style={{
-                        background: 'radial-gradient(circle, hsl(30, 12%, 10%) 0%, transparent 70%)',
+                        background: 'radial-gradient(circle, hsl(355, 35%, 10%) 0%, transparent 70%)',
                         transform: `translate(${-mousePosition.x * 1.5}px, ${-mousePosition.y * 1.5}px)`,
                         transition: 'transform 0.3s ease-out'
                     }}
                 />
                 <div
-                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-10 blur-[180px]"
-                    style={{ background: 'radial-gradient(circle, hsl(28, 10%, 9%) 0%, transparent 60%)' }}
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[900px] rounded-full opacity-12 blur-[200px]"
+                    style={{ background: 'radial-gradient(circle, hsl(0, 30%, 7%) 0%, transparent 60%)' }}
                 />
 
-                {/* Subtle noise texture overlay */}
-                <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%" height="100%" filter="url(%23noise)"/%3E%3C/svg%3E")' }} />
+                {/* Subtle noise texture */}
+                <div className="absolute inset-0 opacity-[0.02]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox=\'0 0 256 256\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noise\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noise)\'/%3E%3C/svg%3E")' }} />
             </div>
 
             <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
@@ -151,8 +151,8 @@ const HeroSection = () => {
                     {/* Left Content */}
                     <div className="space-y-8 z-20">
                         {/* Premium Badge */}
-                        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-neutral-900/60 border border-neutral-700/30 text-neutral-300 text-sm font-medium backdrop-blur-sm">
-                            <Sparkles className="w-4 h-4 text-amber-500/80" />
+                        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0a0a0a] border border-[#1a1a1a] text-neutral-400 text-sm font-medium">
+                            <Sparkles className="w-4 h-4 text-rose-900/80" />
                             <span>{siteConfig.tagline}</span>
                         </div>
 
@@ -175,7 +175,7 @@ const HeroSection = () => {
                         <div className="flex flex-wrap gap-4 pt-4">
                             <Button
                                 size="lg"
-                                className="h-14 px-10 text-base font-semibold bg-gradient-to-r from-amber-600/90 to-amber-700/90 hover:from-amber-500 hover:to-amber-600 text-neutral-950 transition-all duration-300 group border-0"
+                                className="h-14 px-10 text-base font-semibold bg-gradient-to-r from-rose-950 to-rose-900 hover:from-rose-900 hover:to-rose-800 text-white transition-all duration-300 group border-0"
                                 asChild
                             >
                                 <Link href={siteConfig.hero.cta.primary.href}>
@@ -186,7 +186,7 @@ const HeroSection = () => {
                             <Button
                                 size="lg"
                                 variant="outline"
-                                className="h-14 px-10 text-base font-semibold border-neutral-800/50 bg-neutral-900/40 hover:bg-neutral-800/50 text-neutral-300 transition-all duration-300"
+                                className="h-14 px-10 text-base font-semibold border-[#1a1a1a] bg-[#0a0a0a] hover:bg-[#111111] text-neutral-300 transition-all duration-300"
                                 asChild
                             >
                                 <Link href={siteConfig.hero.cta.secondary.href}>
@@ -196,10 +196,10 @@ const HeroSection = () => {
                         </div>
 
                         {/* Premium Stats */}
-                        <div className="flex flex-wrap gap-10 pt-8 border-t border-neutral-800/30">
+                        <div className="flex flex-wrap gap-10 pt-8 border-t border-[#151515]">
                             {siteConfig.hero.stats.map((stat, index) => (
                                 <div key={index} className="text-center sm:text-left group">
-                                    <div className="text-3xl sm:text-4xl font-bold text-neutral-200 group-hover:text-amber-400/80 transition-all">
+                                    <div className="text-3xl sm:text-4xl font-bold text-neutral-200 group-hover:text-rose-800/90 transition-all">
                                         {stat.value}
                                     </div>
                                     <div className="text-sm text-neutral-600 mt-1">{stat.label}</div>
@@ -223,102 +223,102 @@ const HeroSection = () => {
                             <div className="absolute inset-0 flex items-center justify-center">
                                 {/* Card 1 - Far Left */}
                                 <div
-                                    className="absolute w-48 h-64 rounded-xl bg-neutral-900/80 border border-neutral-800/40 shadow-2xl overflow-hidden animate-float-slow"
+                                    className="absolute w-48 h-64 rounded-xl bg-[#0a0a0a] border border-[#151515] shadow-2xl overflow-hidden animate-float-slow"
                                     style={{
                                         transform: 'translateX(-180px) translateZ(-100px) rotateY(25deg)',
                                         animationDelay: '0s'
                                     }}
                                 >
-                                    <div className="h-32 bg-neutral-800/50" />
+                                    <div className="h-32 bg-[#0d0d0d]" />
                                     <div className="p-3 space-y-2">
-                                        <div className="h-3 w-3/4 bg-neutral-700/40 rounded" />
-                                        <div className="h-2 w-1/2 bg-neutral-800/40 rounded" />
+                                        <div className="h-3 w-3/4 bg-[#181818] rounded" />
+                                        <div className="h-2 w-1/2 bg-[#141414] rounded" />
                                     </div>
                                 </div>
 
                                 {/* Card 2 - Left */}
                                 <div
-                                    className="absolute w-52 h-72 rounded-2xl bg-neutral-900/90 border border-neutral-700/30 shadow-2xl overflow-hidden animate-float"
+                                    className="absolute w-52 h-72 rounded-2xl bg-[#0a0a0a] border border-[#181818] shadow-2xl overflow-hidden animate-float"
                                     style={{
                                         transform: 'translateX(-100px) translateZ(-50px) rotateY(15deg)',
                                         animationDelay: '0.5s'
                                     }}
                                 >
-                                    <div className="h-36 bg-neutral-800/60 flex items-center justify-center">
-                                        <BookOpen className="w-12 h-12 text-amber-500/40" />
+                                    <div className="h-36 bg-gradient-to-br from-rose-950/20 to-[#0d0d0d] flex items-center justify-center">
+                                        <BookOpen className="w-12 h-12 text-rose-900/40" />
                                     </div>
                                     <div className="p-4 space-y-3">
-                                        <h3 className="font-bold text-neutral-300 text-sm">Featured Articles</h3>
+                                        <h3 className="font-bold text-neutral-400 text-sm">Featured Articles</h3>
                                         <p className="text-xs text-neutral-600">Curated content collection</p>
                                         <div className="flex gap-1">
-                                            {[1, 2, 3].map(i => <div key={i} className="w-6 h-6 rounded-full bg-neutral-800/60" />)}
+                                            {[1, 2, 3].map(i => <div key={i} className="w-6 h-6 rounded-full bg-[#151515]" />)}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Card 3 - Center (Main) */}
                                 <div
-                                    className="absolute w-60 h-80 rounded-2xl bg-neutral-900/95 border border-amber-800/30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] overflow-hidden animate-float-slow z-20 group"
+                                    className="absolute w-60 h-80 rounded-2xl bg-[#0a0a0a] border border-rose-950/30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.9)] overflow-hidden animate-float-slow z-20 group"
                                     style={{
                                         transform: 'translateZ(50px)',
                                         animationDelay: '0.2s'
                                     }}
                                 >
-                                    <div className="h-44 bg-gradient-to-br from-amber-900/20 via-neutral-800/40 to-neutral-900/60 flex items-center justify-center relative overflow-hidden">
-                                        <div className="absolute inset-0 bg-neutral-900/20" />
-                                        <Sparkles className="w-16 h-16 text-amber-500/50 group-hover:text-amber-400/70 transition-colors" />
+                                    <div className="h-44 bg-gradient-to-br from-rose-950/30 via-[#0d0d0d] to-[#0a0a0a] flex items-center justify-center relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-[#0c0c0c]/50" />
+                                        <Sparkles className="w-16 h-16 text-rose-900/50 group-hover:text-rose-800/60 transition-colors" />
                                     </div>
                                     <div className="p-5 space-y-3">
                                         <div className="flex items-center gap-2">
-                                            <div className="w-2 h-2 rounded-full bg-amber-600/80" />
-                                            <span className="text-xs text-amber-500/70 font-medium">TRENDING</span>
+                                            <div className="w-2 h-2 rounded-full bg-rose-900/70" />
+                                            <span className="text-xs text-rose-900/60 font-medium">TRENDING</span>
                                         </div>
-                                        <h3 className="font-bold text-neutral-200 text-lg leading-tight">Discover Premium Content</h3>
+                                        <h3 className="font-bold text-neutral-300 text-lg leading-tight">Discover Premium Content</h3>
                                         <p className="text-sm text-neutral-500">Explore curated articles and resources</p>
                                     </div>
                                     {/* Hover glow */}
-                                    <div className="absolute inset-0 bg-gradient-to-t from-amber-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-rose-950/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                                 </div>
 
                                 {/* Card 4 - Right */}
                                 <div
-                                    className="absolute w-52 h-72 rounded-2xl bg-neutral-900/90 border border-neutral-700/30 shadow-2xl overflow-hidden animate-float"
+                                    className="absolute w-52 h-72 rounded-2xl bg-[#0a0a0a] border border-[#181818] shadow-2xl overflow-hidden animate-float"
                                     style={{
                                         transform: 'translateX(100px) translateZ(-50px) rotateY(-15deg)',
                                         animationDelay: '0.7s'
                                     }}
                                 >
-                                    <div className="h-36 bg-neutral-800/50 flex items-center justify-center">
-                                        <Users className="w-12 h-12 text-neutral-500/50" />
+                                    <div className="h-36 bg-[#0d0d0d] flex items-center justify-center">
+                                        <Users className="w-12 h-12 text-neutral-700/50" />
                                     </div>
                                     <div className="p-4 space-y-3">
-                                        <h3 className="font-bold text-neutral-300 text-sm">Top Creators</h3>
+                                        <h3 className="font-bold text-neutral-400 text-sm">Top Creators</h3>
                                         <p className="text-xs text-neutral-600">Meet our community</p>
                                         <div className="flex -space-x-2">
-                                            {[1, 2, 3, 4].map(i => <div key={i} className="w-7 h-7 rounded-full bg-neutral-800/70 border-2 border-neutral-900" />)}
+                                            {[1, 2, 3, 4].map(i => <div key={i} className="w-7 h-7 rounded-full bg-[#151515] border-2 border-[#0a0a0a]" />)}
                                         </div>
                                     </div>
                                 </div>
 
                                 {/* Card 5 - Far Right */}
                                 <div
-                                    className="absolute w-48 h-64 rounded-xl bg-neutral-900/80 border border-neutral-800/40 shadow-2xl overflow-hidden animate-float-slow"
+                                    className="absolute w-48 h-64 rounded-xl bg-[#0a0a0a] border border-[#151515] shadow-2xl overflow-hidden animate-float-slow"
                                     style={{
                                         transform: 'translateX(180px) translateZ(-100px) rotateY(-25deg)',
                                         animationDelay: '0.3s'
                                     }}
                                 >
-                                    <div className="h-32 bg-neutral-800/40" />
+                                    <div className="h-32 bg-[#0d0d0d]" />
                                     <div className="p-3 space-y-2">
-                                        <div className="h-3 w-3/4 bg-neutral-700/40 rounded" />
-                                        <div className="h-2 w-1/2 bg-neutral-800/40 rounded" />
+                                        <div className="h-3 w-3/4 bg-[#181818] rounded" />
+                                        <div className="h-2 w-1/2 bg-[#141414] rounded" />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Floating glow orbs - very subtle */}
-                            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-amber-600/5 rounded-full blur-3xl animate-pulse" />
-                            <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-amber-700/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
+                            {/* Floating glow orbs - very subtle dark maroon */}
+                            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-rose-950/10 rounded-full blur-3xl animate-pulse" />
+                            <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-rose-900/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
                         </div>
                     </div>
                 </div>
