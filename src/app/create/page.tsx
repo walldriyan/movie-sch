@@ -92,7 +92,7 @@ function CreateCard({ option }: { option: CreateOption }) {
                     <div className="flex justify-end">
                         <div className={cn(
                             "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
-                            "bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white"
+                            "bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0"
                         )}>
                             {option.icon}
                             <span>Create</span>

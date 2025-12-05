@@ -75,7 +75,7 @@ export default function LeftSidebar() {
                     <div className="hidden md:block">
                         <SearchBar />
                     </div>
-                    <Button asChild size="sm" className="h-8 text-xs rounded-md bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white">
+                    <Button asChild size="sm" className="h-8 text-xs rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0">
                         <Link href="/login">Login</Link>
                     </Button>
                 </div>

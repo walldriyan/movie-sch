@@ -143,7 +143,7 @@ export default function ManageLayout({
         {/* Create Button */}
         <div className="px-4 pb-4">
           <Link href="/manage?create=true">
-            <Button className="w-full rounded-md bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white gap-2 h-10">
+            <Button className="w-full rounded-md bg-white/[0.03] hover:bg-white/[0.06] border-0 text-white/70 hover:text-white gap-2 h-10">
               <Plus className="h-4 w-4" />
               Create New
             </Button>
@@ -250,7 +250,7 @@ export default function ManageLayout({
                 </div>
                 <div className="flex items-center gap-3">
                   <Link href="/create">
-                    <Button variant="outline" className="rounded-md border-white/10 hover:bg-white/5 text-white/70 hover:text-white">
+                    <Button variant="ghost" className="rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0">
                       <Plus className="h-4 w-4 mr-2" />
                       Quick Create
                     </Button>

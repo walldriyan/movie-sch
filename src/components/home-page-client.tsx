@@ -127,7 +127,7 @@ const HeroSection = () => {
                     <div className="flex items-center gap-3">
                         <Button
                             size="default"
-                            className="bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white font-semibold h-10 px-5 text-sm rounded-full"
+                            className="bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white font-semibold h-10 px-5 text-sm rounded-full border-0"
                             asChild
                         >
                             <Link href={siteConfig.hero.cta.primary.href}>

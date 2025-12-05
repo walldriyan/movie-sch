@@ -460,13 +460,17 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
             onChange={handleImport}
           />
           <Button
-            variant="outline"
+            variant="ghost"
+            className="rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0"
             onClick={() => importFileInputRef.current?.click()}
           >
             <Upload className="mr-2 h-4 w-4" />
             Import Exam
           </Button>
-          <Button onClick={handleNewExamClick}>
+          <Button
+            className="rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0"
+            onClick={handleNewExamClick}
+          >
             <PlusCircle className="mr-2 h-4 w-4" />
             Create New Exam
           </Button>
