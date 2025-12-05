@@ -5,7 +5,6 @@ import { cn } from '@/lib/utils';
 import React from 'react';
 import { LoadingProvider } from '@/context/loading-context';
 import GlobalLoadingBar from '@/components/global-loading-bar';
-import Navbar from '@/components/navigation/navbar';
 import LeftSidebar from '@/components/navigation/left-sidebar';
 import SessionProvider from '@/components/auth/session-provider';
 import { SidebarProvider } from '@/components/ui/sidebar';
@@ -63,13 +62,11 @@ export default function RootLayout({
               <SidebarProvider>
                 <GlobalLoadingBar />
 
-                {/* Suno-style: No top navbar - items in sidebar/absolute */}
-
-                {/* Suno-style Left Sidebar */}
+                {/* Suno-style Left Sidebar with dynamic width */}
                 <LeftSidebar />
 
-                {/* Main Content - no top padding since no navbar */}
-                <main className="flex-1 md:pl-[200px]">
+                {/* Main Content - padding controlled by sidebar */}
+                <main className="flex-1">
                   <ErrorBoundary>
                     {children}
                   </ErrorBoundary>

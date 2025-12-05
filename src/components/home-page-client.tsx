@@ -89,60 +89,66 @@ const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex =
 // ========================================
 const HeroSection = () => {
     return (
-        <section className="relative pt-20 pb-12">
-            {/* Suno-style Hero Banner with Rounded Corners */}
-            <div className="relative mx-4 rounded-2xl overflow-hidden" style={{ minHeight: '320px' }}>
-                {/* Gradient Background - like Suno's v5 banner */}
-                <div
-                    className="absolute inset-0"
-                    style={{
-                        background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 25%, #0f3460 50%, #e94560 75%, #ff6b6b 100%)',
-                    }}
+        <section className="relative pt-16 pb-8">
+            {/* Suno-style Hero Banner - taller like Suno Studio banner */}
+            <div className="relative mx-3 rounded-xl overflow-hidden" style={{ aspectRatio: '21/8', minHeight: '350px' }}>
+                {/* Background Image - music studio style */}
+                <Image
+                    src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&q=80"
+                    alt="Hero Background"
+                    fill
+                    className="object-cover"
+                    priority
                 />
 
-                {/* Large decorative text overlay - like "v5" in Suno */}
-                <div className="absolute right-0 top-0 bottom-0 flex items-center opacity-30">
-                    <span className="text-[200px] md:text-[300px] font-black text-white/20 leading-none select-none" style={{ transform: 'translateX(20%)' }}>
-                        v5
-                    </span>
-                </div>
+                {/* Dark overlay for text readability */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
 
                 {/* Content overlay */}
-                <div className="relative z-10 p-8 md:p-12 flex flex-col justify-center h-full" style={{ minHeight: '320px' }}>
+                <div className="absolute inset-0 z-10 p-8 md:p-12 flex flex-col justify-center">
                     {/* Badge */}
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-pink-500/90 text-white text-xs font-medium w-fit mb-6">
-                        <Sparkles className="w-3 h-3" />
-                        <span>NEW MODEL</span>
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-pink-500 text-white text-xs font-semibold w-fit mb-5">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>NEW PRODUCT</span>
                     </div>
 
-                    {/* Headline */}
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white max-w-lg leading-tight mb-4">
+                    {/* Headline - bigger and bolder */}
+                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white max-w-lg leading-[1.15] mb-4">
                         {siteConfig.hero.headline}
                     </h1>
 
                     {/* Description */}
-                    <p className="text-white/70 text-sm md:text-base max-w-md mb-6 leading-relaxed">
+                    <p className="text-white/80 text-sm md:text-base max-w-md mb-6 leading-relaxed">
                         {siteConfig.hero.description}
                     </p>
 
-                    {/* CTA Button */}
-                    <div>
+                    {/* CTA Buttons - like Suno */}
+                    <div className="flex items-center gap-3">
                         <Button
-                            size="sm"
-                            variant="secondary"
-                            className="bg-white text-black hover:bg-white/90 font-medium"
+                            size="default"
+                            className="bg-white text-black hover:bg-white/90 font-semibold h-10 px-5 text-sm rounded-full"
                             asChild
                         >
                             <Link href={siteConfig.hero.cta.primary.href}>
                                 {siteConfig.hero.cta.primary.text}
                             </Link>
                         </Button>
+                        <Button
+                            size="default"
+                            variant="ghost"
+                            className="text-white hover:bg-white/10 font-semibold h-10 px-5 text-sm"
+                            asChild
+                        >
+                            <Link href={siteConfig.hero.cta.secondary.href}>
+                                Learn More
+                            </Link>
+                        </Button>
                     </div>
                 </div>
 
-                {/* Scroll up indicator - like Suno */}
-                <button className="absolute top-4 right-4 w-8 h-8 rounded-md bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors">
-                    <span className="text-lg">^</span>
+                {/* Scroll up indicator */}
+                <button className="absolute top-4 right-4 w-8 h-8 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors">
+                    <span className="text-sm">^</span>
                 </button>
             </div>
         </section>

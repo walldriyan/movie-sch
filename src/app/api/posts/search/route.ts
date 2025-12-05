@@ -11,14 +11,19 @@ export async function GET(request: NextRequest) {
             return NextResponse.json({ posts: [] });
         }
 
+        // Use simple contains for SQLite compatibility (case-sensitive)
+        // For case-insensitive search, we search with the query as-is
         const posts = await prisma.post.findMany({
             where: {
                 AND: [
                     { status: 'PUBLISHED' },
                     {
                         OR: [
-                            { title: { contains: query, mode: 'insensitive' } },
-                            { description: { contains: query, mode: 'insensitive' } },
+                            { title: { contains: query } },
+                            { description: { contains: query } },
+                            // Also search lowercase version
+                            { title: { contains: query.toLowerCase() } },
+                            { title: { contains: query.toUpperCase() } },
                         ]
                     }
                 ]
