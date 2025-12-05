@@ -319,91 +319,96 @@ export default function HomePageClient({
                         <p className="text-muted-foreground ml-12">{siteConfig.sections.featured.subtitle}</p>
                     </div>
 
-                    {/* Filter Bar */}
-                    <div className="max-w-4xl pb-8 flex items-center justify-between">
-                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                            <Button asChild variant={'outline'} className={cn(
-                                "rounded-full hover:bg-white/5 flex-shrink-0",
-                                !typeFilter && !lockStatus ? 'bg-primary/10 border-primary/30 text-primary' : 'border-white/10 bg-transparent'
-                            )}>
-                                <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
-                                    <Film className="w-4 h-4" />
-                                    <span>All</span>
-                                </Link>
-                            </Button>
-                            {typeFilters.map(filter => (
-                                <Button key={filter.value} asChild variant={'outline'} className={cn(
-                                    "rounded-full hover:bg-white/5 flex-shrink-0",
-                                    typeFilter === filter.value && !lockStatus ? 'bg-primary/10 border-primary/30 text-primary' : 'border-white/10 bg-transparent'
+
+                    {/* Filter Section - Suno.com Style Banner */}
+                    <div className="mb-8 mx-3 rounded-xl overflow-hidden bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-sm border border-white/5 p-6">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            {/* Filter Tabs */}
+                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1">
+                                <Button asChild variant={'ghost'} size="sm" className={cn(
+                                    "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
+                                    !typeFilter && !lockStatus ? 'bg-white text-black hover:bg-white/90' : 'text-white/70 hover:text-white'
                                 )}>
-                                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
-                                        {filter.icon}
-                                        <span>{filter.label}</span>
+                                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
+                                        <Film className="w-4 h-4" />
+                                        <span>All</span>
                                     </Link>
                                 </Button>
-                            ))}
-                            <Button asChild variant={'outline'} className={cn(
-                                "rounded-full hover:bg-white/5 flex-shrink-0",
-                                lockStatus === 'locked' ? 'bg-primary/10 border-primary/30 text-primary' : 'border-white/10 bg-transparent'
-                            )}>
-                                <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
-                                    <Lock className="w-4 h-4" />
-                                    <span>Locked</span>
-                                </Link>
-                            </Button>
-                        </div>
-
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="rounded-full bg-transparent border-white/10 hover:bg-white/5 ml-2 flex-shrink-0">
-                                    <ListFilter className="mr-2 h-4 w-4" />
-                                    Filter
+                                {typeFilters.map(filter => (
+                                    <Button key={filter.value} asChild variant={'ghost'} size="sm" className={cn(
+                                        "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
+                                        typeFilter === filter.value && !lockStatus ? 'bg-white text-black hover:bg-white/90' : 'text-white/70 hover:text-white'
+                                    )}>
+                                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
+                                            {filter.icon}
+                                            <span>{filter.label}</span>
+                                        </Link>
+                                    </Button>
+                                ))}
+                                <Button asChild variant={'ghost'} size="sm" className={cn(
+                                    "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
+                                    lockStatus === 'locked' ? 'bg-white text-black hover:bg-white/90' : 'text-white/70 hover:text-white'
+                                )}>
+                                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
+                                        <Lock className="w-4 h-4" />
+                                        <span>Locked</span>
+                                    </Link>
                                 </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56" align="end">
-                                <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="newest">
-                                        <Clock className="mr-2 h-4 w-4" /> Newest
-                                    </DropdownMenuRadioItem>
-                                </Link>
-                                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="oldest">
-                                        <Clock className="mr-2 h-4 w-4" /> Oldest
-                                    </DropdownMenuRadioItem>
-                                </Link>
-                                <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="imdb">
-                                        <Star className="mr-2 h-4 w-4" /> IMDb Rating
-                                    </DropdownMenuRadioItem>
-                                </Link>
+                            </div>
 
-                                <DropdownMenuSeparator />
-                                <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
-                                <DropdownMenuSeparator />
-                                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="today">
-                                        <Calendar className="mr-2 h-4 w-4" /> Today
-                                    </DropdownMenuRadioItem>
-                                </Link>
-                                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="this_week">
-                                        <Calendar className="mr-2 h-4 w-4" /> This Week
-                                    </DropdownMenuRadioItem>
-                                </Link>
-                                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="this_month">
-                                        <Calendar className="mr-2 h-4 w-4" /> This Month
-                                    </DropdownMenuRadioItem>
-                                </Link>
-                                <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })} scroll={false}>
-                                    <DropdownMenuRadioItem value="all">
-                                        <Calendar className="mr-2 h-4 w-4" /> All Time
-                                    </DropdownMenuRadioItem>
-                                </Link>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                            {/* Sort Dropdown */}
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex-shrink-0 text-white/90">
+                                        <ListFilter className="mr-2 h-4 w-4" />
+                                        Sort
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-56" align="end">
+                                    <DropdownMenuLabel>Sort by</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })} scroll={false}>
+                                        <DropdownMenuRadioItem value="newest">
+                                            <Clock className="mr-2 h-4 w-4" /> Newest
+                                        </DropdownMenuRadioItem>
+                                    </Link>
+                                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })} scroll={false}>
+                                        <DropdownMenuRadioItem value="oldest">
+                                            <Clock className="mr-2 h-4 w-4" /> Oldest
+                                        </DropdownMenuRadioItem>
+                                    </Link>
+                                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })} scroll={false}>
+                                        <DropdownMenuRadioItem value="imdb">
+                                            <Star className="mr-2 h-4 w-4" /> IMDb Rating
+                                        </DropdownMenuRadioItem>
+                                    </Link>
+
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })} scroll={false}>
+                                        <DropdownMenuRadioItem value="today">
+                                            <Calendar className="mr-2 h-4 w-4" /> Today
+                                        </DropdownMenuRadioItem>
+                                    </Link>
+                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })} scroll={false}>
+                                        <DropdownMenuRadioItem value="this_week">
+                                            <Calendar className="mr-2 h-4 w-4" /> This Week
+                                        </DropdownMenuRadioItem>
+                                    </Link>
+                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter, lockStatus })} scroll={false}>
+                                        <DropdownMenuRadioItem value="this_month">
+                                            <Calendar className="mr-2 h-4 w-4" /> This Month
+                                        </DropdownMenuRadioItem>
+                                    </Link>
+                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })} scroll={false}>
+                                        <DropdownMenuRadioItem value="all">
+                                            <Calendar className="mr-2 h-4 w-4" /> All Time
+                                        </DropdownMenuRadioItem>
+                                    </Link>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
 
                     {/* Posts Grid */}

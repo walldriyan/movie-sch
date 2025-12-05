@@ -65,7 +65,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
   return (
     <div
       key={movie.id}
-      className="relative block overflow-hidden rounded-lg bg-card border border-border cursor-pointer group transition-all hover:border-muted-foreground/30"
+      className="relative block overflow-hidden rounded-xl bg-card/50 backdrop-blur-sm border border-white/5 cursor-pointer group transition-all duration-300 hover:scale-[1.02] hover:border-white/20"
     >
       <Link
         href={`/movies/${movie.id}`}
@@ -73,7 +73,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
         aria-label={movie.title}
       >
         {/* Image Container */}
-        <div className="relative aspect-[2/3] overflow-hidden">
+        <div className="relative aspect-[3/4] overflow-hidden rounded-t-xl">
           {!imageLoaded && <Skeleton className="absolute inset-0" />}
           {movieImageUrl && (
             <Image
@@ -82,7 +82,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
               fill
               sizes="(max-width: 768px) 50vw, 25vw"
               className={cn(
-                'object-cover transition-transform duration-300 group-hover:scale-105',
+                'object-cover transition-all duration-500 group-hover:scale-110 group-hover:brightness-75',
                 imageLoaded ? 'opacity-100' : 'opacity-0'
               )}
               onLoad={() => setImageLoaded(true)}
@@ -91,56 +91,63 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
             />
           )}
 
-          {/* Overlay gradient */}
-          <div className="absolute inset-0 bg-gradient-to-t from-card via-transparent to-transparent" />
+          {/* Overlay gradient - stronger for better text readability */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-          {/* Lock badge */}
+          {/* Play Button Overlay - Suno.com style */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20">
+            <div className="w-16 h-16 rounded-full bg-white/90 backdrop-blur-md flex items-center justify-center shadow-2xl transform group-hover:scale-110 transition-transform duration-300">
+              <Play className="w-7 h-7 text-black ml-1" fill="currentColor" />
+            </div>
+          </div>
+
+          {/* Lock badge - top right */}
           {movie.isLockedByDefault && (
-            <div className="absolute top-2 right-2 z-10">
-              <div className="flex items-center gap-1 bg-secondary/90 backdrop-blur-sm px-2 py-1 rounded text-xs">
-                <Lock className="h-3 w-3" />
+            <div className="absolute top-3 right-3 z-30">
+              <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-full text-xs font-medium border border-white/10">
+                <Lock className="h-3.5 w-3.5 text-yellow-400" />
               </div>
             </div>
           )}
 
-          {/* Type badge */}
+          {/* Type badge - top left */}
           {mounted && (
-            <div className="absolute top-2 left-2 z-10">
-              <div className="flex items-center gap-1 bg-secondary/90 backdrop-blur-sm px-2 py-1 rounded text-xs text-muted-foreground">
-                {movie.type === 'MOVIE' ? <Clapperboard className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
+            <div className="absolute top-3 left-3 z-30">
+              <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-full text-xs font-medium text-white/90 border border-white/10">
+                {movie.type === 'MOVIE' ? <Clapperboard className="w-3.5 h-3.5" /> : <Tv className="w-3.5 h-3.5" />}
                 <span className="hidden sm:inline">{movie.type === 'MOVIE' ? 'Movie' : 'Series'}</span>
               </div>
             </div>
           )}
 
-          {/* Series count */}
+          {/* Series count - bottom left */}
           {mounted && series && series._count && series._count.posts > 0 && (
-            <div className="absolute bottom-2 left-2 z-10">
-              <div className="flex items-center gap-1 bg-secondary/90 backdrop-blur-sm px-2 py-1 rounded text-xs text-muted-foreground">
-                <List className="h-3 w-3" />
-                <span>{series._count.posts}</span>
+            <div className="absolute bottom-3 left-3 z-30">
+              <div className="flex items-center gap-1.5 bg-black/60 backdrop-blur-md px-2.5 py-1.5 rounded-full text-xs font-medium text-white/90 border border-white/10">
+                <List className="h-3.5 w-3.5" />
+                <span>{series._count.posts} Episodes</span>
               </div>
             </div>
           )}
         </div>
 
-        {/* Content */}
-        <div className="p-3 space-y-2">
-          <h3 className="font-medium text-sm line-clamp-1 text-foreground">
+        {/* Content - Suno.com style */}
+        <div className="p-4 space-y-2.5 bg-gradient-to-b from-card/80 to-card">
+          <h3 className="font-semibold text-base line-clamp-1 text-white group-hover:text-primary transition-colors">
             {movie.title}
           </h3>
           <div
-            className="text-xs text-muted-foreground line-clamp-2"
+            className="text-xs text-muted-foreground/80 line-clamp-2 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
           />
 
-          {/* Author */}
-          <div className="flex items-center gap-2 pt-1">
-            <Avatar className="h-5 w-5">
+          {/* Author - improved spacing */}
+          <div className="flex items-center gap-2.5 pt-2">
+            <Avatar className="h-6 w-6 ring-2 ring-white/10">
               {authorAvatarUrl && <AvatarImage src={authorAvatarUrl} alt={movie.author.name || 'Author'} />}
-              <AvatarFallback className="text-[10px]">{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
+              <AvatarFallback className="text-xs bg-primary/20 text-primary">{movie.author.name?.charAt(0).toUpperCase() || 'A'}</AvatarFallback>
             </Avatar>
-            <span className="text-xs text-muted-foreground truncate">{movie.author.name}</span>
+            <span className="text-xs text-muted-foreground/70 truncate font-medium">{movie.author.name}</span>
           </div>
         </div>
       </Link>
