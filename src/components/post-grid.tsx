@@ -50,18 +50,20 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
     setMounted(true);
   }, []);
 
+  // Default placeholder image
+  const defaultImage = 'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=500&h=400&fit=crop';
+
   const movieImageUrl =
     movie.posterUrl ||
-    PlaceHolderImages.find(
-      (p) => p.id === 'movie-poster-placeholder'
-    )?.imageUrl;
+    PlaceHolderImages.find((p) => p.id === 'movie-poster-placeholder')?.imageUrl ||
+    defaultImage;
 
   const series = movie.series as Series | null;
 
   return (
     <div
       key={movie.id}
-      className="relative overflow-hidden rounded-sm cursor-pointer group"
+      className="relative overflow-hidden cursor-pointer group"
       style={{ boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)' }}
     >
       <Link
@@ -69,24 +71,21 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
         className="block h-full w-full"
         aria-label={movie.title}
       >
-        {/* Image - Full card */}
+        {/* Image - Full card, no rounded corners */}
         <div className="relative w-full overflow-hidden">
-          {!imageLoaded && <Skeleton className="w-full h-48" />}
-          {movieImageUrl && (
-            <Image
-              src={movieImageUrl}
-              alt={movie.title}
-              width={500}
-              height={400}
-              className={cn(
-                'w-full h-auto object-cover transition-all duration-300 group-hover:scale-105',
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              )}
-              onLoad={() => setImageLoaded(true)}
-              priority={index < 4}
-              quality={75}
-            />
-          )}
+          <Image
+            src={movieImageUrl}
+            alt={movie.title}
+            width={500}
+            height={400}
+            className={cn(
+              'w-full h-auto object-cover transition-all duration-300 group-hover:scale-105',
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            )}
+            onLoad={() => setImageLoaded(true)}
+            priority={index < 4}
+            quality={75}
+          />
 
           {/* Hover Overlay with Play Button */}
           <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-black/40">
@@ -103,7 +102,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
           {/* Lock badge - top right */}
           {movie.isLockedByDefault && (
             <div className="absolute top-2 right-2 z-30">
-              <div className="flex items-center justify-center w-6 h-6 bg-black/60 rounded-sm">
+              <div className="flex items-center justify-center w-6 h-6 bg-black/60">
                 <Lock className="h-3 w-3 text-yellow-300" />
               </div>
             </div>
@@ -112,7 +111,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
           {/* Type badge - top left */}
           {mounted && (
             <div className="absolute top-2 left-2 z-30">
-              <div className="flex items-center gap-1 bg-black/60 px-2 py-1 rounded-sm text-xs font-medium text-white/90">
+              <div className="flex items-center gap-1 bg-black/60 px-2 py-1 text-xs font-medium text-white/90">
                 {movie.type === 'MOVIE' ? <Clapperboard className="w-3 h-3" /> : <Tv className="w-3 h-3" />}
               </div>
             </div>
