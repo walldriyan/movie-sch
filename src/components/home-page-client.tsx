@@ -5,6 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { User, Post, GroupWithCount } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
