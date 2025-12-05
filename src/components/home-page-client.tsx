@@ -89,7 +89,7 @@ const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex =
 // ========================================
 const HeroSection = () => {
     return (
-        <section className="relative pt-8 pb-12">
+        <section className="relative pt-20 pb-12">
             {/* Suno-style Hero Banner with Rounded Corners */}
             <div className="relative mx-4 rounded-2xl overflow-hidden" style={{ minHeight: '320px' }}>
                 {/* Gradient Background - like Suno's v5 banner */}

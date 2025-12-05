@@ -26,7 +26,7 @@ import { siteConfig } from '@/config/site.config';
 import { Button } from '@/components/ui/button';
 import UserButton from './user-button';
 import CreateButton from './create-button';
-import Image from 'next/image';
+import SearchBar from './search-bar';
 
 export default function LeftSidebar() {
     const { data: session, status } = useSession();
@@ -49,7 +49,7 @@ export default function LeftSidebar() {
 
     if (shouldHide) return null;
 
-    // Suno-style NavItem - horizontal icon + text
+    // Suno-style NavItem
     const NavItem = ({
         href,
         icon: Icon,
@@ -88,18 +88,14 @@ export default function LeftSidebar() {
 
     return (
         <>
-            {/* Absolute positioned top-right controls */}
+            {/* Absolute positioned top-right controls - with search bar */}
             <div className="fixed top-4 right-4 z-50 flex items-center gap-3">
-                {/* Search placeholder */}
-                <div className="hidden md:flex items-center gap-2 px-4 py-2 bg-secondary rounded-md text-muted-foreground text-sm">
-                    <span>Create your own content</span>
+                {/* Search Bar */}
+                <div className="hidden md:block">
+                    <SearchBar />
                 </div>
 
                 {canManage && <CreateButton />}
-
-                <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-foreground">
-                    <Search className="w-5 h-5" />
-                </Button>
 
                 {status === 'authenticated' && user ? (
                     <UserButton />
@@ -123,14 +119,12 @@ export default function LeftSidebar() {
                 "fixed left-0 top-0 h-screen w-[200px] z-40",
                 "bg-background border-r border-border",
                 "flex flex-col overflow-y-auto",
-                // Mobile: hidden by default, shown when mobileOpen
                 mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
                 "transition-transform duration-200"
             )}>
                 {/* Logo */}
                 <div className="p-4 flex items-center gap-2">
                     <Link href="/" className="flex items-center gap-2">
-                        <Image src="/logo.png" alt="Logo" width={28} height={28} />
                         <span className="font-bold text-lg">{siteConfig.name}</span>
                     </Link>
                     <button className="ml-auto text-muted-foreground hover:text-foreground">
@@ -158,9 +152,7 @@ export default function LeftSidebar() {
                     <NavItem href="/" icon={Home} label="Home" />
 
                     {user && (
-                        <>
-                            <NavItem href="/create" icon={Plus} label="Create" badge="+" />
-                        </>
+                        <NavItem href="/create" icon={Plus} label="Create" badge="+" />
                     )}
 
                     <NavItem href="/explore" icon={Compass} label="Explore" />
