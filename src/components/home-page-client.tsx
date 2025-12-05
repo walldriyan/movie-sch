@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
@@ -28,100 +28,304 @@ import { ROLES } from '@/lib/permissions';
 import { siteConfig } from '@/config/site.config';
 
 // ========================================
-// HERO SECTION - Magazine/Education Style
+// 3D FLOATING CARD COMPONENT
+// ========================================
+interface FloatingCardProps {
+    title: string;
+    subtitle?: string;
+    imageUrl?: string;
+    delay?: number;
+    position: 'left' | 'center' | 'right';
+    zIndex?: number;
+}
+
+const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex = 10 }: FloatingCardProps) => {
+    const positionStyles = {
+        left: 'left-0 -translate-x-1/4 rotate-y-[25deg] rotate-z-[-3deg]',
+        center: 'left-1/2 -translate-x-1/2 rotate-y-[0deg]',
+        right: 'right-0 translate-x-1/4 rotate-y-[-25deg] rotate-z-[3deg]',
+    };
+
+    return (
+        <div
+            className={cn(
+                "absolute w-56 h-72 rounded-2xl overflow-hidden shadow-2xl transition-all duration-700 hover:scale-105",
+                "bg-gradient-to-br from-stone-800/90 via-stone-900/95 to-neutral-900/90",
+                "border border-stone-700/50 backdrop-blur-xl",
+                "animate-float cursor-pointer group"
+            )}
+            style={{
+                animationDelay: `${delay}ms`,
+                zIndex,
+                transform: `perspective(1000px) ${position === 'left' ? 'rotateY(15deg) rotateZ(-2deg) translateX(-20%)' : position === 'right' ? 'rotateY(-15deg) rotateZ(2deg) translateX(20%)' : 'rotateY(0)'}`,
+            }}
+        >
+            {/* Card Image */}
+            {imageUrl && (
+                <div className="relative h-40 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-transparent to-transparent z-10" />
+                    <img
+                        src={imageUrl}
+                        alt={title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                </div>
+            )}
+            {/* Card Content */}
+            <div className="p-4 space-y-2">
+                <h3 className="font-bold text-white/95 text-base line-clamp-2">{title}</h3>
+                {subtitle && (
+                    <p className="text-xs text-stone-400 line-clamp-2">{subtitle}</p>
+                )}
+            </div>
+            {/* Glow Effect */}
+            <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 via-transparent to-amber-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        </div>
+    );
+};
+
+// ========================================
+// HERO SECTION - Safari Tabs 3D Style
 // ========================================
 const HeroSection = () => {
-    return (
-        <section className="relative overflow-hidden">
-            {/* Background Effects */}
-            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-background to-blue-500/5" />
-            <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+    const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+    const heroRef = useRef<HTMLDivElement>(null);
 
-            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
-                <div className="grid lg:grid-cols-2 gap-12 items-center">
+    useEffect(() => {
+        const handleMouseMove = (e: MouseEvent) => {
+            if (heroRef.current) {
+                const rect = heroRef.current.getBoundingClientRect();
+                const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
+                const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
+                setMousePosition({ x: x * 15, y: y * 10 });
+            }
+        };
+
+        window.addEventListener('mousemove', handleMouseMove);
+        return () => window.removeEventListener('mousemove', handleMouseMove);
+    }, []);
+
+    const floatingCards = [
+        { title: "Los Angeles Times", subtitle: "Arts & Culture Magazine", position: 'left' as const, delay: 0, zIndex: 8 },
+        { title: "Färs - Poetic Objects", subtitle: "NEW COLLECTION", position: 'left' as const, delay: 200, zIndex: 12 },
+        { title: "Mush Studios", subtitle: "Creative Design Agency", position: 'center' as const, delay: 100, zIndex: 15 },
+        { title: "On modular - Teenage", subtitle: "Electronics Magazine", position: 'right' as const, delay: 300, zIndex: 10 },
+        { title: "RONAN BOUROULIEC", subtitle: "GOOD MOODS Furniture", position: 'right' as const, delay: 150, zIndex: 14 },
+    ];
+
+    return (
+        <section ref={heroRef} className="relative min-h-[85vh] overflow-hidden">
+            {/* 97% Black with subtle Brown/Gray Mix Background */}
+            <div className="absolute inset-0">
+                {/* Pure dark base */}
+                <div className="absolute inset-0 bg-background" />
+
+                {/* Very subtle warm gradient orbs - almost invisible */}
+                <div
+                    className="absolute top-1/4 left-1/3 w-[600px] h-[600px] rounded-full opacity-15 blur-[150px]"
+                    style={{
+                        background: 'radial-gradient(circle, hsl(25, 15%, 12%) 0%, transparent 70%)',
+                        transform: `translate(${mousePosition.x * 2}px, ${mousePosition.y * 2}px)`,
+                        transition: 'transform 0.3s ease-out'
+                    }}
+                />
+                <div
+                    className="absolute bottom-1/4 right-1/3 w-[500px] h-[500px] rounded-full opacity-12 blur-[120px]"
+                    style={{
+                        background: 'radial-gradient(circle, hsl(30, 12%, 10%) 0%, transparent 70%)',
+                        transform: `translate(${-mousePosition.x * 1.5}px, ${-mousePosition.y * 1.5}px)`,
+                        transition: 'transform 0.3s ease-out'
+                    }}
+                />
+                <div
+                    className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-10 blur-[180px]"
+                    style={{ background: 'radial-gradient(circle, hsl(28, 10%, 9%) 0%, transparent 60%)' }}
+                />
+
+                {/* Subtle noise texture overlay */}
+                <div className="absolute inset-0 opacity-[0.015]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg viewBox="0 0 256 256" xmlns="http://www.w3.org/2000/svg"%3E%3Cfilter id="noise"%3E%3CfeTurbulence type="fractalNoise" baseFrequency="0.9" stitchTiles="stitch"/%3E%3C/filter%3E%3Crect width="100%" height="100%" filter="url(%23noise)"/%3E%3C/svg%3E")' }} />
+            </div>
+
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+                <div className="grid lg:grid-cols-2 gap-16 items-center min-h-[60vh]">
                     {/* Left Content */}
-                    <div className="space-y-8">
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
-                            <Sparkles className="w-4 h-4" />
+                    <div className="space-y-8 z-20">
+                        {/* Premium Badge */}
+                        <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-neutral-900/60 border border-neutral-700/30 text-neutral-300 text-sm font-medium backdrop-blur-sm">
+                            <Sparkles className="w-4 h-4 text-amber-500/80" />
                             <span>{siteConfig.tagline}</span>
                         </div>
 
-                        {/* Main Headline */}
-                        <div className="space-y-4">
-                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
-                                <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
+                        {/* Main Headline with Premium Typography */}
+                        <div className="space-y-6">
+                            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight leading-[1.1]">
+                                <span className="bg-gradient-to-br from-neutral-100 via-neutral-200 to-neutral-400 bg-clip-text text-transparent">
                                     {siteConfig.hero.headline}
                                 </span>
                             </h1>
-                            <p className="text-xl sm:text-2xl text-muted-foreground font-medium">
+                            <p className="text-2xl sm:text-3xl font-medium text-neutral-400">
                                 {siteConfig.hero.subheadline}
                             </p>
-                            <p className="text-lg text-muted-foreground/80 max-w-lg">
+                            <p className="text-lg text-neutral-500 max-w-lg leading-relaxed">
                                 {siteConfig.hero.description}
                             </p>
                         </div>
 
-                        {/* CTA Buttons */}
-                        <div className="flex flex-wrap gap-4">
-                            <Button size="lg" className="h-12 px-8 text-base font-semibold group" asChild>
+                        {/* Premium CTA Buttons */}
+                        <div className="flex flex-wrap gap-4 pt-4">
+                            <Button
+                                size="lg"
+                                className="h-14 px-10 text-base font-semibold bg-gradient-to-r from-amber-600/90 to-amber-700/90 hover:from-amber-500 hover:to-amber-600 text-neutral-950 transition-all duration-300 group border-0"
+                                asChild
+                            >
                                 <Link href={siteConfig.hero.cta.primary.href}>
                                     {siteConfig.hero.cta.primary.text}
-                                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                    <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                                 </Link>
                             </Button>
-                            <Button size="lg" variant="outline" className="h-12 px-8 text-base font-semibold border-white/20 hover:bg-white/5" asChild>
+                            <Button
+                                size="lg"
+                                variant="outline"
+                                className="h-14 px-10 text-base font-semibold border-neutral-800/50 bg-neutral-900/40 hover:bg-neutral-800/50 text-neutral-300 transition-all duration-300"
+                                asChild
+                            >
                                 <Link href={siteConfig.hero.cta.secondary.href}>
                                     {siteConfig.hero.cta.secondary.text}
                                 </Link>
                             </Button>
                         </div>
 
-                        {/* Stats */}
-                        <div className="flex flex-wrap gap-8 pt-4">
+                        {/* Premium Stats */}
+                        <div className="flex flex-wrap gap-10 pt-8 border-t border-neutral-800/30">
                             {siteConfig.hero.stats.map((stat, index) => (
-                                <div key={index} className="text-center">
-                                    <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
-                                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                                <div key={index} className="text-center sm:text-left group">
+                                    <div className="text-3xl sm:text-4xl font-bold text-neutral-200 group-hover:text-amber-400/80 transition-all">
+                                        {stat.value}
+                                    </div>
+                                    <div className="text-sm text-neutral-600 mt-1">{stat.label}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Right Content - Feature Cards */}
-                    <div className="relative hidden lg:block">
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* Featured Card 1 */}
-                            <div className="space-y-4">
-                                <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/10 border border-amber-500/20 backdrop-blur-sm">
-                                    <BookOpen className="w-10 h-10 text-amber-400 mb-4" />
-                                    <h3 className="font-semibold text-lg mb-2">In-Depth Content</h3>
-                                    <p className="text-sm text-muted-foreground">Curated articles and resources for deep learning</p>
+                    {/* Right Content - 3D Floating Cards Showcase */}
+                    <div className="relative hidden lg:flex items-center justify-center h-[500px]" style={{ perspective: '1500px' }}>
+                        {/* 3D Card Container */}
+                        <div
+                            className="relative w-full h-full"
+                            style={{
+                                transformStyle: 'preserve-3d',
+                                transform: `rotateX(${mousePosition.y * 0.5}deg) rotateY(${mousePosition.x * 0.5}deg)`,
+                                transition: 'transform 0.1s ease-out'
+                            }}
+                        >
+                            {/* Background Cards (blur effect) */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                {/* Card 1 - Far Left */}
+                                <div
+                                    className="absolute w-48 h-64 rounded-xl bg-neutral-900/80 border border-neutral-800/40 shadow-2xl overflow-hidden animate-float-slow"
+                                    style={{
+                                        transform: 'translateX(-180px) translateZ(-100px) rotateY(25deg)',
+                                        animationDelay: '0s'
+                                    }}
+                                >
+                                    <div className="h-32 bg-neutral-800/50" />
+                                    <div className="p-3 space-y-2">
+                                        <div className="h-3 w-3/4 bg-neutral-700/40 rounded" />
+                                        <div className="h-2 w-1/2 bg-neutral-800/40 rounded" />
+                                    </div>
                                 </div>
-                                <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/10 border border-blue-500/20 backdrop-blur-sm">
-                                    <Users className="w-10 h-10 text-blue-400 mb-4" />
-                                    <h3 className="font-semibold text-lg mb-2">Expert Creators</h3>
-                                    <p className="text-sm text-muted-foreground">Learn from passionate content creators</p>
+
+                                {/* Card 2 - Left */}
+                                <div
+                                    className="absolute w-52 h-72 rounded-2xl bg-neutral-900/90 border border-neutral-700/30 shadow-2xl overflow-hidden animate-float"
+                                    style={{
+                                        transform: 'translateX(-100px) translateZ(-50px) rotateY(15deg)',
+                                        animationDelay: '0.5s'
+                                    }}
+                                >
+                                    <div className="h-36 bg-neutral-800/60 flex items-center justify-center">
+                                        <BookOpen className="w-12 h-12 text-amber-500/40" />
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        <h3 className="font-bold text-neutral-300 text-sm">Featured Articles</h3>
+                                        <p className="text-xs text-neutral-600">Curated content collection</p>
+                                        <div className="flex gap-1">
+                                            {[1, 2, 3].map(i => <div key={i} className="w-6 h-6 rounded-full bg-neutral-800/60" />)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card 3 - Center (Main) */}
+                                <div
+                                    className="absolute w-60 h-80 rounded-2xl bg-neutral-900/95 border border-amber-800/30 shadow-[0_25px_50px_-12px_rgba(0,0,0,0.8)] overflow-hidden animate-float-slow z-20 group"
+                                    style={{
+                                        transform: 'translateZ(50px)',
+                                        animationDelay: '0.2s'
+                                    }}
+                                >
+                                    <div className="h-44 bg-gradient-to-br from-amber-900/20 via-neutral-800/40 to-neutral-900/60 flex items-center justify-center relative overflow-hidden">
+                                        <div className="absolute inset-0 bg-neutral-900/20" />
+                                        <Sparkles className="w-16 h-16 text-amber-500/50 group-hover:text-amber-400/70 transition-colors" />
+                                    </div>
+                                    <div className="p-5 space-y-3">
+                                        <div className="flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-amber-600/80" />
+                                            <span className="text-xs text-amber-500/70 font-medium">TRENDING</span>
+                                        </div>
+                                        <h3 className="font-bold text-neutral-200 text-lg leading-tight">Discover Premium Content</h3>
+                                        <p className="text-sm text-neutral-500">Explore curated articles and resources</p>
+                                    </div>
+                                    {/* Hover glow */}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-amber-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                </div>
+
+                                {/* Card 4 - Right */}
+                                <div
+                                    className="absolute w-52 h-72 rounded-2xl bg-neutral-900/90 border border-neutral-700/30 shadow-2xl overflow-hidden animate-float"
+                                    style={{
+                                        transform: 'translateX(100px) translateZ(-50px) rotateY(-15deg)',
+                                        animationDelay: '0.7s'
+                                    }}
+                                >
+                                    <div className="h-36 bg-neutral-800/50 flex items-center justify-center">
+                                        <Users className="w-12 h-12 text-neutral-500/50" />
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        <h3 className="font-bold text-neutral-300 text-sm">Top Creators</h3>
+                                        <p className="text-xs text-neutral-600">Meet our community</p>
+                                        <div className="flex -space-x-2">
+                                            {[1, 2, 3, 4].map(i => <div key={i} className="w-7 h-7 rounded-full bg-neutral-800/70 border-2 border-neutral-900" />)}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Card 5 - Far Right */}
+                                <div
+                                    className="absolute w-48 h-64 rounded-xl bg-neutral-900/80 border border-neutral-800/40 shadow-2xl overflow-hidden animate-float-slow"
+                                    style={{
+                                        transform: 'translateX(180px) translateZ(-100px) rotateY(-25deg)',
+                                        animationDelay: '0.3s'
+                                    }}
+                                >
+                                    <div className="h-32 bg-neutral-800/40" />
+                                    <div className="p-3 space-y-2">
+                                        <div className="h-3 w-3/4 bg-neutral-700/40 rounded" />
+                                        <div className="h-2 w-1/2 bg-neutral-800/40 rounded" />
+                                    </div>
                                 </div>
                             </div>
-                            {/* Featured Card 2 */}
-                            <div className="space-y-4 pt-8">
-                                <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-600/10 border border-purple-500/20 backdrop-blur-sm">
-                                    <Compass className="w-10 h-10 text-purple-400 mb-4" />
-                                    <h3 className="font-semibold text-lg mb-2">Explore Topics</h3>
-                                    <p className="text-sm text-muted-foreground">Discover content across various subjects</p>
-                                </div>
-                                <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-600/10 border border-green-500/20 backdrop-blur-sm">
-                                    <TrendingUp className="w-10 h-10 text-green-400 mb-4" />
-                                    <h3 className="font-semibold text-lg mb-2">Stay Updated</h3>
-                                    <p className="text-sm text-muted-foreground">Fresh content added regularly</p>
-                                </div>
-                            </div>
+
+                            {/* Floating glow orbs - very subtle */}
+                            <div className="absolute top-1/4 left-1/4 w-32 h-32 bg-amber-600/5 rounded-full blur-3xl animate-pulse" />
+                            <div className="absolute bottom-1/4 right-1/4 w-24 h-24 bg-amber-700/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '1s' }} />
                         </div>
                     </div>
                 </div>
             </div>
+
+            {/* Bottom fade to content */}
+            <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
         </section>
     );
 };
@@ -131,7 +335,7 @@ const HeroSection = () => {
 // ========================================
 const Footer = () => {
     return (
-        <footer className="bg-zinc-950/90 border-t border-white/5 mt-16">
+        <footer className="bg-background border-t border-transparent mt-16">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
                     {/* Brand Column */}

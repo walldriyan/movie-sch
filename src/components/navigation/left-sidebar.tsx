@@ -133,7 +133,7 @@ export default function LeftSidebar() {
     return (
         <aside className={cn(
             "fixed left-0 top-16 h-[calc(100vh-4rem)] w-[72px] z-40",
-            "bg-background/60 backdrop-blur-xl",
+            "bg-transparent",
             "hidden md:flex flex-col items-center py-2"
         )}>
             {/* Main Navigation */}

@@ -1,4 +1,3 @@
-
 @import url("../../prisma/Fonts/WEB/css/cabinet-grotesk.css");
 
 @tailwind base;
@@ -7,49 +6,52 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
+    /* 97% Black with subtle Brown/Gray Mix - Seamless Dark Theme */
+    --background: 20 8% 5%;
+    --foreground: 30 10% 90%;
 
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
+    --card: 20 8% 6%;
+    --card-foreground: 30 10% 90%;
 
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
+    --popover: 20 8% 5%;
+    --popover-foreground: 30 10% 90%;
 
-    --primary: 142 76% 36%;
-    /* Retain spotify green for accent */
-    --primary-foreground: 0 0% 98%;
+    /* Warm gold/amber accent - subtle */
+    --primary: 35 70% 50%;
+    --primary-foreground: 20 8% 5%;
 
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
+    --secondary: 20 6% 10%;
+    --secondary-foreground: 30 8% 85%;
 
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 0 0% 63.9%;
+    --muted: 20 5% 9%;
+    --muted-foreground: 25 8% 45%;
 
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 22 8% 11%;
+    --accent-foreground: 30 10% 90%;
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
 
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 142 76% 36%;
+    /* Very subtle borders - almost invisible */
+    --border: 20 5% 10%;
+    --input: 20 5% 10%;
+    --ring: 35 70% 50%;
 
     --radius: 1rem;
 
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    --chart-1: 35 70% 50%;
+    --chart-2: 25 50% 35%;
+    --chart-3: 20 35% 25%;
+    --chart-4: 40 60% 55%;
+    --chart-5: 30 75% 60%;
 
-    --sidebar-background: 240 10% 3.9%;
-    --sidebar-foreground: 0 0% 80%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-ring: 142 76% 45%;
+    /* Sidebar matching background - seamless */
+    --sidebar-background: 20 8% 5%;
+    --sidebar-foreground: 25 10% 70%;
+    --sidebar-border: 20 5% 8%;
+    --sidebar-accent: 22 8% 9%;
+    --sidebar-accent-foreground: 30 10% 90%;
+    --sidebar-ring: 35 70% 45%;
 
     /* Z-index hierarchy */
     --z-index-header: 50;
@@ -79,7 +81,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   .tiptap p.is-editor-empty:first-child::before {
     content: attr(data-placeholder);
     float: left;
@@ -93,18 +95,21 @@
   .prose p {
     margin: 0;
     padding: 0;
-    line-height: 1.6; /* Text lines අතර natural spacing */
+    line-height: 1.6;
+    /* Text lines අතර natural spacing */
   }
 
   /* Empty paragraphs වලට height - Enter press කරද්දී space line එක */
   .tiptap p:empty,
   .prose p:empty {
-    min-height: 1.6em; /* Line height එකට match වෙන height */
+    min-height: 1.6em;
+    /* Line height එකට match වෙන height */
   }
 
   /* Remove extra spacing between paragraphs */
   .prose p:not(:first-child) {
-    margin-top: 0; /* මේක remove කළා */
+    margin-top: 0;
+    /* මේක remove කළා */
   }
 
   .prose img {
@@ -118,16 +123,18 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
+
   .no-print {
     display: none !important;
   }
-  
-  .printable-certificate, .printable-detailed {
-      padding: 1.5rem;
-      background-color: white;
-      color: black;
+
+  .printable-certificate,
+  .printable-detailed {
+    padding: 1.5rem;
+    background-color: white;
+    color: black;
   }
-  
+
   @page {
     size: A4;
     margin: 0;
@@ -166,13 +173,14 @@ body {
   /* IE and Edge */
   scrollbar-width: none;
   /* Firefox */
-  
+
 }
 
 @keyframes loading-bar-animation {
   0% {
     transform: translateX(-100%);
   }
+
   100% {
     transform: translateX(100%);
   }
@@ -182,4 +190,95 @@ body {
   position: absolute;
   width: 50%;
   animation: loading-bar-animation 1.5s infinite linear;
+}
+
+/* 3D Floating Card Animations */
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
+}
+
+@keyframes float-slow {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
+  }
+}
+
+@keyframes float-gentle {
+
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+
+  25% {
+    transform: translateY(-8px) rotate(0.5deg);
+  }
+
+  75% {
+    transform: translateY(-8px) rotate(-0.5deg);
+  }
+}
+
+.animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float-slow 8s ease-in-out infinite;
+}
+
+.animate-float-gentle {
+  animation: float-gentle 10s ease-in-out infinite;
+}
+
+/* 3D Transform utilities */
+.preserve-3d {
+  transform-style: preserve-3d;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-1500 {
+  perspective: 1500px;
+}
+
+/* Warm color overlays for magazine feel */
+.warm-overlay {
+  background: linear-gradient(135deg,
+      rgba(139, 90, 43, 0.15) 0%,
+      rgba(68, 51, 39, 0.1) 50%,
+      rgba(50, 42, 35, 0.15) 100%);
+}
+
+/* Premium glass effect */
+.glass-warm {
+  background: rgba(50, 42, 35, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(139, 90, 43, 0.2);
+}
+
+/* Subtle grain texture for premium feel */
+.grain-texture::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
 }

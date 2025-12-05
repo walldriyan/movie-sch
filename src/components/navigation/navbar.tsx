@@ -123,7 +123,7 @@ export default function Navbar() {
   };
 
   return (
-    <header className="fixed top-0 w-full bg-background/80 backdrop-blur-lg shadow-lg shadow-black/10 z-header">
+    <header className="fixed top-0 w-full bg-background/95 backdrop-blur-md border-b border-transparent z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-4">
         {/* Logo */}
         <Link
