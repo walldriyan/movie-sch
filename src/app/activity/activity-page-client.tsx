@@ -90,16 +90,9 @@ const ActivityCard = ({
                     {type === 'notification' ? item.message : item.description || `by ${item.author?.name || 'Unknown'}`}
                 </p>
 
-                {isPost && (
+                {isPost && item.year && (
                     <div className="flex items-center gap-3 mt-2">
-                        {item.genres?.slice(0, 2).map((genre: string) => (
-                            <Badge key={genre} variant="secondary" className="text-[10px] bg-white/5">
-                                {genre}
-                            </Badge>
-                        ))}
-                        {item.year && (
-                            <span className="text-[10px] text-muted-foreground">{item.year}</span>
-                        )}
+                        <span className="text-[10px] text-muted-foreground">{item.year}</span>
                     </div>
                 )}
             </div>
