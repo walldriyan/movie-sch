@@ -97,59 +97,82 @@ export default function MoviesPageClient({
             "min-h-screen bg-background transition-opacity duration-200 overflow-x-hidden",
             isPending && "opacity-60 pointer-events-none"
         )}>
-            {/* Centered content container */}
-            <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
-                {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-                    <div className="flex items-center gap-3">
-                        <Film className="h-8 w-8 text-primary" />
-                        <h1 className="text-3xl font-bold">Movies</h1>
-                        {isPending && <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />}
-                    </div>
+            {/* Hero Section */}
+            <div className="relative pt-20 pb-8">
+                {/* Background Gradients */}
+                <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                    <div className="absolute top-0 left-1/4 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
+                    <div className="absolute top-10 right-1/3 w-64 h-64 bg-purple-500/8 rounded-full blur-3xl" />
+                </div>
 
-                    {/* Quick filters */}
-                    <div className="flex items-center gap-2">
-                        <Select
-                            value={searchParams.genre || 'all'}
-                            onValueChange={(value) => handleFilterChange('genre', value)}
-                        >
-                            <SelectTrigger className="w-[140px] bg-muted/50">
-                                <SelectValue placeholder="Genre" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Genres</SelectItem>
-                                {GENRES.map((genre) => (
-                                    <SelectItem key={genre} value={genre}>{genre}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                <div className="relative max-w-6xl mx-auto px-4 md:px-6">
+                    <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+                        <div>
+                            {/* Badge */}
+                            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/5 mb-4">
+                                <Film className="w-4 h-4 text-white/60" />
+                                <span className="text-xs font-medium text-white/60">Browse Collection</span>
+                            </div>
 
-                        <Select
-                            value={searchParams.year || 'all'}
-                            onValueChange={(value) => handleFilterChange('year', value)}
-                        >
-                            <SelectTrigger className="w-[120px] bg-muted/50">
-                                <SelectValue placeholder="Year" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">All Years</SelectItem>
-                                {YEARS.map((year) => (
-                                    <SelectItem key={year} value={year}>{year}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
+                            {/* Title */}
+                            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                                Movies
+                            </h1>
+                            <p className="text-white/50 text-sm max-w-md">
+                                Explore our collection of movies across all genres
+                            </p>
+                            {isPending && <Loader2 className="h-4 w-4 animate-spin text-white/50 mt-2" />}
+                        </div>
 
-                        {(searchParams.genre || searchParams.year) && (
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => navigateWithTransition('/movies')}
+                        {/* Filters */}
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <Select
+                                value={searchParams.genre || 'all'}
+                                onValueChange={(value) => handleFilterChange('genre', value)}
                             >
-                                Clear
-                            </Button>
-                        )}
+                                <SelectTrigger className="w-[130px] bg-white/5 border-0 text-white/70">
+                                    <SelectValue placeholder="Genre" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Genres</SelectItem>
+                                    {GENRES.map((genre) => (
+                                        <SelectItem key={genre} value={genre}>{genre}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            <Select
+                                value={searchParams.year || 'all'}
+                                onValueChange={(value) => handleFilterChange('year', value)}
+                            >
+                                <SelectTrigger className="w-[110px] bg-white/5 border-0 text-white/70">
+                                    <SelectValue placeholder="Year" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Years</SelectItem>
+                                    {YEARS.map((year) => (
+                                        <SelectItem key={year} value={year}>{year}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+
+                            {(searchParams.genre || searchParams.year) && (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-white/50 hover:text-white"
+                                    onClick={() => navigateWithTransition('/movies')}
+                                >
+                                    Clear
+                                </Button>
+                            )}
+                        </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Content */}
+            <div className="max-w-6xl mx-auto px-4 md:px-6 pb-12">
 
                 {/* Results */}
                 {initialPosts.length === 0 ? (
