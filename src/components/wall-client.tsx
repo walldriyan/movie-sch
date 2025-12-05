@@ -6,22 +6,21 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
-import { Image as ImageIcon, X, Info, MessageSquare, Sparkles } from 'lucide-react';
-import type { User, MicroPost as MicroPostType, MicroPost } from '@/lib/types';
+import { Image as ImageIcon, X, MessageSquare, Sparkles, Send, Hash, Folder } from 'lucide-react';
+import type { MicroPost } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent } from "@/components/ui/card";
 import { createMicroPost, getAllCategories, getAllTags, getMicroPostCreationStatus } from '@/lib/actions';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';
 import Image from 'next/image';
 import { Textarea } from './ui/textarea';
-import { Form, FormControl, FormField, FormItem, FormMessage } from './ui/form';
+import { Form, FormControl, FormField, FormItem } from './ui/form';
 import { CategoryInput } from '@/components/manage/category-input';
 import { TagInput } from '@/components/manage/tag-input';
 import MicroPostCard from './micro-post-card';
-import { Skeleton } from './ui/skeleton';
+import { Badge } from './ui/badge';
 
 
 interface WallClientProps {
@@ -92,6 +91,8 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
   });
 
   const contentValue = form.watch('content');
+  const categoriesValue = form.watch('categories') || [];
+  const tagsValue = form.watch('tags') || [];
 
   const userAvatar = user?.image || PlaceHolderImages.find((img) => img.id === 'avatar-4')?.imageUrl;
 
@@ -100,7 +101,7 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (file.size > 1024 * 1024) { // 1MB limit
+      if (file.size > 1024 * 1024) {
         toast({ variant: 'destructive', title: 'File too large', description: 'Image size must be less than 1MB.' });
         return;
       }
@@ -136,9 +137,9 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
         form.reset();
         setPreviewImage(null);
         if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto'; // Reset height
+          textareaRef.current.style.height = 'auto';
         }
-        await fetchPostStatus(); // Refresh status after posting
+        await fetchPostStatus();
       } catch (error: any) {
         toast({ variant: 'destructive', title: 'Error', description: error.message });
       }
@@ -149,130 +150,145 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
   const maxChars = 2000;
 
   return (
-    <div className="rounded-xl bg-white/[0.02] border border-white/5 p-5 mb-6">
-      {/* Status Badge */}
-      {isLoadingStatus ? (
-        <div className="flex items-center gap-3 mb-4">
-          <Skeleton className="h-4 w-4 rounded-full" />
-          <Skeleton className="h-3 w-48" />
-        </div>
-      ) : postStatus && (
-        <div className="flex items-center gap-2 text-xs text-white/40 mb-4">
-          <Info className="h-3 w-3" />
-          <span>
-            {postStatus.limit === 0 ? 'Unlimited posts' : `${postStatus.remaining} of ${postStatus.limit} posts remaining today`}
-          </span>
+    <div className="rounded-xl border border-white/[0.06] overflow-hidden mb-6">
+      {/* Status Bar */}
+      {!isLoadingStatus && postStatus && (
+        <div className="px-5 py-3 border-b border-white/[0.06] text-xs text-white/40">
+          {postStatus.limit === 0
+            ? '✨ Unlimited posts'
+            : `📊 ${postStatus.remaining}/${postStatus.limit} posts remaining`}
         </div>
       )}
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="flex items-start gap-4">
-          <Avatar className="h-10 w-10 border border-white/10">
-            <AvatarImage src={userAvatar} />
-            <AvatarFallback className="bg-white/5 text-white/60">{user?.name?.charAt(0) || 'U'}</AvatarFallback>
-          </Avatar>
-          <div className="w-full space-y-4">
-            <FormField
-              control={form.control}
-              name="content"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
-                    <Textarea
-                      ref={(e) => {
-                        field.ref(e);
-                        textareaRef.current = e;
-                      }}
-                      placeholder="What's on your mind?"
-                      className="w-full bg-transparent border-0 focus-visible:ring-0 p-0 text-base text-white placeholder:text-white/30 resize-none"
-                      rows={2}
-                      {...field}
-                      disabled={!canPost || isSubmitting}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="p-5">
+          <div className="flex gap-4">
+            <Avatar className="h-10 w-10 flex-shrink-0">
+              <AvatarImage src={userAvatar} />
+              <AvatarFallback className="bg-white/[0.06] text-white/50">{user?.name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+
+            <div className="flex-1">
+              <FormField
+                control={form.control}
+                name="content"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Textarea
+                        ref={(e) => {
+                          field.ref(e);
+                          textareaRef.current = e;
+                        }}
+                        placeholder="What's on your mind?"
+                        className="w-full bg-transparent border-0 focus-visible:ring-0 p-0 text-[15px] text-white placeholder:text-white/25 resize-none min-h-[80px]"
+                        {...field}
+                        disabled={!canPost || isSubmitting}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Image Preview */}
+              {previewImage && (
+                <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden mt-3">
+                  <Image src={previewImage} alt="Preview" fill className="object-cover" />
+                  <button
+                    type="button"
+                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/70 hover:bg-black/90 flex items-center justify-center"
+                    onClick={removeImage}
+                  >
+                    <X className="h-3.5 w-3.5 text-white" />
+                  </button>
+                </div>
               )}
-            />
-            {previewImage && (
-              <div className="relative w-full max-w-xs aspect-video rounded-lg overflow-hidden border border-white/10">
-                <Image src={previewImage} alt="Image preview" fill className="object-cover" />
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="absolute top-2 right-2 h-7 w-7 rounded-full bg-black/50 hover:bg-black/70"
-                  onClick={removeImage}
-                >
-                  <X className="h-4 w-4 text-white" />
-                </Button>
-              </div>
-            )}
-            <FormField
-              control={form.control}
-              name="categories"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
+
+              {/* Selected Categories & Tags Display */}
+              {(categoriesValue.length > 0 || tagsValue.length > 0) && (
+                <div className="flex flex-wrap gap-2 mt-3">
+                  {categoriesValue.map((cat) => (
+                    <Badge key={cat} variant="secondary" className="bg-white/[0.06] text-white/60 border-0 text-xs">
+                      <Folder className="h-3 w-3 mr-1" />{cat}
+                    </Badge>
+                  ))}
+                  {tagsValue.map((tag) => (
+                    <Badge key={tag} variant="secondary" className="bg-white/[0.06] text-white/60 border-0 text-xs">
+                      <Hash className="h-3 w-3 mr-1" />{tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+
+              {/* Hidden Category/Tag Inputs - still functional but not visible */}
+              <div className="hidden">
+                <FormField
+                  control={form.control}
+                  name="categories"
+                  render={({ field }) => (
                     <CategoryInput
                       allCategories={allCategories}
                       value={field.value || []}
                       onChange={field.onChange}
-                      placeholder="Add categories..."
+                      placeholder="Categories"
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="tags"
-              render={({ field }) => (
-                <FormItem>
-                  <FormControl>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="tags"
+                  render={({ field }) => (
                     <TagInput
                       allTags={allTags}
                       value={field.value || []}
                       onChange={field.onChange}
-                      placeholder="Add tags..."
+                      placeholder="Tags"
                     />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <div className="flex justify-between items-center pt-2 border-t border-white/5">
-              <div className="flex gap-2 items-center">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  type="button"
-                  className="h-8 w-8 text-white/40 hover:text-white hover:bg-white/5"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={!canPost || isSubmitting}
-                >
-                  <ImageIcon className="h-4 w-4" />
-                </Button>
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  className="hidden"
-                  accept="image/*"
-                  onChange={handleImageChange}
+                  )}
                 />
-                <span className="text-xs text-white/30">
-                  {contentValue.length}/{maxChars}
-                </span>
               </div>
-              <Button
-                type="submit"
-                disabled={isSubmitting || !canPost}
-                className="rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0 h-8 px-4"
-              >
-                {isSubmitting && <Loader2 className="mr-2 h-3 w-3 animate-spin" />}
-                Post
-              </Button>
             </div>
+          </div>
+
+          {/* Actions Bar */}
+          <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/[0.06]">
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className="h-9 w-9 rounded-lg hover:bg-white/[0.06] flex items-center justify-center transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={!canPost || isSubmitting}
+              >
+                <ImageIcon className="h-[18px] w-[18px] text-white/40" />
+              </button>
+              <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleImageChange}
+              />
+
+              <span className="text-[11px] text-white/25 ml-2">
+                {contentValue.length}/{maxChars}
+              </span>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isSubmitting || !canPost || contentValue.length === 0}
+              size="sm"
+              className="rounded-lg bg-white/[0.08] hover:bg-white/[0.12] text-white/80 hover:text-white border-0 h-9 px-4 gap-2"
+            >
+              {isSubmitting ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  <span>Post</span>
+                </>
+              )}
+            </Button>
           </div>
         </form>
       </Form>
@@ -280,84 +296,41 @@ function CreateMicroPost({ onPostCreated }: { onPostCreated: (newPost: MicroPost
   );
 }
 
-function WallSkeleton() {
-  return (
-    <div className="space-y-4">
-      {[...Array(3)].map((_, i) => (
-        <div key={i} className="rounded-xl bg-white/[0.02] border border-white/5 p-5">
-          <div className="flex items-start gap-4">
-            <Skeleton className="h-10 w-10 rounded-full" />
-            <div className="flex-grow space-y-3">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-3 w-16" />
-              </div>
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-5/6" />
-              <Skeleton className="aspect-video w-full rounded-lg" />
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  )
-}
-
 export default function WallClient({ initialMicroPosts }: WallClientProps) {
   const [posts, setPosts] = useState<MicroPost[]>(initialMicroPosts);
 
   const handlePostCreated = (newPost: MicroPost) => {
-    // Since getMicroPosts fetches the full related data, we can just add the new post
-    // to the top of the list.
     setPosts(currentPosts => [newPost, ...currentPosts]);
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <div className="relative pt-20 pb-8">
-        {/* Background Gradients */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-72 h-72 bg-primary/10 rounded-full blur-3xl" />
-          <div className="absolute top-10 right-1/4 w-56 h-56 bg-purple-500/8 rounded-full blur-3xl" />
+    <div className="min-h-screen">
+      {/* Hero */}
+      <div className="pt-20 pb-8 text-center">
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/[0.04] text-white/40 text-xs mb-4">
+          <MessageSquare className="w-3.5 h-3.5" />
+          <span>Community Feed</span>
         </div>
-
-        <div className="relative max-w-xl mx-auto px-4">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md bg-white/5 mb-4">
-            <MessageSquare className="w-4 h-4 text-white/60" />
-            <span className="text-xs font-medium text-white/60">Community Feed</span>
-          </div>
-
-          {/* Title */}
-          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            The Wall
-          </h1>
-          <p className="text-white/50 text-sm max-w-md">
-            Share your thoughts with the community
-          </p>
-        </div>
+        <h1 className="text-3xl font-bold text-white mb-2">The Wall</h1>
+        <p className="text-white/35 text-sm">Share your thoughts with the community</p>
       </div>
 
-      {/* Content */}
-      <main className="max-w-xl mx-auto px-4 pb-12">
+      {/* Content - Centered */}
+      <div className="w-full max-w-xl mx-auto px-4 pb-12">
         <CreateMicroPost onPostCreated={handlePostCreated} />
+
         <div className="space-y-4">
           {posts.length > 0 ? (
             posts.map(post => <MicroPostCard key={post.id} post={post} />)
           ) : (
-            <div className="text-center py-16 rounded-xl bg-white/[0.02] border border-white/5">
-              <Sparkles className="h-12 w-12 mx-auto text-white/20 mb-4" />
-              <h2 className="text-xl font-semibold text-white/70 mb-2">
-                The Wall is Quiet...
-              </h2>
-              <p className="text-sm text-white/40">
-                Be the first to share something!
-              </p>
+            <div className="text-center py-16 rounded-xl border border-white/[0.06]">
+              <Sparkles className="h-8 w-8 text-white/15 mx-auto mb-4" />
+              <p className="text-white/50 font-medium">The Wall is Quiet...</p>
+              <p className="text-white/30 text-sm mt-1">Be the first to share!</p>
             </div>
           )}
         </div>
-      </main>
+      </div>
     </div>
   );
 }
