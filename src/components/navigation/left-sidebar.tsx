@@ -45,11 +45,14 @@ export default function LeftSidebar() {
 
     const isActive = useCallback((path: string) => pathname === path, [pathname]);
 
-    // Hide sidebar on certain pages
-    const shouldHide = useMemo(() => {
+    // Hide sidebar on certain pages or when not logged in
+    const shouldHideSidebar = useMemo(() => {
         const hiddenPaths = ['/login', '/register', '/admin', '/manage'];
         return hiddenPaths.some(p => pathname.startsWith(p));
     }, [pathname]);
+
+    // Check if user is logged in
+    const isLoggedIn = status === 'authenticated' && user;
 
     // Persist collapsed state
     useEffect(() => {
@@ -63,7 +66,35 @@ export default function LeftSidebar() {
         localStorage.setItem('sidebar-collapsed', String(newState));
     };
 
-    if (shouldHide) return null;
+    // If user is not logged in, only show top controls, not sidebar
+    if (!isLoggedIn) {
+        return (
+            <>
+                {/* Top-right controls for non-logged users */}
+                <div className="fixed top-3 right-4 z-50 flex items-center gap-2">
+                    <div className="hidden md:block">
+                        <SearchBar />
+                    </div>
+                    <Button asChild size="sm" className="h-8 text-xs rounded-full bg-white text-black hover:bg-white/90">
+                        <Link href="/login">Login</Link>
+                    </Button>
+                </div>
+                {/* No sidebar = main content centered with no left margin */}
+                <style jsx global>{`
+                    main {
+                        margin-left: 0 !important;
+                        width: 100% !important;
+                    }
+                    .max-w-7xl {
+                        margin-left: auto !important;
+                        margin-right: auto !important;
+                    }
+                `}</style>
+            </>
+        );
+    }
+
+    if (shouldHideSidebar) return null;
 
     const sidebarWidth = isCollapsed ? 'w-[70px]' : 'w-[220px]';
 
