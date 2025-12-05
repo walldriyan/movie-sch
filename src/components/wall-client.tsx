@@ -318,20 +318,10 @@ function CreatePostDialog({ onPostCreated }: { onPostCreated: (post: MicroPost) 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <div className="group cursor-pointer rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.12] p-5 transition-all hover:bg-white/[0.04]">
-          <div className="flex items-center gap-4 mb-4">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-pink-500/20 flex items-center justify-center">
-              <PenLine className="h-5 w-5 text-purple-400" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-white text-sm">Share a thought</h3>
-              <p className="text-[12px] text-white/40">Write something to the community</p>
-            </div>
-          </div>
-          <div className="flex items-center justify-end">
-            <span className="text-xs text-white/30 group-hover:text-purple-400 transition-colors">Create →</span>
-          </div>
-        </div>
+        <Button className="gap-2 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white border-0 rounded-full h-10 px-5">
+          <Plus className="h-4 w-4" />
+          Create Post
+        </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
@@ -487,9 +477,14 @@ export default function WallClient({ initialMicroPosts }: WallClientProps) {
           </h1>
 
           {/* Description */}
-          <p className="text-white/50 text-sm md:text-base max-w-lg mx-auto mb-8">
+          <p className="text-white/50 text-sm md:text-base max-w-lg mx-auto mb-6">
             Connect with the community. Share your thoughts, ideas, or discoveries.
           </p>
+
+          {/* Create Button */}
+          <div className="mb-8">
+            <CreatePostDialog onPostCreated={handlePostCreated} />
+          </div>
 
           {/* Search */}
           <div className="max-w-md mx-auto relative">
@@ -523,21 +518,17 @@ export default function WallClient({ initialMicroPosts }: WallClientProps) {
         </div>
       </div>
 
-      {/* Scrollable Posts Container */}
+      {/* Scrollable Posts Feed */}
       <div className="flex-1 overflow-y-auto px-4 pb-8">
-        <div className="max-w-5xl mx-auto">
-          {/* Create Card + Posts Grid */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {/* Create Post Card */}
-            <CreatePostDialog onPostCreated={handlePostCreated} />
-
-            {/* Posts */}
+        <div className="max-w-lg mx-auto">
+          {/* Posts Feed - Single Column like Instagram */}
+          <div className="space-y-4">
             {filteredPosts.length > 0 ? (
               filteredPosts.map(post => (
                 <PostCard key={post.id} post={post} onDelete={handlePostDeleted} />
               ))
             ) : (
-              <div className="md:col-span-2 lg:col-span-2 text-center py-16 rounded-xl bg-white/[0.02] border border-white/[0.06]">
+              <div className="text-center py-16 rounded-xl bg-white/[0.02] border border-white/[0.06]">
                 <MessageSquare className="h-10 w-10 text-white/15 mx-auto mb-4" />
                 <p className="text-white/50 font-medium">
                   {searchQuery ? 'No posts found' : 'No posts yet'}
