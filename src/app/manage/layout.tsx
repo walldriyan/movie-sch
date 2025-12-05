@@ -39,7 +39,7 @@ const NavItem = ({ href, icon: Icon, label, isActive, disabled, badge }: NavItem
     className={cn(
       "group flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200",
       "hover:bg-white/5",
-      isActive && "bg-white text-black",
+      isActive && "bg-white/10 text-white",
       disabled && "opacity-50 cursor-not-allowed"
     )}
   >
@@ -143,7 +143,7 @@ export default function ManageLayout({
         {/* Create Button */}
         <div className="px-4 pb-4">
           <Link href="/manage?create=true">
-            <Button className="w-full rounded-md bg-white text-black hover:bg-white/90 gap-2 h-10">
+            <Button className="w-full rounded-md bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white gap-2 h-10">
               <Plus className="h-4 w-4" />
               Create New
             </Button>

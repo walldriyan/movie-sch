@@ -164,7 +164,7 @@ export default function ExplorePageClient({
                                 className="pl-12 h-12 bg-white/5 border-white/10 rounded-lg text-white placeholder:text-white/40 focus:bg-white/10 focus:border-white/20"
                             />
                         </div>
-                        <Button type="submit" className="h-12 px-6 rounded-lg bg-white text-black hover:bg-white/90">
+                        <Button type="submit" className="h-12 px-6 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white">
                             Search
                         </Button>
                     </form>
@@ -190,7 +190,7 @@ export default function ExplorePageClient({
                                         className={cn(
                                             "rounded-md flex items-center gap-2 transition-all",
                                             isActive
-                                                ? "bg-white text-black hover:bg-white/90"
+                                                ? "bg-white/10 text-white"
                                                 : "text-white/70 hover:text-white hover:bg-white/10"
                                         )}
                                     >
@@ -290,7 +290,7 @@ export default function ExplorePageClient({
                         </p>
                         <Button
                             onClick={() => navigateWithTransition('/explore')}
-                            className="rounded-md bg-white text-black hover:bg-white/90"
+                            className="rounded-md bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white"
                         >
                             Clear Filters
                         </Button>

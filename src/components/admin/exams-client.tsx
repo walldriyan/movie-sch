@@ -123,14 +123,14 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
   const [exams, setExams] = useState<ExamForListing[]>(initialExams);
   const [editingExamId, setEditingExamId] = useState<number | null>(null);
   const [isLoadingExams, setIsLoadingExams] = useState(false);
-  
+
   // Transitions
   const [isSubmitting, startSubmitTransition] = useTransition();
   const [, startDeleteTransition] = useTransition();
-  
+
   // Refs
   const importFileInputRef = useRef<HTMLInputElement>(null);
-  
+
   const { toast } = useToast();
 
   // Form setup
@@ -172,10 +172,10 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
 
   const handleEdit = useCallback(async (examId: number) => {
     console.log(`[EXAMS_CLIENT] Editing exam ID:`, examId);
-    
+
     try {
       const examToEdit = await getExamForEdit(examId);
-      
+
       if (!examToEdit) {
         toast({ variant: 'destructive', title: 'Error', description: 'Exam not found.' });
         return;
@@ -236,7 +236,7 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
 
   const handleDelete = useCallback((examId: number) => {
     console.log(`[EXAMS_CLIENT] Deleting exam ID:`, examId);
-    
+
     startDeleteTransition(async () => {
       try {
         await deleteExam(examId);
@@ -257,10 +257,10 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
 
   const handleExport = useCallback(async (examId: number) => {
     console.log(`[EXAMS_CLIENT] Exporting exam ID:`, examId);
-    
+
     try {
       const examToExport = await getExamForEdit(examId);
-      
+
       if (!examToExport) {
         toast({ variant: 'destructive', title: 'Error', description: 'Exam not found.' });
         return;
@@ -312,20 +312,30 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
 
   const handleImport = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     console.log(`[EXAMS_CLIENT] Importing exam...`);
-    
+
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       try {
         const content = e.target?.result;
-        if (typeof content !== 'string') {
-          throw new Error('Failed to read file content.');
+        if (typeof content !== 'string' || content.trim() === '') {
+          throw new Error('File is empty or could not be read.');
         }
 
-        const importedData = JSON.parse(content);
+        let importedData;
+        try {
+          importedData = JSON.parse(content);
+        } catch (jsonError) {
+          throw new Error('Invalid JSON file. Please check the file format.');
+        }
+
+        if (!importedData || !importedData.questions) {
+          throw new Error('Invalid exam format. Missing required fields.');
+        }
+
         console.log('[EXAMS_CLIENT] Imported data:', importedData);
 
         const normalizedQuestions = importedData.questions.map((q: any) => ({
@@ -356,17 +366,18 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
 
         setEditingExamId(null);
         setActiveTab('create');
-        
+
         toast({
           title: "Import Successful",
           description: "Exam data has been loaded into the form."
         });
 
       } catch (error: any) {
+        console.error('[EXAMS_CLIENT] Import error:', error);
         toast({
           variant: 'destructive',
           title: 'Import Failed',
-          description: error.message
+          description: error.message || 'Failed to import exam file.'
         });
       } finally {
         if (importFileInputRef.current) {
@@ -380,11 +391,11 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
 
   const onSubmit = useCallback((data: ExamFormValues) => {
     console.log('[EXAMS_CLIENT] Submitting form:', data);
-    
+
     startSubmitTransition(async () => {
       try {
         await createOrUpdateExam(data, editingExamId);
-        
+
         toast({
           title: 'Exam Saved!',
           description: `The exam "${data.title}" has been saved.`

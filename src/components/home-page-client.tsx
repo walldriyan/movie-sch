@@ -127,7 +127,7 @@ const HeroSection = () => {
                     <div className="flex items-center gap-3">
                         <Button
                             size="default"
-                            className="bg-white text-black hover:bg-white/90 font-semibold h-10 px-5 text-sm rounded-full"
+                            className="bg-white/5 hover:bg-white/10 border border-white/5 text-white/80 hover:text-white font-semibold h-10 px-5 text-sm rounded-full"
                             asChild
                         >
                             <Link href={siteConfig.hero.cta.primary.href}>
@@ -327,7 +327,7 @@ export default function HomePageClient({
                             <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1">
                                 <Button asChild variant={'ghost'} size="sm" className={cn(
                                     "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
-                                    !typeFilter && !lockStatus ? 'bg-white text-black hover:bg-white/90' : 'text-white/70 hover:text-white'
+                                    !typeFilter && !lockStatus ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
                                 )}>
                                     <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
                                         <Film className="w-4 h-4" />
@@ -337,7 +337,7 @@ export default function HomePageClient({
                                 {typeFilters.map(filter => (
                                     <Button key={filter.value} asChild variant={'ghost'} size="sm" className={cn(
                                         "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
-                                        typeFilter === filter.value && !lockStatus ? 'bg-white text-black hover:bg-white/90' : 'text-white/70 hover:text-white'
+                                        typeFilter === filter.value && !lockStatus ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
                                     )}>
                                         <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
                                             {filter.icon}
@@ -347,7 +347,7 @@ export default function HomePageClient({
                                 ))}
                                 <Button asChild variant={'ghost'} size="sm" className={cn(
                                     "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
-                                    lockStatus === 'locked' ? 'bg-white text-black hover:bg-white/90' : 'text-white/70 hover:text-white'
+                                    lockStatus === 'locked' ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
                                 )}>
                                     <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
                                         <Lock className="w-4 h-4" />
