@@ -535,7 +535,9 @@ export default function MoviePageContent({
                                     </a>
                                   </Button>
                                 ) : (
-                                  <Lock className="h-5 w-5 text-muted-foreground" title="You don't have permission to download this file" />
+                                  <span title="You don't have permission to download this file">
+                                    <Lock className="h-5 w-5 text-muted-foreground" />
+                                  </span>
                                 )}
                                 {canDelete && (
                                   <Button
