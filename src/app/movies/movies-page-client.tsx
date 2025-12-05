@@ -94,10 +94,11 @@ export default function MoviesPageClient({
 
     return (
         <div className={cn(
-            "min-h-screen bg-background transition-opacity duration-200",
+            "min-h-screen bg-background transition-opacity duration-200 overflow-x-hidden",
             isPending && "opacity-60 pointer-events-none"
         )}>
-            <div className="max-w-7xl mx-auto px-4 py-8">
+            {/* Centered content container */}
+            <div className="max-w-6xl mx-auto px-4 md:px-6 py-8">
                 {/* Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
                     <div className="flex items-center gap-3">

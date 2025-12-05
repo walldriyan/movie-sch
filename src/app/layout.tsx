@@ -65,11 +65,13 @@ export default function RootLayout({
                 {/* Suno-style Left Sidebar with dynamic width */}
                 <LeftSidebar />
 
-                {/* Main Content - padding controlled by sidebar */}
-                <main className="flex-1">
-                  <ErrorBoundary>
-                    {children}
-                  </ErrorBoundary>
+                {/* Main Content - margin controlled by sidebar, overflow hidden */}
+                <main className="flex-1 overflow-x-hidden">
+                  <div className="w-full">
+                    <ErrorBoundary>
+                      {children}
+                    </ErrorBoundary>
+                  </div>
                 </main>
 
                 <Toaster />

@@ -65,7 +65,7 @@ export default function LeftSidebar() {
 
     if (shouldHide) return null;
 
-    const sidebarWidth = isCollapsed ? 'w-[60px]' : 'w-[200px]';
+    const sidebarWidth = isCollapsed ? 'w-[70px]' : 'w-[220px]';
 
     // Suno-style NavItem
     const NavItem = ({
@@ -150,17 +150,17 @@ export default function LeftSidebar() {
             {/* Sidebar */}
             <aside
                 className={cn(
-                    "fixed left-0 top-0 p-5 h-screen z-40",
+                    "fixed left-0 top-0 h-screen z-40 p-4",
                     "bg-background border-r border-border",
-                    "flex flex-col overflow-y-auto transition-all duration-200",
+                    "flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-200",
                     sidebarWidth,
                     mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
                 )}
             >
                 {/* Logo - SUNO style with arrow toggle */}
                 <div className={cn(
-                    "px-4 py-5 flex items-center",
-                    isCollapsed ? "justify-center px-2" : "justify-between"
+                    "px-5 py-5 flex items-center",
+                    isCollapsed ? "justify-center px-3" : "justify-between"
                 )}>
                     <Link href="/" className="flex items-center">
                         {isCollapsed ? (
@@ -279,14 +279,14 @@ export default function LeftSidebar() {
                 </div>
             </aside>
 
-            {/* Dynamic main content padding */}
+            {/* Dynamic main content margin */}
             <style jsx global>{`
                 main {
-                    padding-left: ${isCollapsed ? '60px' : '200px'} !important;
+                    margin-left: ${isCollapsed ? '70px' : '220px'} !important;
                 }
                 @media (max-width: 768px) {
                     main {
-                        padding-left: 0 !important;
+                        margin-left: 0 !important;
                     }
                 }
             `}</style>
