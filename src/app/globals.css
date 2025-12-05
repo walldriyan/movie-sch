@@ -69,6 +69,117 @@
   .z-header {
     z-index: var(--z-index-header);
   }
+
+  /* ========== SUNO.COM DARK THEME STYLES ========== */
+
+  /* Buttons - Dark transparent default */
+  button, 
+  [role="button"],
+  .btn {
+    border-color: transparent !important;
+  }
+
+  /* Primary/Default buttons - Dark glassmorphism */
+  [data-slot="button"]:not([data-variant]) {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border-color: transparent !important;
+  }
+  [data-slot="button"]:not([data-variant]):hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+  }
+
+  /* Badges - Dark style */
+  [data-slot="badge"],
+  .badge,
+  [class*="Badge"] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: rgba(255, 255, 255, 0.7) !important;
+    border-color: transparent !important;
+  }
+
+  /* Cards - Dark glassmorphism */
+  [data-slot="card"],
+  .card,
+  [class*="Card"]:not([class*="CardContent"]):not([class*="CardHeader"]):not([class*="CardTitle"]):not([class*="CardDescription"]) {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* Tabs - Dark style */
+  [role="tablist"],
+  [data-slot="tabs-list"] {
+    background-color: rgba(255, 255, 255, 0.02) !important;
+    border-color: transparent !important;
+  }
+
+  [role="tab"][data-state="active"],
+  [data-slot="tabs-trigger"][data-state="active"] {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  [role="tab"]:not([data-state="active"]),
+  [data-slot="tabs-trigger"]:not([data-state="active"]) {
+    color: rgba(255, 255, 255, 0.5) !important;
+  }
+
+  [role="tab"]:not([data-state="active"]):hover,
+  [data-slot="tabs-trigger"]:not([data-state="active"]):hover {
+    color: rgba(255, 255, 255, 0.7) !important;
+    background-color: rgba(255, 255, 255, 0.03) !important;
+  }
+
+  /* Table headers - Subtle */
+  th,
+  [role="columnheader"] {
+    color: rgba(255, 255, 255, 0.4) !important;
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* Table rows */
+  tr,
+  [role="row"] {
+    border-color: rgba(255, 255, 255, 0.03) !important;
+  }
+
+  /* Dropdowns/Selects - Dark */
+  [role="listbox"],
+  [role="menu"],
+  [data-slot="select-content"],
+  [data-slot="dropdown-content"] {
+    background-color: hsl(0 0% 8%) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  /* Input fields - Dark */
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select,
+  [data-slot="input"] {
+    background-color: rgba(255, 255, 255, 0.03) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
+
+  input:focus,
+  textarea:focus,
+  select:focus {
+    border-color: rgba(255, 255, 255, 0.15) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* Separators/Dividers - Very subtle */
+  hr,
+  [role="separator"] {
+    border-color: rgba(255, 255, 255, 0.05) !important;
+  }
+
+  /* Sheet/Dialog - Dark */
+  [role="dialog"],
+  [data-slot="sheet-content"],
+  [data-slot="dialog-content"] {
+    background-color: hsl(0 0% 7%) !important;
+    border-color: rgba(255, 255, 255, 0.08) !important;
+  }
 }
 
 @layer base {
