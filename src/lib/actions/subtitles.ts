@@ -8,17 +8,24 @@ import prisma from '@/lib/prisma';
 import type { Subtitle } from '@prisma/client';
 import { writeFile, mkdir, unlink } from 'fs/promises';
 import { join, extname } from 'path';
+import { createClient } from '@supabase/supabase-js';
+import { STORAGE_CONFIG } from '../storage-config';
 
 async function deleteUploadedFile(filePath: string | null | undefined) {
-    if (!filePath || !filePath.startsWith('/uploads/')) {
-        return; 
+  if (!filePath) return;
+
+  if (STORAGE_CONFIG.provider === 'local') {
+    if (!filePath.startsWith(STORAGE_CONFIG.publicUrlPrefix)) {
+      return;
     }
     try {
-        const fullPath = join(process.cwd(), 'public', filePath);
-        await unlink(fullPath);
+      const relativePath = filePath.substring(STORAGE_CONFIG.publicUrlPrefix.length);
+      const fullPath = join(process.cwd(), STORAGE_CONFIG.localRoot, relativePath);
+      await unlink(fullPath);
     } catch (error) {
-        console.error(`Failed to delete file: ${filePath}`, error);
+      console.error(`Failed to delete file: ${filePath}`, error);
     }
+  }
 }
 
 
@@ -49,15 +56,43 @@ export async function uploadSubtitle(formData: FormData): Promise<Subtitle> {
 
   const fileExtension = extname(file.name);
   const filename = `${subtitleRecord.id}${fileExtension}`;
-  const directory = join(process.cwd(), `public/uploads/subtitles`);
-  await mkdir(directory, { recursive: true });
-  const path = join(directory, filename);
-  
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-  await writeFile(path, buffer);
-  
-  const url = `/uploads/subtitles/${filename}`;
+
+  let url = '';
+
+  if (STORAGE_CONFIG.provider === 'local') {
+    const directory = join(process.cwd(), STORAGE_CONFIG.localRoot, 'subtitles');
+    await mkdir(directory, { recursive: true });
+    const path = join(directory, filename);
+
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+    await writeFile(path, buffer);
+
+    const prefix = STORAGE_CONFIG.publicUrlPrefix.replace(/\/$/, '');
+    url = `${prefix}/subtitles/${filename}`;
+  } else if (STORAGE_CONFIG.provider === 'supabase') {
+    const supabase = createClient(STORAGE_CONFIG.supabase.url, STORAGE_CONFIG.supabase.anonKey);
+    const bytes = await file.arrayBuffer();
+    const buffer = Buffer.from(bytes);
+
+    const { error } = await supabase.storage
+      .from(STORAGE_CONFIG.supabase.bucket)
+      .upload(`subtitles/${filename}`, buffer, {
+        contentType: 'text/vtt',
+        upsert: false
+      });
+
+    if (error) throw error;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from(STORAGE_CONFIG.supabase.bucket)
+      .getPublicUrl(`subtitles/${filename}`);
+
+    url = publicUrl;
+  } else {
+    // Placeholder for other providers
+    console.warn('Storage provider not implemented:', STORAGE_CONFIG.provider);
+  }
 
   const updatedSubtitle = await prisma.subtitle.update({
     where: { id: subtitleRecord.id },

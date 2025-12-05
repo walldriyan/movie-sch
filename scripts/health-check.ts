@@ -1,132 +1,182 @@
-/**
- * Health Check Script
- * Run with: npm run health-check
- */
+import prisma from '../src/lib/prisma';
+import { redis, checkRedisHealth } from '../src/lib/redis';
 
-import { config } from 'dotenv';
-import { resolve } from 'path';
-
-// Load environment variables from .env and .env.local
-config({ path: resolve(process.cwd(), '.env') });
-config({ path: resolve(process.cwd(), '.env.local') });
-
-import { checkDatabaseHealth } from '../src/lib/prisma';
-import { checkRedisHealth } from '../src/lib/redis';
-
-interface HealthStatus {
-    service: string;
+interface HealthCheckResult {
     status: 'healthy' | 'unhealthy' | 'degraded';
-    message: string;
-    responseTime?: number;
+    timestamp: string;
+    checks: {
+        database: { status: string; latency?: number; error?: string };
+        redis: { status: string; latency?: number; error?: string };
+        memory: {
+            status: string;
+            heapUsed: string;
+            heapTotal: string;
+            rss: string;
+            external: string;
+        };
+        env: { status: string; missing?: string[] };
+    };
+    uptime: number;
 }
 
-async function measureTime<T>(fn: () => Promise<T>): Promise<{ result: T; time: number }> {
+async function checkDatabase(): Promise<{ status: string; latency?: number; error?: string }> {
     const start = Date.now();
-    const result = await fn();
-    return { result, time: Date.now() - start };
+    try {
+        await prisma.$queryRaw`SELECT 1`;
+        const latency = Date.now() - start;
+        return { status: 'healthy', latency };
+    } catch (error: any) {
+        return { status: 'unhealthy', error: error.message };
+    }
 }
 
-async function checkHealth(): Promise<void> {
-    console.log('\n🔍 Running Health Checks...\n');
-    console.log('='.repeat(50));
-
-    const results: HealthStatus[] = [];
-
-    // Check Database
-    console.log('\n📊 Database (Prisma)...');
+async function checkRedis(): Promise<{ status: string; latency?: number; error?: string }> {
+    const start = Date.now();
     try {
-        const { result: dbHealthy, time } = await measureTime(checkDatabaseHealth);
-        results.push({
-            service: 'Database',
-            status: dbHealthy ? 'healthy' : 'unhealthy',
-            message: dbHealthy ? 'Connected successfully' : 'Connection failed',
-            responseTime: time,
-        });
-        console.log(`   Status: ${dbHealthy ? '✅ Healthy' : '❌ Unhealthy'}`);
-        console.log(`   Response Time: ${time}ms`);
-    } catch (error) {
-        results.push({
-            service: 'Database',
-            status: 'unhealthy',
-            message: error instanceof Error ? error.message : 'Unknown error',
-        });
-        console.log(`   Status: ❌ Unhealthy`);
-        console.log(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        const isHealthy = await checkRedisHealth();
+        const latency = Date.now() - start;
+        return {
+            status: isHealthy ? 'healthy' : 'unavailable',
+            latency: isHealthy ? latency : undefined
+        };
+    } catch (error: any) {
+        return { status: 'unavailable', error: error.message };
     }
+}
 
-    // Check Redis
-    console.log('\n🔴 Redis (Upstash)...');
-    try {
-        const { result: redisHealthy, time } = await measureTime(checkRedisHealth);
-        results.push({
-            service: 'Redis',
-            status: redisHealthy ? 'healthy' : 'degraded',
-            message: redisHealthy ? 'Connected successfully' : 'Not configured or connection failed',
-            responseTime: time,
-        });
-        console.log(`   Status: ${redisHealthy ? '✅ Healthy' : '⚠️ Degraded'}`);
-        console.log(`   Response Time: ${time}ms`);
-    } catch (error) {
-        results.push({
-            service: 'Redis',
-            status: 'degraded',
-            message: error instanceof Error ? error.message : 'Unknown error',
-        });
-        console.log(`   Status: ⚠️ Degraded`);
-        console.log(`   Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+function checkMemory(): {
+    status: string;
+    heapUsed: string;
+    heapTotal: string;
+    rss: string;
+    external: string;
+} {
+    const memUsage = process.memoryUsage();
+    const formatBytes = (bytes: number) => `${(bytes / 1024 / 1024).toFixed(2)} MB`;
 
-    // Check Environment Variables
-    console.log('\n🔐 Environment Variables...');
+    // Warn if heap usage > 80%
+    const heapPercentage = (memUsage.heapUsed / memUsage.heapTotal) * 100;
+    const status = heapPercentage > 90 ? 'critical' : heapPercentage > 80 ? 'warning' : 'healthy';
+
+    return {
+        status,
+        heapUsed: formatBytes(memUsage.heapUsed),
+        heapTotal: formatBytes(memUsage.heapTotal),
+        rss: formatBytes(memUsage.rss),
+        external: formatBytes(memUsage.external),
+    };
+}
+
+function checkEnvVariables(): { status: string; missing?: string[] } {
     const requiredEnvVars = [
         'DATABASE_URL',
-        'AUTH_SECRET',
+        'NEXTAUTH_URL',
+        'NEXTAUTH_SECRET',
     ];
 
-    const optionalEnvVars = [
-        'AUTH_GOOGLE_ID',
-        'AUTH_GOOGLE_SECRET',
+    const optionalButRecommended = [
         'UPSTASH_REDIS_REST_URL',
         'UPSTASH_REDIS_REST_TOKEN',
-        'SENTRY_DSN',
+        'GOOGLE_CLIENT_ID',
+        'GOOGLE_CLIENT_SECRET',
     ];
 
-    let envHealthy = true;
-    for (const envVar of requiredEnvVars) {
-        const exists = !!process.env[envVar];
-        if (!exists) envHealthy = false;
-        console.log(`   ${envVar}: ${exists ? '✅' : '❌ Missing'}`);
+    const missing = requiredEnvVars.filter(key => !process.env[key]);
+    const missingOptional = optionalButRecommended.filter(key => !process.env[key]);
+
+    if (missing.length > 0) {
+        return { status: 'critical', missing };
     }
 
-    console.log('\n   Optional:');
-    for (const envVar of optionalEnvVars) {
-        const exists = !!process.env[envVar];
-        console.log(`   ${envVar}: ${exists ? '✅' : '⚪ Not set'}`);
+    if (missingOptional.length > 0) {
+        return { status: 'warning', missing: missingOptional };
     }
 
-    results.push({
-        service: 'Environment',
-        status: envHealthy ? 'healthy' : 'unhealthy',
-        message: envHealthy ? 'All required variables set' : 'Missing required variables',
-    });
-
-    // Summary
-    console.log('\n' + '='.repeat(50));
-    console.log('\n📋 Summary:\n');
-
-    const healthyCount = results.filter(r => r.status === 'healthy').length;
-    const degradedCount = results.filter(r => r.status === 'degraded').length;
-    const unhealthyCount = results.filter(r => r.status === 'unhealthy').length;
-
-    console.log(`   ✅ Healthy: ${healthyCount}`);
-    console.log(`   ⚠️ Degraded: ${degradedCount}`);
-    console.log(`   ❌ Unhealthy: ${unhealthyCount}`);
-
-    const overallStatus = unhealthyCount > 0 ? 'UNHEALTHY' : degradedCount > 0 ? 'DEGRADED' : 'HEALTHY';
-    console.log(`\n   Overall Status: ${overallStatus}\n`);
-
-    // Exit with appropriate code
-    process.exit(unhealthyCount > 0 ? 1 : 0);
+    return { status: 'healthy' };
 }
 
-checkHealth().catch(console.error);
+async function runHealthCheck(): Promise<HealthCheckResult> {
+    console.log('🔍 Running health checks...\n');
+
+    const [dbCheck, redisCheck] = await Promise.all([
+        checkDatabase(),
+        checkRedis(),
+    ]);
+
+    const memoryCheck = checkMemory();
+    const envCheck = checkEnvVariables();
+
+    const checks = {
+        database: dbCheck,
+        redis: redisCheck,
+        memory: memoryCheck,
+        env: envCheck,
+    };
+
+    // Determine overall status
+    let status: 'healthy' | 'unhealthy' | 'degraded' = 'healthy';
+
+    if (dbCheck.status === 'unhealthy' || envCheck.status === 'critical') {
+        status = 'unhealthy';
+    } else if (
+        redisCheck.status === 'unavailable' ||
+        memoryCheck.status === 'warning' ||
+        envCheck.status === 'warning'
+    ) {
+        status = 'degraded';
+    }
+
+    const result: HealthCheckResult = {
+        status,
+        timestamp: new Date().toISOString(),
+        checks,
+        uptime: process.uptime(),
+    };
+
+    // Print results
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`📊 HEALTH CHECK RESULTS`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+    const statusEmoji = status === 'healthy' ? '✅' : status === 'degraded' ? '⚠️' : '❌';
+    console.log(`Overall Status: ${statusEmoji} ${status.toUpperCase()}\n`);
+
+    console.log('📦 Database:');
+    console.log(`   Status: ${dbCheck.status === 'healthy' ? '✅' : '❌'} ${dbCheck.status}`);
+    if (dbCheck.latency) console.log(`   Latency: ${dbCheck.latency}ms`);
+    if (dbCheck.error) console.log(`   Error: ${dbCheck.error}`);
+
+    console.log('\n🔴 Redis:');
+    console.log(`   Status: ${redisCheck.status === 'healthy' ? '✅' : '⚠️'} ${redisCheck.status}`);
+    if (redisCheck.latency) console.log(`   Latency: ${redisCheck.latency}ms`);
+    if (redisCheck.error) console.log(`   Note: ${redisCheck.error}`);
+
+    console.log('\n💾 Memory:');
+    console.log(`   Status: ${memoryCheck.status === 'healthy' ? '✅' : '⚠️'} ${memoryCheck.status}`);
+    console.log(`   Heap Used: ${memoryCheck.heapUsed}`);
+    console.log(`   Heap Total: ${memoryCheck.heapTotal}`);
+    console.log(`   RSS: ${memoryCheck.rss}`);
+
+    console.log('\n🔐 Environment:');
+    console.log(`   Status: ${envCheck.status === 'healthy' ? '✅' : envCheck.status === 'warning' ? '⚠️' : '❌'} ${envCheck.status}`);
+    if (envCheck.missing) console.log(`   Missing: ${envCheck.missing.join(', ')}`);
+
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log(`⏱️  Uptime: ${Math.floor(result.uptime)}s`);
+    console.log(`📅 Timestamp: ${result.timestamp}`);
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+    return result;
+}
+
+// Run health check
+runHealthCheck()
+    .then(async (result) => {
+        await prisma.$disconnect();
+        process.exit(result.status === 'unhealthy' ? 1 : 0);
+    })
+    .catch(async (error) => {
+        console.error('Health check failed:', error);
+        await prisma.$disconnect();
+        process.exit(1);
+    });

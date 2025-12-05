@@ -58,64 +58,6 @@ export async function invalidatePostsCache(postId?: number, seriesId?: number, a
 }
 
 
-async function getWithCacheLock<T>(
-  cacheKey: string,
-  fetchFn: () => Promise<T>,
-  ttl: number = 3600,
-  maxRetries = 3
-): Promise<T> {
-  if (redis) {
-    try {
-      const cached = await redis.get<T>(cacheKey);
-      if (cached) {
-        console.log(`[Cache] HIT for key: ${cacheKey}`);
-        return cached;
-      }
-    } catch (error) {
-      console.error('[Cache] Redis GET error:', error);
-    }
-  }
-
-  const lockKey = `lock:${cacheKey}`;
-  const lockTTL = 10; // 10 seconds
-
-  if (redis) {
-    try {
-      const locked = await redis.set(lockKey, '1', { ex: lockTTL, nx: true });
-
-      if (!locked) {
-        for (let i = 0; i < maxRetries; i++) {
-          await new Promise(r => setTimeout(r, 100 * (i + 1))); // Exponential backoff
-          const retryCache = await redis.get<T>(cacheKey);
-          if (retryCache) {
-            console.log(`[Cache] HIT on retry for key: ${cacheKey}`);
-            return retryCache;
-          }
-        }
-        console.warn(`[Cache] Could not acquire lock or find cache after retries for key: ${cacheKey}. Fetching directly.`);
-      }
-    } catch (error) {
-      console.error('[Cache] Redis SET lock error:', error);
-    }
-  }
-
-  console.log(`[Cache] MISS for key: ${cacheKey}`);
-  try {
-    const result = await fetchFn();
-
-    if (redis) {
-      await redis.set(cacheKey, result, { ex: ttl });
-      console.log(`[Cache] SET for key: ${cacheKey}`);
-      await redis.del(lockKey);
-    }
-
-    return result;
-  } catch (error) {
-    if (redis) await redis.del(lockKey);
-    throw error;
-  }
-}
-
 async function getUserGroupIds(userId: string): Promise<string[]> {
   const cacheKey = `user:${userId}:groups`;
 
@@ -155,6 +97,9 @@ export async function invalidateUserGroupsCache(userId: string) {
 }
 
 
+import { STORAGE_CONFIG } from '../storage-config';
+import { createClient } from '@supabase/supabase-js';
+
 export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
   console.log(`[SERVER: STEP 5.3] saveImageFromDataUrl: Saving image to subfolder: ${subfolder}`);
   if (!dataUrl.startsWith('data:image')) {
@@ -168,17 +113,48 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
     const buffer = Buffer.from(base64Data, 'base64');
 
     const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${fileType}`;
-    const directory = join(process.cwd(), `public/uploads/${subfolder}`);
-    const path = join(directory, filename);
 
-    console.log(`[SERVER: STEP 5.4] Preparing to write file to path: ${path}`);
-    await mkdir(directory, { recursive: true });
-    await writeFile(path, buffer);
-    console.log(`[SERVER: STEP 5.5] Successfully wrote file to path: ${path}`);
+    if (STORAGE_CONFIG.provider === 'local') {
+      const directory = join(process.cwd(), STORAGE_CONFIG.localRoot, subfolder);
+      const path = join(directory, filename);
 
-    const publicUrl = `/uploads/${subfolder}/${filename}`;
-    console.log(`[SERVER: STEP 5.6] Returning public URL: ${publicUrl}`);
-    return publicUrl;
+      console.log(`[SERVER: STEP 5.4] Preparing to write file to path: ${path}`);
+      await mkdir(directory, { recursive: true });
+      await writeFile(path, buffer);
+      console.log(`[SERVER: STEP 5.5] Successfully wrote file to path: ${path}`);
+
+      // Construct public URL using the configured prefix
+      const prefix = STORAGE_CONFIG.publicUrlPrefix.replace(/\/$/, '');
+      const publicUrl = `${prefix}/${subfolder}/${filename}`;
+
+      console.log(`[SERVER: STEP 5.6] Returning public URL: ${publicUrl}`);
+      return publicUrl;
+    } else if (STORAGE_CONFIG.provider === 'supabase') {
+      console.log('[Image Save] Uploading to Supabase Storage...');
+      const supabase = createClient(STORAGE_CONFIG.supabase.url, STORAGE_CONFIG.supabase.anonKey);
+
+      const { data, error } = await supabase.storage
+        .from(STORAGE_CONFIG.supabase.bucket)
+        .upload(`${subfolder}/${filename}`, buffer, {
+          contentType: `image/${fileType}`,
+          upsert: false
+        });
+
+      if (error) {
+        console.error('[Image Save] Supabase upload error:', error);
+        throw error;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from(STORAGE_CONFIG.supabase.bucket)
+        .getPublicUrl(`${subfolder}/${filename}`);
+
+      console.log(`[Image Save] Upload successful. Public URL: ${publicUrl}`);
+      return publicUrl;
+    } else {
+      console.warn(`[Image Save] Provider '${STORAGE_CONFIG.provider}' not implemented yet.`);
+      return null;
+    }
   } catch (error) {
     console.error("[Image Save] Error saving image from data URL:", error);
     return null;
@@ -186,15 +162,53 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
 }
 
 export async function deleteUploadedFile(filePath: string | null | undefined) {
-  if (!filePath || !filePath.startsWith('/uploads/')) {
-    return;
-  }
-  try {
-    const fullPath = join(process.cwd(), 'public', filePath);
-    await unlink(fullPath);
-    console.log(`[File System] Deleted file: ${fullPath}`);
-  } catch (error) {
-    console.error(`Failed to delete file: ${filePath}`, error);
+  if (!filePath) return;
+
+  if (STORAGE_CONFIG.provider === 'local') {
+    // Check if the file path starts with our configured prefix
+    if (!filePath.startsWith(STORAGE_CONFIG.publicUrlPrefix)) {
+      return;
+    }
+
+    try {
+      const relativePath = filePath.substring(STORAGE_CONFIG.publicUrlPrefix.length);
+      const fullPath = join(process.cwd(), STORAGE_CONFIG.localRoot, relativePath);
+
+      await unlink(fullPath);
+      console.log(`[File System] Deleted file: ${fullPath}`);
+    } catch (error) {
+      console.error(`Failed to delete file: ${filePath}`, error);
+    }
+  } else if (STORAGE_CONFIG.provider === 'supabase') {
+    try {
+      // Extract the path relative to the bucket
+      // Supabase public URL format: https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
+      // We need to extract <path>
+      const bucketUrl = `${STORAGE_CONFIG.supabase.url}/storage/v1/object/public/${STORAGE_CONFIG.supabase.bucket}/`;
+
+      if (!filePath.startsWith(bucketUrl)) {
+        console.warn(`[File Delete] File path does not match Supabase bucket URL: ${filePath}`);
+        return;
+      }
+
+      const relativePath = filePath.replace(bucketUrl, '');
+      console.log(`[File Delete] Deleting from Supabase: ${relativePath}`);
+
+      const supabase = createClient(STORAGE_CONFIG.supabase.url, STORAGE_CONFIG.supabase.anonKey);
+      const { error } = await supabase.storage
+        .from(STORAGE_CONFIG.supabase.bucket)
+        .remove([relativePath]);
+
+      if (error) {
+        console.error('[File Delete] Supabase delete error:', error);
+      } else {
+        console.log('[File Delete] Successfully deleted from Supabase');
+      }
+    } catch (error) {
+      console.error(`Failed to delete file from Supabase: ${filePath}`, error);
+    }
+  } else {
+    console.warn(`[File Delete] Provider '${STORAGE_CONFIG.provider}' not implemented yet.`);
   }
 }
 
@@ -277,10 +291,13 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     }
   }
 
+  // For SQLite: Use contains with OR for each genre
+  // For PostgreSQL: Could use hasSome, but contains works for both
   if (genres && genres.length > 0) {
-    whereClause.genres = {
-      hasSome: genres,
-    };
+    whereClause.OR = [
+      ...(whereClause.OR || []),
+      ...genres.map((genre: string) => ({ genres: { contains: genre } }))
+    ];
   }
 
   if (yearRange) {
@@ -884,9 +901,10 @@ export async function searchPostsForExam(query: string) {
 
   const posts = await prisma.post.findMany({
     where: {
+      // Note: mode: 'insensitive' is PostgreSQL only, removing for SQLite compatibility
+      // In production PostgreSQL, add mode: 'insensitive' back
       title: {
         contains: query,
-        mode: 'insensitive',
       },
       status: 'PUBLISHED', // Only allow exams for published posts
     },
