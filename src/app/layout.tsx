@@ -11,6 +11,7 @@ import SessionProvider from '@/components/auth/session-provider';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import ErrorBoundary from '@/components/error-boundary';
 import { ConnectivityProvider } from '@/context/connectivity-context';
+import { siteConfig } from '@/config/site.config';
 
 const fontSans = Inter({
   subsets: ['latin'],
@@ -44,8 +45,8 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <head>
-        <title>CineVerse Captions</title>
-        <meta name="description" content="The universe of movies and subtitles at your fingertips." />
+        <title>{siteConfig.seo.title}</title>
+        <meta name="description" content={siteConfig.seo.description} />
       </head>
       <body
         suppressHydrationWarning

@@ -1,12 +1,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronLeft, ChevronRight, ListFilter, Calendar, Clock, Star, ArrowDown, ArrowUp, Clapperboard, Folder, Terminal, Bell, Check, Info, Lock, Image as ImageIcon, Link2, X, ArrowRight, Copyright, Mail, Phone, MapPin, Twitter, Youtube, Linkedin, Instagram, Facebook } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { User, Post, GroupWithCount, MicroPost as MicroPostType } from '@/lib/types';
+import type { User, Post, GroupWithCount } from '@/lib/types';
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -14,143 +14,171 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import {
     DropdownMenu,
     DropdownMenuContent,
-    DropdownMenuItem,
     DropdownMenuLabel,
-    DropdownMenuRadioGroup,
     DropdownMenuRadioItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import GroupCard from './group-card';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
 import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
-import MetaSpotlightHero from './meta-spotlight-hero';
-import Image from 'next/image';
+import { siteConfig } from '@/config/site.config';
 
-const ViralCommerceSection = () => {
+// ========================================
+// HERO SECTION - Magazine/Education Style
+// ========================================
+const HeroSection = () => {
     return (
-        <section className="py-16 md:py-24">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-                <div className="flex items-center justify-center gap-4">
-                    <div className="w-48 h-48 bg-gray-800/50 rounded-2xl flex items-center justify-center p-4">
-                        <Image src="https://placehold.co/150x150/000000/FFFFFF/png?text=Before" alt="Before" width={150} height={150} className="rounded-lg" />
+        <section className="relative overflow-hidden">
+            {/* Background Effects */}
+            <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 via-background to-blue-500/5" />
+            <div className="absolute top-0 left-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl" />
+            <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl" />
+
+            <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+                <div className="grid lg:grid-cols-2 gap-12 items-center">
+                    {/* Left Content */}
+                    <div className="space-y-8">
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium">
+                            <Sparkles className="w-4 h-4" />
+                            <span>{siteConfig.tagline}</span>
+                        </div>
+
+                        {/* Main Headline */}
+                        <div className="space-y-4">
+                            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight">
+                                <span className="bg-gradient-to-r from-white via-white to-white/60 bg-clip-text text-transparent">
+                                    {siteConfig.hero.headline}
+                                </span>
+                            </h1>
+                            <p className="text-xl sm:text-2xl text-muted-foreground font-medium">
+                                {siteConfig.hero.subheadline}
+                            </p>
+                            <p className="text-lg text-muted-foreground/80 max-w-lg">
+                                {siteConfig.hero.description}
+                            </p>
+                        </div>
+
+                        {/* CTA Buttons */}
+                        <div className="flex flex-wrap gap-4">
+                            <Button size="lg" className="h-12 px-8 text-base font-semibold group" asChild>
+                                <Link href={siteConfig.hero.cta.primary.href}>
+                                    {siteConfig.hero.cta.primary.text}
+                                    <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                                </Link>
+                            </Button>
+                            <Button size="lg" variant="outline" className="h-12 px-8 text-base font-semibold border-white/20 hover:bg-white/5" asChild>
+                                <Link href={siteConfig.hero.cta.secondary.href}>
+                                    {siteConfig.hero.cta.secondary.text}
+                                </Link>
+                            </Button>
+                        </div>
+
+                        {/* Stats */}
+                        <div className="flex flex-wrap gap-8 pt-4">
+                            {siteConfig.hero.stats.map((stat, index) => (
+                                <div key={index} className="text-center">
+                                    <div className="text-2xl sm:text-3xl font-bold text-white">{stat.value}</div>
+                                    <div className="text-sm text-muted-foreground">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
                     </div>
-                    <ArrowRight className="w-8 h-8 text-yellow-400" />
-                    <div className="w-64 h-64 bg-gray-800/50 rounded-2xl flex items-center justify-center p-4">
-                        <Image src="https://placehold.co/220x220/000000/FFFFFF/png?text=After" alt="After" width={220} height={220} className="rounded-lg" />
+
+                    {/* Right Content - Feature Cards */}
+                    <div className="relative hidden lg:block">
+                        <div className="grid grid-cols-2 gap-4">
+                            {/* Featured Card 1 */}
+                            <div className="space-y-4">
+                                <div className="p-6 rounded-2xl bg-gradient-to-br from-amber-500/20 to-orange-600/10 border border-amber-500/20 backdrop-blur-sm">
+                                    <BookOpen className="w-10 h-10 text-amber-400 mb-4" />
+                                    <h3 className="font-semibold text-lg mb-2">In-Depth Content</h3>
+                                    <p className="text-sm text-muted-foreground">Curated articles and resources for deep learning</p>
+                                </div>
+                                <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-500/20 to-cyan-600/10 border border-blue-500/20 backdrop-blur-sm">
+                                    <Users className="w-10 h-10 text-blue-400 mb-4" />
+                                    <h3 className="font-semibold text-lg mb-2">Expert Creators</h3>
+                                    <p className="text-sm text-muted-foreground">Learn from passionate content creators</p>
+                                </div>
+                            </div>
+                            {/* Featured Card 2 */}
+                            <div className="space-y-4 pt-8">
+                                <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-500/20 to-pink-600/10 border border-purple-500/20 backdrop-blur-sm">
+                                    <Compass className="w-10 h-10 text-purple-400 mb-4" />
+                                    <h3 className="font-semibold text-lg mb-2">Explore Topics</h3>
+                                    <p className="text-sm text-muted-foreground">Discover content across various subjects</p>
+                                </div>
+                                <div className="p-6 rounded-2xl bg-gradient-to-br from-green-500/20 to-emerald-600/10 border border-green-500/20 backdrop-blur-sm">
+                                    <TrendingUp className="w-10 h-10 text-green-400 mb-4" />
+                                    <h3 className="font-semibold text-lg mb-2">Stay Updated</h3>
+                                    <p className="text-sm text-muted-foreground">Fresh content added regularly</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                </div>
-                <div>
-                    <h2 className="text-3xl md:text-4xl font-bold">Viral Commerce</h2>
-                    <p className="text-yellow-400 font-semibold mt-2">FOR: ECOMMERCE BRANDS, AGENCIES</p>
-                    <h3 className="text-2xl md:text-3xl font-semibold mt-6">Amplify Your Brand's Presence with Scroll-Stopping Motion Ads</h3>
-                    <p className="text-muted-foreground mt-4">
-                        We turn your static assets into dynamic motion ads for every platform and format, ensuring maximum impact and engagement.
-                    </p>
-                    <Button className="mt-8 bg-yellow-400 text-black hover:bg-yellow-500">
-                        Book a Call
-                    </Button>
                 </div>
             </div>
         </section>
     );
 };
 
-const ViralContentSection = () => {
-    return (
-        <section className="py-16 md:py-24">
-            <div className="grid md:grid-cols-2 gap-12 items-center">
-                <div>
-                    <h2 className="text-3xl md:text-4xl font-bold">Viral Content</h2>
-                    <p className="text-yellow-400 font-semibold mt-2">FOR: ANY BRANDS, AGENCIES</p>
-                    <h3 className="text-2xl md:text-3xl font-semibold mt-6">Transform Your Content for Every Platform</h3>
-                </div>
-                <div className="flex items-center justify-center">
-                    <div className="w-80 h-80 bg-gray-800/50 rounded-2xl flex items-center justify-center p-4">
-                        <Image src="https://placehold.co/300x300/000000/FFFFFF/png?text=Content" alt="Viral Content" width={300} height={300} className="rounded-lg" />
-                    </div>
-                </div>
-            </div>
-        </section>
-    );
-};
-
+// ========================================
+// FOOTER COMPONENT
+// ========================================
 const Footer = () => {
     return (
-        <footer className="bg-zinc-950/70 text-white pt-16 pb-8">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                    {/* Column 1: Logo and Socials */}
-                    <div className="space-y-4">
-                        <div className="flex items-center space-x-2">
-                            <Film className="h-8 w-8 text-primary" />
-                            <span className="font-bold text-xl">CineVerse</span>
+        <footer className="bg-zinc-950/90 border-t border-white/5 mt-16">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
+                    {/* Brand Column */}
+                    <div className="lg:col-span-2 space-y-4">
+                        <div className="flex items-center gap-2">
+                            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
+                                <Film className="w-6 h-6 text-primary" />
+                            </div>
+                            <span className="font-bold text-xl">{siteConfig.name}</span>
                         </div>
-                        <p className="text-sm text-muted-foreground">a Walldriyan.inc company</p>
-                        <p className="text-sm text-muted-foreground pt-2">CineVerse is a top-tier content production studio for the platform age.</p>
-                        <div className="flex items-center space-x-3 pt-2">
-                            <Link href="#"><Facebook className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-                            <Link href="#"><Instagram className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-                            <Link href="#"><Linkedin className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-                            <Link href="#"><Youtube className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
-                            <Link href="#"><Twitter className="h-5 w-5 text-muted-foreground hover:text-primary" /></Link>
+                        <p className="text-sm text-muted-foreground max-w-sm">
+                            {siteConfig.footer.description}
+                        </p>
+                        {/* Social Links */}
+                        <div className="flex items-center gap-3 pt-2">
+                            <SocialLink href={siteConfig.social.twitter} icon="twitter" />
+                            <SocialLink href={siteConfig.social.instagram} icon="instagram" />
+                            <SocialLink href={siteConfig.social.youtube} icon="youtube" />
+                            <SocialLink href={siteConfig.social.discord} icon="discord" />
                         </div>
                     </div>
 
-                    {/* Column 2: Quick Links */}
-                    <div>
-                        <h3 className="font-semibold text-white mb-4">Quick Links</h3>
-                        <ul className="space-y-2 text-sm">
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">About</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Solutions</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Resources</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Contact</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary flex items-center gap-1">Content Archive <ExternalLink className="h-3 w-3" /></Link></li>
-                        </ul>
-                    </div>
-
-                    {/* Column 3: Solutions */}
-                    <div>
-                        <h3 className="font-semibold text-white mb-4">Solutions</h3>
-                        <ul className="space-y-2 text-sm">
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Viral Exec</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Viral Commerce</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Viral Content</Link></li>
-                            <li><Link href="#" className="text-muted-foreground hover:text-primary">Short Form Videos</Link></li>
-                        </ul>
-                    </div>
-
-                    {/* Column 4: Contact */}
-                    <div>
-                        <h3 className="font-semibold text-white mb-4">Contact</h3>
-                        <ul className="space-y-3 text-sm text-muted-foreground">
-                            <li className="flex items-start gap-2">
-                                <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                                <span>123 Movie Lane,<br />Hollywood, CA 90210</span>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <Mail className="h-4 w-4" />
-                                <a href="mailto:info@cineverse.com" className="hover:text-primary">info@cineverse.com</a>
-                            </li>
-                            <li className="flex items-center gap-2">
-                                <Phone className="h-4 w-4" />
-                                <a href="tel:+123456789" className="hover:text-primary">+1 (234) 567-89</a>
-                            </li>
-                        </ul>
-                    </div>
+                    {/* Footer Columns */}
+                    {siteConfig.footer.columns.map((column, index) => (
+                        <div key={index}>
+                            <h3 className="font-semibold text-white mb-4">{column.title}</h3>
+                            <ul className="space-y-3">
+                                {column.links.map((link, linkIndex) => (
+                                    <li key={linkIndex}>
+                                        <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                                            {link.label}
+                                        </Link>
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    ))}
                 </div>
 
-                <Separator className="my-8 bg-border/50" />
-
-                <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
-                    <p className="flex items-center gap-2"><Copyright className="h-4 w-4" /> {new Date().getFullYear()} CineVerse. All rights reserved.</p>
-                    <div className="flex items-center gap-4 mt-4 sm:mt-0">
-                        <Link href="#" className="hover:text-primary">Privacy Policy</Link>
-                        <Link href="#" className="hover:text-primary">Cookie Policy</Link>
+                {/* Bottom Bar */}
+                <Separator className="my-8 bg-white/5" />
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+                    <p>{siteConfig.footer.copyright}</p>
+                    <div className="flex items-center gap-6">
+                        <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
+                        <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
+                        <Link href="/contact" className="hover:text-primary transition-colors">Contact</Link>
                     </div>
                 </div>
             </div>
@@ -158,9 +186,33 @@ const Footer = () => {
     );
 };
 
+// Social Link Helper Component
+const SocialLink = ({ href, icon }: { href: string; icon: string }) => {
+    const iconClass = "w-5 h-5 text-muted-foreground hover:text-primary transition-colors";
+    return (
+        <Link href={href} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg hover:bg-white/5 transition-colors">
+            {icon === 'twitter' && (
+                <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" /></svg>
+            )}
+            {icon === 'instagram' && (
+                <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" /></svg>
+            )}
+            {icon === 'youtube' && (
+                <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" /></svg>
+            )}
+            {icon === 'discord' && (
+                <svg className={iconClass} fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" /></svg>
+            )}
+        </Link>
+    );
+};
 
+
+// ========================================
+// MAIN COMPONENT
+// ========================================
 interface HomePageClientProps {
-    initialPosts: Post[];
+    initialPosts: any[];
     initialUsers: User[];
     initialGroups: (GroupWithCount & { posts: { posterUrl: string | null }[] })[];
     totalPages: number;
@@ -179,6 +231,13 @@ export default function HomePageClient({
     session,
 }: HomePageClientProps) {
 
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const timer = setTimeout(() => setLoading(false), 500);
+        return () => clearTimeout(timer);
+    }, []);
+
     const posts = initialPosts;
     const users = initialUsers;
     const groups = initialGroups;
@@ -186,7 +245,6 @@ export default function HomePageClient({
     const sortBy = searchParams?.sortBy;
     const typeFilter = searchParams?.type;
     const lockStatus = searchParams?.lockStatus;
-
 
     const userAvatarPlaceholder = PlaceHolderImages.find(
         (img) => img.id === 'avatar-4'
@@ -210,25 +268,33 @@ export default function HomePageClient({
     ]
 
     const isPrivilegedUser = session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
-    const allButtonLockStatus = isPrivilegedUser ? null : 'unlocked';
 
 
     return (
         <TooltipProvider>
             <div className="w-full bg-background text-foreground">
-                <MetaSpotlightHero posts={posts} />
+                {/* Hero Section */}
+                <HeroSection />
 
-                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10 pt-0">
-                    <ViralCommerceSection />
-                    <Separator className="my-8 bg-gray-800" />
-                    <ViralContentSection />
-                    <Separator className="my-8 bg-gray-800" />
+                <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
 
-                    <div className="max-w-4xl mx-auto pb-8 flex items-center justify-between">
+                    {/* Section Header - Featured/Trending */}
+                    <div className="mb-8">
+                        <div className="flex items-center gap-3 mb-2">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                                <TrendingUp className="w-5 h-5 text-primary" />
+                            </div>
+                            <h2 className="text-2xl sm:text-3xl font-bold">{siteConfig.sections.featured.title}</h2>
+                        </div>
+                        <p className="text-muted-foreground ml-12">{siteConfig.sections.featured.subtitle}</p>
+                    </div>
+
+                    {/* Filter Bar */}
+                    <div className="max-w-4xl pb-8 flex items-center justify-between">
                         <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
                             <Button asChild variant={'outline'} className={cn(
-                                "rounded-full hover:bg-gray-800 flex-shrink-0",
-                                !typeFilter && !lockStatus ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                                "rounded-full hover:bg-white/5 flex-shrink-0",
+                                !typeFilter && !lockStatus ? 'bg-primary/10 border-primary/30 text-primary' : 'border-white/10 bg-transparent'
                             )}>
                                 <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
                                     <Film className="w-4 h-4" />
@@ -237,8 +303,8 @@ export default function HomePageClient({
                             </Button>
                             {typeFilters.map(filter => (
                                 <Button key={filter.value} asChild variant={'outline'} className={cn(
-                                    "rounded-full hover:bg-gray-800 flex-shrink-0",
-                                    typeFilter === filter.value && !lockStatus ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                                    "rounded-full hover:bg-white/5 flex-shrink-0",
+                                    typeFilter === filter.value && !lockStatus ? 'bg-primary/10 border-primary/30 text-primary' : 'border-white/10 bg-transparent'
                                 )}>
                                     <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
                                         {filter.icon}
@@ -247,8 +313,8 @@ export default function HomePageClient({
                                 </Button>
                             ))}
                             <Button asChild variant={'outline'} className={cn(
-                                "rounded-full hover:bg-gray-800 flex-shrink-0",
-                                lockStatus === 'locked' ? 'bg-gray-800 border-gray-600' : 'border-gray-700 bg-transparent'
+                                "rounded-full hover:bg-white/5 flex-shrink-0",
+                                lockStatus === 'locked' ? 'bg-primary/10 border-primary/30 text-primary' : 'border-white/10 bg-transparent'
                             )}>
                                 <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
                                     <Lock className="w-4 h-4" />
@@ -259,7 +325,7 @@ export default function HomePageClient({
 
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="rounded-full bg-transparent border-gray-700 hover:bg-gray-800 ml-2 flex-shrink-0">
+                                <Button variant="outline" className="rounded-full bg-transparent border-white/10 hover:bg-white/5 ml-2 flex-shrink-0">
                                     <ListFilter className="mr-2 h-4 w-4" />
                                     Filter
                                 </Button>
@@ -309,15 +375,16 @@ export default function HomePageClient({
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </div>
+
+                    {/* Posts Grid */}
                     {posts.length === 0 && !loading ? (
                         <div className="text-center py-16">
-                            <h1 className="font-serif text-4xl font-bold">
-                                No Posts Found
-                            </h1>
-                            <p className="mt-4 text-lg text-muted-foreground">
-                                No posts match the current filters. Try a different filter.
-                            </p>
-                            <Button asChild className="mt-8">
+                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
+                                <Film className="w-10 h-10 text-muted-foreground" />
+                            </div>
+                            <h1 className="text-2xl font-bold mb-2">No Content Found</h1>
+                            <p className="text-muted-foreground mb-6">No posts match the current filters. Try adjusting your search.</p>
+                            <Button asChild>
                                 <Link href="/">Clear Filters</Link>
                             </Button>
                         </div>
@@ -333,7 +400,7 @@ export default function HomePageClient({
                                                 href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter, lockStatus })}
                                                 scroll={false}
                                                 className={cn(
-                                                    "dark bg-gray-800 hover:bg-gray-700",
+                                                    "bg-white/5 hover:bg-white/10 border-white/10",
                                                     currentPage <= 1 && "pointer-events-none opacity-50"
                                                 )}
                                             >
@@ -351,7 +418,7 @@ export default function HomePageClient({
                                                 href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter, lockStatus })}
                                                 scroll={false}
                                                 className={cn(
-                                                    "dark bg-gray-800 hover:bg-gray-700",
+                                                    "bg-white/5 hover:bg-white/10 border-white/10",
                                                     currentPage >= totalPages && "pointer-events-none opacity-50"
                                                 )}
                                             >
@@ -362,84 +429,111 @@ export default function HomePageClient({
                             )}
 
 
-                            <Separator className="my-12 bg-gray-800" />
+                            <Separator className="my-12 bg-white/5" />
 
-                            <section>
-                                <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Users /> Popular Artists</h2>
-                                {users.length > 0 ? (
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 justify-center gap-x-8 gap-y-4">
+                            {/* Creators Section */}
+                            <section className="mb-12">
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-blue-500/10">
+                                            <Users className="w-5 h-5 text-blue-400" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-bold">{siteConfig.sections.creators.title}</h2>
+                                            <p className="text-muted-foreground text-sm">{siteConfig.sections.creators.subtitle}</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" className="text-muted-foreground hover:text-primary" asChild>
+                                        <Link href="/explore">
+                                            View All <ChevronRight className="w-4 h-4 ml-1" />
+                                        </Link>
+                                    </Button>
+                                </div>
+
+                                {loading ? (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-4">
+                                        {[...Array(5)].map((_, i) => (
+                                            <div key={i} className="flex flex-col items-center">
+                                                <Skeleton className="w-24 h-24 rounded-full" />
+                                                <Skeleton className="h-4 w-20 mt-2" />
+                                                <Skeleton className="h-3 w-16 mt-1" />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : users.length > 0 ? (
+                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 justify-center gap-x-8 gap-y-6">
                                         {users.map(user => {
                                             const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
                                             return (
                                                 <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group">
-                                                    <Avatar className="w-24 h-24 text-4xl border-2 border-transparent group-hover:border-primary transition-colors">
+                                                    <Avatar className="w-20 h-20 sm:w-24 sm:h-24 text-3xl border-2 border-transparent group-hover:border-primary transition-all group-hover:scale-105">
                                                         {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
-                                                        <AvatarFallback>
+                                                        <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
                                                             {user.name?.charAt(0).toUpperCase() || 'U'}
                                                         </AvatarFallback>
                                                     </Avatar>
-                                                    <div className='text-center mt-2'>
-                                                        <h3 className="font-semibold group-hover:text-primary">{user.name}</h3>
-                                                        <p className="text-sm text-muted-foreground">{user.role === 'USER' ? 'Artist' : user.role.replace('_', ' ')}</p>
+                                                    <div className='text-center mt-3'>
+                                                        <h3 className="font-semibold group-hover:text-primary transition-colors">{user.name}</h3>
+                                                        <p className="text-xs text-muted-foreground">{user.role === 'USER' ? 'Creator' : user.role.replace('_', ' ')}</p>
                                                     </div>
                                                 </Link>
                                             )
                                         })}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                                    <div className="flex flex-col items-center justify-center text-center p-16 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
                                         <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold">No Users Yet</h3>
-                                        <p className="text-muted-foreground mt-2 text-sm">There are no users in the system yet.</p>
+                                        <h3 className="text-lg font-semibold">No Creators Yet</h3>
+                                        <p className="text-muted-foreground mt-2 text-sm">Be the first to join our community!</p>
                                     </div>
                                 )}
                             </section>
 
-                            <Separator className="my-12 bg-gray-800" />
+                            <Separator className="my-12 bg-white/5" />
 
+                            {/* Collections/Groups Section */}
                             <section>
-                                <h2 className="text-3xl font-bold font-serif mb-8 flex items-center gap-3"><Globe /> Popular Groups</h2>
-                                {groups.length > 0 ? (
+                                <div className="flex items-center justify-between mb-8">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 rounded-lg bg-purple-500/10">
+                                            <Globe className="w-5 h-5 text-purple-400" />
+                                        </div>
+                                        <div>
+                                            <h2 className="text-2xl font-bold">{siteConfig.sections.collections.title}</h2>
+                                            <p className="text-muted-foreground text-sm">{siteConfig.sections.collections.subtitle}</p>
+                                        </div>
+                                    </div>
+                                    <Button variant="ghost" className="text-muted-foreground hover:text-primary" asChild>
+                                        <Link href="/groups">
+                                            View All <ChevronRight className="w-4 h-4 ml-1" />
+                                        </Link>
+                                    </Button>
+                                </div>
+                                {loading ? (
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+                                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-xl" />)}
+                                    </div>
+                                ) : groups.length > 0 ? (
                                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
                                         {groups.map((group) => (
                                             <GroupCard key={group.id} group={group} />
                                         ))}
                                     </div>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
-                                        <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold">No Groups Yet</h3>
-                                        <p className="text-muted-foreground mt-2 text-sm">There are no public groups available at the moment. Check back later!</p>
+                                    <div className="flex flex-col items-center justify-center text-center p-16 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
+                                        <Globe className="h-12 w-12 text-muted-foreground mb-4" />
+                                        <h3 className="text-lg font-semibold">No Collections Yet</h3>
+                                        <p className="text-muted-foreground mt-2 text-sm">Collections will appear here when available.</p>
                                     </div>
                                 )}
                             </section>
                         </>
                     )}
                 </main>
+
+                {/* Footer */}
                 <Footer />
             </div>
         </TooltipProvider>
     );
 }
-
-// Define ExternalLink icon component locally
-const ExternalLink = (props: React.SVGProps<SVGSVGElement>) => (
-    <svg
-        {...props}
-        xmlns="http://www.w3.org/2000/svg"
-        width="24"
-        height="24"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-    >
-        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-        <polyline points="15 3 21 3 21 9" />
-        <line x1="10" x2="21" y1="14" y2="3" />
-    </svg>
-);
-
-

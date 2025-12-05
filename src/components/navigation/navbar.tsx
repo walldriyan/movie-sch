@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/sheet';
 import React from 'react';
 import { canUserAccessMicroPosts } from '@/lib/actions/users';
+import { siteConfig } from '@/config/site.config';
 
 export default function Navbar() {
   const { data: session, status } = useSession();
@@ -132,7 +133,7 @@ export default function Navbar() {
         >
           <Image src="/logo.png" alt="Logo" width={38} height={38} />
           <span className="font-bold text-lg hidden sm:inline bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            CineVerse
+            {siteConfig.name}
           </span>
         </Link>
 
@@ -159,7 +160,7 @@ export default function Navbar() {
                   <div className="p-4 border-b border-white/10">
                     <Link href="/" className="flex items-center gap-2">
                       <Image src="/logo.png" alt="Logo" width={32} height={32} />
-                      <span className="font-bold text-lg">CineVerse</span>
+                      <span className="font-bold text-lg">{siteConfig.name}</span>
                     </Link>
                   </div>
 
