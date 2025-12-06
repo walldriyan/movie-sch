@@ -331,14 +331,23 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
   }
 
   // Search filter - search in title and description
+  // NOTE: We need to use AND to combine search with access control (not add to existing OR)
   if (search && search.trim()) {
-    const searchTerm = search.trim();
-    whereClause.OR = [
-      ...(whereClause.OR || []),
-      { title: { contains: searchTerm } },
-      { description: { contains: searchTerm } },
-      { genres: { contains: searchTerm } },
-    ];
+    const searchTerm = search.trim().toLowerCase();
+    // Wrap existing where clause and add search as AND condition
+    const existingWhere = { ...whereClause };
+    whereClause = {
+      AND: [
+        existingWhere,
+        {
+          OR: [
+            { title: { contains: searchTerm } },
+            { description: { contains: searchTerm } },
+            { genres: { contains: searchTerm } },
+          ]
+        }
+      ]
+    };
   }
 
   console.log('[DB Fetch] FINAL whereClause:', JSON.stringify(whereClause, null, 2));

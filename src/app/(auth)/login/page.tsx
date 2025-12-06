@@ -3,23 +3,16 @@
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
-import { Film, AlertCircle, Loader2, Mail } from 'lucide-react';
+import Image from 'next/image';
+import { Sparkles, AlertCircle, Loader2, Mail, Lock, ArrowRight, Eye, EyeOff } from 'lucide-react';
 import { doSignIn } from '@/lib/actions';
 import { signIn as nextAuthSignIn } from 'next-auth/react';
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
 // Google Icon Component
 function GoogleIcon({ className }: { className?: string }) {
@@ -48,9 +41,14 @@ function GoogleIcon({ className }: { className?: string }) {
 function LoginButton() {
   const { pending } = useFormStatus();
   return (
-    <Button className="w-full" type="submit" disabled={pending}>
+    <Button
+      className="w-full h-12 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-xl text-white font-medium transition-all duration-300 shadow-lg shadow-purple-500/25"
+      type="submit"
+      disabled={pending}
+    >
       {pending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-      {pending ? 'Signing in...' : 'Sign in with Email'}
+      {pending ? 'Signing in...' : 'Sign In'}
+      {!pending && <ArrowRight className="ml-2 h-4 w-4" />}
     </Button>
   );
 }
@@ -72,14 +70,14 @@ function GoogleSignInButton() {
     <Button
       type="button"
       variant="outline"
-      className="w-full"
+      className="w-full h-12 bg-white/5 border-white/20 hover:bg-white/10 hover:border-white/30 rounded-xl text-white font-medium transition-all duration-300"
       onClick={handleGoogleSignIn}
       disabled={isLoading}
     >
       {isLoading ? (
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
       ) : (
-        <GoogleIcon className="mr-2 h-4 w-4" />
+        <GoogleIcon className="mr-2 h-5 w-5" />
       )}
       {isLoading ? 'Connecting...' : 'Continue with Google'}
     </Button>
@@ -90,7 +88,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [state, formAction] = useActionState(doSignIn, { success: false, error: undefined });
-  const [showGoogleAuth, setShowGoogleAuth] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Check for OAuth errors
   const error = searchParams.get('error');
@@ -108,131 +106,160 @@ export default function LoginPage() {
     }
   }, [state.success, searchParams]);
 
-  // Check if Google OAuth is configured
-  useEffect(() => {
-    // Google auth is available if the provider is configured
-    // We'll show it by default and let the backend handle if it's not configured
-    setShowGoogleAuth(true);
-  }, []);
-
   return (
-    <div className="min-h-screen bg-background flex flex-col items-center justify-center p-8 overflow-hidden relative">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <Link href="/" className="inline-flex items-center space-x-2">
-            <Film className="h-8 w-8 text-primary" />
-            <span className="inline-block font-bold font-serif text-3xl">
-              CineVerse
-            </span>
-          </Link>
-          <p className="mt-2 text-muted-foreground">
-            Welcome back! Please sign in to your account.
-          </p>
+    <div className="min-h-screen bg-background flex overflow-hidden">
+      {/* Left Side - Hero Image */}
+      <div className="hidden lg:flex lg:w-1/2 relative">
+        {/* Hero Background Image */}
+        <div className="absolute inset-6 rounded-3xl overflow-hidden">
+          <Image
+            src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&q=80"
+            alt="Cinema"
+            fill
+            className="object-cover"
+            priority
+          />
+          {/* Gradient Overlay */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
+          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 to-transparent" />
+
+          {/* Content on Hero */}
+          <div className="absolute bottom-12 left-12 right-12">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-6">
+              <Sparkles className="w-4 h-4 text-purple-400" />
+              Welcome to CineVerse
+            </div>
+            <h1 className="text-4xl font-bold text-white mb-4">
+              Discover Your Next<br />
+              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                Favorite Movie
+              </span>
+            </h1>
+            <p className="text-white/60 text-lg max-w-md">
+              Join our community and explore a world of entertainment. Stream movies, discover series, and connect with fellow cinema lovers.
+            </p>
+          </div>
         </div>
+      </div>
 
-        <Card>
-          <form action={formAction}>
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl">Sign In</CardTitle>
-              <CardDescription>
-                Choose your preferred sign-in method
-              </CardDescription>
-            </CardHeader>
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-8 py-12">
+        <div className="w-full max-w-md">
+          {/* Logo */}
+          <div className="text-center mb-10">
+            <Link href="/" className="inline-flex items-center gap-3 mb-4">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <span className="font-bold text-2xl text-white">CineVerse</span>
+            </Link>
+            <h2 className="text-3xl font-bold text-white mb-2">Welcome back</h2>
+            <p className="text-white/50">Sign in to your account to continue</p>
+          </div>
 
-            <CardContent className="grid gap-4">
-              {/* Google Sign In */}
-              {showGoogleAuth && (
-                <>
-                  <GoogleSignInButton />
+          {/* Login Form */}
+          <form action={formAction} className="space-y-6">
+            {/* Social Login */}
+            <GoogleSignInButton />
 
-                  <div className="relative">
-                    <div className="absolute inset-0 flex items-center">
-                      <Separator className="w-full" />
-                    </div>
-                    <div className="relative flex justify-center text-xs uppercase">
-                      <span className="bg-card px-2 text-muted-foreground">
-                        Or continue with email
-                      </span>
-                    </div>
-                  </div>
-                </>
-              )}
+            {/* Divider */}
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-4 text-white/40">
+                  Or continue with email
+                </span>
+              </div>
+            </div>
 
-              {/* Email/Password Form */}
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+            {/* Email Field */}
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-white/70">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="m@example.com"
+                  placeholder="your@email.com"
                   required
                   autoComplete="email"
+                  className="h-12 pl-12 bg-white/5 border-white/10 rounded-xl text-white placeholder:text-white/30 focus:border-purple-500/50 focus:bg-white/10 transition-all"
                 />
               </div>
+            </div>
 
-              <div className="grid gap-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/forgot-password"
-                    className="text-sm text-muted-foreground hover:text-primary"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+            {/* Password Field */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-white/70">Password</Label>
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
                 <Input
                   id="password"
                   name="password"
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="••••••••"
                   required
                   autoComplete="current-password"
+                  className="h-12 pl-12 pr-12 bg-white/5 border-white/10 rounded-xl text-white placeholder:text-white/30 focus:border-purple-500/50 focus:bg-white/10 transition-all"
                 />
-              </div>
-
-              {/* Error Messages */}
-              <div
-                className="flex h-8 items-end space-x-1"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                {(state.error || errorMessage) && (
-                  <>
-                    <AlertCircle className="h-5 w-5 text-destructive" />
-                    <p className="text-sm text-destructive">
-                      {state.error || errorMessage}
-                    </p>
-                  </>
-                )}
-              </div>
-            </CardContent>
-
-            <CardFooter className="flex flex-col gap-4">
-              <LoginButton />
-              <p className="text-sm text-muted-foreground text-center">
-                Don&apos;t have an account?{' '}
-                <Link
-                  href="/register"
-                  className="font-semibold text-primary hover:underline"
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/60 transition-colors"
                 >
-                  Create account
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
-        </Card>
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
 
-        {/* Terms and Privacy */}
-        <p className="text-center text-xs text-muted-foreground">
-          By signing in, you agree to our{' '}
-          <Link href="/terms" className="underline hover:text-primary">
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link href="/privacy" className="underline hover:text-primary">
-            Privacy Policy
-          </Link>
-        </p>
+            {/* Error Messages */}
+            {(state.error || errorMessage) && (
+              <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
+                <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
+                <p className="text-sm text-red-400">
+                  {state.error || errorMessage}
+                </p>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <LoginButton />
+
+            {/* Sign Up Link */}
+            <p className="text-center text-white/50">
+              Don't have an account?{' '}
+              <Link
+                href="/register"
+                className="text-purple-400 hover:text-purple-300 font-medium transition-colors"
+              >
+                Create account
+              </Link>
+            </p>
+          </form>
+
+          {/* Terms & Privacy */}
+          <p className="text-center text-xs text-white/30 mt-8">
+            By signing in, you agree to our{' '}
+            <Link href="/terms" className="text-white/50 hover:text-white/70 underline">
+              Terms of Service
+            </Link>{' '}
+            and{' '}
+            <Link href="/privacy" className="text-white/50 hover:text-white/70 underline">
+              Privacy Policy
+            </Link>
+          </p>
+        </div>
       </div>
     </div>
   );
