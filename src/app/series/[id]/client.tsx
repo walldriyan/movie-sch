@@ -300,9 +300,9 @@ export default function SeriesPageClient({
         </nav>
       </div>
 
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 relative z-10">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          <div className="md:col-span-3">
+      <main className="w-full px-4 sm:px-6 lg:px-8 pb-12 relative z-10 flex justify-center">
+        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-8">
+          <div className="lg:col-span-3">
             <article>
               <div className="relative h-[400px] w-full rounded-xl overflow-hidden mb-8">
                 {/* Hero Image or Gradient Fallback */}
@@ -566,13 +566,13 @@ export default function SeriesPageClient({
 
             </article>
           </div>
-          <aside className="hidden md:block md:col-span-1 md:h-screen">
-            <div className="md:sticky md:top-24 overflow-y-auto">
-              <div className="flex flex-col items-start gap-4 mb-4">
-                <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-                  <List className="h-6 w-6 text-primary" />
-                  <span>{series.title}</span>
-                </h1>
+
+          {/* Sidebar with Series Tracker */}
+          <aside className="lg:col-span-1">
+            <div className="sticky top-24">
+              <div className="flex items-center gap-3 mb-4">
+                <List className="h-6 w-6 text-primary" />
+                <h2 className="text-xl font-bold font-serif">{series.title}</h2>
               </div>
               <SeriesTracker
                 seriesId={series.id}
