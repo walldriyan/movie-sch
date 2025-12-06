@@ -41,12 +41,21 @@ const GENRES = [
 
 const YEARS = Array.from({ length: 30 }, (_, i) => (new Date().getFullYear() - i).toString());
 
+// Helper to safely get genres as array (handles string or array)
+const getGenresArray = (genres: string | string[] | null | undefined): string[] => {
+    if (!genres) return [];
+    if (Array.isArray(genres)) return genres;
+    if (typeof genres === 'string') return genres.split(',').map(g => g.trim()).filter(Boolean);
+    return [];
+};
+
 // ========================================
 // MOVIE CARD COMPONENT - Suno.com Style
 // ========================================
 function MovieCard({ post, index }: { post: any; index: number }) {
     const [imgError, setImgError] = useState(false);
     const hasImage = post.posterUrl && post.posterUrl.trim() !== '' && !imgError;
+    const genres = getGenresArray(post.genres);
 
     return (
         <Link href={`/movies/${post.id}`} className="group block">
@@ -105,9 +114,9 @@ function MovieCard({ post, index }: { post: any; index: number }) {
                             </div>
                         )}
                         {/* Genres */}
-                        {post.genres && post.genres.length > 0 && (
+                        {genres.length > 0 && (
                             <div className="flex flex-wrap gap-1 mt-2">
-                                {post.genres.slice(0, 2).map((genre: string, idx: number) => (
+                                {genres.slice(0, 2).map((genre: string, idx: number) => (
                                     <span
                                         key={idx}
                                         className="px-2 py-0.5 rounded-full bg-white/10 text-[10px] text-white/60"
