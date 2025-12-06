@@ -88,7 +88,7 @@ export default function SeriesPageClient({
   const [currentPost, setCurrentPost] = useState(initialPost);
   const [reviews, setReviews] = useState<Review[]>(initialPost.reviews);
   const [showReviews, setShowReviews] = useState(false);
-  
+
   const [isLockedByDefault, setIsLockedByDefault] = useState(initialPost.isLockedByDefault);
   const [requiresExamToUnlock, setRequiresExamToUnlock] = useState(initialPost.requiresExamToUnlock);
 
@@ -101,9 +101,7 @@ export default function SeriesPageClient({
     setRequiresExamToUnlock(initialPost.requiresExamToUnlock || false);
   }, [initialPost]);
 
-  const heroImage =
-    currentPost.posterUrl ||
-    PlaceHolderImages.find((p) => p.id === 'movie-poster-placeholder')?.imageUrl;
+  // heroImage is now defined in the return section for image error handling
 
   const handleLike = (like: boolean) => {
     if (!currentUser) {
@@ -245,16 +243,16 @@ export default function SeriesPageClient({
       setReviews(originalReviews);
     }
   };
-  
+
   const handleLockSettingsChange = () => {
     startLockSettingsTransition(async () => {
-        try {
-            await updatePostLockSettings(currentPost.id, isLockedByDefault, requiresExamToUnlock);
-            toast({ title: 'Lock settings updated successfully' });
-            router.refresh();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Error', description: error.message });
-        }
+      try {
+        await updatePostLockSettings(currentPost.id, isLockedByDefault, requiresExamToUnlock);
+        toast({ title: 'Lock settings updated successfully' });
+        router.refresh();
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message });
+      }
     });
   };
 
@@ -264,47 +262,71 @@ export default function SeriesPageClient({
   const isDisliked = currentUser && currentPost.dislikedBy?.some(user => user.id === currentUser.id);
   const canManage = currentUser && (currentUser.id === author?.id || currentUser.role === ROLES.SUPER_ADMIN);
 
+  // State for image error handling
+  const [imgError, setImgError] = useState(false);
+  const heroImage = currentPost.posterUrl;
+  const hasHeroImage = heroImage && heroImage.trim() !== '' && !imgError;
+
   return (
-    <div className="w-full bg-background text-foreground">
-      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+    <div className="w-full bg-background text-foreground pt-[80px]">
+      {/* Breadcrumb Navigation - Fixed at top left */}
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <nav className="flex items-center gap-3 text-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="h-8 px-3 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <span className="text-white/30">/</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="h-8 px-3 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white gap-2"
+          >
+            <Link href="/">
+              <Home className="h-4 w-4" />
+              Home
+            </Link>
+          </Button>
+          <span className="text-white/30">/</span>
+          <span className="text-white/50">Series</span>
+          <span className="text-white/30">/</span>
+          <span className="text-white truncate max-w-[200px]">{series.title}</span>
+        </nav>
+      </div>
+
+      <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 pb-12 relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="md:col-span-3">
             <article>
               <div className="relative h-[400px] w-full rounded-xl overflow-hidden mb-8">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => router.back()}
-                  className="absolute top-4 left-4 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                  <span className="sr-only">Back</span>
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  asChild
-                  className="absolute top-4 left-16 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-                >
-                  <Link href="/">
-                    <Home className="h-5 w-5" />
-                    <span className="sr-only">Home</span>
-                  </Link>
-                </Button>
-
-                {heroImage && (
+                {/* Hero Image or Gradient Fallback */}
+                {hasHeroImage ? (
                   <Image
                     src={heroImage}
                     alt={`Poster for ${currentPost.title}`}
                     fill
                     className="object-cover"
                     priority
+                    onError={() => setImgError(true)}
                   />
+                ) : (
+                  // Dark gradient background when no image or image failed
+                  <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/50 to-gray-900">
+                    <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiA2djZoNnYtNmgtNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50" />
+                  </div>
                 )}
 
-                {/* gradent mask */}
+                {/* Gradient mask */}
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
-                {/* fallow button with image */}
+
+                {/* Follow button with image */}
                 <div className="absolute bottom-2 right-2 h-[100px] w-auto flex items-center justify-center">
                   {author && (
                     <div className="flex flex-col items-end gap-3 mt-3 w-full text-right">
@@ -328,217 +350,217 @@ export default function SeriesPageClient({
               </div>
 
               <h2 className="text-4xl font-bold font-serif mb-4">{currentPost.title}</h2>
-              
-              {currentPost.isLocked ? (
-                  <div className="min-h-[200px] flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
-                      <Lock className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold">Content Locked</h3>
-                      <p className="text-muted-foreground mt-2 max-w-sm">
-                          This part of the series is currently locked. You may need to complete a previous step to unlock it.
-                      </p>
-                  </div>
+
+              {(currentPost as any).isLocked ? (
+                <div className="min-h-[200px] flex flex-col items-center justify-center text-center p-16 border-2 border-dashed rounded-lg bg-muted/20">
+                  <Lock className="h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold">Content Locked</h3>
+                  <p className="text-muted-foreground mt-2 max-w-sm">
+                    This part of the series is currently locked. You may need to complete a previous step to unlock it.
+                  </p>
+                </div>
               ) : (
                 <>
                   <div
-                      className="prose prose-lg prose-invert max-w-none text-foreground/80"
-                      dangerouslySetInnerHTML={{ __html: currentPost.description }}
+                    className="prose prose-lg prose-invert max-w-none text-foreground/80"
+                    dangerouslySetInnerHTML={{ __html: currentPost.description }}
                   />
                 </>
               )}
 
-              {!currentPost.isLocked && (
+              {!(currentPost as any).isLocked && (
                 <>
-                    <Separator className="my-12" />
+                  <Separator className="my-12" />
 
-                    <section id="interactions" className="flex items-center justify-between text-muted-foreground mb-12">
-                      <PostViewsAndLikes post={currentPost} />
-                      <div className="flex items-center gap-2 pl-4 flex-shrink-0">
-                        <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
-                          <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
-                        </Button>
+                  <section id="interactions" className="flex items-center justify-between text-muted-foreground mb-12">
+                    <PostViewsAndLikes post={currentPost} viewCount={currentPost.viewCount || 0} />
+                    <div className="flex items-center gap-2 pl-4 flex-shrink-0">
+                      <Button variant="ghost" size="icon" onClick={() => handleLike(true)} disabled={likeTransition} title={isLiked ? 'Unlike' : 'Like'}>
+                        <ThumbsUp className={cn("w-5 h-5", isLiked && "text-primary fill-primary")} />
+                      </Button>
 
-                        <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={likeTransition} title={isDisliked ? 'Remove dislike' : 'Dislike'}>
-                          <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
-                        </Button>
+                      <Button variant="ghost" size="icon" onClick={() => handleLike(false)} disabled={likeTransition} title={isDisliked ? 'Remove dislike' : 'Dislike'}>
+                        <ThumbsDown className={cn("w-5 h-5", isDisliked && "text-destructive fill-destructive")} />
+                      </Button>
 
-                        <Separator orientation="vertical" className="h-6 mx-2" />
+                      <Separator orientation="vertical" className="h-6 mx-2" />
 
-                        <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
-                          <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
-                        </Button>
-                      </div>
-                    </section>
+                      <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={favoriteTransition} title={isFavorited ? 'Remove from favorites' : 'Add to favorites'}>
+                        <Bookmark className={cn("w-5 h-5", isFavorited && "text-primary fill-primary")} />
+                      </Button>
+                    </div>
+                  </section>
 
-                    {canManage && (
-                        <>
-                            <Separator className="my-12" />
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>Lock Settings</CardTitle>
-                                    <CardDescription>Manage access control for this post within the series.</CardDescription>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                        <div className="space-y-0.5">
-                                            <Label className="text-base">Lock Post by Default</Label>
-                                            <p className="text-sm text-muted-foreground">If on, this post will be locked until a previous requirement is met.</p>
-                                        </div>
-                                        <Switch
-                                            checked={isLockedByDefault}
-                                            onCheckedChange={setIsLockedByDefault}
-                                            aria-label="Lock post by default"
-                                        />
-                                    </div>
-                                    <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
-                                        <div className="space-y-0.5">
-                                            <Label className="text-base">Exam Unlocks Next Post</Label>
-                                            <p className="text-sm text-muted-foreground">If on, passing this post's exam will unlock the next one in the series.</p>
-                                        </div>
-                                        <Switch
-                                            checked={requiresExamToUnlock}
-                                            onCheckedChange={setRequiresExamToUnlock}
-                                            aria-label="Exam unlocks next post"
-                                        />
-                                    </div>
-                                    <Button onClick={handleLockSettingsChange} disabled={lockSettingsTransition}>
-                                        {lockSettingsTransition ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Saving...</> : 'Save Lock Settings'}
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        </>
-                    )}
-
-
-                    <ExamSection exam={currentPost.exam} />
-
-                    <SponsoredAdCard />
-
-                    <div className="block md:hidden">
+                  {canManage && (
+                    <>
                       <Separator className="my-12" />
-                      <aside>
-                        <div className="flex flex-col items-start gap-4 mb-4">
-                          <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
-                            <List className="h-6 w-6 text-primary" />
-                            <span>{series.title}</span>
-                          </h1>
-                          {author && (
-                            <div className="flex flex-col items-start gap-3 mt-3 w-full">
-                              <div className='flex items-center gap-2'>
-                                <Avatar className="h-6 w-6">
-                                  <AvatarImage src={author.image || ''} alt={author.name || ''} />
-                                  <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <span className="text-sm font-medium">{author.name}</span>
-                              </div>
-                              <Button variant="outline" size="sm">
-                                <UserPlus className="mr-2 h-4 w-4" />
-                                Follow
-                              </Button>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle>Lock Settings</CardTitle>
+                          <CardDescription>Manage access control for this post within the series.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                            <div className="space-y-0.5">
+                              <Label className="text-base">Lock Post by Default</Label>
+                              <p className="text-sm text-muted-foreground">If on, this post will be locked until a previous requirement is met.</p>
                             </div>
-                          )}
+                            <Switch
+                              checked={isLockedByDefault}
+                              onCheckedChange={setIsLockedByDefault}
+                              aria-label="Lock post by default"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between rounded-lg border p-3 shadow-sm">
+                            <div className="space-y-0.5">
+                              <Label className="text-base">Exam Unlocks Next Post</Label>
+                              <p className="text-sm text-muted-foreground">If on, passing this post's exam will unlock the next one in the series.</p>
+                            </div>
+                            <Switch
+                              checked={requiresExamToUnlock}
+                              onCheckedChange={setRequiresExamToUnlock}
+                              aria-label="Exam unlocks next post"
+                            />
+                          </div>
+                          <Button onClick={handleLockSettingsChange} disabled={lockSettingsTransition}>
+                            {lockSettingsTransition ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving...</> : 'Save Lock Settings'}
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+
+
+                  <ExamSection exam={currentPost.exam} />
+
+                  <SponsoredAdCard />
+
+                  <div className="block md:hidden">
+                    <Separator className="my-12" />
+                    <aside>
+                      <div className="flex flex-col items-start gap-4 mb-4">
+                        <h1 className="text-2xl font-bold font-serif flex items-center gap-2">
+                          <List className="h-6 w-6 text-primary" />
+                          <span>{series.title}</span>
+                        </h1>
+                        {author && (
+                          <div className="flex flex-col items-start gap-3 mt-3 w-full">
+                            <div className='flex items-center gap-2'>
+                              <Avatar className="h-6 w-6">
+                                <AvatarImage src={author.image || ''} alt={author.name || ''} />
+                                <AvatarFallback>{author.name?.charAt(0)}</AvatarFallback>
+                              </Avatar>
+                              <span className="text-sm font-medium">{author.name}</span>
+                            </div>
+                            <Button variant="outline" size="sm">
+                              <UserPlus className="mr-2 h-4 w-4" />
+                              Follow
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                      <SeriesTracker
+                        seriesId={series.id}
+                        posts={postsInSeries}
+                        currentPostId={currentPost.id}
+                        passedExamIds={passedExamIds}
+                        session={session}
+                      />
+                    </aside>
+                  </div>
+
+                  {currentPost.subtitles && currentPost.subtitles.length > 0 && (
+                    <>
+                      <Separator className="my-12" />
+                      <section id="downloads">
+                        <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
+                          <Download className="w-8 h-8 text-primary" />
+                          Downloads
+                        </h2>
+                        <div className="space-y-4">
+                          {currentPost.subtitles.map((subtitle) => (
+                            <div
+                              key={subtitle.id}
+                              className="flex items-center justify-between rounded-lg border p-4"
+                            >
+                              <div>
+                                <p className="font-semibold">
+                                  {subtitle.language}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  by {subtitle.uploaderName}
+                                </p>
+                              </div>
+                              <div className="flex items-center space-x-4">
+                                {currentUser ? (
+                                  <Button variant="ghost" size="icon" asChild>
+                                    <a href={subtitle.url} download>
+                                      <Download className="h-5 w-5" />
+                                    </a>
+                                  </Button>
+                                ) : (
+                                  <span title="Login to download"><Lock className="h-5 w-5 text-muted-foreground" /></span>
+                                )}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <SeriesTracker
-                          seriesId={series.id}
-                          posts={postsInSeries}
-                          currentPostId={currentPost.id}
-                          passedExamIds={passedExamIds}
+                      </section>
+                    </>
+                  )}
+
+
+                  <section id="reviews" className="my-12">
+                    <div className="flex justify-between items-center mb-6">
+                      <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
+                        <MessageCircle className="w-8 h-8 text-primary" />
+                        Responses ({reviews.length})
+                      </h2>
+                      <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
+                        {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
+                      </Button>
+                    </div>
+                    {showReviews && (
+                      <>
+                        <ReviewForm
+                          postId={currentPost.id}
+                          isSubmitting={isSubmittingReview}
+                          onSubmitReview={handleReviewSubmit}
                           session={session}
                         />
-                      </aside>
-                    </div>
-
-                    {currentPost.subtitles && currentPost.subtitles.length > 0 && (
-                      <>
-                        <Separator className="my-12" />
-                        <section id="downloads">
-                          <h2 className="font-serif text-3xl font-bold mb-6 flex items-center gap-3">
-                            <Download className="w-8 h-8 text-primary" />
-                            Downloads
-                          </h2>
-                          <div className="space-y-4">
-                            {currentPost.subtitles.map((subtitle) => (
-                              <div
-                                key={subtitle.id}
-                                className="flex items-center justify-between rounded-lg border p-4"
-                              >
-                                <div>
-                                  <p className="font-semibold">
-                                    {subtitle.language}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    by {subtitle.uploaderName}
-                                  </p>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                  {currentUser ? (
-                                    <Button variant="ghost" size="icon" asChild>
-                                      <a href={subtitle.url} download>
-                                        <Download className="h-5 w-5" />
-                                      </a>
-                                    </Button>
-                                  ) : (
-                                    <Lock className="h-5 w-5 text-muted-foreground" title="Login to download" />
-                                  )}
-                                </div>
+                        <Separator className="my-8" />
+                        <div className="space-y-8">
+                          {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
+                            <div className="flex items-start gap-4">
+                              <Skeleton className="h-8 w-8 rounded-full" />
+                              <div className="w-full space-y-2">
+                                <Skeleton className="h-4 w-1/4" />
+                                <Skeleton className="h-4 w-full" />
+                                <Skeleton className="h-4 w-2/3" />
                               </div>
-                            ))}
-                          </div>
-                        </section>
+                            </div>
+                          )}
+                          {reviews.length > 0 ? (
+                            reviews.map((review: Review) => (
+                              <ReviewCard
+                                key={review.id}
+                                review={review}
+                                onReviewSubmit={handleReviewSubmit}
+                                onReviewDelete={handleReviewDelete}
+                                session={session}
+                              />
+                            ))
+                          ) : (
+                            !isSubmittingReview && (
+                              <p className="text-muted-foreground">
+                                Be the first to share your thoughts!
+                              </p>
+                            )
+                          )}
+                        </div>
                       </>
                     )}
-
-
-                    <section id="reviews" className="my-12">
-                      <div className="flex justify-between items-center mb-6">
-                        <h2 className="font-serif text-3xl font-bold flex items-center gap-3">
-                          <MessageCircle className="w-8 h-8 text-primary" />
-                          Responses ({reviews.length})
-                        </h2>
-                        <Button variant="ghost" size="icon" onClick={() => setShowReviews(!showReviews)}>
-                          {showReviews ? <ChevronUp className="w-6 h-6" /> : <ChevronDown className="w-6 h-6" />}
-                        </Button>
-                      </div>
-                      {showReviews && (
-                        <>
-                          <ReviewForm
-                            postId={currentPost.id}
-                            isSubmitting={isSubmittingReview}
-                            onSubmitReview={handleReviewSubmit}
-                            session={session}
-                          />
-                          <Separator className="my-8" />
-                          <div className="space-y-8">
-                            {isSubmittingReview && !reviews.some(r => r.id > 999999) && (
-                              <div className="flex items-start gap-4">
-                                <Skeleton className="h-8 w-8 rounded-full" />
-                                <div className="w-full space-y-2">
-                                  <Skeleton className="h-4 w-1/4" />
-                                  <Skeleton className="h-4 w-full" />
-                                  <Skeleton className="h-4 w-2/3" />
-                                </div>
-                              </div>
-                            )}
-                            {reviews.length > 0 ? (
-                              reviews.map((review: Review) => (
-                                <ReviewCard
-                                  key={review.id}
-                                  review={review}
-                                  onReviewSubmit={handleReviewSubmit}
-                                  onReviewDelete={handleReviewDelete}
-                                  session={session}
-                                />
-                              ))
-                            ) : (
-                              !isSubmittingReview && (
-                                <p className="text-muted-foreground">
-                                  Be the first to share your thoughts!
-                                </p>
-                              )
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </section>
+                  </section>
                 </>
               )}
 

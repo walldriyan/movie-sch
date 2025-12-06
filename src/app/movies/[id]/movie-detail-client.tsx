@@ -51,47 +51,56 @@ export default function MovieDetailClient({
 
   return (
     <div className="pt-[80px]">
-      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end">
+      {/* Breadcrumb Navigation */}
+      <div className="max-w-5xl mx-auto px-4 md:px-6 py-4">
+        <nav className="flex items-center gap-3 text-sm">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="h-8 px-3 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back
+          </Button>
+          <span className="text-white/30">/</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            asChild
+            className="h-8 px-3 rounded-full bg-white/5 hover:bg-white/10 text-white/70 hover:text-white gap-2"
+          >
+            <Link href="/">
+              <Home className="h-4 w-4" />
+              Home
+            </Link>
+          </Button>
+          <span className="text-white/30">/</span>
+          <span className="text-white/50">{post.type === 'MOVIE' ? 'Movies' : post.type === 'TV_SERIES' ? 'Series' : 'Posts'}</span>
+          <span className="text-white/30">/</span>
+          <span className="text-white truncate max-w-[200px]">{post.title}</span>
+        </nav>
+      </div>
+
+      <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end mx-4 md:mx-6" style={{ width: 'calc(100% - 2rem)' }}>
         {/* Show image if available, otherwise show gradient */}
         {hasHeroImage ? (
           <Image
             src={heroImage}
             alt={`Poster for ${post.title}`}
             fill
-            className="object-cover"
+            className="object-cover rounded-2xl"
             priority
           />
         ) : (
           // Dark gradient background when no image
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/50 to-gray-900">
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/50 to-gray-900 rounded-2xl">
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent" />
             <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiA2djZoNnYtNmgtNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50" />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
-
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => router.back()}
-          className="absolute top-4 left-4 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-        >
-          <ArrowLeft className="h-5 w-5" />
-          <span className="sr-only">Back</span>
-        </Button>
-
-        <Button
-          variant="ghost"
-          size="icon"
-          asChild
-          className="absolute top-4 left-16 z-10 rounded-full bg-black/20 backdrop-blur-sm border border-white/20 hover:bg-white/20"
-        >
-          <Link href="/">
-            <Home className="h-5 w-5" />
-            <span className="sr-only">Home</span>
-          </Link>
-        </Button>
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent rounded-2xl" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background rounded-2xl" />
 
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
           {post.genres.map((genre: string) => (
