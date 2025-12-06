@@ -772,7 +772,6 @@ export async function updatePostStatus(postId: number, status: string) {
 export async function toggleLikePost(postId: number, like: boolean) {
   const session = await auth();
 
-
   if (!session?.user?.id) {
     throw new Error('Not authenticated');
   }
@@ -922,12 +921,10 @@ export async function searchPostsForExam(query: string) {
 
   const posts = await prisma.post.findMany({
     where: {
-      // Note: mode: 'insensitive' is PostgreSQL only, removing for SQLite compatibility
-      // In production PostgreSQL, add mode: 'insensitive' back
       title: {
         contains: query,
       },
-      status: 'PUBLISHED', // Only allow exams for published posts
+      status: 'PUBLISHED',
     },
     take: 10,
     orderBy: {
@@ -968,13 +965,19 @@ export async function updatePostLockSettings(
     throw new Error("Not authorized to update this post's lock settings.");
   }
 
-  await prisma.post.update({
+  const updatedPost = await prisma.post.update({
     where: { id: postId },
     data: {
       isLockedByDefault,
       requiresExamToUnlock,
     },
   });
+
+  // --- DEBUG LOG START ---
+  console.log('[UpdatePostLockSettings] Post successfully updated in DB!');
+  console.log('[UpdatePostLockSettings] Stored ID:', updatedPost.id);
+  console.log('[UpdatePostLockSettings] Stored posterUrl:', updatedPost.posterUrl);
+  // --- DEBUG LOG END ---
 
   await invalidatePostsCache(postId, post.seriesId ?? undefined, post.authorId);
   revalidatePath(`/manage`);
