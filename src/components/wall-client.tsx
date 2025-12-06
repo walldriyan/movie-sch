@@ -51,7 +51,6 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from './ui/alert-dialog';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from './ui/accordion';
 import MicroPostComments from './micro-post-comments';
 
 
@@ -76,18 +75,39 @@ const TIME_FILTERS = [
 ];
 
 
+// Default placeholder images for posts without images
+const DEFAULT_POST_IMAGES = [
+  'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=800&q=80', // cinema
+  'https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=800&q=80', // theater
+  'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=800&q=80', // film
+  'https://images.unsplash.com/photo-1440404653325-ab127d49abc1?w=800&q=80', // projector
+  'https://images.unsplash.com/photo-1594909122845-11baa439b7bf?w=800&q=80', // popcorn
+  'https://images.unsplash.com/photo-1626814026160-2237a95fc5a0?w=800&q=80', // movie set
+];
+
+// Get consistent random image based on post id
+const getDefaultImage = (postId: string) => {
+  const hash = postId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  return DEFAULT_POST_IMAGES[hash % DEFAULT_POST_IMAGES.length];
+};
+
 // ========================================
-// POST CARD COMPONENT
+// POST CARD COMPONENT - Suno.com Style Bento Card
 // ========================================
-function PostCard({ post: initialPost, onDelete }: { post: MicroPost; onDelete: (id: string) => void }) {
+function PostCard({ post: initialPost, onDelete, variant = 'normal' }: {
+  post: MicroPost;
+  onDelete: (id: string) => void;
+  variant?: 'featured' | 'normal' | 'compact';
+}) {
   const { data: session } = useSession();
   const user = session?.user;
   const { toast } = useToast();
   const [post, setPost] = useState(initialPost);
   const [isLikePending, startLikeTransition] = useTransition();
   const [isDeletePending, startDeleteTransition] = useTransition();
+  const [showComments, setShowComments] = useState(false);
 
-  const postImage = post.images?.[0]?.url;
+  const postImage = post.images?.[0]?.url || getDefaultImage(post.id);
   const hasLiked = post.likes?.some(like => like.userId === user?.id) ?? false;
   const likeCount = post._count?.likes || 0;
   const commentCount = post._count?.comments || 0;
@@ -128,30 +148,53 @@ function PostCard({ post: initialPost, onDelete }: { post: MicroPost; onDelete: 
     setPost(p => ({ ...p, _count: { ...p._count, comments: count } }));
   }, []);
 
+  // Card height based on variant
+  const cardHeight = variant === 'featured' ? 'h-[380px]' : variant === 'compact' ? 'h-[200px]' : 'h-[280px]';
+
   return (
-    <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] hover:border-white/[0.1] transition-all">
-      {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        <Link href={`/profile/${post.author.id}`} className="flex items-center gap-3">
-          <Avatar className="h-9 w-9">
-            <AvatarImage src={post.author.image || ''} />
-            <AvatarFallback className="bg-gradient-to-br from-purple-500/30 to-pink-500/30 text-white/80 text-sm">
-              {post.author.name?.charAt(0) || 'U'}
-            </AvatarFallback>
-          </Avatar>
-          <div>
-            <p className="font-medium text-white text-sm">{post.author.name}</p>
-            <span className="text-[11px] text-white/40 block">
-              <ClientRelativeDate date={post.createdAt} />
-            </span>
+    <div className={cn(
+      "group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
+      "hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10",
+      cardHeight
+    )}>
+      {/* Background Image */}
+      <Image
+        src={postImage}
+        alt="Post"
+        fill
+        className="object-cover transition-transform duration-500 group-hover:scale-105"
+      />
+
+      {/* Gradient Overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+
+      {/* Top Section - Author & Actions */}
+      <div className="absolute top-0 left-0 right-0 p-4 flex items-start justify-between">
+        {/* Author Avatar Group */}
+        <Link href={`/profile/${post.author.id}`} className="flex items-center gap-2 group/avatar">
+          <div className="flex -space-x-2">
+            <Avatar className="h-8 w-8 border-2 border-black/50">
+              <AvatarImage src={post.author.image || ''} />
+              <AvatarFallback className="bg-gradient-to-br from-purple-500 to-pink-500 text-white text-xs">
+                {post.author.name?.charAt(0) || 'U'}
+              </AvatarFallback>
+            </Avatar>
           </div>
+          <span className="text-white/80 text-xs font-medium opacity-0 group-hover:opacity-100 group-hover/avatar:opacity-100 transition-opacity">
+            {post.author.name}
+          </span>
         </Link>
 
+        {/* More Actions */}
         {canManage && (
           <AlertDialog>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-white/30 hover:text-white/60">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 bg-black/30 backdrop-blur-sm text-white/70 hover:text-white hover:bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                >
                   <MoreHorizontal className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
@@ -181,60 +224,85 @@ function PostCard({ post: initialPost, onDelete }: { post: MicroPost; onDelete: 
         )}
       </div>
 
-      {/* Content */}
-      <div className="px-4 pb-3">
-        <p className="text-white/80 text-[14px] whitespace-pre-wrap leading-relaxed">{post.content}</p>
+      {/* Bottom Section - Content & Actions */}
+      <div className="absolute bottom-0 left-0 right-0 p-4">
+        {/* Tags */}
         {post.tags && post.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            {post.tags.map(tag => (
-              <span key={tag.id} className="text-[11px] text-purple-400">#{tag.name}</span>
+          <div className="flex flex-wrap gap-1.5 mb-2">
+            {post.tags.slice(0, 3).map(tag => (
+              <span
+                key={tag.id}
+                className="px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-[10px] text-white/80 font-medium"
+              >
+                {tag.name}
+              </span>
             ))}
           </div>
         )}
+
+        {/* Content/Title */}
+        <p className={cn(
+          "text-white font-semibold leading-snug mb-2",
+          variant === 'featured' ? 'text-lg line-clamp-3' : 'text-sm line-clamp-2'
+        )}>
+          {post.content}
+        </p>
+
+        {/* Date & Stats */}
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] text-white/50">
+            <ClientRelativeDate date={post.createdAt} />
+          </span>
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-3">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleLike(); }}
+              disabled={isLikePending}
+              className={cn(
+                "flex items-center gap-1 transition-colors",
+                hasLiked ? "text-red-400" : "text-white/50 hover:text-red-400"
+              )}
+            >
+              <Heart className={cn("h-4 w-4", hasLiked && "fill-current")} />
+              {likeCount > 0 && <span className="text-[11px]">{likeCount}</span>}
+            </button>
+
+            <button
+              onClick={(e) => { e.stopPropagation(); setShowComments(!showComments); }}
+              className="flex items-center gap-1 text-white/50 hover:text-white/80 transition-colors"
+            >
+              <MessageCircle className="h-4 w-4" />
+              {commentCount > 0 && <span className="text-[11px]">{commentCount}</span>}
+            </button>
+
+            <button className="text-white/50 hover:text-white/80 transition-colors">
+              <Bookmark className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       </div>
 
-      {/* Image */}
-      {postImage && (
-        <div className="relative aspect-[16/9] mx-4 mb-3 rounded-lg overflow-hidden">
-          <Image src={postImage} alt="Post" fill className="object-cover" />
+      {/* Comments Overlay */}
+      {showComments && (
+        <div
+          className="absolute inset-0 bg-black/95 backdrop-blur-sm p-4 overflow-y-auto"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-white font-semibold">Comments</h3>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setShowComments(false)}
+              className="h-8 w-8 text-white/60 hover:text-white"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <MicroPostComments postId={post.id} onCommentCountChange={handleCommentCountChange} />
         </div>
       )}
-
-      {/* Actions */}
-      <div className="px-4 pb-3">
-        <Accordion type="single" collapsible>
-          <AccordionItem value="comments" className="border-0">
-            <div className="flex items-center gap-5 py-2 border-t border-white/[0.05]">
-              <button
-                onClick={handleLike}
-                disabled={isLikePending}
-                className={cn(
-                  "flex items-center gap-1.5 transition-colors",
-                  hasLiked ? "text-red-400" : "text-white/40 hover:text-red-400"
-                )}
-              >
-                <Heart className={cn("h-[18px] w-[18px]", hasLiked && "fill-current")} />
-                {likeCount > 0 && <span className="text-xs">{likeCount}</span>}
-              </button>
-
-              <AccordionTrigger className="p-0 hover:no-underline [&>svg]:hidden">
-                <div className="flex items-center gap-1.5 text-white/40 hover:text-white/70 transition-colors">
-                  <MessageCircle className="h-[18px] w-[18px]" />
-                  {commentCount > 0 && <span className="text-xs">{commentCount}</span>}
-                </div>
-              </AccordionTrigger>
-
-              <button className="text-white/40 hover:text-white/70 transition-colors ml-auto">
-                <Bookmark className="h-[18px] w-[18px]" />
-              </button>
-            </div>
-
-            <AccordionContent className="pt-2">
-              <MicroPostComments postId={post.id} onCommentCountChange={handleCommentCountChange} />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
-      </div>
     </div>
   );
 }
@@ -406,12 +474,44 @@ function CreatePostDialog({ onPostCreated }: { onPostCreated: (post: MicroPost) 
 
 
 // ========================================
+// STORY CARD COMPONENT
+// ========================================
+function StoryCard({ post }: { post: MicroPost }) {
+  const postImage = post.images?.[0]?.url;
+
+  return (
+    <div className="flex-shrink-0 w-20 group cursor-pointer">
+      <div className="relative w-16 h-16 mx-auto rounded-full p-[2px] bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400">
+        <div className="w-full h-full rounded-full overflow-hidden bg-background">
+          <Avatar className="w-full h-full">
+            <AvatarImage src={post.author.image || ''} />
+            <AvatarFallback className="bg-gradient-to-br from-purple-500/30 to-pink-500/30 text-white/80 text-sm">
+              {post.author.name?.charAt(0) || 'U'}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+        {postImage && (
+          <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-background overflow-hidden">
+            <Image src={postImage} alt="" fill className="object-cover" />
+          </div>
+        )}
+      </div>
+      <p className="text-[11px] text-white/60 text-center mt-2 truncate group-hover:text-white/80 transition-colors">
+        {post.author.name?.split(' ')[0] || 'User'}
+      </p>
+    </div>
+  );
+}
+
+
+// ========================================
 // MAIN WALL COMPONENT
 // ========================================
 export default function WallClient({ initialMicroPosts }: WallClientProps) {
   const [posts, setPosts] = useState<MicroPost[]>(initialMicroPosts);
   const [searchQuery, setSearchQuery] = useState('');
   const [timeFilter, setTimeFilter] = useState('all');
+  const [sortBy, setSortBy] = useState<'latest' | 'popular'>('latest');
 
   const handlePostCreated = (newPost: MicroPost) => {
     setPosts(current => [newPost, ...current]);
@@ -420,6 +520,16 @@ export default function WallClient({ initialMicroPosts }: WallClientProps) {
   const handlePostDeleted = (postId: string) => {
     setPosts(current => current.filter(p => p.id !== postId));
   };
+
+  // Get unique authors for story cards (max 10)
+  const storyAuthors = useMemo(() => {
+    const seen = new Set<string>();
+    return posts.filter(post => {
+      if (seen.has(post.authorId)) return false;
+      seen.add(post.authorId);
+      return true;
+    }).slice(0, 10);
+  }, [posts]);
 
   const filteredPosts = useMemo(() => {
     let result = [...posts];
@@ -447,98 +557,167 @@ export default function WallClient({ initialMicroPosts }: WallClientProps) {
       });
     }
 
+    // Sort
+    if (sortBy === 'popular') {
+      return result.sort((a, b) => (b._count?.likes || 0) - (a._count?.likes || 0));
+    }
     return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-  }, [posts, searchQuery, timeFilter]);
+  }, [posts, searchQuery, timeFilter, sortBy]);
 
   return (
     <div className="h-[calc(100vh-60px)] flex flex-col">
-      {/* Fixed Hero Section */}
-      <div className="flex-shrink-0 pt-16 pb-8 text-center relative">
-        {/* Background Glow */}
+      {/* Compact Hero Section - 200px height */}
+      <div className="flex-shrink-0 h-[200px] relative overflow-hidden">
+        {/* Background Gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-pink-900/10 to-purple-900/20" />
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-purple-500/[0.08] rounded-full blur-[100px]" />
-          <div className="absolute top-1/3 left-1/3 w-[400px] h-[300px] bg-pink-500/[0.05] rounded-full blur-[80px]" />
+          <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-[300px] h-[200px] bg-purple-500/[0.1] rounded-full blur-[80px]" />
+          <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[250px] h-[150px] bg-pink-500/[0.08] rounded-full blur-[60px]" />
         </div>
 
-        <div className="relative">
+        <div className="relative h-full flex flex-col items-center justify-center px-4">
           {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/60 text-xs mb-6">
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Share Something New</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.05] border border-white/[0.08] text-white/60 text-[11px] mb-3">
+            <Sparkles className="w-3 h-3" />
+            <span>Community Wall</span>
           </div>
 
-          {/* Headline */}
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-4 leading-tight">
-            <span className="text-white">What would you like to </span>
+          {/* Compact Headline */}
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 text-center">
+            <span className="text-white">Share with the </span>
             <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent">
-              share today
+              Community
             </span>
-            <span className="text-white">?</span>
           </h1>
 
-          {/* Description */}
-          <p className="text-white/50 text-sm md:text-base max-w-lg mx-auto mb-6">
-            Connect with the community. Share your thoughts, ideas, or discoveries.
-          </p>
-
           {/* Create Button */}
-          <div className="mb-8">
-            <CreatePostDialog onPostCreated={handlePostCreated} />
-          </div>
+          <CreatePostDialog onPostCreated={handlePostCreated} />
+        </div>
+      </div>
 
-          {/* Search */}
-          <div className="max-w-md mx-auto relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
-            <Input
-              type="text"
-              placeholder="Search posts, users, tags..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-11 pl-11 bg-white/[0.03] border-white/[0.08] rounded-xl"
-            />
-          </div>
+      {/* Story Cards Bar */}
+      {storyAuthors.length > 0 && (
+        <div className="flex-shrink-0 px-4 py-4 border-b border-white/[0.05]">
+          <div className="max-w-3xl mx-auto">
+            <div className="flex items-center gap-4 overflow-x-auto no-scrollbar pb-1">
+              {/* Add Story Card */}
+              <div className="flex-shrink-0 w-20 group cursor-pointer">
+                <div className="relative w-16 h-16 mx-auto rounded-full bg-white/[0.05] border-2 border-dashed border-white/[0.15] flex items-center justify-center hover:border-purple-500/50 transition-colors">
+                  <Plus className="w-6 h-6 text-white/40 group-hover:text-purple-400 transition-colors" />
+                </div>
+                <p className="text-[11px] text-white/40 text-center mt-2">Your story</p>
+              </div>
 
-          {/* Filters */}
-          <div className="flex items-center justify-center gap-2 mt-5">
-            {TIME_FILTERS.map(filter => (
-              <button
-                key={filter.value}
-                onClick={() => setTimeFilter(filter.value)}
-                className={cn(
-                  "px-4 py-1.5 rounded-full text-xs font-medium transition-all",
-                  timeFilter === filter.value
-                    ? "bg-white/[0.1] text-white"
-                    : "text-white/40 hover:text-white/60"
-                )}
-              >
-                {filter.label}
-              </button>
-            ))}
+              {/* Story Cards */}
+              {storyAuthors.map(post => (
+                <StoryCard key={post.id} post={post} />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Filter Bar - Like Home Page */}
+      <div className="flex-shrink-0 px-4 py-4">
+        <div className="max-w-3xl mx-auto">
+          <div className="rounded-xl overflow-hidden bg-white/[0.02] border border-white/[0.06] p-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              {/* Search */}
+              <div className="relative flex-1 max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-white/30" />
+                <Input
+                  type="text"
+                  placeholder="Search posts, users, tags..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full h-9 pl-9 bg-white/[0.03] border-white/[0.08] rounded-lg text-sm"
+                />
+              </div>
+
+              {/* Filter Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                {TIME_FILTERS.map(filter => (
+                  <button
+                    key={filter.value}
+                    onClick={() => setTimeFilter(filter.value)}
+                    className={cn(
+                      "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
+                      timeFilter === filter.value
+                        ? "bg-white/[0.1] text-white"
+                        : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
+                    )}
+                  >
+                    {filter.label}
+                  </button>
+                ))}
+
+                {/* Separator */}
+                <div className="w-px h-4 bg-white/[0.1] mx-1" />
+
+                {/* Sort Options */}
+                <button
+                  onClick={() => setSortBy('latest')}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    sortBy === 'latest'
+                      ? "bg-purple-500/20 text-purple-400"
+                      : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
+                  )}
+                >
+                  <Clock className="w-3 h-3" />
+                  Latest
+                </button>
+                <button
+                  onClick={() => setSortBy('popular')}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all",
+                    sortBy === 'popular'
+                      ? "bg-pink-500/20 text-pink-400"
+                      : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
+                  )}
+                >
+                  <TrendingUp className="w-3 h-3" />
+                  Popular
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Scrollable Posts Feed */}
+      {/* Scrollable Posts Feed - Masonry Bento Grid */}
       <div className="flex-1 overflow-y-auto px-4 pb-8">
-        <div className="max-w-lg mx-auto">
-          {/* Posts Feed - Single Column like Instagram */}
-          <div className="space-y-4">
-            {filteredPosts.length > 0 ? (
-              filteredPosts.map(post => (
-                <PostCard key={post.id} post={post} onDelete={handlePostDeleted} />
-              ))
-            ) : (
-              <div className="text-center py-16 rounded-xl bg-white/[0.02] border border-white/[0.06]">
-                <MessageSquare className="h-10 w-10 text-white/15 mx-auto mb-4" />
-                <p className="text-white/50 font-medium">
-                  {searchQuery ? 'No posts found' : 'No posts yet'}
-                </p>
-                <p className="text-white/30 text-sm mt-1">
-                  {searchQuery ? 'Try different keywords' : 'Be the first to share!'}
-                </p>
-              </div>
-            )}
-          </div>
+        <div className="max-w-6xl mx-auto">
+          {filteredPosts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 auto-rows-max">
+              {filteredPosts.map((post, index) => {
+                // Determine card variant based on position for visual variety
+                let variant: 'featured' | 'normal' | 'compact' = 'normal';
+                if (index === 0) variant = 'featured'; // First post is featured
+                else if (index % 5 === 4) variant = 'compact'; // Every 5th post is compact
+                else if (index % 7 === 0 && index > 0) variant = 'featured'; // Every 7th post is featured
+
+                // Make featured cards span 2 columns on larger screens
+                const spanClass = variant === 'featured' ? 'sm:col-span-2 lg:col-span-1 lg:row-span-1' : '';
+
+                return (
+                  <div key={post.id} className={spanClass}>
+                    <PostCard post={post} onDelete={handlePostDeleted} variant={variant} />
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="text-center py-16 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
+              <MessageSquare className="h-10 w-10 text-white/15 mx-auto mb-4" />
+              <p className="text-white/50 font-medium">
+                {searchQuery ? 'No posts found' : 'No posts yet'}
+              </p>
+              <p className="text-white/30 text-sm mt-1">
+                {searchQuery ? 'Try different keywords' : 'Be the first to share!'}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>
