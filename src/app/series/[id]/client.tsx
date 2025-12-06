@@ -300,8 +300,8 @@ export default function SeriesPageClient({
         </nav>
       </div>
 
-      <main className="w-full px-4 sm:px-6 lg:px-8 pb-12 relative z-10 flex justify-center">
-        <div className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-4 gap-8">
+      <section className="w-full px-4 sm:px-6 lg:px-8 pb-12 relative z-10">
+        <div className="w-full max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-4 gap-8">
           <div className="lg:col-span-3">
             <article>
               <div className="relative h-[400px] w-full rounded-xl overflow-hidden mb-8">
@@ -584,7 +584,7 @@ export default function SeriesPageClient({
             </div>
           </aside>
         </div>
-      </main>
+      </section>
     </div>
   );
 }

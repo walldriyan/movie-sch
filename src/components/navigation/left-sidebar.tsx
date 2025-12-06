@@ -79,15 +79,21 @@ export default function LeftSidebar() {
                         <Link href="/login">Login</Link>
                     </Button>
                 </div>
-                {/* No sidebar = main content centered with no left margin */}
+                {/* No sidebar = main content centered */}
                 <style jsx global>{`
                     main {
                         margin-left: 0 !important;
+                        margin-right: 0 !important;
+                        padding-left: 0 !important;
+                        padding-right: 0 !important;
                         width: 100% !important;
+                        display: flex !important;
+                        justify-content: center !important;
                     }
-                    .max-w-7xl {
-                        margin-left: auto !important;
-                        margin-right: auto !important;
+                    main > div {
+                        width: 100% !important;
+                        display: flex !important;
+                        justify-content: center !important;
                     }
                 `}</style>
             </>

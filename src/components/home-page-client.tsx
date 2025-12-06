@@ -306,7 +306,7 @@ export default function HomePageClient({
                 {/* Hero Section */}
                 <HeroSection />
 
-                <main className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+                <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
 
                     {/* Section Header - Featured/Trending */}
                     <div className="mb-8">
@@ -564,7 +564,7 @@ export default function HomePageClient({
                             </section>
                         </>
                     )}
-                </main>
+                </section>
 
                 {/* Footer */}
                 <Footer />
