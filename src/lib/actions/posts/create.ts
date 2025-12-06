@@ -27,7 +27,6 @@ export async function createPost(formData: FormData) {
         }
 
         // IMAGE UPLOAD LOGIC (Poster)
-        // We use a new variable 'finalPosterUrl' to be absolutely sure we don't save Base64
         let finalPosterUrl = null;
 
         if (posterUrlRaw && posterUrlRaw.startsWith('data:image')) {

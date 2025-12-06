@@ -11,9 +11,11 @@ export const STORAGE_CONFIG = {
     provider: (process.env.STORAGE_PROVIDER || 'local') as 'local' | 'supabase',
 
     // Supabase Configuration
+
     supabase: {
         url: process.env.NEXT_PUBLIC_SUPABASE_URL || '',
         anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
+        serviceKey: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
         bucket: process.env.NEXT_PUBLIC_SUPABASE_STORAGE_BUCKET || 'uploads',
     }
 };

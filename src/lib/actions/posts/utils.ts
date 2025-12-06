@@ -102,7 +102,10 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
 
         } else if (STORAGE_CONFIG.provider === 'supabase') {
             console.log('[Image Save] Uploading to Supabase Storage...');
-            const supabase = createClient(STORAGE_CONFIG.supabase.url, STORAGE_CONFIG.supabase.anonKey);
+
+            // Use Service Key if available to bypass RLS, otherwise fallback to Anon Key
+            const accessKey = STORAGE_CONFIG.supabase.serviceKey || STORAGE_CONFIG.supabase.anonKey;
+            const supabase = createClient(STORAGE_CONFIG.supabase.url, accessKey);
 
             const filePath = `${subfolder}/${filename}`;
             const { error } = await supabase.storage
@@ -200,7 +203,9 @@ export async function deleteUploadedFile(filePath: string | null | undefined) {
             const relativePath = parts[1];
             console.log(`[File Delete] Deleting from Supabase: ${relativePath}`);
 
-            const supabase = createClient(STORAGE_CONFIG.supabase.url, STORAGE_CONFIG.supabase.anonKey);
+            // Use Service Key if available to bypass RLS
+            const accessKey = STORAGE_CONFIG.supabase.serviceKey || STORAGE_CONFIG.supabase.anonKey;
+            const supabase = createClient(STORAGE_CONFIG.supabase.url, accessKey);
             await supabase.storage.from(STORAGE_CONFIG.supabase.bucket).remove([relativePath]);
             console.log('[File Delete] Successfully deleted from Supabase');
         } catch (error) {
