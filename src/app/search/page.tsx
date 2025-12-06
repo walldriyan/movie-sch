@@ -1,5 +1,9 @@
 import { Suspense } from 'react';
 import { getPosts } from '@/lib/actions';
+import { getNotifications } from '@/lib/actions/notifications';
+import { getExamsForUser } from '@/lib/actions/exams';
+import { getPublicGroups } from '@/lib/actions/groups';
+import { auth } from '@/auth';
 import SearchPageClient from '@/components/search-page-client';
 import { Loader2 } from 'lucide-react';
 
@@ -26,6 +30,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const sortBy = params.sortBy || 'updatedAt-desc';
     const page = parseInt(params.page || '1', 10);
 
+    // Get current user session
+    const session = await auth();
+    const userId = session?.user?.id;
+
     // Fetch posts with filters
     const filters: any = {};
     if (query) {
@@ -41,9 +49,36 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     const { posts: rawPosts, totalPages } = await getPosts({
         page,
-        limit: 18,
+        limit: 10,
         filters
     });
+
+    // Fetch user-specific data in parallel
+    let userNotifications: any[] = [];
+    let userExams: any[] = [];
+    let userGroups: any[] = [];
+
+    if (userId) {
+        try {
+            const [notifResult, examsResult, groupsResult] = await Promise.allSettled([
+                getNotifications({ page: 1, limit: 5 }),
+                getExamsForUser(userId),
+                getPublicGroups(5),
+            ]);
+
+            if (notifResult.status === 'fulfilled') {
+                userNotifications = notifResult.value.items || [];
+            }
+            if (examsResult.status === 'fulfilled') {
+                userExams = examsResult.value || [];
+            }
+            if (groupsResult.status === 'fulfilled') {
+                userGroups = groupsResult.value || [];
+            }
+        } catch (error) {
+            console.error('Error fetching user data:', error);
+        }
+    }
 
     // Process posts to ensure genres is always an array
     const posts = rawPosts.map(post => ({
@@ -75,8 +110,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     currentSortBy={sortBy}
                     currentPage={page}
                     totalPages={totalPages}
+                    userNotifications={userNotifications}
+                    userExams={userExams}
+                    userGroups={userGroups}
                 />
             </Suspense>
         </div>
     );
 }
+

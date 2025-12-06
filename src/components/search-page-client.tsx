@@ -378,6 +378,9 @@ interface SearchPageClientProps {
     currentSortBy: string;
     currentPage: number;
     totalPages: number;
+    userNotifications?: any[];
+    userExams?: any[];
+    userGroups?: any[];
 }
 
 export default function SearchPageClient({
@@ -389,6 +392,9 @@ export default function SearchPageClient({
     currentSortBy,
     currentPage,
     totalPages,
+    userNotifications = [],
+    userExams = [],
+    userGroups = [],
 }: SearchPageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -453,6 +459,7 @@ export default function SearchPageClient({
                                         <Link
                                             key={filter.value}
                                             href={buildUrl({ type: filter.value || undefined })}
+                                            scroll={false}
                                             className={cn(
                                                 "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap",
                                                 isActive
@@ -473,6 +480,7 @@ export default function SearchPageClient({
                                     <Link
                                         key={filter.value}
                                         href={buildUrl({ timeFilter: filter.value })}
+                                        scroll={false}
                                         className={cn(
                                             "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
                                             currentTimeFilter === filter.value
@@ -492,6 +500,7 @@ export default function SearchPageClient({
                                         <Link
                                             key={option.value}
                                             href={buildUrl({ sortBy: option.value })}
+                                            scroll={false}
                                             className={cn(
                                                 "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
                                                 currentSortBy === option.value
@@ -509,6 +518,109 @@ export default function SearchPageClient({
                     </div>
                 </div>
             </section>
+
+            {/* User-Specific Content Sections */}
+            {(userNotifications.length > 0 || userExams.length > 0 || userGroups.length > 0) && (
+                <section className="px-[22px] py-6">
+                    <div className="max-w-7xl mx-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+                            {/* Notifications Card */}
+                            {userNotifications.length > 0 && (
+                                <div className="rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 p-5">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 rounded-lg bg-blue-500/20">
+                                            <Bell className="w-5 h-5 text-blue-400" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-white">Notifications</h3>
+                                        <span className="ml-auto px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-medium">
+                                            {userNotifications.length}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {userNotifications.slice(0, 3).map((notif: any, idx: number) => (
+                                            <div key={notif.id || idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
+                                                <p className="text-sm text-white font-medium line-clamp-1">{notif.title}</p>
+                                                <p className="text-xs text-white/50 line-clamp-1 mt-1">{notif.message}</p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Link href="/notifications" className="flex items-center justify-center gap-2 mt-4 py-2 rounded-lg bg-blue-500/10 text-blue-400 text-sm font-medium hover:bg-blue-500/20 transition-colors">
+                                        View All <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                            )}
+
+                            {/* Exams Card */}
+                            {userExams.length > 0 && (
+                                <div className="rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 p-5">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 rounded-lg bg-purple-500/20">
+                                            <GraduationCap className="w-5 h-5 text-purple-400" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-white">Available Exams</h3>
+                                        <span className="ml-auto px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
+                                            {userExams.length}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {userExams.slice(0, 3).map((exam: any, idx: number) => (
+                                            <Link key={exam.id || idx} href={`/exams/${exam.id}`} className="block p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-colors">
+                                                <p className="text-sm text-white font-medium line-clamp-1">{exam.title}</p>
+                                                <div className="flex items-center gap-2 mt-1">
+                                                    <span className="text-xs text-white/50">{exam._count?.questions || 0} questions</span>
+                                                    {exam.durationMinutes && (
+                                                        <>
+                                                            <span className="text-white/30">•</span>
+                                                            <span className="text-xs text-white/50">{exam.durationMinutes} min</span>
+                                                        </>
+                                                    )}
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                    <Link href="/exams" className="flex items-center justify-center gap-2 mt-4 py-2 rounded-lg bg-purple-500/10 text-purple-400 text-sm font-medium hover:bg-purple-500/20 transition-colors">
+                                        View All Exams <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                            )}
+
+                            {/* Groups Card */}
+                            {userGroups.length > 0 && (
+                                <div className="rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 p-5">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 rounded-lg bg-green-500/20">
+                                            <Users className="w-5 h-5 text-green-400" />
+                                        </div>
+                                        <h3 className="text-lg font-semibold text-white">Groups</h3>
+                                        <span className="ml-auto px-2.5 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
+                                            {userGroups.length}
+                                        </span>
+                                    </div>
+                                    <div className="space-y-3">
+                                        {userGroups.slice(0, 3).map((group: any, idx: number) => (
+                                            <Link key={group.id || idx} href={`/groups/${group.id}`} className="block p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-colors">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/30 to-emerald-500/30 flex items-center justify-center">
+                                                        <Users className="w-5 h-5 text-green-400" />
+                                                    </div>
+                                                    <div className="flex-1 min-w-0">
+                                                        <p className="text-sm text-white font-medium line-clamp-1">{group.name}</p>
+                                                        <p className="text-xs text-white/50">{group._count?.members || 0} members</p>
+                                                    </div>
+                                                </div>
+                                            </Link>
+                                        ))}
+                                    </div>
+                                    <Link href="/groups" className="flex items-center justify-center gap-2 mt-4 py-2 rounded-lg bg-green-500/10 text-green-400 text-sm font-medium hover:bg-green-500/20 transition-colors">
+                                        View All Groups <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </section>
+            )}
 
             {/* Results Section */}
             <section className="px-[22px] py-6">
@@ -626,6 +738,7 @@ export default function SearchPageClient({
                                 <PaginationItem>
                                     <PaginationPrevious
                                         href={buildUrl({ page: String(Math.max(1, currentPage - 1)) })}
+                                        scroll={false}
                                         className={cn(
                                             "bg-white/5 hover:bg-white/10 border-white/10",
                                             currentPage <= 1 && "pointer-events-none opacity-50"
@@ -642,6 +755,7 @@ export default function SearchPageClient({
                                 <PaginationItem>
                                     <PaginationNext
                                         href={buildUrl({ page: String(Math.min(totalPages, currentPage + 1)) })}
+                                        scroll={false}
                                         className={cn(
                                             "bg-white/5 hover:bg-white/10 border-white/10",
                                             currentPage >= totalPages && "pointer-events-none opacity-50"
