@@ -277,9 +277,7 @@ export default function LeftSidebar() {
                         <>
                             <GroupLabel label="Library" />
                             <div className="space-y-[5px]">
-                                <NavItem href="/favorites" icon={Heart} label="Favorites" />
-                                <NavItem href="/activity" icon={Activity} label="Activity" />
-                                <NavItem href="/notifications" icon={Bell} label="Notifications" />
+                                <NavItem href="/activity" icon={Activity} label="Activity Center" />
                             </div>
                         </>
                     )}
