@@ -35,6 +35,7 @@ function generateCacheKey(options: any): string {
       authorId: options.filters.authorId,
       type: options.filters.type,
       lockStatus: options.filters.lockStatus,
+      search: options.filters.search,
     } : {}
   };
   return `posts:${JSON.stringify(normalized, Object.keys(normalized).sort())}`;
@@ -225,8 +226,8 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
 
   let whereClause: Prisma.PostWhereInput = {};
 
-  const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus } = filters;
-  console.log(`[DB Fetch] Filter - lockStatus: ${lockStatus}`);
+  const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus, search } = filters;
+  console.log(`[DB Fetch] Filter - lockStatus: ${lockStatus}, search: ${search}`);
 
   // --- Role-Based Access Control & Lock Status Logic ---
   if (userRole === ROLES.SUPER_ADMIN || userRole === ROLES.USER_ADMIN) {
@@ -327,6 +328,17 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
 
   if (type && ['MOVIE', 'TV_SERIES', 'OTHER'].includes(type)) {
     whereClause.type = type as 'MOVIE' | 'TV_SERIES' | 'OTHER';
+  }
+
+  // Search filter - search in title and description
+  if (search && search.trim()) {
+    const searchTerm = search.trim();
+    whereClause.OR = [
+      ...(whereClause.OR || []),
+      { title: { contains: searchTerm } },
+      { description: { contains: searchTerm } },
+      { genres: { contains: searchTerm } },
+    ];
   }
 
   console.log('[DB Fetch] FINAL whereClause:', JSON.stringify(whereClause, null, 2));
