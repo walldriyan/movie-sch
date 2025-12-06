@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input';
 import {
     Search, Play, Info, ChevronRight, Film, Tv, Folder,
     Clock, TrendingUp, Star, Calendar, Sparkles, ArrowRight,
-    Volume2, VolumeX, Heart, Bookmark
+    Volume2, VolumeX, Heart, Bookmark, Lock, Users, Globe,
+    FileText, Bell, MessageSquare, GraduationCap
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Post } from '@/lib/types';
@@ -19,6 +20,7 @@ import {
     Pagination, PaginationContent, PaginationItem,
     PaginationNext, PaginationPrevious
 } from './ui/pagination';
+
 
 // Default images for posts without posters
 const DEFAULT_POSTER_IMAGES = [
@@ -411,8 +413,26 @@ export default function SearchPageClient({
         router.push(buildUrl({ q: newQuery || undefined }));
     };
 
+    // Permission-based grouping of posts
+    const groupedPosts = useMemo(() => {
+        // Type-safe access to post properties
+        const lockedPosts = initialPosts.filter(post =>
+            (post as any).isLockedByDefault || (post as any).requiresExamToUnlock
+        );
+        const groupOnlyPosts = initialPosts.filter(post =>
+            (post as any).visibility === 'GROUP_ONLY' && (post as any).groupId
+        );
+        const publicPosts = initialPosts.filter(post =>
+            !(post as any).isLockedByDefault &&
+            !(post as any).requiresExamToUnlock &&
+            (post as any).visibility !== 'GROUP_ONLY'
+        );
+
+        return { lockedPosts, groupOnlyPosts, publicPosts };
+    }, [initialPosts]);
+
     return (
-        <div className="min-h-screen bg-background">
+        <div className="min-h-screen bg-background pt-[80px]">
             {/* Hero Section with Featured Post */}
             <HeroSection post={featuredPost} onSearch={handleSearch} />
 
@@ -494,7 +514,7 @@ export default function SearchPageClient({
             <section className="px-[22px] py-6">
                 <div className="max-w-7xl mx-auto">
                     {/* Results Header */}
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-8">
                         <div>
                             <h2 className="text-2xl font-bold text-white">
                                 {query ? `Results for "${query}"` : 'Browse All'}
@@ -505,22 +525,86 @@ export default function SearchPageClient({
                         </div>
                     </div>
 
-                    {/* Posts Grid - Masonry Bento */}
                     {initialPosts.length > 0 ? (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                            {initialPosts.map((post, index) => {
-                                let variant: 'featured' | 'normal' | 'compact' = 'normal';
-                                if (index % 7 === 0) variant = 'featured';
-                                else if (index % 5 === 4) variant = 'compact';
-
-                                const spanClass = variant === 'featured' ? 'sm:col-span-2 lg:col-span-2 xl:col-span-1' : '';
-
-                                return (
-                                    <div key={post.id} className={spanClass}>
-                                        <PostCard post={post} variant={variant} />
+                        <div className="space-y-12">
+                            {/* Locked/Premium Content Section */}
+                            {groupedPosts.lockedPosts.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
+                                            <Lock className="w-5 h-5 text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-white">Premium Content</h3>
+                                            <p className="text-sm text-white/50">Locked posts - Exam or subscription required</p>
+                                        </div>
+                                        <span className="ml-auto px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
+                                            {groupedPosts.lockedPosts.length} items
+                                        </span>
                                     </div>
-                                );
-                            })}
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {groupedPosts.lockedPosts.map((post) => (
+                                            <PostCard key={post.id} post={post} variant="normal" />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Group Only Content Section */}
+                            {groupedPosts.groupOnlyPosts.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+                                            <Users className="w-5 h-5 text-purple-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-white">Group Content</h3>
+                                            <p className="text-sm text-white/50">Posts visible to group members only</p>
+                                        </div>
+                                        <span className="ml-auto px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
+                                            {groupedPosts.groupOnlyPosts.length} items
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {groupedPosts.groupOnlyPosts.map((post) => (
+                                            <PostCard key={post.id} post={post} variant="normal" />
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Public Content Section */}
+                            {groupedPosts.publicPosts.length > 0 && (
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-3 mb-4">
+                                        <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30">
+                                            <Globe className="w-5 h-5 text-green-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-lg font-semibold text-white">Public Content</h3>
+                                            <p className="text-sm text-white/50">Available to everyone</p>
+                                        </div>
+                                        <span className="ml-auto px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
+                                            {groupedPosts.publicPosts.length} items
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                        {groupedPosts.publicPosts.map((post, index) => {
+                                            let variant: 'featured' | 'normal' | 'compact' = 'normal';
+                                            if (index % 7 === 0) variant = 'featured';
+                                            else if (index % 5 === 4) variant = 'compact';
+
+                                            const spanClass = variant === 'featured' ? 'sm:col-span-2 lg:col-span-2 xl:col-span-1' : '';
+
+                                            return (
+                                                <div key={post.id} className={spanClass}>
+                                                    <PostCard post={post} variant={variant} />
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     ) : (
                         <div className="text-center py-20 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
