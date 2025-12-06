@@ -1,16 +1,20 @@
-// This is your Prisma schema file for LOCAL DEVELOPMENT with SQLite
-// Use this for local development, switch to schema.prisma for production
+// ═══════════════════════════════════════════════════════════════════════════════
+// CINEVERSE - PRODUCTION SCHEMA FOR SUPABASE POSTGRESQL
+// ═══════════════════════════════════════════════════════════════════════════════
+// Use this schema for production deployment with Supabase
+// ═══════════════════════════════════════════════════════════════════════════════
 
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = ["driverAdapters"]
-  binaryTargets   = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl", "linux-musl-openssl-3.0.x"]
+  binaryTargets   = ["native", "debian-openssl-1.1.x", "debian-openssl-3.0.x", "linux-musl", "linux-musl-openssl-3.0.x", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
   engineType      = "library"
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -67,6 +71,10 @@ model User {
   microPostLikes    MicroPostLike[]
   microPostComments MicroPostComment[]
 
+  @@index([email])
+  @@index([username])
+  @@index([role])
+  @@index([status])
   @@map("users")
 }
 
@@ -76,17 +84,18 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String?
-  access_token      String?
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String?
+  id_token          String? @db.Text
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
+  @@index([userId])
   @@map("accounts")
 }
 
@@ -97,6 +106,7 @@ model Session {
   expires      DateTime
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([userId])
   @@map("sessions")
 }
 
@@ -112,7 +122,7 @@ model VerificationToken {
 model Post {
   id                   Int            @id @default(autoincrement())
   title                String
-  description          String
+  description          String         @db.Text
   posterUrl            String?
   year                 Int?
   duration             String?
@@ -155,6 +165,13 @@ model Post {
 
   exam Exam?
 
+  @@index([authorId])
+  @@index([status])
+  @@index([visibility])
+  @@index([type])
+  @@index([createdAt])
+  @@index([seriesId])
+  @@index([groupId])
   @@map("posts")
 }
 
@@ -171,6 +188,7 @@ model Subtitle {
   post   Post  @relation(fields: [postId], references: [id], onDelete: Cascade)
   user   User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
+  @@index([postId])
   @@map("subtitles")
 }
 
@@ -184,12 +202,14 @@ model FavoritePost {
   post Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
   @@unique([userId, postId])
+  @@index([userId])
+  @@index([postId])
   @@map("favorite_posts")
 }
 
 model Review {
   id        Int      @id @default(autoincrement())
-  comment   String
+  comment   String   @db.Text
   rating    Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -200,16 +220,18 @@ model Review {
 
   post    Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent  Review?  @relation("ReviewReplies", fields: [parentId], references: [id], onUpdate: NoAction)
+  parent  Review?  @relation("ReviewReplies", fields: [parentId], references: [id])
   replies Review[] @relation("ReviewReplies")
 
+  @@index([postId])
+  @@index([userId])
   @@map("reviews")
 }
 
 model Episode {
   id            Int      @id @default(autoincrement())
   title         String
-  description   String
+  description   String   @db.Text
   episodeNumber Int
   seasonNumber  Int
   releaseDate   DateTime
@@ -217,6 +239,7 @@ model Episode {
   postId Int
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  @@index([postId])
   @@map("episodes")
 }
 
@@ -228,24 +251,26 @@ model MediaLink {
   postId Int
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  @@index([postId])
   @@map("media_links")
 }
 
 model MetaData {
   id    Int    @id @default(autoincrement())
   key   String
-  value String
+  value String @db.Text
 
   postId Int
   post   Post @relation(fields: [postId], references: [id], onDelete: Cascade)
 
+  @@index([postId])
   @@map("meta_data")
 }
 
 model Series {
   id          Int      @id @default(autoincrement())
   title       String   @unique
-  description String?
+  description String?  @db.Text
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -254,13 +279,14 @@ model Series {
 
   posts Post[]
 
+  @@index([authorId])
   @@map("series")
 }
 
 model Group {
   id           String          @id @default(cuid())
   name         String
-  description  String?
+  description  String?         @db.Text
   profilePhoto String?
   coverPhoto   String?
   status       GroupStatus     @default(ACTIVE)
@@ -278,6 +304,8 @@ model Group {
   posts         Post[]
   notifications Notification[]
 
+  @@index([createdById])
+  @@index([status])
   @@map("groups")
 }
 
@@ -294,6 +322,8 @@ model GroupMember {
   group Group @relation(fields: [groupId], references: [id])
 
   @@unique([userId, groupId])
+  @@index([userId])
+  @@index([groupId])
   @@map("group_members")
 }
 
@@ -310,6 +340,8 @@ model GroupInvite {
   sender   User  @relation("SentInvites", fields: [senderId], references: [id])
   receiver User  @relation("ReceivedInvites", fields: [receiverId], references: [id])
 
+  @@index([groupId])
+  @@index([receiverId])
   @@map("group_invites")
 }
 
@@ -326,13 +358,14 @@ model GroupSuggestion {
   suggestedBy User  @relation("SuggestedByUser", fields: [suggestedById], references: [id])
   suggestedUser User @relation("SuggestedUser", fields: [suggestedUserId], references: [id])
 
+  @@index([groupId])
   @@map("group_suggestions")
 }
 
 model Notification {
   id        String             @id @default(cuid())
   title     String
-  message   String
+  message   String             @db.Text
   type      NotificationType
   targetId  String?
   status    NotificationStatus @default(UNREAD)
@@ -345,6 +378,8 @@ model Notification {
   users       UserNotification[]
   targetGroup Group?             @relation(fields: [targetId], references: [id])
 
+  @@index([senderId])
+  @@index([targetId])
   @@map("notifications")
 }
 
@@ -359,17 +394,19 @@ model UserNotification {
   notification Notification @relation(fields: [notificationId], references: [id])
 
   @@unique([userId, notificationId])
+  @@index([userId])
   @@map("user_notifications")
 }
 
 model GroupPermission {
   id          String    @id @default(cuid())
   role        GroupRole
-  permissions String    // JSON stored as string in SQLite
+  permissions Json      // Using native JSON for PostgreSQL
 
   groupId String
   group   Group  @relation(fields: [groupId], references: [id])
 
+  @@index([groupId])
   @@map("group_permissions")
 }
 
@@ -378,7 +415,7 @@ model GroupPermission {
 model Exam {
   id              Int        @id @default(autoincrement())
   title           String
-  description     String?
+  description     String?    @db.Text
   status          ExamStatus @default(DRAFT)
   durationMinutes Int?
   attemptsAllowed Int        @default(1)
@@ -394,6 +431,8 @@ model Exam {
 
   questions   Question[]
   submissions ExamSubmission[]
+
+  @@index([groupId])
 }
 
 enum QuestionType {
@@ -406,6 +445,8 @@ model QuestionImage {
   url        String
   questionId Int
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  @@index([questionId])
 }
 
 model SubmissionAnswer {
@@ -417,14 +458,17 @@ model SubmissionAnswer {
   selectedOptionId Int?
   selectedOption   QuestionOption? @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
 
-  customAnswer String?
+  customAnswer String? @db.Text
   marksAwarded Int?
-  feedback     String?
+  feedback     String? @db.Text
+
+  @@index([submissionId])
+  @@index([questionId])
 }
 
 model Question {
   id               Int                @id @default(autoincrement())
-  text             String
+  text             String             @db.Text
   points           Int
   isMultipleChoice Boolean            @default(false)
   examId           Int
@@ -434,17 +478,21 @@ model Question {
 
   images QuestionImage[]
   type   QuestionType @default(MCQ)
+
+  @@index([examId])
 }
 
 model QuestionOption {
   id        Int     @id @default(autoincrement())
-  text      String
+  text      String  @db.Text
   isCorrect Boolean @default(false)
 
   questionId Int
   question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
 
   submissionAnswers SubmissionAnswer[]
+
+  @@index([questionId])
 }
 
 model ExamSubmission {
@@ -460,6 +508,9 @@ model ExamSubmission {
   exam   Exam @relation(fields: [examId], references: [id], onDelete: Cascade)
 
   answers SubmissionAnswer[]
+
+  @@index([userId])
+  @@index([examId])
 }
 
 // --- ENUMS ---
@@ -567,7 +618,7 @@ enum AccountType {
 model AppSetting {
   id    String @id @default(cuid())
   key   String @unique
-  value String
+  value String @db.Text
 
   @@map("app_settings")
 }
@@ -575,7 +626,7 @@ model AppSetting {
 model Feedback {
   id          String         @id @default(cuid())
   title       String
-  description String
+  description String         @db.Text
   imageUrl    String?
   status      FeedbackStatus @default(UNREAD)
   createdAt   DateTime       @default(now())
@@ -586,12 +637,14 @@ model Feedback {
 
   replies FeedbackReply[]
 
+  @@index([userId])
+  @@index([status])
   @@map("feedbacks")
 }
 
 model FeedbackReply {
   id        String   @id @default(cuid())
-  message   String
+  message   String   @db.Text
   createdAt DateTime @default(now())
 
   feedbackId String
@@ -600,12 +653,13 @@ model FeedbackReply {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@index([feedbackId])
   @@map("feedback_replies")
 }
 
 model MicroPost {
   id        String   @id @default(cuid())
-  content   String
+  content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -622,6 +676,8 @@ model MicroPost {
   categories Category[]
   tags       Tag[]
 
+  @@index([authorId])
+  @@index([createdAt])
   @@map("micro_posts")
 }
 
@@ -649,6 +705,7 @@ model MicroPostImage {
   microPostId String
   microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
 
+  @@index([microPostId])
   @@map("micro_post_images")
 }
 
@@ -659,6 +716,7 @@ model MicroPostLink {
   microPostId String
   microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
 
+  @@index([microPostId])
   @@map("micro_post_links")
 }
 
@@ -672,12 +730,13 @@ model MicroPostLike {
   microPost MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
 
   @@unique([userId, microPostId])
+  @@index([microPostId])
   @@map("micro_post_likes")
 }
 
 model MicroPostComment {
   id        String   @id @default(cuid())
-  content   String
+  content   String   @db.Text
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -688,8 +747,10 @@ model MicroPostComment {
   post        MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
 
   parentId String?
-  parent   MicroPostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  parent   MicroPostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
   replies  MicroPostComment[] @relation("CommentReplies")
 
+  @@index([microPostId])
+  @@index([userId])
   @@map("micro_post_comments")
 }

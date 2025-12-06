@@ -17,20 +17,26 @@ const hasRedisCredentials = !!(
 // Create Redis client only if credentials are available
 const createRedisClient = (): Redis | null => {
   if (!hasRedisCredentials) {
-    console.warn('[Redis] No credentials configured. Caching and rate limiting will be disabled.');
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('[Redis] No credentials configured. Caching is disabled.');
+    }
     return null;
   }
 
   try {
-    return new Redis({
+    const client = new Redis({
       url: process.env.UPSTASH_REDIS_REST_URL!,
       token: process.env.UPSTASH_REDIS_REST_TOKEN!,
       retry: {
-        retries: 3,
-        backoff: (retryCount) => Math.min(1000 * Math.pow(2, retryCount), 10000),
+        retries: 2, // Low retry count to fail fast
+        backoff: (retryCount) => Math.min(100 * Math.pow(2, retryCount), 2000),
       },
     });
+
+    return client;
   } catch (error) {
+    // FAIL-SAFE: If Redis creation fails, just log and return null.
+    // The app will continue working using the database directly.
     console.error('[Redis] Failed to create client:', error);
     return null;
   }

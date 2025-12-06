@@ -287,9 +287,33 @@ export const authConfig: NextAuthConfig = {
   events: {
     async signIn({ user, account }) {
       console.log(`[Auth] User signed in: ${user.email} via ${account?.provider}`);
+
+      // CACHE USER IN REDIS
+      try {
+        const { redis } = await import('@/lib/redis');
+        if (redis && user.email) {
+          // Store user details for 24 hours (86400 seconds)
+          // This allows fetching user data quickly without DB calls later
+          await redis.set(`user:${user.email}`, JSON.stringify(user), { ex: 86400 });
+          console.log(`[Redis] Cached user session for: ${user.email}`);
+        }
+      } catch (error) {
+        console.error('[Redis] Failed to cache user:', error);
+      }
     },
     async signOut({ token }) {
       console.log(`[Auth] User signed out: ${token?.email}`);
+
+      // REMOVE USER FROM REDIS
+      try {
+        const { redis } = await import('@/lib/redis');
+        if (redis && token?.email) {
+          await redis.del(`user:${token.email}`);
+          console.log(`[Redis] Removed user session for: ${token.email}`);
+        }
+      } catch (error) {
+        console.error('[Redis] Failed to remove user cache:', error);
+      }
     },
     async createUser({ user }) {
       console.log(`[Auth] New user created: ${user.email}`);
