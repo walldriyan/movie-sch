@@ -99,38 +99,34 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-background flex overflow-hidden">
       {/* Left Side - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
-        {/* Hero Background Image */}
         <div className="absolute inset-6 rounded-3xl overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=1200&q=80"
-            alt="Cinema Experience"
+            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200&q=80"
+            alt="Community"
             fill
             className="object-cover"
             priority
           />
-          {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
           <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 to-transparent" />
 
-          {/* Content on Hero */}
           <div className="absolute bottom-12 left-12 right-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-6">
               <Sparkles className="w-4 h-4 text-purple-400" />
-              Join CineVerse Today
+              Join Fiddle Today
             </div>
             <h1 className="text-4xl font-bold text-white mb-4">
               Start Your<br />
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Movie Journey
+                Learning Journey
               </span>
             </h1>
             <p className="text-white/60 text-lg max-w-md mb-6">
-              Create your free account and unlock access to thousands of movies, exclusive content, and a vibrant community.
+              Create your free account and unlock access to educational content, articles, courses, and a vibrant community.
             </p>
 
-            {/* Benefits */}
             <div className="space-y-3">
-              {['Unlimited streaming', 'Personalized recommendations', 'Join movie discussions'].map((benefit, idx) => (
+              {['Access premium content', 'Join learning communities', 'Track your progress'].map((benefit, idx) => (
                 <div key={idx} className="flex items-center gap-2 text-white/70">
                   <CheckCircle className="w-4 h-4 text-green-400" />
                   <span className="text-sm">{benefit}</span>
@@ -144,24 +140,20 @@ export default function RegisterPage() {
       {/* Right Side - Register Form */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-8 py-12">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="text-center mb-10">
             <Link href="/" className="inline-flex items-center gap-3 mb-4">
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
-              <span className="font-bold text-2xl text-white">CineVerse</span>
+              <span className="font-bold text-2xl text-white">Fiddle</span>
             </Link>
             <h2 className="text-3xl font-bold text-white mb-2">Create account</h2>
-            <p className="text-white/50">Sign up to get started with CineVerse</p>
+            <p className="text-white/50">Sign up to get started with Fiddle</p>
           </div>
 
-          {/* Register Form */}
           <form action={formAction} className="space-y-5">
-            {/* Social Sign Up */}
             <GoogleSignUpButton />
 
-            {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/10" />
@@ -173,7 +165,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Name Field */}
             <div className="space-y-2">
               <Label htmlFor="name" className="text-white/70">Full Name</Label>
               <div className="relative">
@@ -190,7 +181,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white/70">Email</Label>
               <div className="relative">
@@ -207,7 +197,6 @@ export default function RegisterPage() {
               </div>
             </div>
 
-            {/* Password Field */}
             <div className="space-y-2">
               <Label htmlFor="password" className="text-white/70">Password</Label>
               <div className="relative">
@@ -232,7 +221,6 @@ export default function RegisterPage() {
               <p className="text-xs text-white/30">Must be at least 8 characters</p>
             </div>
 
-            {/* Error Messages */}
             {state?.message && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
                 <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
@@ -242,10 +230,8 @@ export default function RegisterPage() {
               </div>
             )}
 
-            {/* Submit Button */}
             <RegisterButton />
 
-            {/* Sign In Link */}
             <p className="text-center text-white/50">
               Already have an account?{' '}
               <Link
@@ -257,7 +243,6 @@ export default function RegisterPage() {
             </p>
           </form>
 
-          {/* Terms & Privacy */}
           <p className="text-center text-xs text-white/30 mt-8">
             By creating an account, you agree to our{' '}
             <Link href="/terms" className="text-white/50 hover:text-white/70 underline">

@@ -5,7 +5,7 @@ import GroupsPageClient from './groups-page-client';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
-    title: 'Groups | StreamVault',
+    title: 'Groups | Fiddle',
     description: 'Discover and join groups to access exclusive content and connect with other members.',
 };
 

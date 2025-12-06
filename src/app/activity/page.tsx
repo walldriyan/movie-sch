@@ -7,7 +7,7 @@ import { Metadata } from 'next';
 import { Activity, Loader2 } from 'lucide-react';
 
 export const metadata: Metadata = {
-  title: 'Activity | CineVerse',
+  title: 'Activity | Fiddle',
   description: 'View your recent activity and notifications.',
 };
 

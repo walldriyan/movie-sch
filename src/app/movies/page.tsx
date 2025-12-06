@@ -4,8 +4,8 @@ import MoviesPageClient from './movies-page-client';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Movies | CineVerse',
-    description: 'Browse and discover the best movies on CineVerse.',
+    title: 'Posts | Fiddle',
+    description: 'Browse and discover the best content on Fiddle.',
 };
 
 export const dynamic = 'force-dynamic';

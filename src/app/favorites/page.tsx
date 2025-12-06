@@ -6,7 +6,7 @@ import FavoritesPageClient from './favorites-page-client';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
-  title: 'My Favorites | StreamVault',
+  title: 'My Favorites | Fiddle',
   description: 'Your saved movies, series, and favorite content.',
 };
 

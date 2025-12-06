@@ -18,8 +18,8 @@ interface SearchPageProps {
 }
 
 export const metadata = {
-    title: 'Search Movies & Series | StreamVault',
-    description: 'Search and discover movies, TV series, and exclusive content on StreamVault.',
+    title: 'Search | Fiddle',
+    description: 'Search and discover educational content, articles, and more on Fiddle.',
 };
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
@@ -102,8 +102,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
             }>
                 <SearchPageClient
-                    featuredPost={featuredPost}
-                    initialPosts={remainingPosts}
+                    featuredPost={featuredPost as any}
+                    initialPosts={remainingPosts as any[]}
                     query={query}
                     currentType={type}
                     currentTimeFilter={timeFilter}

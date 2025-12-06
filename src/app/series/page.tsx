@@ -4,8 +4,8 @@ import SeriesPageClient from './series-page-client';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'TV Series | CineVerse',
-    description: 'Browse and discover the best TV series on CineVerse.',
+    title: 'Series | Fiddle',
+    description: 'Browse and discover the best series content on Fiddle.',
 };
 
 export const dynamic = 'force-dynamic';

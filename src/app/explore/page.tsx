@@ -4,8 +4,8 @@ import ExplorePageClient from './explore-page-client';
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Explore | CineVerse',
-    description: 'Discover trending movies, TV series, and more on CineVerse.',
+    title: 'Explore | Fiddle',
+    description: 'Discover trending content, articles, and more on Fiddle.',
 };
 
 export const dynamic = 'force-dynamic';

@@ -370,8 +370,8 @@ function TrendingBar({ posts }: { posts: Post[] }) {
 // MAIN SEARCH PAGE CLIENT
 // ========================================
 interface SearchPageClientProps {
-    featuredPost: Post | null;
-    initialPosts: Post[];
+    featuredPost: any | null;
+    initialPosts: any[];
     query: string;
     currentType?: string;
     currentTimeFilter: string;

@@ -12,7 +12,6 @@ import { doSignIn } from '@/lib/actions';
 import { signIn as nextAuthSignIn } from 'next-auth/react';
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { cn } from '@/lib/utils';
 
 // Google Icon Component
 function GoogleIcon({ className }: { className?: string }) {
@@ -90,7 +89,6 @@ export default function LoginPage() {
   const [state, formAction] = useActionState(doSignIn, { success: false, error: undefined });
   const [showPassword, setShowPassword] = useState(false);
 
-  // Check for OAuth errors
   const error = searchParams.get('error');
   const errorMessage = error === 'OAuthAccountNotLinked'
     ? 'This email is already registered with a different sign-in method.'
@@ -98,7 +96,6 @@ export default function LoginPage() {
       ? 'An error occurred during sign-in. Please try again.'
       : undefined;
 
-  // Effect to handle redirection on successful login
   useEffect(() => {
     if (state.success) {
       const callbackUrl = searchParams.get('callbackUrl') || '/';
@@ -110,33 +107,30 @@ export default function LoginPage() {
     <div className="min-h-screen bg-background flex overflow-hidden">
       {/* Left Side - Hero Image */}
       <div className="hidden lg:flex lg:w-1/2 relative">
-        {/* Hero Background Image */}
         <div className="absolute inset-6 rounded-3xl overflow-hidden">
           <Image
-            src="https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=1200&q=80"
-            alt="Cinema"
+            src="https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=1200&q=80"
+            alt="Learning"
             fill
             className="object-cover"
             priority
           />
-          {/* Gradient Overlay */}
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/20" />
           <div className="absolute inset-0 bg-gradient-to-r from-purple-900/30 to-transparent" />
 
-          {/* Content on Hero */}
           <div className="absolute bottom-12 left-12 right-12">
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-sm font-medium mb-6">
               <Sparkles className="w-4 h-4 text-purple-400" />
-              Welcome to CineVerse
+              Welcome to Fiddle
             </div>
             <h1 className="text-4xl font-bold text-white mb-4">
-              Discover Your Next<br />
+              Explore. Learn.<br />
               <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Favorite Movie
+                Create Amazing Things
               </span>
             </h1>
             <p className="text-white/60 text-lg max-w-md">
-              Join our community and explore a world of entertainment. Stream movies, discover series, and connect with fellow cinema lovers.
+              Join our community and discover educational content, inspiring articles, and connect with like-minded learners.
             </p>
           </div>
         </div>
@@ -145,24 +139,20 @@ export default function LoginPage() {
       {/* Right Side - Login Form */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center px-8 py-12">
         <div className="w-full max-w-md">
-          {/* Logo */}
           <div className="text-center mb-10">
             <Link href="/" className="inline-flex items-center gap-3 mb-4">
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500">
                 <Sparkles className="h-6 w-6 text-white" />
               </div>
-              <span className="font-bold text-2xl text-white">CineVerse</span>
+              <span className="font-bold text-2xl text-white">Fiddle</span>
             </Link>
             <h2 className="text-3xl font-bold text-white mb-2">Welcome back</h2>
             <p className="text-white/50">Sign in to your account to continue</p>
           </div>
 
-          {/* Login Form */}
           <form action={formAction} className="space-y-6">
-            {/* Social Login */}
             <GoogleSignInButton />
 
-            {/* Divider */}
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-white/10" />
@@ -174,7 +164,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email" className="text-white/70">Email</Label>
               <div className="relative">
@@ -191,7 +180,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Password Field */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password" className="text-white/70">Password</Label>
@@ -223,7 +211,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Error Messages */}
             {(state.error || errorMessage) && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">
                 <AlertCircle className="h-5 w-5 text-red-400 flex-shrink-0" />
@@ -233,10 +220,8 @@ export default function LoginPage() {
               </div>
             )}
 
-            {/* Submit Button */}
             <LoginButton />
 
-            {/* Sign Up Link */}
             <p className="text-center text-white/50">
               Don't have an account?{' '}
               <Link
@@ -248,7 +233,6 @@ export default function LoginPage() {
             </p>
           </form>
 
-          {/* Terms & Privacy */}
           <p className="text-center text-xs text-white/30 mt-8">
             By signing in, you agree to our{' '}
             <Link href="/terms" className="text-white/50 hover:text-white/70 underline">
