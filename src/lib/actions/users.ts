@@ -22,7 +22,7 @@ export async function getUsers(options: { page?: number; limit?: number } = {}):
     queryOptions.skip = (page - 1) * limit;
     queryOptions.take = limit;
   }
-  
+
   const users = await prisma.user.findMany(queryOptions);
 
   return users.map(user => ({
@@ -46,18 +46,18 @@ export async function getPostsByUserId(userId: string, includePrivate: boolean =
       in: [MovieStatus.PUBLISHED]
     }
   }
-  
+
   const userPosts = await prisma.post.findMany({
     where,
     include: {
       author: true,
-       series: {
-          include: {
-            _count: {
-              select: { posts: true }
-            }
+      series: {
+        include: {
+          _count: {
+            select: { posts: true }
           }
-        },
+        }
+      },
       _count: {
         select: {
           likedBy: true,
@@ -69,7 +69,7 @@ export async function getPostsByUserId(userId: string, includePrivate: boolean =
       updatedAt: 'desc',
     },
   });
-  
+
   return userPosts.map(post => ({
     ...post,
     genres: post.genres ? post.genres.split(',') : [],
@@ -84,27 +84,27 @@ export async function getFavoritePostsByUserId(userId: string) {
       post: {
         include: {
           author: true,
-           series: {
-              include: {
-                _count: {
-                  select: { posts: true }
-                }
+          series: {
+            include: {
+              _count: {
+                select: { posts: true }
               }
-            },
-           likedBy: {
-                select: {
-                    id: true,
-                    name: true,
-                    image: true,
-                },
-                take: 5,
-            },
-            _count: {
-                select: {
-                    likedBy: true,
-                    reviews: true,
-                }
             }
+          },
+          likedBy: {
+            select: {
+              id: true,
+              name: true,
+              image: true,
+            },
+            take: 5,
+          },
+          _count: {
+            select: {
+              likedBy: true,
+              reviews: true,
+            }
+          }
         },
       },
     },
@@ -121,25 +121,25 @@ export async function getFavoritePostsByUserId(userId: string) {
 
 
 export async function uploadProfileImage(formData: FormData): Promise<string | null> {
-    const file = formData.get('image') as File;
-    if (!file || file.size === 0) {
-      return null;
-    }
-    const dataUrl = await file.arrayBuffer().then(buffer => 
-        `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
-    );
-    return saveImageFromDataUrl(dataUrl, 'avatars');
+  const file = formData.get('image') as File;
+  if (!file || file.size === 0) {
+    return null;
+  }
+  const dataUrl = await file.arrayBuffer().then(buffer =>
+    `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
+  );
+  return saveImageFromDataUrl(dataUrl, 'avatars');
 }
 
 export async function uploadProfileCoverImage(formData: FormData): Promise<string | null> {
-    const file = formData.get('image') as File;
-    if (!file || file.size === 0) {
-      return null;
-    }
-    const dataUrl = await file.arrayBuffer().then(buffer => 
-        `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
-    );
-    return saveImageFromDataUrl(dataUrl, 'covers');
+  const file = formData.get('image') as File;
+  if (!file || file.size === 0) {
+    return null;
+  }
+  const dataUrl = await file.arrayBuffer().then(buffer =>
+    `data:${file.type};base64,${Buffer.from(buffer).toString('base64')}`
+  );
+  return saveImageFromDataUrl(dataUrl, 'covers');
 }
 
 
@@ -159,7 +159,7 @@ export async function updateUserProfile(
   if (!session?.user || session.user.id !== userId) {
     throw new Error('Not authorized');
   }
-  
+
   const currentUser = await prisma.user.findUnique({
     where: { id: userId },
     select: { image: true, coverImage: true },
@@ -167,18 +167,18 @@ export async function updateUserProfile(
 
   let finalImageUrl = data.image;
   if (data.image && data.image.startsWith('data:image')) {
-      finalImageUrl = await saveImageFromDataUrl(data.image, 'avatars');
-      if (currentUser?.image && currentUser.image.startsWith('/uploads/')) {
-        await deleteUploadedFile(currentUser.image);
-      }
+    finalImageUrl = await saveImageFromDataUrl(data.image, 'avatars');
+    if (currentUser?.image && currentUser.image.startsWith('/uploads/')) {
+      await deleteUploadedFile(currentUser.image);
+    }
   }
 
   let finalCoverImageUrl = data.coverImage;
   if (data.coverImage && data.coverImage.startsWith('data:image')) {
-      finalCoverImageUrl = await saveImageFromDataUrl(data.coverImage, 'covers');
-      if (currentUser?.coverImage && currentUser.coverImage.startsWith('/uploads/')) {
-        await deleteUploadedFile(currentUser.coverImage);
-      }
+    finalCoverImageUrl = await saveImageFromDataUrl(data.coverImage, 'covers');
+    if (currentUser?.coverImage && currentUser.coverImage.startsWith('/uploads/')) {
+      await deleteUploadedFile(currentUser.coverImage);
+    }
   }
 
   const updateData = {
@@ -262,7 +262,7 @@ export async function getDashboardNotifications() {
   if (user.role === ROLES.USER_ADMIN) {
     whereClause.authorId = user.id;
   }
-  
+
   const pendingPostsPromise = prisma.post.findMany({
     where: whereClause,
     select: { id: true, title: true, author: { select: { name: true } } },
@@ -280,62 +280,64 @@ export async function getDashboardNotifications() {
       select: { id: true, name: true, email: true },
       orderBy: { createdAt: 'desc' },
     });
-    
+
     unreadFeedbackPromise = prisma.feedback.findMany({
-        where: { status: 'UNREAD' },
-        select: { id: true, title: true, user: { select: { name: true }}},
-        orderBy: { createdAt: 'desc' },
+      where: { status: 'UNREAD' },
+      select: { id: true, title: true, user: { select: { name: true } } },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
   const [pendingPosts, pendingUsers, unreadFeedback] = await Promise.all([
-      pendingPostsPromise,
-      pendingUsersPromise,
-      unreadFeedbackPromise
+    pendingPostsPromise,
+    pendingUsersPromise,
+    unreadFeedbackPromise
   ]);
 
   return { pendingPosts, pendingUsers, unreadFeedback };
 }
 
 export async function getPostCreationStatus() {
-    const session = await auth();
-    const user = session?.user;
+  const session = await auth();
+  const user = session?.user;
 
-    if (!user) {
-        throw new Error('Not authenticated');
-    }
+  if (!user) {
+    return { limit: 0, count: 0, remaining: 0 };
+  }
 
-    const userRecord = await prisma.user.findUnique({ where: { id: user.id } });
-    if (!userRecord) {
-        throw new Error('User not found');
-    }
+  const userRecord = await prisma.user.findUnique({ where: { id: user.id } });
+  if (!userRecord) {
+    // Handle case where user exists in session but not in DB (stale session)
+    console.warn(`[getPostCreationStatus] User record not found for ID: ${user.id}`);
+    return { limit: 0, count: 0, remaining: 0 };
+  }
 
-    const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' }});
-    const defaultLimit = defaultLimitSetting ? parseInt(defaultLimitSetting.value, 10) : 10;
-    
-    // User-specific limit overrides the default
-    const postLimit = userRecord.dailyPostLimit ?? defaultLimit;
+  const defaultLimitSetting = await prisma.appSetting.findUnique({ where: { key: 'dailyPostLimit_default' } });
+  const defaultLimit = defaultLimitSetting ? parseInt(defaultLimitSetting.value, 10) : 10;
 
-    let postCount = 0;
-    if (postLimit > 0) { // No need to count if limit is unlimited
-        const twentyFourHoursAgo = subDays(new Date(), 1);
-        postCount = await prisma.post.count({
-            where: {
-                authorId: user.id,
-                createdAt: {
-                    gte: twentyFourHoursAgo,
-                },
-            },
-        });
-    }
-    
-    const remaining = postLimit > 0 ? postLimit - postCount : Infinity;
+  // User-specific limit overrides the default
+  const postLimit = userRecord.dailyPostLimit ?? defaultLimit;
 
-    return {
-        limit: postLimit,
-        count: postCount,
-        remaining: remaining,
-    };
+  let postCount = 0;
+  if (postLimit > 0) { // No need to count if limit is unlimited
+    const twentyFourHoursAgo = subDays(new Date(), 1);
+    postCount = await prisma.post.count({
+      where: {
+        authorId: user.id,
+        createdAt: {
+          gte: twentyFourHoursAgo,
+        },
+      },
+    });
+  }
+
+  const remaining = postLimit > 0 ? postLimit - postCount : Infinity;
+
+  return {
+    limit: postLimit,
+    count: postCount,
+    remaining: remaining,
+  };
 }
 
 
@@ -344,7 +346,7 @@ export async function canUserAccessMicroPosts(): Promise<boolean> {
   if (!session?.user) {
     return false;
   }
-  
+
   if (session.user.role === ROLES.SUPER_ADMIN) {
     return true;
   }
@@ -359,7 +361,7 @@ export async function canUserAccessMicroPosts(): Promise<boolean> {
 
   const allowedGroupIds = allowedGroupsSetting.value.split(',').filter(Boolean);
   if (allowedGroupIds.length === 0) {
-      return false;
+    return false;
   }
 
   const userMembershipCount = await prisma.groupMember.count({
