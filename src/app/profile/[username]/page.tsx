@@ -21,7 +21,6 @@ export default async function ProfilePage({
   params: Promise<{ username: string }>;
   searchParams: Promise<{ filter?: string; 'show-all-series'?: string }>;
 }) {
-  // 🟢 Promise resolve කරලා values ගන්නවා
   const { username } = await params;
   const resolvedSearchParams = await searchParams;
 
@@ -62,28 +61,31 @@ export default async function ProfilePage({
     displaySeries = series || [];
     totalSeriesCount = totalSeries;
   } else if (currentFilter === 'exams') {
-    // Only fetch exams if it's the user's own profile OR if the logged-in user is a SUPER_ADMIN
     if (isOwnProfile || loggedInUser?.role === ROLES.SUPER_ADMIN) {
-        displayExams = await getExamsForUser(profileUser.id);
+      displayExams = await getExamsForUser(profileUser.id);
     }
   }
-  
+
   return (
-    <>
-      <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile}/>
-      <main className='overflow-hidden'>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-8">
-            <div className="md:col-span-2 lg:col-span-3">
+    <div className="min-h-screen bg-background">
+      {/* Hero Header */}
+      <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile} />
+
+      {/* Main Content */}
+      <main className="max-w-7xl mx-auto px-4 md:px-8 pb-16">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Content Area */}
+          <div className="lg:col-span-3">
+            <div className="rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent border border-white/[0.04] p-6">
               {currentFilter === 'series' ? (
-                 <ProfileSeriesList
-                    series={displaySeries}
-                    isOwnProfile={isOwnProfile}
-                    profileUser={profileUser}
-                    totalSeries={totalSeriesCount}
-                  />
+                <ProfileSeriesList
+                  series={displaySeries}
+                  isOwnProfile={isOwnProfile}
+                  profileUser={profileUser}
+                  totalSeries={totalSeriesCount}
+                />
               ) : currentFilter === 'exams' ? (
-                <ProfileExamList 
+                <ProfileExamList
                   exams={displayExams}
                   isOwnProfile={isOwnProfile}
                 />
@@ -96,14 +98,16 @@ export default async function ProfilePage({
                 />
               )}
             </div>
-            <aside>
-              <div className="sticky top-24">
-                  <ProfileSidebar profileUser={profileUser} loggedInUser={loggedInUser} />
-              </div>
-            </aside>
           </div>
+
+          {/* Sidebar */}
+          <aside className="lg:col-span-1">
+            <div className="sticky top-24">
+              <ProfileSidebar profileUser={profileUser} loggedInUser={loggedInUser} />
+            </div>
+          </aside>
         </div>
       </main>
-    </>
+    </div>
   );
 }
