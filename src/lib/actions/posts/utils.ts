@@ -68,14 +68,22 @@ export async function invalidateUserGroupsCache(userId: string) {
 
 export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): Promise<string | null> {
     console.log(`[Image Save] Saving image to subfolder: ${subfolder}`);
+
+    // Basic validation
+    if (!dataUrl || typeof dataUrl !== 'string') {
+        console.warn('[Image Save] Invalid dataUrl provided.');
+        return null;
+    }
+
     if (!dataUrl.startsWith('data:image')) {
-        console.log(`[Image Save] Provided URL is not a data URL, returning as is: ${dataUrl}`);
+        console.log(`[Image Save] Provided URL is not a data URL (length: ${dataUrl.length}). Returning as is.`);
         return dataUrl;
     }
 
     try {
-        const fileType = dataUrl.substring(dataUrl.indexOf('/') + 1, dataUrl.indexOf(';'));
-        const base64Data = dataUrl.substring(dataUrl.indexOf(',') + 1);
+        const fileTypeMatch = dataUrl.match(/^data:image\/(\w+);base64,/);
+        const fileType = fileTypeMatch ? fileTypeMatch[1] : 'jpeg';
+        const base64Data = dataUrl.replace(/^data:image\/\w+;base64,/, '');
         const buffer = Buffer.from(base64Data, 'base64');
 
         const filename = `${Date.now()}-${Math.round(Math.random() * 1E9)}.${fileType}`;
@@ -96,9 +104,10 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
             console.log('[Image Save] Uploading to Supabase Storage...');
             const supabase = createClient(STORAGE_CONFIG.supabase.url, STORAGE_CONFIG.supabase.anonKey);
 
+            const filePath = `${subfolder}/${filename}`;
             const { error } = await supabase.storage
                 .from(STORAGE_CONFIG.supabase.bucket)
-                .upload(`${subfolder}/${filename}`, buffer, {
+                .upload(filePath, buffer, {
                     contentType: `image/${fileType}`,
                     upsert: false
                 });
@@ -108,11 +117,11 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
                 throw error;
             }
 
-            const { data: { publicUrl } } = supabase.storage
-                .from(STORAGE_CONFIG.supabase.bucket)
-                .getPublicUrl(`${subfolder}/${filename}`);
+            // Manually construct proper Public URL to avoid missing 'public' segment issue
+            // Format: https://<project>.supabase.co/storage/v1/object/public/<bucket>/<path>
+            const publicUrl = `${STORAGE_CONFIG.supabase.url}/storage/v1/object/public/${STORAGE_CONFIG.supabase.bucket}/${filePath}`;
 
-            console.log(`[Image Save] Upload successful. Public URL: ${publicUrl}`);
+            console.log(`[Image Save] Upload successful. Manually constructed Public URL: ${publicUrl}`);
             return publicUrl;
         } else {
             console.warn(`[Image Save] Provider '${STORAGE_CONFIG.provider}' not implemented yet.`);
@@ -122,6 +131,46 @@ export async function saveImageFromDataUrl(dataUrl: string, subfolder: string): 
         console.error("[Image Save] Error saving image from data URL:", error);
         return null;
     }
+}
+
+/**
+ * Parses HTML content, finds all Base64 images, uploads them to storage,
+ * and replaces the Base64 strings with the new public URLs.
+ */
+export async function extractAndUploadImages(htmlContent: string, subfolder: string = 'posts-content'): Promise<string> {
+    if (!htmlContent) return '';
+
+    // Regex to find all img tags with base64 src
+    // Matches <img ... src="data:image/..." ... >
+    const imgTagRegex = /<img[^>]+src=["'](data:image\/[^;]+;base64,[^"']+)["'][^>]*>/g;
+
+    let match;
+    let newHtmlContent = htmlContent;
+    const matches: { fullTag: string; dataUrl: string }[] = [];
+
+    // 1. Collect all matches first
+    while ((match = imgTagRegex.exec(htmlContent)) !== null) {
+        matches.push({
+            fullTag: match[0],
+            dataUrl: match[1]
+        });
+    }
+
+    if (matches.length === 0) {
+        return htmlContent;
+    }
+
+    console.log(`[Content Image Process] Found ${matches.length} base64 images to upload.`);
+
+    // 2. Upload each image and replace in the content
+    for (const item of matches) {
+        const uploadedUrl = await saveImageFromDataUrl(item.dataUrl, subfolder);
+        if (uploadedUrl) {
+            newHtmlContent = newHtmlContent.replace(item.dataUrl, uploadedUrl);
+        }
+    }
+
+    return newHtmlContent;
 }
 
 export async function deleteUploadedFile(filePath: string | null | undefined) {
@@ -140,9 +189,15 @@ export async function deleteUploadedFile(filePath: string | null | undefined) {
     } else if (STORAGE_CONFIG.provider === 'supabase') {
         try {
             const bucketUrl = `${STORAGE_CONFIG.supabase.url}/storage/v1/object/public/${STORAGE_CONFIG.supabase.bucket}/`;
-            if (!filePath.startsWith(bucketUrl)) return;
+            // Allow for potential variations in URL (e.g. if bucket name is missing in public url logic but present here)
+            if (!filePath.startsWith(STORAGE_CONFIG.supabase.url)) return;
 
-            const relativePath = filePath.replace(bucketUrl, '');
+            // Extract the path after the bucket name
+            // Expected format: .../bucketName/folder/file.ext
+            const parts = filePath.split(`${STORAGE_CONFIG.supabase.bucket}/`);
+            if (parts.length < 2) return;
+
+            const relativePath = parts[1];
             console.log(`[File Delete] Deleting from Supabase: ${relativePath}`);
 
             const supabase = createClient(STORAGE_CONFIG.supabase.url, STORAGE_CONFIG.supabase.anonKey);

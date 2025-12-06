@@ -7,7 +7,7 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { subDays } from 'date-fns';
 import type { PostFormData } from '@/lib/types';
-import { saveImageFromDataUrl, deleteUploadedFile, invalidatePostsCache } from './utils';
+import { saveImageFromDataUrl, deleteUploadedFile, invalidatePostsCache, extractAndUploadImages } from './utils';
 
 export async function incrementViewCount(postId: number) {
     try {
@@ -29,13 +29,28 @@ export async function savePost(postData: PostFormData, id?: number) {
         if (count >= user.dailyPostLimit) throw new Error(`Daily limit reached.`);
     }
 
+    // --- IMAGES PROCESSING START ---
+
+    // 1. Process Poster (Cover Image)
     let finalPosterUrl = postData.posterUrl;
     if (postData.posterUrl && postData.posterUrl.startsWith('data:image')) {
+        console.log('[Action: savePost] Saving new poster image from data URL to Supabase...');
         finalPosterUrl = await saveImageFromDataUrl(postData.posterUrl, 'posts');
+        console.log('[Action: savePost] Poster Upload Complete. New URL:', finalPosterUrl);
     }
 
+    // 2. Process Description (Content Images)
+    let processedDescription = postData.description;
+    if (processedDescription) {
+        console.log('[Action: savePost] Processing description for images...');
+        processedDescription = await extractAndUploadImages(processedDescription, 'posts-content');
+    }
+
+    // --- IMAGES PROCESSING END ---
+    console.log('[Action: savePost] Final URLs for DB - Poster:', finalPosterUrl);
+
     const data: any = {
-        title: postData.title, description: postData.description, posterUrl: finalPosterUrl, year: postData.year, duration: postData.duration,
+        title: postData.title, description: processedDescription, posterUrl: finalPosterUrl, year: postData.year, duration: postData.duration,
         genres: postData.genres?.join(','), directors: postData.directors, mainCast: postData.mainCast, imdbRating: postData.imdbRating,
         rottenTomatoesRating: postData.rottenTomatoesRating, googleRating: postData.googleRating, viewCount: postData.viewCount,
         type: postData.type || 'MOVIE', seriesId: postData.seriesId, orderInSeries: postData.orderInSeries, updatedAt: new Date(),

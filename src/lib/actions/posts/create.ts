@@ -5,7 +5,7 @@ import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { invalidatePostsCache, saveImageFromDataUrl } from './utils';
+import { invalidatePostsCache, saveImageFromDataUrl, extractAndUploadImages } from './utils';
 
 export async function createPost(formData: FormData) {
     try {
@@ -18,15 +18,24 @@ export async function createPost(formData: FormData) {
         const posterUrlRaw = formData.get('posterUrl') as string;
 
         const title = formData.get('title') as string;
-        const description = formData.get('description') as string;
+        let description = formData.get('description') as string;
 
-        // IMAGE UPLOAD LOGIC
-        let posterUrl = null;
+        // Process Description for Base64 Images
+        if (description) {
+            console.log('[CreatePost] Processing description for images...');
+            description = await extractAndUploadImages(description, 'posts-content');
+        }
+
+        // IMAGE UPLOAD LOGIC (Poster)
+        // We use a new variable 'finalPosterUrl' to be absolutely sure we don't save Base64
+        let finalPosterUrl = null;
+
         if (posterUrlRaw && posterUrlRaw.startsWith('data:image')) {
-            console.log('[CreatePost] Base64 image detected. Uploading to Storage...');
-            posterUrl = await saveImageFromDataUrl(posterUrlRaw, 'posts');
+            console.log('[CreatePost] Base64 poster detected. Uploading to Supabase...');
+            finalPosterUrl = await saveImageFromDataUrl(posterUrlRaw, 'posts');
+            console.log('[CreatePost] Upload Complete. New URL:', finalPosterUrl);
         } else if (posterUrlRaw && posterUrlRaw.startsWith('http')) {
-            posterUrl = posterUrlRaw;
+            finalPosterUrl = posterUrlRaw;
         }
 
         const year = parseInt(formData.get('year') as string) || new Date().getFullYear();
@@ -44,11 +53,13 @@ export async function createPost(formData: FormData) {
         const googleRating = formData.get('googleRating') ? parseFloat(formData.get('googleRating') as string) : undefined;
         const rottenTomatoesRating = formData.get('rottenTomatoesRating') ? parseFloat(formData.get('rottenTomatoesRating') as string) : undefined;
 
+        console.log('[CreatePost] Final Data Verification - PosterUrl:', finalPosterUrl);
+
         const newPost = await prisma.post.create({
             data: {
                 title,
                 description,
-                posterUrl,
+                posterUrl: finalPosterUrl,
                 year,
                 duration,
                 genres,
