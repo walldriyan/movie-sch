@@ -87,13 +87,17 @@ export const authConfig: NextAuthConfig = {
             if (!dbSuperuser) {
               // Create superuser in database with hashed password (cost 10 for performance)
               const hashedPassword = await bcrypt.hash(superuserPassword, 10);
+
               dbSuperuser = await prisma.user.create({
                 data: {
                   email: superuserEmail,
                   name: 'Super Admin',
+                  username: 'superadmin', // Set a default username
                   password: hashedPassword,
                   role: 'SUPER_ADMIN',
                   status: 'ACTIVE',
+                  emailVerified: new Date(), // Mark email as verified
+                  dailyPostLimit: 1000,      // Give high limits
                 },
               });
             } else if (dbSuperuser.role !== 'SUPER_ADMIN') {
@@ -263,7 +267,8 @@ export const authConfig: NextAuthConfig = {
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id;
-        session.user.role = token.role;
+        // Cast role to any to handle string vs Enum type mismatch
+        session.user.role = token.role as any;
         session.user.permissions = token.permissions;
       }
       return session;
@@ -301,8 +306,11 @@ export const authConfig: NextAuthConfig = {
         console.error('[Redis] Failed to cache user:', error);
       }
     },
-    async signOut({ token }) {
-      console.log(`[Auth] User signed out: ${token?.email}`);
+    async signOut(message) {
+      // Safely access token from message (NextAuth types vary)
+      const token = 'token' in message ? (message as any).token : null;
+
+      console.log(`[Auth] User signed out: ${token?.email || 'Unknown'}`);
 
       // REMOVE USER FROM REDIS
       try {
