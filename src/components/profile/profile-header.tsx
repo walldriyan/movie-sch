@@ -11,7 +11,14 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import EditProfileDialog from '@/components/edit-profile-dialog';
 import { cn } from '@/lib/utils';
 
-export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { user: User, currentFilter: string, isOwnProfile: boolean }) {
+interface ProfileStats {
+  postsCount: number;
+  favoritesCount: number;
+  followersCount: number;
+  followingCount: number;
+}
+
+export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats }: { user: User, currentFilter: string, isOwnProfile: boolean, stats: ProfileStats }) {
   const coverImage = user.coverImage || 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=1920&q=80';
 
   const userAvatar =
@@ -135,15 +142,15 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile }: { u
           {/* Stats */}
           <div className="flex items-center gap-8">
             <div className="text-center">
-              <p className="text-2xl font-bold text-white">128</p>
+              <p className="text-2xl font-bold text-white">{stats.postsCount}</p>
               <p className="text-xs text-white/50">Posts</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-white">1.2K</p>
+              <p className="text-2xl font-bold text-white">{stats.followersCount}</p>
               <p className="text-xs text-white/50">Followers</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-white">48</p>
+              <p className="text-2xl font-bold text-white">{stats.followingCount}</p>
               <p className="text-xs text-white/50">Following</p>
             </div>
           </div>

@@ -11,8 +11,25 @@ import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
 import { ROLES } from '@/lib/permissions';
+import prisma from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
+
+// Get user stats
+async function getUserStats(userId: string) {
+  const [postsCount, favoritesCount] = await Promise.all([
+    prisma.post.count({ where: { authorId: userId } }),
+    prisma.favoritePost.count({ where: { userId: userId } }),
+  ]);
+
+  // For now, followers/following are placeholders (0) since the follow system isn't implemented
+  return {
+    postsCount,
+    favoritesCount,
+    followersCount: 0,
+    followingCount: 0,
+  };
+}
 
 export default async function ProfilePage({
   params,
@@ -39,6 +56,9 @@ export default async function ProfilePage({
   }
 
   const isOwnProfile = loggedInUser?.id === profileUser.id;
+
+  // Fetch user stats
+  const stats = await getUserStats(profileUser.id);
 
   let displayPosts: any[] = [];
   let displaySeries: any[] = [];
@@ -69,7 +89,12 @@ export default async function ProfilePage({
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Header */}
-      <ProfileHeader user={profileUser} currentFilter={currentFilter} isOwnProfile={isOwnProfile} />
+      <ProfileHeader
+        user={profileUser}
+        currentFilter={currentFilter}
+        isOwnProfile={isOwnProfile}
+        stats={stats}
+      />
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 md:px-8 pb-16">

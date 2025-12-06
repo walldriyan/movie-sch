@@ -179,13 +179,45 @@ function PostCard({ post, variant = 'normal' }: {
 // ========================================
 // HERO FEATURED POST COMPONENT
 // ========================================
+
+// Helper to extract YouTube video ID
+function getYouTubeVideoId(url: string | null | undefined): string | null {
+    if (!url) return null;
+    const patterns = [
+        /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/,
+        /youtube\.com\/v\/([a-zA-Z0-9_-]{11})/,
+    ];
+    for (const pattern of patterns) {
+        const match = url.match(pattern);
+        if (match) return match[1];
+    }
+    return null;
+}
+
 function HeroSection({ post, onSearch }: {
     post: Post | null;
     onSearch: (query: string) => void;
 }) {
     const [localQuery, setLocalQuery] = useState('');
-    const defaultImage = DEFAULT_POSTER_IMAGES[0];
-    const [heroImg, setHeroImg] = useState(post?.posterUrl || defaultImage);
+    const [imgError, setImgError] = useState(false);
+
+    // Check if post has a valid image
+    const hasValidImage = post?.posterUrl && post.posterUrl.trim() !== '' && !imgError;
+
+    // Check for YouTube video in mediaLinks
+    const youtubeVideoId = useMemo(() => {
+        if (!post?.mediaLinks || !Array.isArray(post.mediaLinks)) return null;
+        for (const link of post.mediaLinks) {
+            if (typeof link === 'object' && link !== null && 'url' in link) {
+                const id = getYouTubeVideoId((link as any).url);
+                if (id) return id;
+            } else if (typeof link === 'string') {
+                const id = getYouTubeVideoId(link);
+                if (id) return id;
+            }
+        }
+        return null;
+    }, [post?.mediaLinks]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -193,104 +225,150 @@ function HeroSection({ post, onSearch }: {
     };
 
     return (
-        <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-            {/* Background Image Container with 25px margin */}
-            <div className="absolute inset-0 m-[25px] rounded-2xl overflow-hidden">
-                <Image
-                    src={heroImg}
-                    alt={post?.title || 'Featured'}
-                    fill
-                    className="object-cover"
-                    priority
-                    onError={() => setHeroImg(defaultImage)}
-                />
+        <section className="relative overflow-hidden">
+            {/* Main Hero Container with 100px margin */}
+            <div className="mx-[100px] my-6">
+                <div className="relative rounded-3xl overflow-hidden aspect-[21/9]">
+                    {/* Background - YouTube Video, Image, or Gradient */}
+                    {youtubeVideoId ? (
+                        <iframe
+                            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=0&mute=1&controls=1&modestbranding=1&rel=0`}
+                            title={post?.title || 'Featured Video'}
+                            className="absolute inset-0 w-full h-full rounded-3xl"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                        />
+                    ) : hasValidImage ? (
+                        <>
+                            <Image
+                                src={post!.posterUrl!}
+                                alt={post?.title || 'Featured'}
+                                fill
+                                className="object-cover"
+                                priority
+                                onError={() => setImgError(true)}
+                            />
+                            {/* Gradient Overlays */}
+                            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
+                        </>
+                    ) : (
+                        /* Dark black/maroon gradient fallback */
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a0a] via-[#0d0d0d] to-[#0a0a0a]">
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-rose-900/30 via-transparent to-transparent" />
+                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
+                        </div>
+                    )}
 
-                {/* Gradient Overlays */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent rounded-2xl" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-2xl" />
+                    {/* Content Overlay - Only show for image/gradient, not for video */}
+                    {!youtubeVideoId && (
+                        <div className="absolute inset-0 flex flex-col justify-end p-12">
+                            {post ? (
+                                <>
+                                    {/* Badge */}
+                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-semibold w-fit mb-4">
+                                        <Sparkles className="w-3.5 h-3.5" />
+                                        <span>{post.type === 'MOVIE' ? 'FEATURED POST' : post.type === 'TV_SERIES' ? 'FEATURED SERIES' : 'TRENDING NOW'}</span>
+                                    </div>
+
+                                    {/* Title */}
+                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight max-w-3xl">
+                                        {post.title}
+                                    </h1>
+
+                                    {/* Real Meta Info */}
+                                    <div className="flex items-center gap-4 mb-4 text-sm text-white/70 flex-wrap">
+                                        {post.imdbRating && post.imdbRating > 0 && (
+                                            <span className="flex items-center gap-1.5 bg-yellow-500/20 px-2 py-1 rounded-full">
+                                                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                                <span className="text-yellow-400 font-bold">{post.imdbRating.toFixed(1)}</span>
+                                            </span>
+                                        )}
+                                        {post.year && (
+                                            <span className="flex items-center gap-1.5">
+                                                <Calendar className="w-4 h-4" />
+                                                {post.year}
+                                            </span>
+                                        )}
+                                        {post.duration && (
+                                            <span className="flex items-center gap-1.5">
+                                                <Clock className="w-4 h-4" />
+                                                {post.duration}
+                                            </span>
+                                        )}
+                                        {post.viewCount !== undefined && post.viewCount > 0 && (
+                                            <span className="flex items-center gap-1.5">
+                                                <TrendingUp className="w-4 h-4" />
+                                                {post.viewCount.toLocaleString()} views
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {/* Genres */}
+                                    {getGenresArray(post.genres).length > 0 && (
+                                        <div className="flex items-center gap-2 mb-5">
+                                            {getGenresArray(post.genres).slice(0, 4).map((genre, idx) => (
+                                                <span key={idx} className="px-3 py-1 rounded-full bg-white/10 text-white/80 text-xs font-medium">
+                                                    {genre}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Description */}
+                                    {post.description && (
+                                        <p className="text-white/60 text-sm md:text-base max-w-2xl mb-6 line-clamp-2">
+                                            {post.description.replace(/<[^>]*>/g, '')}
+                                        </p>
+                                    )}
+
+                                    {/* CTA Buttons */}
+                                    <div className="flex items-center gap-3">
+                                        <Button
+                                            asChild
+                                            className="bg-white text-black hover:bg-white/90 font-semibold h-12 px-8 rounded-full"
+                                        >
+                                            <Link href={`/movies/${post.id}`}>
+                                                <Play className="w-5 h-5 mr-2 fill-black" />
+                                                View Details
+                                            </Link>
+                                        </Button>
+                                        <Button
+                                            asChild
+                                            variant="ghost"
+                                            className="bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 font-semibold h-12 px-6 rounded-full border border-white/20"
+                                        >
+                                            <Link href={`/movies/${post.id}`}>
+                                                <Info className="w-4 h-4 mr-2" />
+                                                More Info
+                                            </Link>
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                /* Empty state when no featured post */
+                                <div className="text-center py-8">
+                                    <h2 className="text-3xl font-bold text-white mb-2">Discover Amazing Content</h2>
+                                    <p className="text-white/50">Search for posts, series, and more</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
-            {/* Content */}
-            <div className="absolute inset-0 flex flex-col justify-end p-[50px] md:p-[50px] max-w-4xl">
-                {post && (
-                    <>
-                        {/* Badge */}
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-pink-500 text-white text-xs font-semibold w-fit mb-4">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            <span>{post.type === 'MOVIE' ? 'NEW MOVIE' : 'NEW SERIES'}</span>
-                        </div>
-
-                        {/* Title */}
-                        <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 leading-tight">
-                            {post.title}
-                        </h1>
-
-                        {/* Description */}
-                        {post.description && (
-                            <p className="text-white/80 text-sm md:text-base max-w-xl mb-4 line-clamp-3">
-                                {post.description}
-                            </p>
-                        )}
-
-                        {/* Meta Info */}
-                        <div className="flex items-center gap-4 mb-6 text-sm text-white/60">
-                            {post.imdbRating && (
-                                <span className="flex items-center gap-1">
-                                    <span className="text-white font-bold">IMDb</span>
-                                    <span className="text-yellow-400 font-bold">{post.imdbRating}/10</span>
-                                </span>
-                            )}
-                            {post.year && (
-                                <span>{post.year}</span>
-                            )}
-                            {getGenresArray(post.genres).slice(0, 3).map((genre, idx) => (
-                                <span key={idx} className="hidden sm:inline">{genre}</span>
-                            ))}
-                        </div>
-
-                        {/* CTA Buttons */}
-                        <div className="flex items-center gap-3 mb-8">
-                            <Button
-                                asChild
-                                className="bg-white text-black hover:bg-white/90 font-semibold h-11 px-6 rounded-full"
-                            >
-                                <Link href={`/movies/${post.id}`}>
-                                    <Play className="w-4 h-4 mr-2 fill-black" />
-                                    Watch Now
-                                </Link>
-                            </Button>
-                            <Button
-                                asChild
-                                variant="ghost"
-                                className="bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 font-semibold h-11 px-6 rounded-full border border-white/20"
-                            >
-                                <Link href={`/movies/${post.id}`}>
-                                    More Info
-                                    <ArrowRight className="w-4 h-4 ml-2" />
-                                </Link>
-                            </Button>
-                        </div>
-                    </>
-                )}
-
-                {/* Search Bar */}
-                <form onSubmit={handleSubmit} className="relative max-w-lg">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/50" />
+            {/* Search Bar - Below hero */}
+            <div className="mx-[100px] mb-6">
+                <form onSubmit={handleSubmit} className="relative max-w-2xl">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
                     <Input
                         type="text"
-                        placeholder="Search movies, series, genres..."
+                        placeholder="Search posts, series, topics..."
                         value={localQuery}
                         onChange={(e) => setLocalQuery(e.target.value)}
-                        className="w-full h-12 pl-12 pr-4 bg-white/10 backdrop-blur-sm border-white/20 rounded-xl text-white placeholder:text-white/40 focus:bg-white/15"
+                        className="w-full h-14 pl-12 pr-4 bg-white/[0.03] backdrop-blur-sm border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:bg-white/[0.06] focus:border-purple-500/30"
                     />
                 </form>
-            </div>
-
-            {/* Navigation Indicators */}
-            <div className="absolute bottom-6 right-6 flex items-center gap-2">
-                <button className="w-10 h-10 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-colors">
-                    <Volume2 className="w-5 h-5" />
-                </button>
             </div>
         </section>
     );
@@ -442,78 +520,87 @@ export default function SearchPageClient({
             {/* Hero Section with Featured Post */}
             <HeroSection post={featuredPost} onSearch={handleSearch} />
 
-            {/* Trending Categories */}
-            <TrendingBar posts={[featuredPost, ...initialPosts].filter(Boolean) as Post[]} />
-
             {/* Filter Bar */}
-            <section className="px-[22px] py-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-                        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                            {/* Type Filters */}
-                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                                {TYPE_FILTERS.map(filter => {
-                                    const Icon = filter.icon;
-                                    const isActive = (filter.value === '' && !currentType) || filter.value === currentType;
-                                    return (
-                                        <Link
-                                            key={filter.value}
-                                            href={buildUrl({ type: filter.value || undefined })}
-                                            scroll={false}
-                                            className={cn(
-                                                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap",
-                                                isActive
-                                                    ? "bg-white/[0.1] text-white"
-                                                    : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
-                                            )}
-                                        >
-                                            <Icon className="w-4 h-4" />
-                                            {filter.label}
-                                        </Link>
-                                    );
-                                })}
-                            </div>
-
-                            {/* Time & Sort Filters */}
-                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                                {TIME_FILTERS.map(filter => (
+            <section className="px-[100px] py-6">
+                <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
+                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                        {/* Type Filters */}
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                            {TYPE_FILTERS.map(filter => {
+                                const Icon = filter.icon;
+                                const isActive = (filter.value === '' && !currentType) || filter.value === currentType;
+                                return (
                                     <Link
                                         key={filter.value}
-                                        href={buildUrl({ timeFilter: filter.value })}
+                                        href={buildUrl({ type: filter.value || undefined })}
                                         scroll={false}
                                         className={cn(
-                                            "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
-                                            currentTimeFilter === filter.value
-                                                ? "bg-purple-500/20 text-purple-400"
+                                            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap",
+                                            isActive
+                                                ? "bg-white/[0.1] text-white"
+                                                : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
+                                        )}
+                                    >
+                                        <Icon className="w-4 h-4" />
+                                        {filter.label}
+                                    </Link>
+                                );
+                            })}
+                        </div>
+
+                        {/* Time & Sort Filters + Reset */}
+                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+                            {TIME_FILTERS.map(filter => (
+                                <Link
+                                    key={filter.value}
+                                    href={buildUrl({ timeFilter: filter.value })}
+                                    scroll={false}
+                                    className={cn(
+                                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
+                                        currentTimeFilter === filter.value
+                                            ? "bg-purple-500/20 text-purple-400"
+                                            : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
+                                    )}
+                                >
+                                    {filter.label}
+                                </Link>
+                            ))}
+
+                            <div className="w-px h-4 bg-white/[0.1] mx-2" />
+
+                            {SORT_OPTIONS.map(option => {
+                                const Icon = option.icon;
+                                return (
+                                    <Link
+                                        key={option.value}
+                                        href={buildUrl({ sortBy: option.value })}
+                                        scroll={false}
+                                        className={cn(
+                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
+                                            currentSortBy === option.value
+                                                ? "bg-pink-500/20 text-pink-400"
                                                 : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
                                         )}
                                     >
-                                        {filter.label}
+                                        <Icon className="w-3 h-3" />
+                                        {option.label}
                                     </Link>
-                                ))}
+                                );
+                            })}
 
-                                <div className="w-px h-4 bg-white/[0.1] mx-2" />
-
-                                {SORT_OPTIONS.map(option => {
-                                    const Icon = option.icon;
-                                    return (
-                                        <Link
-                                            key={option.value}
-                                            href={buildUrl({ sortBy: option.value })}
-                                            scroll={false}
-                                            className={cn(
-                                                "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
-                                                currentSortBy === option.value
-                                                    ? "bg-pink-500/20 text-pink-400"
-                                                    : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
-                                            )}
-                                        >
-                                            <Icon className="w-3 h-3" />
-                                            {option.label}
-                                        </Link>
-                                    );
-                                })}
-                            </div>
+                            {/* Reset Filters Button */}
+                            {(currentType || currentTimeFilter !== 'all' || currentSortBy !== 'updatedAt-desc' || query) && (
+                                <>
+                                    <div className="w-px h-4 bg-white/[0.1] mx-2" />
+                                    <Link
+                                        href="/search"
+                                        scroll={false}
+                                        className="px-3 py-1.5 rounded-full text-xs font-medium text-red-400 hover:bg-red-500/10 transition-all whitespace-nowrap"
+                                    >
+                                        Reset All
+                                    </Link>
+                                </>
+                            )}
                         </div>
                     </div>
                 </div>
