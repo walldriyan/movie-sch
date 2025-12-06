@@ -40,8 +40,9 @@ export default function MovieDetailClient({
 
   // console.log("Client [/movies/[id]/movie-detail-client.tsx] Session from props:", JSON.stringify(session, null, 2));
   // console.log("Client [/movies/[id]/movie-detail-client.tsx] Current User Details:", session?.user);
-  
-  const heroImage = post.posterUrl || PlaceHolderImages.find((img) => img.id === 'movie-poster-placeholder')?.imageUrl;
+
+  const heroImage = post.posterUrl;
+  const hasHeroImage = heroImage && heroImage.trim() !== '';
   const authorAvatarUrl = post.author.image || PlaceHolderImages.find((img) => img.id === 'avatar-1')?.imageUrl;
 
   const tabButtonStyle = 'flex items-center gap-2 cursor-pointer transition-colors hover:text-foreground pb-3 border-b-2 whitespace-nowrap';
@@ -49,9 +50,10 @@ export default function MovieDetailClient({
   const inactiveTabButtonStyle = 'border-transparent';
 
   return (
-    <>
+    <div className="pt-[80px]">
       <header className="relative h-[500px] w-full rounded-b-2xl overflow-hidden flex items-end">
-        {heroImage && (
+        {/* Show image if available, otherwise show gradient */}
+        {hasHeroImage ? (
           <Image
             src={heroImage}
             alt={`Poster for ${post.title}`}
@@ -59,6 +61,12 @@ export default function MovieDetailClient({
             className="object-cover"
             priority
           />
+        ) : (
+          // Dark gradient background when no image
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-900 via-purple-900/50 to-gray-900">
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-purple-500/20 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djZoNnYtNmgtNnptNiA2djZoNnYtNmgtNnoiLz48L2c+PC9nPjwvc3ZnPg==')] opacity-50" />
+          </div>
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/70 to-transparent" />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-background" />
@@ -88,7 +96,7 @@ export default function MovieDetailClient({
         <div className="absolute top-4 right-4 z-10 flex flex-wrap gap-2 justify-end">
           {post.genres.map((genre: string) => (
             <Button key={genre} variant="outline" size="sm" className="rounded-full bg-black/20 backdrop-blur-sm border-white/20 hover:bg-white/20">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.432 0l6.568-6.568a2.426 2.426 0 0 0 0-3.432z"/><circle cx="8.5" cy="8.5" r="1.5"/></svg>
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2 h-4 w-4"><path d="M12.586 2.586A2 2 0 0 0 11.172 2H4a2 2 0 0 0-2 2v7.172a2 2 0 0 0 .586 1.414l8.704 8.704a2.426 2.426 0 0 0 3.432 0l6.568-6.568a2.426 2.426 0 0 0 0-3.432z" /><circle cx="8.5" cy="8.5" r="1.5" /></svg>
               {genre}
             </Button>
           ))}
@@ -149,7 +157,7 @@ export default function MovieDetailClient({
                 <span className="text-foreground">Subtitles</span>
               </button>
             </div>
-            
+
             <MovieInteractionButtons post={post} onPostUpdate={onPostUpdate} session={session} />
 
           </div>
@@ -159,6 +167,6 @@ export default function MovieDetailClient({
       <Tabs value={activeTab} className="mt-8">
         {children}
       </Tabs>
-    </>
+    </div>
   );
 }
