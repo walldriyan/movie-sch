@@ -16,7 +16,7 @@ export default function MovieCard({ id, title, posterUrlId }: MovieCardProps) {
   return (
     <Link href={`/movies/${id}`} className="group block">
       <Card className="flex flex-col overflow-hidden transition-all duration-300 group-hover:shadow-lg group-hover:shadow-primary/30 group-hover:-translate-y-2">
-        <div className="aspect-[2/3] relative">
+        <div className="aspect-[2/3] relative bg-gradient-to-br from-black via-zinc-950 to-red-950">
           {poster ? (
             <Image
               src={poster.imageUrl}

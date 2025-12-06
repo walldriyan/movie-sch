@@ -84,7 +84,7 @@ const ActivityCard = ({
             {/* Thumbnail or Icon */}
             <div className="relative flex-shrink-0 pt-1">
                 {isPost && item.posterUrl ? (
-                    <div className="relative w-12 h-16 rounded-lg overflow-hidden ring-1 ring-white/10 shadow-sm">
+                    <div className="relative w-12 h-16 rounded-lg overflow-hidden ring-1 ring-white/10 shadow-sm bg-gradient-to-br from-black via-zinc-950 to-red-950">
                         <Image
                             src={item.posterUrl}
                             alt={item.title}
@@ -279,7 +279,7 @@ export default function ActivityPageClient({ initialData }: ActivityPageClientPr
 
             {/* Rounded Hero Card */}
             <div className="mx-4 lg:mx-[100px] mb-8 relative">
-                <div className="h-[250px] w-full rounded-[32px] overflow-hidden relative group">
+                <div className="h-[250px] w-full rounded-[32px] overflow-hidden relative group bg-gradient-to-br from-black via-zinc-950 to-red-950">
                     <Image
                         src="https://images.unsplash.com/photo-1620641788421-7f1c33b74051?w=1600&q=80"
                         alt="Activity Background"
