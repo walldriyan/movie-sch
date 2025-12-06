@@ -66,102 +66,108 @@ const SORT_OPTIONS = [
 ];
 
 // ========================================
-// MOVIE/POST CARD COMPONENT - Bento Style
+// MOVIE/POST CARD COMPONENT - Modern Card Style
 // ========================================
 function PostCard({ post, variant = 'normal' }: {
     post: Post;
     variant?: 'featured' | 'normal' | 'compact';
 }) {
-    const posterUrl = post.posterUrl || getDefaultPoster(post.id);
-    const cardHeight = variant === 'featured' ? 'h-[380px]' : variant === 'compact' ? 'h-[200px]' : 'h-[280px]';
+    const defaultImage = getDefaultPoster(post.id);
+    const [imgSrc, setImgSrc] = useState(post.posterUrl || defaultImage);
+    const [imgError, setImgError] = useState(false);
+
+    const handleImageError = () => {
+        if (!imgError) {
+            setImgError(true);
+            setImgSrc(defaultImage);
+        }
+    };
 
     return (
         <Link
             href={`/movies/${post.id}`}
-            className={cn(
-                "group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300",
-                "hover:scale-[1.02] hover:shadow-2xl hover:shadow-purple-500/10",
-                cardHeight
-            )}
+            className="group block"
         >
-            {/* Background Image */}
-            <Image
-                src={posterUrl}
-                alt={post.title}
-                fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-            />
+            <div className={cn(
+                "relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/[0.08]",
+                "transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/10 hover:scale-[1.02]",
+                variant === 'featured' ? 'h-[380px]' : variant === 'compact' ? 'h-[220px]' : 'h-[320px]'
+            )}>
+                {/* Image Container */}
+                <div className="relative w-full h-[65%] overflow-hidden">
+                    <Image
+                        src={imgSrc}
+                        alt={post.title}
+                        fill
+                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        onError={handleImageError}
+                    />
+                    {/* Image Overlay Gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
-
-            {/* Top Section - Type Badge & Rating */}
-            <div className="absolute top-0 left-0 right-0 p-3 flex items-start justify-between">
-                <span className="px-2 py-0.5 rounded-full bg-white/10 backdrop-blur-sm text-[10px] text-white/80 font-medium">
-                    {post.type === 'MOVIE' ? 'Movie' : post.type === 'TV_SERIES' ? 'Series' : 'Other'}
-                </span>
-
-                {post.imdbRating && (
-                    <div className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-500/20 backdrop-blur-sm">
-                        <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                        <span className="text-[10px] text-yellow-400 font-bold">{post.imdbRating}/10</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Bottom Section - Content */}
-            <div className="absolute bottom-0 left-0 right-0 p-4">
-                {/* Genres */}
-                {getGenresArray(post.genres).length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-2">
-                        {getGenresArray(post.genres).slice(0, 2).map((genre, idx) => (
-                            <span
-                                key={idx}
-                                className="px-2 py-0.5 rounded-full bg-purple-500/20 text-[9px] text-purple-300 font-medium"
-                            >
-                                {genre}
-                            </span>
-                        ))}
-                    </div>
-                )}
-
-                {/* Title */}
-                <h3 className={cn(
-                    "text-white font-bold leading-snug mb-1",
-                    variant === 'featured' ? 'text-xl line-clamp-2' : 'text-sm line-clamp-2'
-                )}>
-                    {post.title}
-                </h3>
-
-                {/* Description for featured */}
-                {variant === 'featured' && post.description && (
-                    <p className="text-white/60 text-xs line-clamp-2 mb-2">
-                        {post.description}
-                    </p>
-                )}
-
-                {/* Author & Date */}
-                <div className="flex items-center justify-between mt-2">
-                    <div className="flex items-center gap-2">
-                        <Avatar className="h-5 w-5">
-                            <AvatarImage src={post.author?.image || ''} />
-                            <AvatarFallback className="text-[8px] bg-purple-500/50">
-                                {post.author?.name?.charAt(0) || 'U'}
-                            </AvatarFallback>
-                        </Avatar>
-                        <span className="text-[10px] text-white/50">{post.author?.name}</span>
+                    {/* Type Badge */}
+                    <div className="absolute top-3 left-3">
+                        <span className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] text-white font-medium">
+                            {post.type === 'MOVIE' ? 'Movie' : post.type === 'TV_SERIES' ? 'Series' : 'Other'}
+                        </span>
                     </div>
 
-                    <span className="text-[10px] text-white/40">
-                        <ClientRelativeDate date={post.updatedAt} />
-                    </span>
+                    {/* Rating Badge */}
+                    {post.imdbRating && (
+                        <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/25 backdrop-blur-md">
+                            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
+                            <span className="text-[11px] text-yellow-400 font-bold">{post.imdbRating}/10</span>
+                        </div>
+                    )}
+
+                    {/* Play Button Overlay on Hover */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                        <div className="w-14 h-14 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                            <Play className="w-6 h-6 text-white fill-white ml-1" />
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Play Button on Hover */}
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
-                    <Play className="w-6 h-6 text-white fill-white ml-1" />
+                {/* Content Section */}
+                <div className="p-4 h-[35%] flex flex-col justify-between">
+                    {/* Genres */}
+                    {getGenresArray(post.genres).length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mb-2">
+                            {getGenresArray(post.genres).slice(0, 2).map((genre, idx) => (
+                                <span
+                                    key={idx}
+                                    className="px-2 py-0.5 rounded-full bg-purple-500/20 text-[10px] text-purple-300 font-medium"
+                                >
+                                    {genre}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Title */}
+                    <h3 className={cn(
+                        "text-white font-semibold leading-tight mb-2 line-clamp-2",
+                        variant === 'featured' ? 'text-lg' : 'text-sm'
+                    )}>
+                        {post.title}
+                    </h3>
+
+                    {/* Author & Date Row */}
+                    <div className="flex items-center justify-between mt-auto">
+                        <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6 border border-white/10">
+                                <AvatarImage src={post.author?.image || ''} />
+                                <AvatarFallback className="text-[9px] bg-gradient-to-br from-purple-500/50 to-pink-500/50 text-white">
+                                    {post.author?.name?.charAt(0) || 'U'}
+                                </AvatarFallback>
+                            </Avatar>
+                            <span className="text-[11px] text-white/60 font-medium">{post.author?.name || 'Unknown'}</span>
+                        </div>
+
+                        <span className="text-[10px] text-white/40">
+                            <ClientRelativeDate date={post.updatedAt} />
+                        </span>
+                    </div>
                 </div>
             </div>
         </Link>
@@ -176,7 +182,8 @@ function HeroSection({ post, onSearch }: {
     onSearch: (query: string) => void;
 }) {
     const [localQuery, setLocalQuery] = useState('');
-    const posterUrl = post?.posterUrl || DEFAULT_POSTER_IMAGES[0];
+    const defaultImage = DEFAULT_POSTER_IMAGES[0];
+    const [heroImg, setHeroImg] = useState(post?.posterUrl || defaultImage);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -185,23 +192,24 @@ function HeroSection({ post, onSearch }: {
 
     return (
         <section className="relative h-[500px] md:h-[600px] overflow-hidden">
-            {/* Background Image */}
-            {post && (
+            {/* Background Image Container with 25px margin */}
+            <div className="absolute inset-0 m-[25px] rounded-2xl overflow-hidden">
                 <Image
-                    src={posterUrl}
-                    alt={post.title || 'Featured'}
+                    src={heroImg}
+                    alt={post?.title || 'Featured'}
                     fill
                     className="object-cover"
                     priority
+                    onError={() => setHeroImg(defaultImage)}
                 />
-            )}
 
-            {/* Gradient Overlays */}
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+                {/* Gradient Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/60 to-transparent rounded-2xl" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent rounded-2xl" />
+            </div>
 
             {/* Content */}
-            <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 max-w-4xl">
+            <div className="absolute inset-0 flex flex-col justify-end p-[50px] md:p-[50px] max-w-4xl">
                 {post && (
                     <>
                         {/* Badge */}
@@ -287,6 +295,33 @@ function HeroSection({ post, onSearch }: {
 }
 
 // ========================================
+// TRENDING CARD COMPONENT
+// ========================================
+function TrendingCard({ genre, post }: { genre: string; post: Post | undefined }) {
+    const defaultImage = getDefaultPoster(post?.id || 0);
+    const [imgSrc, setImgSrc] = useState(post?.posterUrl || defaultImage);
+
+    return (
+        <Link
+            href={`/search?q=${encodeURIComponent(genre)}`}
+            className="flex-shrink-0 relative w-40 h-28 rounded-xl overflow-hidden group"
+        >
+            <Image
+                src={imgSrc}
+                alt={genre}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+                onError={() => setImgSrc(defaultImage)}
+            />
+            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors" />
+            <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs text-white font-medium">
+                {genre}
+            </span>
+        </Link>
+    );
+}
+
+// ========================================
 // TRENDING CATEGORY BAR
 // ========================================
 function TrendingBar({ posts }: { posts: Post[] }) {
@@ -310,7 +345,7 @@ function TrendingBar({ posts }: { posts: Post[] }) {
     if (genrePosts.length === 0) return null;
 
     return (
-        <section className="py-8 px-4 md:px-6">
+        <section className="py-8 px-[22px]">
             <div className="max-w-7xl mx-auto">
                 <div className="flex items-center justify-between mb-6">
                     <h2 className="text-xl font-bold text-white">Trending Now</h2>
@@ -321,22 +356,7 @@ function TrendingBar({ posts }: { posts: Post[] }) {
 
                 <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
                     {genrePosts.map(({ genre, post }) => (
-                        <Link
-                            key={genre}
-                            href={`/search?q=${encodeURIComponent(genre)}`}
-                            className="flex-shrink-0 relative w-40 h-28 rounded-xl overflow-hidden group"
-                        >
-                            <Image
-                                src={post?.posterUrl || getDefaultPoster(post?.id || 0)}
-                                alt={genre}
-                                fill
-                                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                            />
-                            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors" />
-                            <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs text-white font-medium">
-                                {genre}
-                            </span>
-                        </Link>
+                        <TrendingCard key={genre} genre={genre} post={post} />
                     ))}
                 </div>
             </div>
@@ -400,7 +420,7 @@ export default function SearchPageClient({
             <TrendingBar posts={[featuredPost, ...initialPosts].filter(Boolean) as Post[]} />
 
             {/* Filter Bar */}
-            <section className="px-4 md:px-6 py-6">
+            <section className="px-[22px] py-6">
                 <div className="max-w-7xl mx-auto">
                     <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
                         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
@@ -471,7 +491,7 @@ export default function SearchPageClient({
             </section>
 
             {/* Results Section */}
-            <section className="px-4 md:px-6 py-6">
+            <section className="px-[22px] py-6">
                 <div className="max-w-7xl mx-auto">
                     {/* Results Header */}
                     <div className="flex items-center justify-between mb-6">
