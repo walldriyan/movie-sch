@@ -1,12 +1,9 @@
 import { Suspense } from 'react';
 import { getPublicGroups } from '@/lib/actions/groups';
-import { getGroupForProfile } from '@/lib/actions';
 import { auth } from '@/auth';
-import { notFound } from 'next/navigation';
 import GroupsPageClient from './groups-page-client';
-import GroupProfileClient from '@/components/group-profile-client';
-import type { GroupForProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { redirect } from 'next/navigation';
 
 export const metadata = {
     title: 'Groups | Fiddle',
@@ -21,15 +18,9 @@ export default async function GroupsPage({ searchParams }: GroupsPageProps) {
     const session = await auth();
     const resolvedSearchParams = await searchParams;
 
-    // If groupId is provided, show group profile
+    // If groupId is provided, redirect to the group detail page
     if (resolvedSearchParams.groupId) {
-        const groupData = await getGroupForProfile(resolvedSearchParams.groupId);
-
-        if (!groupData) {
-            notFound();
-        }
-
-        return <GroupProfileClient group={groupData as unknown as GroupForProfile} session={session} />;
+        redirect(`/groups/${resolvedSearchParams.groupId}`);
     }
 
     // Otherwise show groups list

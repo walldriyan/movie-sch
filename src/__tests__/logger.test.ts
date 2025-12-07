@@ -13,7 +13,11 @@ describe('Logger Module', () => {
     });
 
     afterEach(() => {
-        process.env.NODE_ENV = originalNodeEnv;
+        Object.defineProperty(process.env, 'NODE_ENV', {
+            value: originalNodeEnv,
+            writable: true,
+            configurable: true
+        });
         jest.restoreAllMocks();
     });
 
@@ -39,7 +43,11 @@ describe('Logger Module', () => {
 
     describe('Logging in development', () => {
         beforeEach(() => {
-            process.env.NODE_ENV = 'development';
+            Object.defineProperty(process.env, 'NODE_ENV', {
+                value: 'development',
+                writable: true,
+                configurable: true
+            });
         });
 
         it('should log messages in development', () => {
