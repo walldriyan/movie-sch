@@ -3,10 +3,6 @@
     "framework": "nextjs",
     "buildCommand": "npm run vercel-build",
     "installCommand": "npm install",
-    "regions": [
-        "sin1",
-        "hnd1"
-    ],
     "functions": {
         "src/app/api/**/*.ts": {
             "maxDuration": 30
