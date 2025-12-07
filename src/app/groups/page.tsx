@@ -1,7 +1,11 @@
 import { Suspense } from 'react';
 import { getPublicGroups } from '@/lib/actions/groups';
+import { getGroupForProfile } from '@/lib/actions';
 import { auth } from '@/auth';
+import { notFound } from 'next/navigation';
 import GroupsPageClient from './groups-page-client';
+import GroupProfileClient from '@/components/group-profile-client';
+import type { GroupForProfile } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 
 export const metadata = {
@@ -9,10 +13,26 @@ export const metadata = {
     description: 'Discover and join groups to access exclusive content and connect with other members.',
 };
 
-export default async function GroupsPage() {
-    const session = await auth();
+interface GroupsPageProps {
+    searchParams: Promise<{ groupId?: string }>;
+}
 
-    // Fetch all public groups
+export default async function GroupsPage({ searchParams }: GroupsPageProps) {
+    const session = await auth();
+    const resolvedSearchParams = await searchParams;
+
+    // If groupId is provided, show group profile
+    if (resolvedSearchParams.groupId) {
+        const groupData = await getGroupForProfile(resolvedSearchParams.groupId);
+
+        if (!groupData) {
+            notFound();
+        }
+
+        return <GroupProfileClient group={groupData as unknown as GroupForProfile} session={session} />;
+    }
+
+    // Otherwise show groups list
     const groups = await getPublicGroups(50);
 
     return (

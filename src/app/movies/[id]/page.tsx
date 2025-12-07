@@ -2,7 +2,7 @@
 import { notFound } from 'next/navigation';
 import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
 import type { Post, Subtitle, User } from '@/lib/types';
-import MoviePageContent from './movie-page-content';
+import MoviePageContent from '@/components/movie/movie-page-content';
 import { auth } from '@/auth';
 import type { Session } from 'next-auth';
 import prisma from '@/lib/prisma';
