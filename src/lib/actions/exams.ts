@@ -774,23 +774,39 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
         throw new Error('Not authorized');
     }
 
-    const submissionAnswer = await prisma.submissionAnswer.findFirst({
+    let submissionAnswer = await prisma.submissionAnswer.findFirst({
         where: { submissionId, questionId },
         include: { question: true }
     });
 
+    // If answer doesn't exist, create it (Admin grading an empty/missing answer)
     if (!submissionAnswer) {
-        throw new Error("Answer not found.");
-    }
+        const question = await prisma.question.findUnique({ where: { id: questionId } });
+        if (!question) throw new Error("Question not found.");
 
-    if (marksAwarded < 0 || marksAwarded > submissionAnswer.question.points) {
-        throw new Error(`Marks must be between 0 and ${submissionAnswer.question.points}.`);
-    }
+        if (marksAwarded < 0 || marksAwarded > question.points) {
+            throw new Error(`Marks must be between 0 and ${question.points}.`);
+        }
 
-    await prisma.submissionAnswer.update({
-        where: { id: submissionAnswer.id },
-        data: { marksAwarded },
-    });
+        submissionAnswer = await prisma.submissionAnswer.create({
+            data: {
+                submissionId,
+                questionId,
+                marksAwarded,
+                customAnswer: "", // Empty answer created by admin grading
+            },
+            include: { question: true }
+        });
+    } else {
+        if (marksAwarded < 0 || marksAwarded > submissionAnswer.question.points) {
+            throw new Error(`Marks must be between 0 and ${submissionAnswer.question.points}.`);
+        }
+
+        await prisma.submissionAnswer.update({
+            where: { id: submissionAnswer.id },
+            data: { marksAwarded },
+        });
+    }
 
     // Recalculate total score
     const submission = await prisma.examSubmission.findUnique({
