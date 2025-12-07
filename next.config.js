@@ -162,13 +162,11 @@ const nextConfig = {
       ];
     }
 
-    // Production optimizations
+    // Production optimizations - DISABLED for speed as per user request
     if (!dev) {
-      // Tree shaking
       config.optimization = {
         ...config.optimization,
-        usedExports: true,
-        sideEffects: true,
+        minimize: false, // Disabling minification to speed up build
       };
     }
 
