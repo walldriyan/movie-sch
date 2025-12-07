@@ -46,7 +46,7 @@ const getAuthUrl = () => {
 };
 
 export const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma) as any,
   providers: [
     // Email/Password credentials
     CredentialsProvider({
