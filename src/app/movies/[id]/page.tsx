@@ -1,6 +1,7 @@
 
 import { notFound } from 'next/navigation';
-import { getPost, canUserDownloadSubtitle } from '@/lib/actions';
+import { getPost } from '@/lib/actions/posts/read';
+import { canUserDownloadSubtitle } from '@/lib/actions/subtitles';
 import type { Post, Subtitle, User } from '@/lib/types';
 import MoviePageContent from '@/components/movie/movie-page-content';
 import { auth } from '@/auth';

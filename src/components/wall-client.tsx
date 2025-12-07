@@ -14,7 +14,7 @@ import {
 import type { MicroPost } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createMicroPost, getAllTags, toggleMicroPostLike, deleteMicroPost } from '@/lib/actions';
+import { createMicroPost, getAllTags, toggleMicroPostLike, deleteMicroPost } from '@/lib/actions/microposts';
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { Loader2 } from 'lucide-react';

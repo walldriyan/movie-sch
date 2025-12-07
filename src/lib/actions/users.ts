@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { ROLES, MovieStatus } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
-import { saveImageFromDataUrl, deleteUploadedFile, invalidateUserGroupsCache } from './posts';
+import { saveImageFromDataUrl, deleteUploadedFile, invalidateUserGroupsCache } from './posts/utils';
 import { subDays } from 'date-fns';
 
 

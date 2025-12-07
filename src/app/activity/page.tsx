@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
-import { getNotifications, getPosts } from '@/lib/actions';
-import { getFavoritePosts } from '@/lib/actions/posts';
+import { getNotifications } from '@/lib/actions/notifications';
+import { getPosts } from '@/lib/actions/posts/read';
+import { getFavoritePosts } from '@/lib/actions/posts/read'; // Assuming it's in read.ts
 import { getExamsForUser } from '@/lib/actions/exams';
 import { auth } from '@/auth';
 import { redirect } from 'next/navigation';

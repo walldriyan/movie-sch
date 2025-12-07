@@ -19,7 +19,6 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     let whereClause: Prisma.PostWhereInput = {};
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus, search } = filters;
 
-    console.log(`[DB Fetch] Filter - lockStatus: ${lockStatus}, search: ${search}, userRole: ${userRole}`);
 
     if (userRole === ROLES.SUPER_ADMIN || userRole === ROLES.USER_ADMIN) {
         whereClause.status = { not: MovieStatus.PENDING_DELETION };

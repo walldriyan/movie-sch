@@ -66,7 +66,25 @@ export default function LeftSidebar() {
         localStorage.setItem('sidebar-collapsed', String(newState));
     };
 
-    // If user is not logged in, only show top controls, not sidebar
+    // Apply styles dynamically for non-logged in users
+    useEffect(() => {
+        const main = document.querySelector('main') as HTMLElement;
+        if (!main) return;
+
+        if (!isLoggedIn) {
+            main.style.marginLeft = '0';
+            main.style.marginRight = '0';
+            main.style.display = 'flex';
+            main.style.justifyContent = 'center';
+        } else {
+            // Logged in - apply sidebar margin
+            const isMobile = window.innerWidth <= 768;
+            main.style.marginLeft = isMobile ? '0' : (isCollapsed ? '70px' : '220px');
+            main.style.display = '';
+            main.style.justifyContent = '';
+        }
+    }, [isLoggedIn, isCollapsed]);
+
     if (!isLoggedIn) {
         return (
             <>
@@ -79,21 +97,6 @@ export default function LeftSidebar() {
                         <Link href="/auth">Login</Link>
                     </Button>
                 </div>
-                {/* No sidebar = main content centered */}
-                <style jsx global>{`
-                    main {
-                        margin-left: 0 !important;
-                        margin-right: 0 !important;
-                        display: flex !important;
-                        justify-content: center !important;
-                    }
-                    main > div {
-                        width: 100% !important;
-                        max-width: 1400px !important;
-                        margin: 0 auto !important;
-                        padding: 0 16px !important;
-                    }
-                `}</style>
             </>
         );
     }
@@ -301,17 +304,7 @@ export default function LeftSidebar() {
                 </div>
             </aside>
 
-            {/* Dynamic main content margin */}
-            <style jsx global>{`
-                main {
-                    margin-left: ${isCollapsed ? '70px' : '220px'} !important;
-                }
-                @media (max-width: 768px) {
-                    main {
-                        margin-left: 0 !important;
-                    }
-                }
-            `}</style>
+
 
             {/* Mobile overlay */}
             {mobileOpen && (

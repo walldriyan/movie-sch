@@ -5,7 +5,9 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions/index';
+import { savePost, updatePostStatus } from '@/lib/actions/posts/update';
+import { deletePost } from '@/lib/actions/posts/delete';
+import { getPostsForAdmin, getPost } from '@/lib/actions/posts/read';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES, MovieStatus } from '@/lib/permissions';
 import PostList from '@/components/manage/post-list';
