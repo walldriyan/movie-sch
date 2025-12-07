@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { getExamForTaker, getExamResults } from '@/lib/actions';
 import { auth } from '@/auth';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Check, X, ArrowLeft } from 'lucide-react';
+import { AlertCircle, Check, X, ArrowLeft, Download, RotateCcw } from 'lucide-react';
 import ExamTaker from '@/components/exam-taker';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -142,11 +142,20 @@ export default async function ExamPage({ params, searchParams }: ExamPageProps) 
             </Card>
 
             {/* Actions */}
-            <div className="flex gap-4">
+            <div className="flex flex-wrap gap-4 print:hidden">
               <Button asChild>
-                <Link href={`/exams/${examId}`}>Try Again</Link>
+                <Link href={`/exams/${examId}`}>
+                  <RotateCcw className="mr-2 h-4 w-4" />
+                  Try Again
+                </Link>
               </Button>
               <Button variant="outline" asChild>
+                <Link href={`/exams/${examId}?view=results&submissionId=${submissionId}&print=true`}>
+                  <Download className="mr-2 h-4 w-4" />
+                  Download PDF
+                </Link>
+              </Button>
+              <Button variant="ghost" asChild>
                 <Link href="/">Go Home</Link>
               </Button>
             </div>
