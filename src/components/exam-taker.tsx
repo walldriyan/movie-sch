@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import {
@@ -14,10 +14,9 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Timer, Send, PlayCircle, Clock, Loader2, Check, Eye, RotateCcw, Download, X, Target, FileQuestion, Film, User, Calendar, Pencil, ArrowLeft, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { AlertCircle, Timer, Send, PlayCircle, Clock, Loader2, Check, Eye, RotateCcw, Download, X, Target, FileQuestion, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { submitExam, getExamResults } from '@/lib/actions';
 import type { getExamForTaker } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
@@ -46,8 +45,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const formRef = useRef<HTMLFormElement | null>(null);
-
-
 
     // Memoized format time function
     const formatTime = useCallback((seconds: number) => {
@@ -87,7 +84,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             clearInterval(timerRef.current);
         }
 
-        // Use controlled state 'userAnswers' instead of FormData
         const payload = {
             answers: userAnswers,
             timeTakenSeconds: timeTaken,
@@ -98,7 +94,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             if (newSubmission) {
                 setSubmittedId(newSubmission.id);
                 setIsSubmitting(false);
-                // Fetch results for modal
                 setLoadingResults(true);
                 try {
                     const results = await getExamResults(newSubmission.id);
@@ -115,14 +110,11 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             setIsSubmitting(false);
             alert("There was an error submitting your exam. Please try again.");
         }
-    }, [exam.id, timeTaken, isSubmitting]);
+    }, [exam.id, timeTaken, isSubmitting, userAnswers]);
 
     useEffect(() => {
-        // Stop timer if not started, no duration, submitting, or already submitted
         if (!hasStarted || !exam.durationMinutes || isSubmitting || submittedId) {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
+            if (timerRef.current) clearInterval(timerRef.current);
             return;
         }
 
@@ -131,7 +123,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             setTimeLeft(prevTime => {
                 if (prevTime <= 1) {
                     if (timerRef.current) clearInterval(timerRef.current);
-                    // Auto-submit using form ref
                     if (formRef.current && !isSubmitting) {
                         setIsSubmitting(true);
                         formRef.current.requestSubmit();
@@ -146,9 +137,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         }, 1000);
 
         return () => {
-            if (timerRef.current) {
-                clearInterval(timerRef.current);
-            }
+            if (timerRef.current) clearInterval(timerRef.current);
         };
     }, [hasStarted, exam.durationMinutes, showWarning, isSubmitting, submittedId]);
 
@@ -157,307 +146,287 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         setHasStarted(true);
     }, []);
 
-
-
-    // Check if all questions are answered
     const allQuestionsAnswered = answeredQuestions.size >= exam.questions.length;
+    const unansweredCount = exam.questions.length - answeredQuestions.size;
 
     if (!hasStarted) {
         return (
-            <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8 pt-28 flex items-center justify-center">
-                <Card className="max-w-2xl w-full">
-                    <CardHeader>
-                        <CardTitle className="text-3xl font-bold font-serif">{exam.title}</CardTitle>
-                        <CardDescription className="flex items-center gap-4 pt-2">
+            <div className="min-h-screen bg-black/90 text-foreground flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-primary/20 via-black/0 to-black pointer-events-none" />
+                <Card className="max-w-2xl w-full border-white/10 bg-black/40 backdrop-blur-2xl shadow-2xl rounded-3xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary to-transparent opacity-50" />
+                    <CardHeader className="text-center pb-8 pt-12">
+                        <CardTitle className="text-4xl md:text-5xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white to-white/60 mb-4">{exam.title}</CardTitle>
+                        <CardDescription className="flex items-center justify-center gap-6 text-lg font-medium text-muted-foreground">
                             {exam.durationMinutes && (
-                                <span className="flex items-center gap-1.5">
-                                    <Timer className="h-4 w-4" /> {exam.durationMinutes} minutes
+                                <span className="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+                                    <Timer className="h-4 w-4 text-primary" /> {exam.durationMinutes} mins
                                 </span>
                             )}
-                            <span>{exam.questions.length} questions</span>
+                            <span className="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
+                                <FileQuestion className="h-4 w-4 text-primary" /> {exam.questions.length} Questions
+                            </span>
                         </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                        {exam.description && <p className="pt-2 text-muted-foreground">{exam.description}</p>}
-                        <Alert className="mt-6">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>Instructions</AlertTitle>
-                            <AlertDescription>
-                                <ul className="list-disc pl-5 space-y-1 mt-2">
-                                    <li>Once you start, a timer will begin.</li>
-                                    <li>The exam will be submitted automatically when the time runs out.</li>
-                                    <li>Ensure you have a stable internet connection.</li>
-                                </ul>
-                            </AlertDescription>
-                        </Alert>
+                    <CardContent className="px-8 md:px-12 pb-12">
+                        {exam.description && <p className="text-center text-muted-foreground text-lg mb-8 max-w-lg mx-auto leading-relaxed">{exam.description}</p>}
+
+                        <div className="grid gap-4">
+                            <button onClick={handleStart} className="w-full relative group overflow-hidden rounded-2xl bg-white p-4 transition-all hover:scale-[1.02] active:scale-[0.98]">
+                                <div className="relative z-10 flex items-center justify-center gap-3 text-black font-bold text-lg">
+                                    <PlayCircle className="h-6 w-6" /> Start Exam Now
+                                </div>
+                                <div className="absolute inset-0 bg-gradient-to-r from-primary via-white to-primary opacity-0 group-hover:opacity-10 transition-opacity duration-500" />
+                            </button>
+                        </div>
+
+                        <div className="mt-8 text-center text-xs text-muted-foreground/60 max-w-xs mx-auto">
+                            By starting, you agree that the timer will begin immediately and cannot be paused.
+                        </div>
                     </CardContent>
-                    <CardFooter>
-                        <Button size="lg" onClick={handleStart}>
-                            <PlayCircle className="mr-2 h-5 w-5" />
-                            Start Exam
-                        </Button>
-                    </CardFooter>
                 </Card>
             </div>
         )
     }
 
     return (
-        <div className="min-h-screen bg-background p-4 sm:p-6 md:p-8 pt-28">
-            {/* Timer - only show when exam is in progress, hide after submission */}
+        <div className="min-h-screen bg-black text-foreground pt-20 pb-12 px-4 md:px-8 font-sans selection:bg-primary/30">
+            {/* Ambient Background */}
+            <div className="fixed inset-0 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-primary/10 via-black to-black -z-10" />
+
+            {/* Timer Overlay */}
             {exam.durationMinutes && !submittedId && (
-                <div className={`fixed bottom-4 left-4 z-50 text-2xl font-mono font-semibold p-2 rounded-lg flex items-center gap-2 ${showWarning ? 'bg-destructive/20 text-destructive' : 'bg-muted'}`}>
-                    <Clock className="h-6 w-6" />
-                    <span>{formatTime(timeLeft)}</span>
+                <div className={cn(
+                    "fixed top-4 right-4 z-50 text-sm font-bold px-4 py-2 rounded-full flex items-center gap-2 backdrop-blur-md border transition-colors duration-500",
+                    showWarning ? "bg-red-500/20 text-red-500 border-red-500/30 animate-pulse" : "bg-white/5 text-muted-foreground border-white/5"
+                )}>
+                    <Clock className="h-4 w-4" />
+                    <span className="tabular-nums font-mono">{formatTime(timeLeft)}</span>
                 </div>
             )}
-            <div className="max-w-4xl mx-auto">
-                <Card>
-                    <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <div>
-                                <CardTitle className="text-3xl font-bold font-serif">{exam.title}</CardTitle>
-                                <CardDescription className="pt-2">{exam.questions.length} questions</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
+
+            <div className="max-w-3xl mx-auto">
+                <Card className="border-none bg-transparent shadow-none">
                     <form ref={formRef} onSubmit={handleFormSubmit}>
-                        <CardContent className="space-y-6">
-                            {/* Stepper Progress Bar - Hidden when submitted */}
+                        <CardContent className="p-0 space-y-8">
+
+                            {/* Progress Stepper (Minimalist) */}
                             {!submittedId && (
-                                <>
-                                    <div className="flex items-center gap-1.5 mb-4">
-                                        {exam.questions.map((q, idx) => {
-                                            const isAnswered = answeredQuestions.has(q.id);
-                                            const isCurrent = idx === currentQuestion;
-                                            return (
-                                                <button
-                                                    key={idx}
-                                                    type="button"
-                                                    onClick={() => !showCompletionScreen && setCurrentQuestion(idx)}
-                                                    className={cn(
-                                                        "flex-1 h-3 rounded-full transition-all relative group",
-                                                        isCurrent ? "bg-primary ring-2 ring-primary/30" :
-                                                            isAnswered ? "bg-green-500" : "bg-muted hover:bg-muted-foreground/30"
-                                                    )}
-                                                    title={`Question ${idx + 1}${isAnswered ? ' ✓' : ''}`}
-                                                />
-                                            );
-                                        })}
+                                <div className="mb-8">
+                                    <div className="flex justify-between items-end mb-2 px-2">
+                                        <span className="text-sm font-medium text-muted-foreground">Question {currentQuestion + 1} <span className="text-muted-foreground/40">/ {exam.questions.length}</span></span>
+                                        <span className="text-xs text-primary font-bold">{Math.round(((currentQuestion + 1) / exam.questions.length) * 100)}%</span>
                                     </div>
-                                    <div className="flex justify-between text-sm text-muted-foreground">
-                                        <span>Question {currentQuestion + 1} of {exam.questions.length}</span>
-                                        <span className="text-green-500">{answeredQuestions.size}/{exam.questions.length} answered</span>
+                                    <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                                        <div
+                                            className="h-full bg-primary transition-all duration-500 ease-out"
+                                            style={{ width: `${((currentQuestion + 1) / exam.questions.length) * 100}%` }}
+                                        />
                                     </div>
-                                </>
+                                    {/* Detailed Dots - Optional, maybe too noisy for minimalist? Keeping subtle. */}
+                                    <div className="flex gap-1 mt-2 justify-center opacity-30 hover:opacity-100 transition-opacity">
+                                        {exam.questions.map((_, idx) => (
+                                            <div
+                                                key={idx}
+                                                className={cn("h-1 w-1 rounded-full transition-colors",
+                                                    idx === currentQuestion ? "bg-primary w-3" : answeredQuestions.has(_?.id ?? -1) ? "bg-green-500" : "bg-white/20")}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
                             )}
 
-                            {/* Current Question Display - Hidden when submitted */}
+                            {/* Question Container */}
                             {!submittedId && !showCompletionScreen && (() => {
                                 const question = exam.questions[currentQuestion];
                                 if (!question) return null;
 
                                 return (
-                                    <div className="min-h-[300px]">
-                                        <div className="font-semibold text-xl mb-2">Q{currentQuestion + 1}. {question.text}</div>
-                                        <p className="text-sm text-muted-foreground mb-6">{question.points} points</p>
+                                    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                                        <div className="mb-8">
+                                            <h2 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight mb-2">{question.text}</h2>
+                                            <p className="text-sm text-muted-foreground font-medium uppercase tracking-widest opacity-60">{question.points} Points</p>
+                                        </div>
 
                                         {question.type === 'IMAGE_BASED_ANSWER' && question.images && (
-                                            <div className="mb-4 grid grid-cols-2 gap-4">
+                                            <div className="mb-8 grid grid-cols-1 md:grid-cols-2 gap-4">
                                                 {question.images.map(image => (
-                                                    <div key={image.id} className="relative aspect-video">
-                                                        <Image src={image.url} alt={`Question ${currentQuestion + 1} image`} layout="fill" className="object-contain rounded-md" />
+                                                    <div key={image.id} className="relative aspect-video rounded-xl overflow-hidden border border-white/10 bg-black/50">
+                                                        <Image src={image.url} alt="Question Image" layout="fill" className="object-contain" />
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
 
-                                        {question.type === 'MCQ' ? (
-                                            question.isMultipleChoice ? (
-                                                <div className="space-y-3">
-                                                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
-                                                        <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-xs">Multiple Choice</span>
-                                                        Select all correct answers
-                                                    </p>
-                                                    {question.options.map(option => {
-                                                        const optId = String(option.id);
-                                                        const currentAnswers = userAnswers[`question-${question.id}`];
-                                                        const isChecked = Array.isArray(currentAnswers)
-                                                            ? currentAnswers.includes(optId)
-                                                            : currentAnswers === optId; // Fallback if single string somehow
+                                        <div className="space-y-3">
+                                            {question.type === 'MCQ' ? (
+                                                question.isMultipleChoice ? (
+                                                    /* CHECKBOXES */
+                                                    <div className="grid gap-3">
+                                                        {question.options.map(option => {
+                                                            const optId = String(option.id);
+                                                            const currentAnswers = userAnswers[`question-${question.id}`];
+                                                            const isChecked = Array.isArray(currentAnswers) ? currentAnswers.includes(optId) : currentAnswers === optId;
 
-                                                        return (
-                                                            <div key={option.id} className="flex items-center space-x-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 has-[:checked]:border-primary has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5 transition-all duration-300 cursor-pointer">
-                                                                <Checkbox
+                                                            return (
+                                                                <label
+                                                                    key={option.id}
+                                                                    className={cn(
+                                                                        "flex items-center space-x-4 p-5 rounded-2xl border transition-all duration-200 cursor-pointer group",
+                                                                        isChecked
+                                                                            ? "bg-primary/10 border-primary/50 shadow-[0_0_30px_-10px_rgba(var(--primary),0.3)]"
+                                                                            : "bg-white/[0.02] border-white/10 hover:bg-white/[0.04] hover:border-white/20"
+                                                                    )}
+                                                                >
+                                                                    <Checkbox
+                                                                        id={`option-${option.id}`}
+                                                                        className="border-2 border-white/40 data-[state=checked]:border-primary data-[state=checked]:bg-primary w-5 h-5 rounded-md transition-all"
+                                                                        checked={isChecked}
+                                                                        onCheckedChange={(checked) => {
+                                                                            const current = userAnswers[`question-${question.id}`] || [];
+                                                                            let newAnswers = Array.isArray(current) ? [...current] : [current as string];
+                                                                            if (checked) { if (!newAnswers.includes(optId)) newAnswers.push(optId); }
+                                                                            else { newAnswers = newAnswers.filter(id => id !== optId); }
+                                                                            handleAnswerChange(question.id, newAnswers);
+                                                                        }}
+                                                                    />
+                                                                    <span className="text-base md:text-lg font-medium opacity-90 group-hover:opacity-100">{option.text}</span>
+                                                                </label>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                ) : (
+                                                    /* RADIOS */
+                                                    <RadioGroup
+                                                        value={userAnswers[`question-${question.id}`] as string || ""}
+                                                        onValueChange={(val) => handleAnswerChange(question.id, val)}
+                                                        className="grid gap-3"
+                                                    >
+                                                        {question.options.map(option => (
+                                                            <label
+                                                                key={option.id}
+                                                                className={cn(
+                                                                    "flex items-center space-x-4 p-5 rounded-2xl border transition-all duration-200 cursor-pointer group",
+                                                                    (userAnswers[`question-${question.id}`] === String(option.id))
+                                                                        ? "bg-primary/10 border-primary/50 shadow-[0_0_30px_-10px_rgba(var(--primary),0.3)]"
+                                                                        : "bg-white/[0.02] border-white/10 hover:bg-white/[0.04] hover:border-white/20"
+                                                                )}
+                                                            >
+                                                                <RadioGroupItem
+                                                                    value={String(option.id)}
                                                                     id={`option-${option.id}`}
-                                                                    name={`question-${question.id}`}
-                                                                    value={optId}
-                                                                    checked={isChecked}
-                                                                    onCheckedChange={(checked) => {
-                                                                        const current = userAnswers[`question-${question.id}`] || [];
-                                                                        let newAnswers = Array.isArray(current) ? [...current] : [current as string];
-
-                                                                        if (checked) {
-                                                                            if (!newAnswers.includes(optId)) newAnswers.push(optId);
-                                                                        } else {
-                                                                            newAnswers = newAnswers.filter(id => id !== optId);
-                                                                        }
-                                                                        handleAnswerChange(question.id, newAnswers);
-                                                                    }}
+                                                                    className="border-2 border-white/40 text-primary w-5 h-5 transition-all"
                                                                 />
-                                                                <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer text-base">{option.text}</Label>
-                                                            </div>
-                                                        );
-                                                    })}
-                                                </div>
+                                                                <span className="text-base md:text-lg font-medium opacity-90 group-hover:opacity-100">{option.text}</span>
+                                                            </label>
+                                                        ))}
+                                                    </RadioGroup>
+                                                )
                                             ) : (
-                                                <RadioGroup
-                                                    name={`question-${question.id}`}
-                                                    value={userAnswers[`question-${question.id}`] as string || ""}
-                                                    onValueChange={(val) => handleAnswerChange(question.id, val)}
-                                                    className="space-y-3"
-                                                >
-                                                    {question.options.map(option => (
-                                                        <div key={option.id} className="flex items-center space-x-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 has-[:checked]:border-primary has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5 transition-all duration-300 cursor-pointer">
-                                                            <RadioGroupItem value={String(option.id)} id={`option-${option.id}`} />
-                                                            <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer text-base">{option.text}</Label>
-                                                        </div>
-                                                    ))}
-                                                </RadioGroup>
-                                            )
-                                        ) : (
-                                            <Textarea
-                                                name={`question-${question.id}`}
-                                                placeholder="Type your answer here..."
-                                                rows={6}
-                                                className="text-base"
-                                                value={userAnswers[`question-${question.id}`] as string || ""}
-                                                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
-                                            />
-                                        )}
+                                                /* TEXTAREA */
+                                                <div className="relative">
+                                                    <Textarea
+                                                        placeholder="Type your answer here..."
+                                                        rows={8}
+                                                        className="bg-white/5 border-white/10 focus:border-primary/50 text-lg resize-none rounded-xl p-4 transition-all"
+                                                        value={userAnswers[`question-${question.id}`] as string || ""}
+                                                        onChange={(e) => handleAnswerChange(question.id, e.target.value)}
+                                                    />
+                                                    <div className="absolute right-3 bottom-3 text-xs text-muted-foreground pointer-events-none">Markdown Supported</div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
                                 );
                             })()}
 
-                            {/* Navigation Buttons - Hidden when submitted */}
+                            {/* Minimal Navigation */}
                             {!submittedId && !showCompletionScreen && (
-                                <div className="flex justify-between items-center pt-6 border-t">
+                                <div className="flex justify-between items-center pt-8 mt-8">
                                     <Button
                                         type="button"
-                                        variant="outline"
-                                        size="lg"
+                                        variant="ghost"
                                         onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
                                         disabled={currentQuestion === 0}
-                                        className="px-6"
+                                        className="text-muted-foreground hover:text-foreground pl-0 hover:bg-transparent"
                                     >
-                                        <ChevronLeft className="mr-2 h-4 w-4" />
-                                        Previous
+                                        <ChevronLeft className="mr-2 h-5 w-5" /> Previous
                                     </Button>
-
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-sm font-semibold">{currentQuestion + 1} / {exam.questions.length}</span>
-                                        <span className="text-xs text-muted-foreground">{answeredQuestions.size} answered</span>
-                                    </div>
 
                                     {currentQuestion < exam.questions.length - 1 ? (
                                         <Button
                                             type="button"
-                                            variant="outline"
-                                            size="lg"
                                             onClick={() => setCurrentQuestion(prev => Math.min(exam.questions.length - 1, prev + 1))}
-                                            className="px-6"
+                                            className="rounded-full px-8 py-6 h-auto text-lg font-bold bg-white text-black hover:bg-white/90 shadow-xl shadow-white/10"
                                         >
-                                            Next
-                                            <ChevronRight className="ml-2 h-4 w-4" />
+                                            Next Question <ChevronRight className="ml-2 h-5 w-5" />
                                         </Button>
                                     ) : (
                                         <Button
                                             type="button"
-                                            size="lg"
                                             onClick={() => setShowCompletionScreen(true)}
-                                            className="px-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                                            className="rounded-full px-8 py-6 h-auto text-lg font-bold bg-primary text-black hover:bg-primary/90 shadow-xl shadow-primary/20"
                                         >
-                                            Finish
-                                            <Check className="ml-2 h-4 w-4" />
+                                            Finish Exam <Check className="ml-2 h-5 w-5" />
                                         </Button>
                                     )}
                                 </div>
                             )}
 
-                            {/* Completion Screen */}
+                            {/* Completion Screen - Redesigned */}
                             {showCompletionScreen && !submittedId && (
-                                <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 via-background to-green-500/10 rounded-2xl border border-primary/20 text-center space-y-6">
-                                    <div className="text-6xl">🎯</div>
-                                    <div>
-                                        <h3 className="text-2xl font-bold mb-2">Ready to Submit?</h3>
-                                        <p className="text-muted-foreground mb-4">
-                                            You have answered <span className="font-bold text-green-500">{answeredQuestions.size}</span> out of <span className="font-bold">{exam.questions.length}</span> questions.
-                                        </p>
-                                        {!allQuestionsAnswered && (
-                                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4 text-sm text-yellow-500">
-                                                ⚠️ You haven't answered all questions. Unanswered questions will be marked as wrong.
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            size="lg"
-                                            onClick={() => setShowCompletionScreen(false)}
-                                            className="px-8"
-                                        >
-                                            <ChevronLeft className="mr-2 h-4 w-4" />
-                                            Review Answers
-                                        </Button>
+                                <div className="animate-in zoom-in-95 duration-300 py-12 text-center max-w-lg mx-auto">
+                                    <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl shadow-inner">🏁</div>
+                                    <h3 className="text-3xl font-bold mb-3">All Done?</h3>
+                                    <p className="text-muted-foreground text-lg mb-8">
+                                        You've answered <span className={cn("font-bold text-white", unansweredCount > 0 ? "text-yellow-500" : "text-green-500")}>{answeredQuestions.size}</span> / {exam.questions.length} questions.
+                                    </p>
+
+                                    {(!allQuestionsAnswered) && (
+                                        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-xl p-4 mb-8 text-yellow-500 text-sm font-medium flex items-center justify-center gap-2">
+                                            <AlertCircle className="h-4 w-4" /> You have unanswered questions.
+                                        </div>
+                                    )}
+
+                                    <div className="space-y-3">
                                         <Button
                                             type="submit"
                                             size="lg"
                                             disabled={isSubmitting}
-                                            className="px-8 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                                            className="w-full rounded-full py-6 text-lg font-bold bg-gradient-to-r from-primary to-purple-500 text-white hover:opacity-90 transition-opacity"
                                         >
-                                            {isSubmitting ? (
-                                                <>
-                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                                    Submitting...
-                                                </>
-                                            ) : (
-                                                <>
-                                                    <Send className="mr-2 h-4 w-4" />
-                                                    Submit Exam
-                                                </>
-                                            )}
+                                            {isSubmitting ? <><Loader2 className="mr-2 animate-spin" /> Submitting...</> : "Yes, Submit My Answers"}
+                                        </Button>
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            onClick={() => setShowCompletionScreen(false)}
+                                            className="w-full rounded-full py-6 text-muted-foreground hover:bg-white/5 hover:text-white"
+                                        >
+                                            Nevermind, Review Answers
                                         </Button>
                                     </div>
                                 </div>
                             )}
 
-                            {/* Submitted Success Screen */}
+                            {/* Success Screen */}
                             {submittedId && (
-                                <div className="mt-6 p-8 bg-gradient-to-br from-green-500/20 via-background to-emerald-500/10 rounded-2xl border border-green-500/30 text-center space-y-6">
-                                    <div className="text-7xl">🎉</div>
-                                    <div>
-                                        <h3 className="text-3xl font-bold mb-2 text-green-500">Exam Submitted!</h3>
-                                        <p className="text-muted-foreground">
-                                            Your answers have been recorded successfully.
-                                        </p>
-                                    </div>
-                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                <div className="animate-in zoom-in-95 duration-500 py-12 text-center max-w-lg mx-auto">
+                                    <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl text-green-500 shadow-[0_0_50px_-10px_rgba(34,197,94,0.4)]">✨</div>
+                                    <h3 className="text-4xl font-bold mb-4 text-white">Excellent Work!</h3>
+                                    <p className="text-muted-foreground text-lg mb-8">
+                                        Your exam has been submitted successfully.
+                                    </p>
+                                    <div className="flex flex-col gap-3">
                                         <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
                                             <DialogTrigger asChild>
-                                                <Button
-                                                    size="lg"
-                                                    className="px-8 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
-                                                >
-                                                    <Eye className="mr-2 h-5 w-5" />
-                                                    View Results
+                                                <Button size="lg" className="rounded-full py-6 text-lg font-bold bg-white text-black hover:bg-white/90">
+                                                    Check Results
                                                 </Button>
                                             </DialogTrigger>
                                         </Dialog>
                                         <Button
-                                            type="button"
                                             variant="outline"
-                                            size="lg"
                                             onClick={() => {
                                                 setSubmittedId(null);
                                                 setHasStarted(false);
@@ -466,260 +435,34 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                                 setAnsweredQuestions(new Set());
                                                 setShowCompletionScreen(false);
                                                 setCurrentQuestion(0);
+                                                setUserAnswers({});
                                             }}
-                                            className="px-8"
+                                            className="rounded-full py-6 border-white/10 hover:bg-white/5 transition-colors"
                                         >
-                                            <RotateCcw className="mr-2 h-4 w-4" />
-                                            Try Again
+                                            Back to Start
                                         </Button>
                                     </div>
                                 </div>
                             )}
+
                         </CardContent>
-                        {/* Hidden CardFooter - Dialog only, no visible buttons */}
+
+                        {/* Hidden Footer for Dialog */}
                         <CardFooter className="hidden">
                             {submittedId && (
                                 <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
-                                    <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col">
+                                    <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col bg-[#0a0a0a] border-white/10 text-white">
                                         <DialogHeader>
-                                            <DialogTitle>Exam Results</DialogTitle>
-                                            <DialogDescription>Your submission results</DialogDescription>
+                                            <DialogTitle className="text-2xl font-bold">Performance Report</DialogTitle>
+                                            <DialogDescription>Detailed analysis of your submission.</DialogDescription>
                                         </DialogHeader>
-                                        <ScrollArea className="flex-1">
+                                        <ScrollArea className="flex-1 pr-4">
                                             {loadingResults ? (
-                                                <div className="flex items-center justify-center h-64">
-                                                    <Loader2 className="h-8 w-8 animate-spin" />
-                                                </div>
-                                            ) : examResults ? (() => {
-                                                const totalPoints = examResults.submission.exam.questions.reduce((s: number, q: any) => s + q.points, 0);
-                                                const percentage = totalPoints > 0 ? (examResults.submission.score / totalPoints) * 100 : 0;
-                                                const correctCount = examResults.submission.answers.filter((a: any) => {
-                                                    const q = examResults.submission.exam.questions.find((q: any) => q.id === a.questionId);
-                                                    const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
-                                                    return opt?.isCorrect;
-                                                }).length;
-                                                const wrongCount = examResults.submission.exam.questions.length - correctCount;
-
-                                                return (
-                                                    <div className="p-4 space-y-6">
-                                                        {/* Score Summary Cards */}
-                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                            <div className="text-center p-4 bg-muted rounded-lg">
-                                                                <p className="text-3xl font-bold">{examResults.submission.score}/{totalPoints}</p>
-                                                                <p className="text-xs text-muted-foreground mt-1">Total Score / මුළු ලකුණු</p>
-                                                            </div>
-                                                            <div className="text-center p-4 bg-muted rounded-lg">
-                                                                <p className="text-3xl font-bold">{percentage.toFixed(0)}%</p>
-                                                                <p className="text-xs text-muted-foreground mt-1">Percentage / ප්‍රතිශතය</p>
-                                                            </div>
-                                                            <div className="text-center p-4 bg-green-500/10 rounded-lg">
-                                                                <p className="text-3xl font-bold text-green-500">{correctCount}</p>
-                                                                <p className="text-xs text-muted-foreground mt-1">Correct / නිවැරදි</p>
-                                                            </div>
-                                                            <div className="text-center p-4 bg-red-500/10 rounded-lg">
-                                                                <p className="text-3xl font-bold text-red-500">{wrongCount}</p>
-                                                                <p className="text-xs text-muted-foreground mt-1">Wrong / වැරදි</p>
-                                                            </div>
-                                                        </div>
-
-                                                        {/* Pass/Fail Status */}
-                                                        <div className={cn(
-                                                            "text-center p-4 rounded-lg border-2",
-                                                            percentage >= 50 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"
-                                                        )}>
-                                                            <p className={cn("text-2xl font-bold", percentage >= 50 ? "text-green-500" : "text-red-500")}>
-                                                                {percentage >= 50 ? "🎉 PASSED! / සමත්!" : "❌ FAILED / අසමත්"}
-                                                            </p>
-                                                            <p className="text-sm text-muted-foreground mt-1">
-                                                                {percentage >= 50 ? "Congratulations! You passed this exam. / සුභ පැතුම්!" : "Better luck next time! / ඊළඟ වතාවේ හොඳින්!"}
-                                                            </p>
-                                                        </div>
-
-                                                        {/* Question Review */}
-                                                        <div className="space-y-4">
-                                                            <h3 className="font-semibold text-lg border-b pb-2">📝 Answer Review / පිළිතුරු සමාලෝචනය</h3>
-                                                            {examResults.submission.exam.questions.map((q: any, i: number) => {
-                                                                const userAnswers = examResults.submission.answers.filter((a: any) => a.questionId === q.id);
-                                                                const correctOptions = q.options?.filter((o: any) => o.isCorrect) || [];
-                                                                const totalCorrectCount = correctOptions.length;
-
-                                                                // Calculate user's correct and wrong selections
-                                                                const userCorrectSelections = userAnswers.filter((a: any) =>
-                                                                    q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
-                                                                ).length;
-                                                                const userWrongSelections = userAnswers.filter((a: any) =>
-                                                                    !q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
-                                                                ).length;
-                                                                const missedCorrect = totalCorrectCount - userCorrectSelections;
-
-                                                                // Calculate marks
-                                                                const marksPerCorrect = totalCorrectCount > 0 ? q.points / totalCorrectCount : q.points;
-                                                                const earnedMarks = Math.round(userCorrectSelections * marksPerCorrect);
-                                                                const lostMarks = q.points - earnedMarks;
-                                                                const isFullMarks = earnedMarks === q.points;
-                                                                const isPartial = earnedMarks > 0 && earnedMarks < q.points;
-                                                                const isZero = earnedMarks === 0;
-
-                                                                return (
-                                                                    <div key={q.id} className="p-4 border rounded-lg space-y-3">
-                                                                        {/* Question Header */}
-                                                                        <div className="flex justify-between items-start">
-                                                                            <div className="flex-1">
-                                                                                <p className="font-medium">Q{i + 1}. {q.text}</p>
-                                                                                <p className="text-xs text-muted-foreground">Max Marks: {q.points} | ලකුණු: {q.points}</p>
-                                                                            </div>
-                                                                            {/* Quick Status Badge */}
-                                                                            <div className={cn(
-                                                                                "px-3 py-1 rounded-full text-xs font-bold",
-                                                                                isFullMarks && "bg-green-500/20 text-green-500",
-                                                                                isPartial && "bg-yellow-500/20 text-yellow-500",
-                                                                                isZero && "bg-red-500/20 text-red-500"
-                                                                            )}>
-                                                                                {earnedMarks}/{q.points}
-                                                                            </div>
-                                                                        </div>
-
-                                                                        {q.type === 'MCQ' ? (
-                                                                            <>
-                                                                                {/* Options Display */}
-                                                                                <div className="space-y-2">
-                                                                                    {q.options.map((opt: any) => {
-                                                                                        const isUserChoice = userAnswers.some((a: any) => a.selectedOptionId === opt.id);
-                                                                                        const isCorrect = opt.isCorrect;
-
-                                                                                        return (
-                                                                                            <div
-                                                                                                key={opt.id}
-                                                                                                className={cn(
-                                                                                                    "flex items-center gap-2 p-2 rounded-md text-sm border",
-                                                                                                    isCorrect && "bg-green-500/10 border-green-500/30",
-                                                                                                    isUserChoice && !isCorrect && "bg-red-500/10 border-red-500/30"
-                                                                                                )}
-                                                                                            >
-                                                                                                <div className="flex-shrink-0">
-                                                                                                    {isUserChoice && isCorrect && <Check className="h-4 w-4 text-green-500" />}
-                                                                                                    {isUserChoice && !isCorrect && <X className="h-4 w-4 text-red-500" />}
-                                                                                                    {!isUserChoice && isCorrect && <Target className="h-4 w-4 text-green-500" />}
-                                                                                                    {!isUserChoice && !isCorrect && <FileQuestion className="h-4 w-4 text-muted-foreground" />}
-                                                                                                </div>
-                                                                                                <div className="flex-1">
-                                                                                                    <p className={cn(
-                                                                                                        isCorrect && "font-semibold",
-                                                                                                        isUserChoice && !isCorrect && "line-through"
-                                                                                                    )}>{opt.text}</p>
-                                                                                                    {/* Sinhala explanations */}
-                                                                                                    {isUserChoice && isCorrect && (
-                                                                                                        <p className="text-xs text-green-500 mt-0.5">✓ ඔබ තෝරපු පිළිතුර - නිවැරදියි!</p>
-                                                                                                    )}
-                                                                                                    {isUserChoice && !isCorrect && (
-                                                                                                        <p className="text-xs text-red-500 mt-0.5">✗ ඔබ තෝරපු පිළිතුර - වැරදියි!</p>
-                                                                                                    )}
-                                                                                                    {!isUserChoice && isCorrect && (
-                                                                                                        <p className="text-xs text-yellow-500 mt-0.5">🎯 මෙයයි නිවැරදි පිළිතුර</p>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                                {/* Mark indicators */}
-                                                                                                {isUserChoice && isCorrect && (
-                                                                                                    <span className="text-xs bg-green-500/20 text-green-500 font-bold px-2 py-1 rounded-full">+{marksPerCorrect.toFixed(1)}</span>
-                                                                                                )}
-                                                                                                {isUserChoice && !isCorrect && (
-                                                                                                    <span className="text-xs bg-red-500/20 text-red-500 font-bold px-2 py-1 rounded-full">Wrong</span>
-                                                                                                )}
-                                                                                                {!isUserChoice && isCorrect && (
-                                                                                                    <span className="text-xs bg-yellow-500/20 text-yellow-500 font-bold px-2 py-1 rounded-full">Missed</span>
-                                                                                                )}
-                                                                                            </div>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-
-                                                                                {/* Detailed Marks Breakdown */}
-                                                                                <div className="mt-3 p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
-                                                                                    <p className="font-semibold border-b pb-1">📊 Marks Breakdown / ලකුණු විස්තරය:</p>
-                                                                                    <div className="grid grid-cols-2 gap-2">
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <Check className="h-3 w-3 text-green-500" />
-                                                                                            <span>Correct: {userCorrectSelections}/{totalCorrectCount}</span>
-                                                                                        </div>
-                                                                                        <div className="flex items-center gap-2">
-                                                                                            <X className="h-3 w-3 text-red-500" />
-                                                                                            <span>Wrong: {userWrongSelections}</span>
-                                                                                        </div>
-                                                                                        {missedCorrect > 0 && (
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <Target className="h-3 w-3 text-yellow-500" />
-                                                                                                <span>Missed: {missedCorrect}</span>
-                                                                                            </div>
-                                                                                        )}
-                                                                                    </div>
-                                                                                    <div className="border-t pt-2 mt-2">
-                                                                                        <div className="flex justify-between">
-                                                                                            <span className="text-green-500">✓ Earned / ලැබූ:</span>
-                                                                                            <span className="font-bold text-green-500">+{earnedMarks}</span>
-                                                                                        </div>
-                                                                                        {lostMarks > 0 && (
-                                                                                            <div className="flex justify-between">
-                                                                                                <span className="text-red-500">✗ Lost / අහිමි:</span>
-                                                                                                <span className="font-bold text-red-500">-{lostMarks}</span>
-                                                                                            </div>
-                                                                                        )}
-                                                                                        <div className="flex justify-between border-t pt-1 mt-1">
-                                                                                            <span className="font-semibold">Final / අවසාන:</span>
-                                                                                            <span className={cn(
-                                                                                                "font-bold",
-                                                                                                isFullMarks && "text-green-500",
-                                                                                                isPartial && "text-yellow-500",
-                                                                                                isZero && "text-red-500"
-                                                                                            )}>{earnedMarks}/{q.points}</span>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </>
-                                                                        ) : (
-                                                                            /* Essay Answer */
-                                                                            <div className="space-y-2">
-                                                                                <div className="p-3 rounded-md bg-muted">
-                                                                                    <p className="text-xs font-semibold text-muted-foreground mb-1">Your Answer / ඔබේ පිළිතුර:</p>
-                                                                                    <p className="text-sm whitespace-pre-wrap">{userAnswers[0]?.customAnswer || 'No answer provided.'}</p>
-                                                                                </div>
-                                                                                {userAnswers[0]?.marksAwarded !== null && userAnswers[0]?.marksAwarded !== undefined ? (
-                                                                                    <div className="p-3 bg-green-500/10 border-green-500/30 rounded-lg border">
-                                                                                        <p className="font-semibold text-green-500 flex items-center gap-2">
-                                                                                            <Check className="h-4 w-4" />
-                                                                                            Graded: {userAnswers[0].marksAwarded} / {q.points}
-                                                                                        </p>
-                                                                                        {userAnswers[0].feedback && (
-                                                                                            <p className="text-sm text-muted-foreground mt-1">💬 {userAnswers[0].feedback}</p>
-                                                                                        )}
-                                                                                    </div>
-                                                                                ) : (
-                                                                                    <div className="p-3 bg-blue-500/10 border-blue-500/30 rounded-lg border">
-                                                                                        <p className="font-semibold text-blue-500 flex items-center gap-2">
-                                                                                            <Pencil className="h-4 w-4" />
-                                                                                            ⏳ Pending Review / සමාලෝචනය බලාපොරොත්තුවෙන්
-                                                                                        </p>
-                                                                                        <p className="text-xs text-muted-foreground mt-1">
-                                                                                            This answer will be graded manually.
-                                                                                        </p>
-                                                                                    </div>
-                                                                                )}
-                                                                            </div>
-                                                                        )}
-                                                                    </div>
-                                                                );
-                                                            })}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })() : (
-                                                <p className="text-center p-8">ප්‍රතිඵල පූරණය කළ නොහැක</p>
-                                            )}
+                                                <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>
+                                            ) : examResults ? <ResultsView examResults={examResults} /> : <p className="text-center py-10 opacity-50">No results found.</p>}
                                         </ScrollArea>
                                         <DialogFooter>
-                                            <Button variant="outline" onClick={() => setShowResultsModal(false)}>Close</Button>
-                                            <Button onClick={() => window.print()}>
-                                                <Download className="mr-2 h-4 w-4" /> Download PDF
-                                            </Button>
+                                            <Button variant="outline" onClick={() => setShowResultsModal(false)} className="border-white/10 hover:bg-white/5">Close</Button>
                                         </DialogFooter>
                                     </DialogContent>
                                 </Dialog>
@@ -730,4 +473,100 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             </div>
         </div>
     );
+}
+
+// Extracted Results Component for cleaner code
+function ResultsView({ examResults }: { examResults: any }) {
+    const submission = examResults.submission;
+    const totalPoints = submission.exam.questions.reduce((s: number, q: any) => s + q.points, 0);
+    const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
+    const correctCount = submission.answers.filter((a: any) => {
+        const q = submission.exam.questions.find((q: any) => q.id === a.questionId);
+        const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
+        return opt?.isCorrect;
+    }).length;
+    const wrongCount = submission.exam.questions.length - correctCount;
+
+    return (
+        <div className="space-y-8 py-4">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
+                    <div className="text-3xl font-bold text-white mb-1">{submission.score}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Score</div>
+                </div>
+                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
+                    <div className="text-3xl font-bold text-white mb-1">{percentage.toFixed(0)}%</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Accuracy</div>
+                </div>
+                <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20 text-center">
+                    <div className="text-3xl font-bold text-green-500 mb-1">{correctCount}</div>
+                    <div className="text-xs text-green-500/70 uppercase tracking-wider">Correct</div>
+                </div>
+                <div className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20 text-center">
+                    <div className="text-3xl font-bold text-red-500 mb-1">{wrongCount}</div>
+                    <div className="text-xs text-red-500/70 uppercase tracking-wider">Wrong</div>
+                </div>
+            </div>
+
+            {/* Questions Review */}
+            <div className="space-y-6">
+                <h3 className="text-xl font-bold flex items-center gap-2"><FileQuestion className="h-5 w-5 text-primary" /> Question Breakdown</h3>
+                {submission.exam.questions.map((q: any, i: number) => {
+                    const userAnswers = submission.answers.filter((a: any) => a.questionId === q.id);
+                    // Calculation logic reused...
+                    const correctOptions = q.options?.filter((o: any) => o.isCorrect) || [];
+                    const totalCorrectCount = correctOptions.length;
+                    const userCorrectSelections = userAnswers.filter((a: any) => q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect).length;
+                    const earnedMarks = Math.round(userCorrectSelections * (totalCorrectCount > 0 ? q.points / totalCorrectCount : q.points));
+                    const isFullMarks = earnedMarks === q.points;
+
+                    return (
+                        <div key={q.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <span className="text-xs font-mono text-muted-foreground mb-1 block">Question {i + 1}</span>
+                                    <h4 className="font-medium text-lg leading-snug">{q.text}</h4>
+                                </div>
+                                <Badge className={cn("ml-4", isFullMarks ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : "bg-red-500/20 text-red-500 hover:bg-red-500/30")} variant="secondary">
+                                    {earnedMarks} / {q.points}
+                                </Badge>
+                            </div>
+
+                            {/* Options Review */}
+                            <div className="space-y-2 pl-4 border-l-2 border-white/5">
+                                {q.options?.map((opt: any) => {
+                                    const isUserChoice = userAnswers.some((a: any) => a.selectedOptionId === opt.id);
+                                    const isCorrect = opt.isCorrect;
+                                    if (!isUserChoice && !isCorrect) return null; // Simple hide irrelevant? No, better show context.
+
+                                    return (
+                                        <div key={opt.id} className={cn("text-sm flex items-center gap-2",
+                                            isCorrect ? "text-green-400" : isUserChoice ? "text-red-400 line-through opacity-70" : "text-muted-foreground"
+                                        )}>
+                                            {isCorrect ? <Check className="h-4 w-4" /> : isUserChoice ? <X className="h-4 w-4" /> : <div className="w-4" />}
+                                            {opt.text}
+                                            {isUserChoice && <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded ml-2">You</span>}
+                                        </div>
+                                    )
+                                })}
+                                {/* Custom Answer Review */}
+                                {q.type !== 'MCQ' && (
+                                    <div className="text-sm bg-white/5 p-3 rounded-lg">
+                                        <p className="text-xs text-muted-foreground mb-1">Your Answer:</p>
+                                        <p>{userAnswers[0]?.customAnswer || '-'}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+}
+
+// Helper Badge component since we removed imports
+function Badge({ className, variant, children, ...props }: any) {
+    return <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)} {...props}>{children}</span>
 }
