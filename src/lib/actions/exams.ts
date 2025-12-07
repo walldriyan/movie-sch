@@ -744,7 +744,6 @@ export async function getExamsForUser(userId: string) {
             submissions: {
                 where: { userId: userId },
                 orderBy: { submittedAt: 'desc' },
-                take: 1, // Only get the latest submission
                 select: {
                     id: true,
                     score: true,
