@@ -20,7 +20,7 @@
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && prisma migrate deploy && next build",
+    "vercel-build": "prisma generate && prisma db push --accept-data-loss && next build",
     "db:local": "copy prisma\\schema.sqlite.prisma prisma\\schema.prisma && prisma generate && prisma db push",
     "db:prod": "prisma generate && prisma migrate deploy",
     "health-check": "tsx scripts/health-check.ts",
