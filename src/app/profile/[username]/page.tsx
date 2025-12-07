@@ -2,7 +2,7 @@
 
 import type { User as PrismaUser } from '@prisma/client';
 import type { Post } from '@/lib/types';
-import { getPosts, getUsers, getFavoritePostsByUserId, getSeriesByAuthorId, getExamsForUser } from '@/lib/actions';
+import { getPosts, getUsers, getFavoritePostsByUserId, getSeriesByAuthorId, getExamsForUser } from '@/lib/actions/index';
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
 import ProfileHeader from '@/components/profile/profile-header';
@@ -96,8 +96,8 @@ export default async function ProfilePage({
         stats={stats}
       />
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 md:px-8 pb-16">
+      {/* Main Content - Centered (Changed main to div to avoid global sidebar style conflicts) */}
+      <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-16">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
           {/* Content Area */}
           <div className="lg:col-span-3">
@@ -132,7 +132,7 @@ export default async function ProfilePage({
             </div>
           </aside>
         </div>
-      </main>
+      </div>
     </div>
   );
 }
