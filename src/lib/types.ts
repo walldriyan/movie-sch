@@ -44,6 +44,7 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres' | 'subtitles'> & {
   metaData?: MetaData[];
   _count?: {
     likedBy: number;
+    dislikedBy: number;
     reviews: number;
   };
   isContentLocked?: boolean;
@@ -98,6 +99,11 @@ export type GroupWithCount = PrismaGroup & {
     pendingRequests?: number;
   };
   posts?: { posterUrl: string | null }[];
+};
+
+export type SerializedGroupWithCount = Omit<GroupWithCount, 'createdAt' | 'updatedAt'> & {
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type GroupForProfile = PrismaGroup & {

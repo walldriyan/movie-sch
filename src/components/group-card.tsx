@@ -4,16 +4,15 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { GroupWithCount } from '@/lib/types';
+import type { GroupWithCount, SerializedGroupWithCount } from '@/lib/types';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Users } from 'lucide-react';
-
 interface GroupCardProps {
-    group: GroupWithCount & { posts: { posterUrl: string | null }[] };
+  group: GroupWithCount | SerializedGroupWithCount;
 }
 
 export default function GroupCard({ group }: GroupCardProps) {
-  const groupImage = group.profilePhoto || group.posts[0]?.posterUrl || PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
+  const groupImage = group.profilePhoto || group.posts?.[0]?.posterUrl || PlaceHolderImages.find(p => p.id === 'movie-poster-placeholder')?.imageUrl;
 
   return (
     <Link href={`/groups/${group.id}`} className="group block">
@@ -28,11 +27,11 @@ export default function GroupCard({ group }: GroupCardProps) {
               className="object-cover"
             />
           )}
-           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-           <div className="absolute bottom-2 right-2 flex items-center gap-1.5 text-xs text-white bg-black/50 px-2 py-1 rounded-full">
-              <Users className="h-3 w-3" />
-              <span>{group._count.members}</span>
-           </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+          <div className="absolute bottom-2 right-2 flex items-center gap-1.5 text-xs text-white bg-black/50 px-2 py-1 rounded-full">
+            <Users className="h-3 w-3" />
+            <span>{group._count.members}</span>
+          </div>
         </div>
         <CardHeader className="flex-grow p-4">
           <CardTitle className="group-hover:text-primary text-base">

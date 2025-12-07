@@ -7,7 +7,8 @@ import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { User, Post, GroupWithCount } from '@/lib/types';
+import type { User, Post, GroupWithCount, SerializedGroupWithCount } from '@/lib/types';
+
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
@@ -244,7 +245,7 @@ const SocialLink = ({ href, icon }: { href: string; icon: string }) => {
 interface HomePageClientProps {
     initialPosts: any[];
     initialUsers: User[];
-    initialGroups: GroupWithCount[];
+    initialGroups: SerializedGroupWithCount[];
     totalPages: number;
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
