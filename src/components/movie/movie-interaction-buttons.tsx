@@ -5,22 +5,22 @@ import React, { useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import type { Session } from 'next-auth';
 import {
-  Bookmark,
-  MoreHorizontal,
-  Share2,
-  ThumbsUp,
-  ThumbsDown,
-  Edit,
-  Trash2,
-  Loader2,
+    Bookmark,
+    MoreHorizontal,
+    Share2,
+    ThumbsUp,
+    ThumbsDown,
+    Edit,
+    Trash2,
+    Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -65,7 +65,7 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
                     title: 'Success',
                     description: `Your preference has been updated.`,
                 });
-                router.refresh(); 
+                router.refresh();
             } catch (err: any) {
                 toast({
                     variant: 'destructive',
@@ -85,29 +85,29 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
             });
             return;
         }
-        
+
         const wasFavorited = post.favoritePosts?.some(fav => fav.userId === currentUser.id);
         const originalPost = post;
 
         const optimisticPost = {
-        ...post,
-        favoritePosts: wasFavorited
-            ? post.favoritePosts?.filter(fav => fav.userId !== currentUser.id)
-            : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
+            ...post,
+            favoritePosts: wasFavorited
+                ? post.favoritePosts?.filter(fav => fav.userId !== currentUser.id)
+                : [...(post.favoritePosts || []), { userId: currentUser.id, postId: post.id, createdAt: new Date() }]
         };
-        
+
         onPostUpdate(optimisticPost as PostType);
 
         startFavoriteTransition(async () => {
             try {
                 await toggleFavoritePost(post.id);
-                 toast({
+                toast({
                     title: 'Favorites Updated',
                     description: `Post has been ${wasFavorited ? 'removed from' : 'added to'} your favorites.`,
                 });
             } catch (err: any) {
                 onPostUpdate(originalPost as PostType);
-                 toast({
+                toast({
                     variant: 'destructive',
                     title: 'Error',
                     description: err.message || 'Failed to update favorites.'
@@ -115,13 +115,13 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
             }
         });
     };
-    
+
     const handleDelete = () => {
         startDeleteTransition(async () => {
             await deletePost(post.id);
             toast({
-            title: 'Post Deleted',
-            description: `"${post.title}" has been submitted for deletion.`,
+                title: 'Post Deleted',
+                description: `"${post.title}" has been submitted for deletion.`,
             });
             router.push('/manage');
         });
@@ -130,47 +130,47 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
     const isFavorited = currentUser && post.favoritePosts?.some(fav => fav.userId === currentUser.id);
     const isLiked = currentUser && post.likedBy?.some(user => user.id === currentUser.id);
     const isDisliked = currentUser && post.dislikedBy?.some(user => user.id === currentUser.id);
-    
+
     const canManage = currentUser && (
-        currentUser.id === post.authorId || 
+        currentUser.id === post.authorId ||
         [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(currentUser.role)
     );
-    
+
     const showInteractiveButtons = sessionStatus === 'authenticated' && currentUser;
-    const showLoadingState = sessionStatus === 'loading';
+    const showLoadingState = false; // Session is already resolved when passed as prop
 
     return (
         <div className="flex items-center gap-2 pl-4 flex-shrink-0">
             {showLoadingState && (
                 <>
-                <Skeleton className="h-9 w-16" />
-                <Skeleton className="h-9 w-16" />
+                    <Skeleton className="h-9 w-16" />
+                    <Skeleton className="h-9 w-16" />
                 </>
             )}
-            
+
             {showInteractiveButtons && (
                 <>
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleLike('like')} 
-                    disabled={isLikeTransitioning} 
-                    className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}
-                >
-                    <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    <span className="text-sm w-4 text-left ml-2">{post._count?.likedBy ?? 0}</span>
-                </Button>
-                
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => handleLike('dislike')} 
-                    disabled={isLikeTransitioning} 
-                    className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}
-                >
-                    <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
-                    <span className="text-sm w-4 text-left ml-2">{post._count?.dislikedBy ?? 0}</span>
-                </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleLike('like')}
+                        disabled={isLikeTransitioning}
+                        className={cn("px-3", isLiked && "bg-black/20 backdrop-blur-sm border border-white/20")}
+                    >
+                        <ThumbsUp className={cn("w-5 h-5", isLiked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
+                        <span className="text-sm w-4 text-left ml-2">{post._count?.likedBy ?? 0}</span>
+                    </Button>
+
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleLike('dislike')}
+                        disabled={isLikeTransitioning}
+                        className={cn("px-3", isDisliked && "bg-black/20 backdrop-blur-sm border border-white/20")}
+                    >
+                        <ThumbsDown className={cn("w-5 h-5", isDisliked ? "text-foreground fill-foreground" : "text-muted-foreground")} />
+                        <span className="text-sm w-4 text-left ml-2">{post._count?.dislikedBy ?? 0}</span>
+                    </Button>
                 </>
             )}
 
@@ -178,16 +178,16 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
 
             <Button variant="ghost" size="icon" onClick={handleFavorite} disabled={!currentUser || isFavoritePending}>
                 {isFavoritePending ? (
-                <Loader2 className="w-5 h-5 animate-spin" />
+                    <Loader2 className="w-5 h-5 animate-spin" />
                 ) : (
-                <Bookmark className={cn("w-5 h-5", isFavorited ? "text-foreground fill-foreground" : "text-muted-foreground")} />
+                    <Bookmark className={cn("w-5 h-5", isFavorited ? "text-foreground fill-foreground" : "text-muted-foreground")} />
                 )}
             </Button>
-            
+
             <Button variant="ghost" size="icon">
                 <Share2 className="w-5 h-5 text-muted-foreground" />
             </Button>
-            
+
             {canManage && (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>

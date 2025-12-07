@@ -44,7 +44,7 @@ export async function createPost(formData: FormData) {
         const visibility = formData.get('visibility') as 'PUBLIC' | 'GROUP_ONLY' || 'PUBLIC';
 
         const groupIdRaw = formData.get('groupId');
-        const groupId = (visibility === 'GROUP_ONLY' && groupIdRaw) ? parseInt(groupIdRaw as string) : null;
+        const groupId = (visibility === 'GROUP_ONLY' && groupIdRaw) ? String(groupIdRaw) : null;
         const seriesIdRaw = formData.get('seriesId');
         const seriesId = seriesIdRaw ? parseInt(seriesIdRaw as string) : null;
 
