@@ -5,7 +5,7 @@
 import React, { useEffect, useState, useTransition } from 'react';
 import type { Post } from '@prisma/client';
 import { useToast } from '@/hooks/use-toast';
-import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions';
+import { savePost, deletePost, getPostsForAdmin, getPost, updatePostStatus } from '@/lib/actions/index';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES, MovieStatus } from '@/lib/permissions';
 import PostList from '@/components/manage/post-list';
@@ -31,10 +31,10 @@ interface ManagePostsClientProps {
   user: Session['user'];
 }
 
-export default function ManagePostsClient({ 
-  initialPosts, 
-  initialTotalPages, 
-  user, 
+export default function ManagePostsClient({
+  initialPosts,
+  initialTotalPages,
+  user,
 }: ManagePostsClientProps) {
   console.log('[ManageClient] Component rendering.');
   const [posts, setPosts] = useState<Post[]>(initialPosts);
@@ -42,12 +42,12 @@ export default function ManagePostsClient({
   const [editingPost, setEditingPost] = useState<Post | null>(null);
   const [isRefreshing, startRefresh] = useTransition();
   const [isSubmitting, startSubmit] = useTransition();
-  
+
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  
+
   const currentPage = Number(searchParams.get('page')) || 1;
   const statusFilter = searchParams.get('status') || MovieStatus.PENDING_APPROVAL;
   const totalPages = initialTotalPages;
@@ -93,16 +93,16 @@ export default function ManagePostsClient({
 
   const handleFilterChange = (status: string | null) => {
     console.log(`[ManageClient] handleFilterChange called with status: ${status}`);
-     const params = new URLSearchParams(searchParams);
-     params.set('page', '1');
-     if (status) {
-       params.set('status', status);
-     } else {
-       params.delete('status');
-     }
-     router.push(`${pathname}?${params.toString()}`);
+    const params = new URLSearchParams(searchParams);
+    params.set('page', '1');
+    if (status) {
+      params.set('status', status);
+    } else {
+      params.delete('status');
+    }
+    router.push(`${pathname}?${params.toString()}`);
   }
-  
+
   const handleRefresh = () => {
     console.log('[ManageClient] handleRefresh called.');
     startRefresh(() => {
@@ -150,23 +150,23 @@ export default function ManagePostsClient({
           description: error.message || "An unexpected error occurred."
         });
       } finally {
-          console.log('[ManageClient] Post submission action finished.');
+        console.log('[ManageClient] Post submission action finished.');
       }
     });
   };
 
   const handleDeleteConfirmed = (postId: number) => {
-     console.log(`[ManageClient] handleDeleteConfirmed called for post ID: ${postId}`);
-     startRefresh(async () => {
-        const postToDelete = posts.find(m => m.id === postId);
-        if (postToDelete) {
-          await deletePost(postId);
-          toast({
-              title: 'Success',
-              description: `Post "${postToDelete.title}" action has been processed.`,
-          });
-          router.refresh(); 
-        }
+    console.log(`[ManageClient] handleDeleteConfirmed called for post ID: ${postId}`);
+    startRefresh(async () => {
+      const postToDelete = posts.find(m => m.id === postId);
+      if (postToDelete) {
+        await deletePost(postId);
+        toast({
+          title: 'Success',
+          description: `Post "${postToDelete.title}" action has been processed.`,
+        });
+        router.refresh();
+      }
     });
   };
 
@@ -174,23 +174,23 @@ export default function ManagePostsClient({
   const handleStatusChange = (postId: number, newStatus: string) => {
     console.log(`[ManageClient] handleStatusChange called for post ID: ${postId}, new status: ${newStatus}`);
     startRefresh(async () => {
-        try {
-            await updatePostStatus(postId, newStatus);
-            toast({
-                title: 'Status Updated',
-                description: `Post status has been changed to ${newStatus}.`,
-            });
-            router.refresh();
-        } catch (error: any) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: error.message || 'Failed to update post status.',
-            });
-        }
+      try {
+        await updatePostStatus(postId, newStatus);
+        toast({
+          title: 'Status Updated',
+          description: `Post status has been changed to ${newStatus}.`,
+        });
+        router.refresh();
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: error.message || 'Failed to update post status.',
+        });
+      }
     });
   };
-  
+
   const visiblePosts = user?.permissions?.includes(
     PERMISSIONS['post.approve_deletion']
   )
@@ -200,66 +200,66 @@ export default function ManagePostsClient({
   console.log(`[ManageClient] Rendering view: ${view}`);
   return (
     <>
-        {view === 'list' ? (
-          <>
-            <PostList
-              posts={visiblePosts}
-              onAddNew={handleAddNewPost}
-              onEdit={handleEditPost}
-              onDeleteConfirmed={handleDeleteConfirmed}
-              onStatusChange={handleStatusChange}
-              onRefresh={handleRefresh}
-              onFilterChange={handleFilterChange}
-              isRefreshing={isRefreshing}
-              statusChangingPostId={null} // Simplified, refresh handles this
-              currentFilter={statusFilter}
-            />
-            {totalPages > 1 && !isRefreshing && (
-               <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <Button 
-                        variant="ghost" 
-                        onClick={() => handlePageChange(currentPage - 1)}
-                        disabled={currentPage === 1}
-                      >
-                        <PaginationPrevious href="#" />
-                      </Button>
-                    </PaginationItem>
-                     {Array.from({ length: totalPages }, (_, i) => (
-                        <PaginationItem key={i}>
-                          <PaginationLink 
-                            href="#"
-                            isActive={currentPage === i + 1}
-                            onClick={() => handlePageChange(i + 1)}
-                          >
-                            {i + 1}
-                          </PaginationLink>
-                        </PaginationItem>
-                     ))}
-
-                    <PaginationItem>
-                      <Button
-                        variant="ghost" 
-                        onClick={() => handlePageChange(currentPage + 1)}
-                        disabled={currentPage === totalPages}
-                      >
-                         <PaginationNext href="#" />
-                      </Button>
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-            )}
-          </>
-        ) : (
-          <PostForm
-            editingPost={editingPost}
-            onFormSubmit={handleFormSubmit}
-            onBack={handleBackFromForm}
-            isSubmitting={isSubmitting}
-            debugError={undefined}
+      {view === 'list' ? (
+        <>
+          <PostList
+            posts={visiblePosts as any}
+            onAddNew={handleAddNewPost}
+            onEdit={handleEditPost}
+            onDeleteConfirmed={handleDeleteConfirmed}
+            onStatusChange={handleStatusChange}
+            onRefresh={handleRefresh}
+            onFilterChange={handleFilterChange}
+            isRefreshing={isRefreshing}
+            statusChangingPostId={null} // Simplified, refresh handles this
+            currentFilter={statusFilter}
           />
-        )}
+          {totalPages > 1 && !isRefreshing && (
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <PaginationPrevious href="#" />
+                  </Button>
+                </PaginationItem>
+                {Array.from({ length: totalPages }, (_, i) => (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      href="#"
+                      isActive={currentPage === i + 1}
+                      onClick={() => handlePageChange(i + 1)}
+                    >
+                      {i + 1}
+                    </PaginationLink>
+                  </PaginationItem>
+                ))}
+
+                <PaginationItem>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <PaginationNext href="#" />
+                  </Button>
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </>
+      ) : (
+        <PostForm
+          editingPost={editingPost as any}
+          onFormSubmit={handleFormSubmit}
+          onBack={handleBackFromForm}
+          isSubmitting={isSubmitting}
+          debugError={undefined}
+        />
+      )}
     </>
   );
 }
