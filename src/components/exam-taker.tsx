@@ -223,7 +223,6 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                             style={{ width: `${((currentQuestion + 1) / exam.questions.length) * 100}%` }}
                                         />
                                     </div>
-                                    {/* Detailed Dots - Optional, maybe too noisy for minimalist? Keeping subtle. */}
                                     <div className="flex gap-1 mt-2 justify-center opacity-30 hover:opacity-100 transition-opacity">
                                         {exam.questions.map((_, idx) => (
                                             <div
@@ -373,7 +372,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                 </div>
                             )}
 
-                            {/* Completion Screen - Redesigned */}
+                            {/* Completion Screen */}
                             {showCompletionScreen && !submittedId && (
                                 <div className="animate-in zoom-in-95 duration-300 py-12 text-center max-w-lg mx-auto">
                                     <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl shadow-inner">🏁</div>
@@ -480,81 +479,226 @@ function ResultsView({ examResults }: { examResults: any }) {
     const submission = examResults.submission;
     const totalPoints = submission.exam.questions.reduce((s: number, q: any) => s + q.points, 0);
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
+
+    // Calculate correct/wrong counts
     const correctCount = submission.answers.filter((a: any) => {
         const q = submission.exam.questions.find((q: any) => q.id === a.questionId);
-        const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
-        return opt?.isCorrect;
+        // For MCQ
+        if (q.type === 'MCQ') {
+            const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
+            return opt?.isCorrect;
+        }
+        // For Custom Answer, check if marks > 0 (manual grading)
+        if (a.marksAwarded !== null && a.marksAwarded > 0) return true;
+        return false;
     }).length;
+
     const wrongCount = submission.exam.questions.length - correctCount;
 
     return (
         <div className="space-y-8 py-4">
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
-                    <div className="text-3xl font-bold text-white mb-1">{submission.score}</div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Score</div>
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/5 text-center shadow-lg">
+                    <div className="text-4xl font-bold text-white mb-2">{submission.score}</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-widest">Total Score</div>
                 </div>
-                <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-center">
-                    <div className="text-3xl font-bold text-white mb-1">{percentage.toFixed(0)}%</div>
-                    <div className="text-xs text-muted-foreground uppercase tracking-wider">Accuracy</div>
+                <div className="p-5 bg-white/5 rounded-2xl border border-white/5 text-center shadow-lg">
+                    <div className="text-4xl font-bold text-white mb-2">{percentage.toFixed(0)}%</div>
+                    <div className="text-xs text-muted-foreground uppercase tracking-widest">Accuracy</div>
                 </div>
-                <div className="p-4 bg-green-500/10 rounded-2xl border border-green-500/20 text-center">
-                    <div className="text-3xl font-bold text-green-500 mb-1">{correctCount}</div>
-                    <div className="text-xs text-green-500/70 uppercase tracking-wider">Correct</div>
+                <div className="p-5 bg-green-500/10 rounded-2xl border border-green-500/20 text-center shadow-[0_0_30px_-10px_rgba(34,197,94,0.2)]">
+                    <div className="text-4xl font-bold text-green-500 mb-2">{correctCount}</div>
+                    <div className="text-xs text-green-500/70 uppercase tracking-widest">Correct</div>
                 </div>
-                <div className="p-4 bg-red-500/10 rounded-2xl border border-red-500/20 text-center">
-                    <div className="text-3xl font-bold text-red-500 mb-1">{wrongCount}</div>
-                    <div className="text-xs text-red-500/70 uppercase tracking-wider">Wrong</div>
+                <div className="p-5 bg-red-500/10 rounded-2xl border border-red-500/20 text-center shadow-[0_0_30px_-10px_rgba(239,68,68,0.2)]">
+                    <div className="text-4xl font-bold text-red-500 mb-2">{wrongCount}</div>
+                    <div className="text-xs text-red-500/70 uppercase tracking-widest">Wrong</div>
                 </div>
             </div>
 
             {/* Questions Review */}
-            <div className="space-y-6">
-                <h3 className="text-xl font-bold flex items-center gap-2"><FileQuestion className="h-5 w-5 text-primary" /> Question Breakdown</h3>
+            <div className="space-y-8">
+                <h3 className="text-2xl font-bold flex items-center gap-3 border-b border-white/10 pb-4">
+                    <FileQuestion className="h-6 w-6 text-primary" />
+                    <span>Question Breakdown & Analysis</span>
+                </h3>
+
                 {submission.exam.questions.map((q: any, i: number) => {
                     const userAnswers = submission.answers.filter((a: any) => a.questionId === q.id);
-                    // Calculation logic reused...
+
+                    // Calculation logic
                     const correctOptions = q.options?.filter((o: any) => o.isCorrect) || [];
                     const totalCorrectCount = correctOptions.length;
+
                     const userCorrectSelections = userAnswers.filter((a: any) => q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect).length;
-                    const earnedMarks = Math.round(userCorrectSelections * (totalCorrectCount > 0 ? q.points / totalCorrectCount : q.points));
+                    const userWrongSelections = userAnswers.filter((a: any) => !q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect).length;
+
+                    const marksPerCorrect = totalCorrectCount > 0 ? q.points / totalCorrectCount : q.points;
+
+                    // Calculate earned marks (Logic might need to align with server if server handles partials differently, 
+                    // but for display we replicate it)
+                    let earnedMarks = 0;
+                    if (q.type === 'MCQ') {
+                        earnedMarks = Math.round(userCorrectSelections * marksPerCorrect);
+                        // Prevent negative or overflow if any weird logic, but typically capped at q.points
+                        if (earnedMarks > q.points) earnedMarks = q.points;
+                    } else {
+                        // For manual answers
+                        earnedMarks = userAnswers[0]?.marksAwarded ?? 0;
+                    }
+
+                    const lostMarks = q.points - earnedMarks;
                     const isFullMarks = earnedMarks === q.points;
+                    const isPartial = earnedMarks > 0 && earnedMarks < q.points;
+                    const isZero = earnedMarks === 0;
+
+                    // Determine status text
+                    let statusText = "Pending";
+                    if (q.type === 'MCQ' || userAnswers[0]?.marksAwarded !== null) {
+                        if (isFullMarks) statusText = "Correct / නිවැරදියි";
+                        else if (isZero) statusText = "Wrong / වැරදියි";
+                        else statusText = "Partial / අර්ධ ලකුණු";
+                    }
 
                     return (
-                        <div key={q.id} className="p-6 bg-white/[0.02] border border-white/5 rounded-2xl">
-                            <div className="flex justify-between items-start mb-4">
-                                <div>
-                                    <span className="text-xs font-mono text-muted-foreground mb-1 block">Question {i + 1}</span>
-                                    <h4 className="font-medium text-lg leading-snug">{q.text}</h4>
-                                </div>
-                                <Badge className={cn("ml-4", isFullMarks ? "bg-green-500/20 text-green-500 hover:bg-green-500/30" : "bg-red-500/20 text-red-500 hover:bg-red-500/30")} variant="secondary">
-                                    {earnedMarks} / {q.points}
-                                </Badge>
-                            </div>
+                        <div key={q.id} className="group relative overflow-hidden bg-white/[0.02] border border-white/5 rounded-3xl transition-all hover:bg-white/[0.04]">
+                            {/* Status bar on left */}
+                            <div className={cn("absolute left-0 top-0 bottom-0 w-1.5",
+                                isFullMarks ? "bg-green-500" : isPartial ? "bg-yellow-500" : q.type !== 'MCQ' && userAnswers[0]?.marksAwarded === null ? "bg-blue-500" : "bg-red-500"
+                            )} />
 
-                            {/* Options Review */}
-                            <div className="space-y-2 pl-4 border-l-2 border-white/5">
-                                {q.options?.map((opt: any) => {
-                                    const isUserChoice = userAnswers.some((a: any) => a.selectedOptionId === opt.id);
-                                    const isCorrect = opt.isCorrect;
-                                    if (!isUserChoice && !isCorrect) return null; // Simple hide irrelevant? No, better show context.
-
-                                    return (
-                                        <div key={opt.id} className={cn("text-sm flex items-center gap-2",
-                                            isCorrect ? "text-green-400" : isUserChoice ? "text-red-400 line-through opacity-70" : "text-muted-foreground"
-                                        )}>
-                                            {isCorrect ? <Check className="h-4 w-4" /> : isUserChoice ? <X className="h-4 w-4" /> : <div className="w-4" />}
-                                            {opt.text}
-                                            {isUserChoice && <span className="text-[10px] bg-white/10 px-1.5 py-0.5 rounded ml-2">You</span>}
+                            <div className="p-6 pl-8 md:p-8 md:pl-10">
+                                {/* Header */}
+                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4 mb-6">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <span className="px-2.5 py-1 rounded-md bg-white/5 text-xs font-mono text-muted-foreground">Q{i + 1}</span>
+                                            <span className={cn("text-xs font-bold uppercase tracking-wider",
+                                                isFullMarks ? "text-green-500" : isPartial ? "text-yellow-500" : q.type !== 'MCQ' && userAnswers[0]?.marksAwarded === null ? "text-blue-500" : "text-red-500"
+                                            )}>{statusText}</span>
                                         </div>
-                                    )
-                                })}
-                                {/* Custom Answer Review */}
-                                {q.type !== 'MCQ' && (
-                                    <div className="text-sm bg-white/5 p-3 rounded-lg">
-                                        <p className="text-xs text-muted-foreground mb-1">Your Answer:</p>
-                                        <p>{userAnswers[0]?.customAnswer || '-'}</p>
+                                        <h4 className="font-bold text-xl md:text-2xl leading-snug">{q.text}</h4>
+                                    </div>
+
+                                    <div className="flex flex-col items-end gap-1 min-w-[100px]">
+                                        <div className="text-3xl font-bold tabular-nums">
+                                            {q.type !== 'MCQ' && userAnswers[0]?.marksAwarded === null ? (
+                                                <span className="text-blue-500 text-xl"><Clock className="inline h-5 w-5 mb-1 mr-1" />Waiting</span>
+                                            ) : (
+                                                <span className={cn(isFullMarks ? "text-green-500" : isZero ? "text-red-500" : "text-yellow-500")}>
+                                                    {earnedMarks}
+                                                </span>
+                                            )}
+                                            <span className="text-lg text-muted-foreground font-normal">/{q.points}</span>
+                                        </div>
+                                        <span className="text-xs text-muted-foreground">Marks Awarded</span>
+                                    </div>
+                                </div>
+
+                                {/* Options Review */}
+                                <div className="space-y-3 mb-6">
+                                    {q.type === 'MCQ' ? (
+                                        q.options?.map((opt: any) => {
+                                            const isUserChoice = userAnswers.some((a: any) => a.selectedOptionId === opt.id);
+                                            const isCorrect = opt.isCorrect;
+
+                                            // Determine styling based on state
+                                            let styles = "border-white/5 bg-transparent opacity-50";
+                                            let icon = null;
+                                            let feedback = null;
+
+                                            if (isUserChoice && isCorrect) {
+                                                styles = "border-green-500/50 bg-green-500/10 opacity-100";
+                                                icon = <Check className="h-5 w-5 text-green-500" />;
+                                                feedback = <span className="text-xs text-green-400 font-medium block mt-1">✓ ඔබ තෝරපු පිළිතුර - නිවැරදියි!</span>;
+                                            } else if (isUserChoice && !isCorrect) {
+                                                styles = "border-red-500/50 bg-red-500/10 opacity-100";
+                                                icon = <X className="h-5 w-5 text-red-500" />;
+                                                feedback = <span className="text-xs text-red-500 font-medium block mt-1">✗ ඔබ තෝරපු පිළිතුර - වැරදියි!</span>;
+                                            } else if (!isUserChoice && isCorrect) {
+                                                styles = "border-yellow-500/50 bg-yellow-500/10 opacity-100";
+                                                icon = <Target className="h-5 w-5 text-yellow-500" />;
+                                                feedback = <span className="text-xs text-yellow-500 font-medium block mt-1">🎯 මෙයයි නිවැරදි පිළිතුර (Missed)</span>;
+                                            }
+
+                                            return (
+                                                <div key={opt.id} className={cn("relative p-4 rounded-xl border flex items-start gap-3 transition-all", styles)}>
+                                                    <div className="mt-0.5 flex-shrink-0">{icon || <div className="w-5 h-5 rounded-full border border-white/20" />}</div>
+                                                    <div className="flex-1">
+                                                        <p className="text-sm md:text-base font-medium">{opt.text}</p>
+                                                        {feedback}
+                                                    </div>
+                                                </div>
+                                            )
+                                        })
+                                    ) : (
+                                        // Custom Answer
+                                        <div className="space-y-4">
+                                            <div className="bg-white/5 p-4 rounded-xl border border-white/10">
+                                                <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2"><Pencil className="h-3 w-3" /> Your Answer / ඔබේ පිළිතුර:</p>
+                                                <p className="text-sm md:text-base whitespace-pre-wrap leading-relaxed">{userAnswers[0]?.customAnswer || 'No answer provided.'}</p>
+                                            </div>
+                                            {userAnswers[0]?.marksAwarded === null && (
+                                                <div className="bg-blue-500/10 border border-blue-500/30 p-4 rounded-xl text-blue-400 text-sm flex items-center gap-3">
+                                                    <Clock className="h-5 w-5" />
+                                                    <div>
+                                                        <p className="font-bold">Pending Review / සමාලෝචනය වෙමින් පවතී</p>
+                                                        <p className="text-xs opacity-80 mt-1">This answer is waiting for manual grading by an admin. Marks will be updated later.</p>
+                                                    </div>
+                                                </div>
+                                            )}
+                                            {/* If graded manually */}
+                                            {userAnswers[0]?.marksAwarded !== null && (
+                                                <div className="bg-green-500/10 border border-green-500/30 p-4 rounded-xl text-green-400 text-sm">
+                                                    <p className="font-bold flex items-center gap-2"><Check className="h-4 w-4" /> Graded / ලකුණු ලබා දී ඇත</p>
+                                                    {userAnswers[0].feedback && <p className="mt-2 text-white/80 border-t border-green-500/20 pt-2">📝 {userAnswers[0].feedback}</p>}
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Detailed Breakdown Footer */}
+                                {q.type === 'MCQ' && (
+                                    <div className="bg-black/20 rounded-xl p-4 text-xs md:text-sm space-y-2 border border-white/5">
+                                        <p className="font-bold text-white/50 uppercase tracking-widest text-[10px] mb-2">Analysis / විශ්ලේෂණය</p>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <div className="flex justify-between text-muted-foreground">
+                                                    <span>Correct Selections:</span>
+                                                    <span>{userCorrectSelections}/{totalCorrectCount}</span>
+                                                </div>
+                                                <div className="flex justify-between text-muted-foreground mt-1">
+                                                    <span>Wrong Selections:</span>
+                                                    <span>{userWrongSelections}</span>
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <div className="flex justify-between items-center text-green-500">
+                                                    <span>Earned / ලැබූ:</span>
+                                                    <span className="font-bold">+{earnedMarks}</span>
+                                                </div>
+                                                {lostMarks > 0 && (
+                                                    <div className="flex justify-between items-center text-red-500 mt-1">
+                                                        <span>Lost / අහිමි:</span>
+                                                        <span className="font-bold">-{lostMarks}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                        {userWrongSelections > 0 && (
+                                            <p className="text-red-400/80 text-xs mt-2 border-t border-white/5 pt-2">
+                                                * මීට අමතරව ඔබ වැරදි පිළිතුරු {userWrongSelections} ක් තෝරාගෙන ඇත.
+                                                {/* Sinhala: Also you selected X wrong answers */}
+                                            </p>
+                                        )}
+                                        {userCorrectSelections < totalCorrectCount && (
+                                            <p className="text-yellow-400/80 text-xs mt-1">
+                                                * ඔබට නිවැරදි පිළිතුරු {totalCorrectCount - userCorrectSelections} ක් මඟ හැරී ඇත.
+                                                {/* Sinhala: You missed X correct answers */}
+                                            </p>
+                                        )}
                                     </div>
                                 )}
                             </div>
