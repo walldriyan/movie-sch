@@ -302,6 +302,7 @@ export default function PostForm({
       orderInSeries: values.orderInSeries ?? null,
       visibility: values.visibility,
       groupId: values.visibility === 'GROUP_ONLY' ? (values.groupId ?? null) : null,
+      publishedAt: editingPost?.publishedAt ?? null,
       isLockedByDefault: values.isLockedByDefault,
       requiresExamToUnlock: values.requiresExamToUnlock,
     };

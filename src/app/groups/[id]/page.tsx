@@ -9,7 +9,7 @@ export default async function GroupProfilePage({ params }: { params: { id: strin
   if (!params.id) {
     notFound();
   }
-  
+
   const session = await auth();
   // console.log("Server [/groups/[id]/page.tsx] Session from auth() on server:", JSON.stringify(session, null, 2));
 
@@ -18,6 +18,6 @@ export default async function GroupProfilePage({ params }: { params: { id: strin
   if (!groupData) {
     notFound();
   }
-  
-  return <GroupProfileClient group={groupData as GroupForProfile} session={session} />;
+
+  return <GroupProfileClient group={groupData as unknown as GroupForProfile} session={session} />;
 }

@@ -87,7 +87,7 @@ function MultiSelectUsers({
   );
 
   const handleSelect = (user: User) => {
-    onSelectionChange([...selectedMembers, { user, role: 'MEMBER', userId: user.id, groupId: '', status: 'ACTIVE', joinedAt: new Date() }]);
+    onSelectionChange([...selectedMembers, { user, role: 'MEMBER', userId: user.id, groupId: '', status: 'ACTIVE', joinedAt: new Date(), id: crypto.randomUUID() }]);
     setOpen(false);
   };
 
@@ -211,14 +211,14 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
 
   const handleRoleChange = (userId: string, role: MemberRole) => {
     setMemberRoles(prev => ({ ...prev, [userId]: role }));
-    setSelectedMembers(prev => prev.map(m => m.user.id === userId ? { ...m, role } : m));
+    setSelectedMembers(prev => prev.map(m => m.user.id === userId ? { ...m, role } : m) as any);
   };
 
   const handleSave = async () => {
     startSubmitting(async () => {
       try {
         const memberIds = selectedMembers.map(m => m.user.id);
-        await updateGroupMembers(group.id, memberIds, memberRoles);
+        await updateGroupMembers(group.id, memberIds, memberRoles as any);
         toast({ title: 'Members updated', description: `Members for "${group.name}" have been saved.` });
         onUpdate();
         await fetchDetails(); // refetch to be safe
@@ -246,8 +246,8 @@ function ManageMembersDialog({ group, allUsers, onUpdate }: { group: GroupWithCo
       <DialogTrigger asChild>
         <div className="relative">
           <Button variant="outline" size="sm">Manage</Button>
-          {group._count.pendingRequests > 0 && (
-            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{group._count.pendingRequests}</Badge>
+          {(group._count?.pendingRequests ?? 0) > 0 && (
+            <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 justify-center p-0">{group._count?.pendingRequests}</Badge>
           )}
         </div>
       </DialogTrigger>
@@ -494,7 +494,7 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
                       </div>
                     </TableCell>
                     <TableCell className="text-right space-x-2">
-                      <EditGroupDialog group={group} onUpdate={fetchGroups} />
+                      <EditGroupDialog group={group as any} />
                       <ManageMembersDialog group={group} allUsers={allUsers} onUpdate={fetchGroups} />
                     </TableCell>
                   </TableRow>
