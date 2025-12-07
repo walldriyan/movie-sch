@@ -177,10 +177,10 @@ const nextConfig = {
   // EXPERIMENTAL FEATURES
   // ================================================================
   experimental: {
-    // Server Actions are stable in Next.js 15
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
+    // Server Actions are stable in Next.js 15, removing experimental config to avoid issues
+    // serverActions: {
+    //   bodySizeLimit: '2mb',
+    // },
     // Optimize package imports - DISABLED FOR DEBUGGING
     // optimizePackageImports: [
     //   'lucide-react',
