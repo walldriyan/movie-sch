@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Film, Tv, X, Loader2 } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
@@ -77,14 +77,14 @@ export default function SearchBar() {
             {/* Search Input */}
             <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                <Input
+                <input
                     ref={inputRef}
                     type="text"
                     placeholder="Search movies, series..."
                     value={query}
                     onChange={handleInputChange}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
-                    className="w-[280px] pl-9 pr-8 h-9 bg-secondary/50 text-sm focus-visible:bg-secondary transition-colors"
+                    className="flex h-9 w-[280px] rounded-md bg-secondary/50 px-3 py-2 pl-9 pr-8 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:bg-secondary transition-colors"
                 />
                 {query && (
                     <button
