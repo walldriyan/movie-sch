@@ -167,6 +167,109 @@
     background-color: rgba(255, 255, 255, 0.05) !important;
   }
 
+  /* ========== RADIO BUTTONS - Suno.com Style ========== */
+  input[type="radio"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 50%;
+    background-color: transparent !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  input[type="radio"]:hover {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+  }
+  
+  input[type="radio"]:checked {
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  input[type="radio"]:checked::after {
+    content: '';
+    display: block;
+    width: 8px;
+    height: 8px;
+    margin: 3px;
+    border-radius: 50%;
+    background-color: white;
+  }
+
+  /* ========== CHECKBOXES - Suno.com Style ========== */
+  input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 2px solid rgba(255, 255, 255, 0.25) !important;
+    border-radius: 4px;
+    background-color: transparent !important;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  
+  input[type="checkbox"]:hover {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+  }
+  
+  input[type="checkbox"]:checked {
+    border-color: rgba(255, 255, 255, 0.8) !important;
+    background-color: rgba(255, 255, 255, 0.9) !important;
+  }
+
+  /* ========== SWITCHES - Suno.com Style ========== */
+  [role="switch"],
+  [data-slot="switch"],
+  button[role="switch"] {
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    transition: all 0.2s ease;
+  }
+  
+  [role="switch"]:hover,
+  [data-slot="switch"]:hover {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+  }
+  
+  [role="switch"][data-state="checked"],
+  [data-slot="switch"][data-state="checked"],
+  button[role="switch"][data-state="checked"] {
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    background-color: rgba(255, 255, 255, 0.15) !important;
+  }
+
+  /* Switch thumb */
+  [role="switch"] span,
+  [data-slot="switch"] span {
+    background-color: rgba(255, 255, 255, 0.7) !important;
+  }
+  
+  [role="switch"][data-state="checked"] span,
+  [data-slot="switch"][data-state="checked"] span {
+    background-color: white !important;
+  }
+
+  /* ========== SLIDERS - Suno.com Style ========== */
+  [role="slider"],
+  [data-slot="slider"] {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+  }
+  
+  [role="slider"] [data-slot="slider-range"],
+  [data-slot="slider"] [data-slot="slider-range"] {
+    background-color: rgba(255, 255, 255, 0.6) !important;
+  }
+  
+  [role="slider"] [data-slot="slider-thumb"],
+  [data-slot="slider"] [data-slot="slider-thumb"] {
+    border: 2px solid rgba(255, 255, 255, 0.8) !important;
+    background-color: white !important;
+  }
+
   /* Separators/Dividers - Very subtle */
   hr,
   [role="separator"] {
