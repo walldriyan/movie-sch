@@ -64,8 +64,25 @@ export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'review
   groupId?: string | null;
 };
 
-// Alias for backward compatibility
-export type MovieFormData = PostFormData;
+// Movie form data for create/edit forms
+export interface MovieFormData {
+  title: string;
+  description: string;
+  posterUrl?: string | null;
+  year: number;
+  duration: string;
+  genres?: string[];
+  directors?: string | null;
+  mainCast?: string | null;
+  imdbRating?: number;
+  rottenTomatoesRating?: number | null;
+  googleRating?: number | null;
+  status?: string;
+  viewCount?: number;
+  mediaLinks?: { type: 'trailer' | 'image'; url: string }[];
+  seriesId?: number | null;
+  groupId?: string | null;
+}
 
 
 // Group Management Types
