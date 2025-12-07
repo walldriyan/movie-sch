@@ -76,7 +76,7 @@ export async function getPostsBySeriesId(seriesId: number) {
 export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   const where = { authorId: authorId };
 
-  const seriesQuery: any = {
+  const series = await prisma.series.findMany({
     where,
     include: {
       _count: {
@@ -94,23 +94,18 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
     orderBy: {
       updatedAt: 'desc',
     },
-  };
-
-  if (limit) {
-    seriesQuery.take = limit;
-  }
-
-  const series = await prisma.series.findMany(seriesQuery);
+    ...(limit ? { take: limit } : {}),
+  });
 
   const totalSeries = await prisma.series.count({ where });
 
-  const processedSeries = series.map((s: typeof series[0]) => ({
+  const processedSeries = series.map(s => ({
     ...s,
-    posts: s.posts.map((p: typeof s.posts[0]) => ({
+    posts: s.posts.map(p => ({
       ...p,
       genres: p.genres ? p.genres.split(',') : [],
     }))
-  }))
+  }));
 
   return { series: processedSeries, totalSeries };
 }
