@@ -15,6 +15,10 @@ npx prisma generate
 npx prisma db push
 
 
+git push origin v50:main --force
+
+
+
 
 To get started, take a look at src/app/page.tsx.
 sudo apt-get update

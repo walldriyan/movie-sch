@@ -405,10 +405,9 @@ function TrendingCard({ genre, post }: { genre: string; post: Post | undefined }
 // TRENDING CATEGORY BAR
 // ========================================
 function TrendingBar({ posts }: { posts: Post[] }) {
-    if (posts.length === 0) return null;
-
-    // Get unique genres from posts
+    // Get unique genres from posts - hooks must be called unconditionally
     const genres = useMemo(() => {
+        if (posts.length === 0) return [];
         const allGenres = posts.flatMap(p => getGenresArray(p.genres));
         const uniqueGenres = [...new Set(allGenres)].slice(0, 6);
         return uniqueGenres;
@@ -416,12 +415,15 @@ function TrendingBar({ posts }: { posts: Post[] }) {
 
     // Get posts for each genre
     const genrePosts = useMemo(() => {
+        if (posts.length === 0 || genres.length === 0) return [];
         return genres.map(genre => ({
             genre,
             post: posts.find(p => getGenresArray(p.genres).includes(genre)),
         })).filter(g => g.post);
     }, [genres, posts]);
 
+    // Early returns after hooks
+    if (posts.length === 0) return null;
     if (genrePosts.length === 0) return null;
 
     return (

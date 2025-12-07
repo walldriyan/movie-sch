@@ -220,11 +220,10 @@ export default function MoviePageContent({
     };
   }, [initialPost.id]);
 
-  // This effect will run only once on mount to set the initial view count
-  // And won't re-run to increment it again.
+  // This effect syncs the view count when initialPost changes
   useEffect(() => {
     setViewCount(initialPost.viewCount + 1);
-  }, []); // Empty dependency array
+  }, [initialPost.viewCount]);
 
 
   useEffect(() => {
