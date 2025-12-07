@@ -95,8 +95,9 @@ export type GroupWithMembers = PrismaGroup & {
 export type GroupWithCount = PrismaGroup & {
   _count: {
     members: number;
-    pendingRequests: number;
+    pendingRequests?: number;
   };
+  posts?: { posterUrl: string | null }[];
 };
 
 export type GroupForProfile = PrismaGroup & {

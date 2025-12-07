@@ -244,7 +244,7 @@ const SocialLink = ({ href, icon }: { href: string; icon: string }) => {
 interface HomePageClientProps {
     initialPosts: any[];
     initialUsers: User[];
-    initialGroups: (GroupWithCount & { posts: { posterUrl: string | null }[] })[];
+    initialGroups: GroupWithCount[];
     totalPages: number;
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
