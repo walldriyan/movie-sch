@@ -33,26 +33,26 @@ import ConnectivityIndicator from '../connectivity-indicator';
 
 
 function LogoutButton() {
-    const { pending } = useFormStatus();
+  const { pending } = useFormStatus();
 
-    return (
-        <button type="submit" disabled={pending} className="flex w-full items-center">
-            {pending ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            ) : (
-                <LogOut className="mr-2 h-4 w-4" />
-            )}
-            <span>{pending ? 'Logging out...' : 'Log out'}</span>
-      </button>
-    )
+  return (
+    <button type="submit" disabled={pending} className="flex w-full items-center">
+      {pending ? (
+        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+      ) : (
+        <LogOut className="mr-2 h-4 w-4" />
+      )}
+      <span>{pending ? 'Logging out...' : 'Log out'}</span>
+    </button>
+  )
 }
 
 function LogoutMenuItem() {
   return (
     <form action={doSignOut} className="w-full">
-        <DropdownMenuItem asChild>
-            <LogoutButton />
-        </DropdownMenuItem>
+      <DropdownMenuItem asChild>
+        <LogoutButton />
+      </DropdownMenuItem>
     </form>
   );
 }
@@ -65,11 +65,11 @@ export default function UserButton() {
   );
 
   if (status === 'loading') {
-      return <Skeleton className="h-10 w-10 rounded-full" />;
+    return <Skeleton className="h-10 w-10 rounded-full" />;
   }
 
   if (!user) {
-      return null;
+    return null;
   }
 
   const getBadgeVariant = (role: string) => {
@@ -84,7 +84,7 @@ export default function UserButton() {
         return 'outline';
     }
   };
-  
+
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
   return (
@@ -138,15 +138,9 @@ export default function UserButton() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link href="/favorites">
+          <Link href="/activity">
             <Bookmark className="mr-2 h-4 w-4" />
-            <span>My Favorites</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/feedback">
-            <MessageSquareWarning className="mr-2 h-4 w-4" />
-            <span>Submit Feedback</span>
+            <span>Activity Hub</span>
           </Link>
         </DropdownMenuItem>
         {canManage && (
@@ -159,9 +153,9 @@ export default function UserButton() {
         )}
         {user.role === ROLES.SUPER_ADMIN && (
           <DropdownMenuItem asChild>
-            <Link href="/admin/users">
+            <Link href="/admin">
               <Users className="mr-2 h-4 w-4" />
-              <span>Manage Users</span>
+              <span>Admin Dashboard</span>
             </Link>
           </DropdownMenuItem>
         )}

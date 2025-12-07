@@ -114,7 +114,7 @@ export default function Navbar() {
 
     return (
       <Button asChild>
-        <Link href="/login">
+        <Link href="/auth">
           <LogIn className="h-5 w-5" />
           <span className="hidden sm:inline ml-2">Login</span>
         </Link>

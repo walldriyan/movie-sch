@@ -176,40 +176,10 @@ export default function ManageLayout({
           {isSuperAdmin && (
             <NavSection title="Administration">
               <NavItem
-                href="/admin/exams"
-                icon={BookCheck}
-                label="Exams"
-                isActive={isActive('/admin/exams')}
-              />
-              <NavItem
-                href="/admin/users"
-                icon={Users}
-                label="Users"
-                isActive={isActive('/admin/users')}
-              />
-              <NavItem
-                href="/admin/groups"
-                icon={Users2}
-                label="Groups"
-                isActive={isActive('/admin/groups')}
-              />
-              <NavItem
-                href="/admin/notifications"
-                icon={Bell}
-                label="Notifications"
-                isActive={isActive('/admin/notifications')}
-              />
-              <NavItem
-                href="/admin/feedback"
-                icon={MessageSquareWarning}
-                label="Feedback"
-                isActive={isActive('/admin/feedback')}
-              />
-              <NavItem
-                href="/admin/settings"
-                icon={Settings}
-                label="Settings"
-                isActive={isActive('/admin/settings')}
+                href="/admin"
+                icon={Shield}
+                label="Admin Dashboard"
+                isActive={pathname === '/admin'}
               />
             </NavSection>
           )}
@@ -249,7 +219,7 @@ export default function ManageLayout({
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Link href="/create">
+                  <Link href="/manage?create=true">
                     <Button variant="ghost" className="rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0">
                       <Plus className="h-4 w-4 mr-2" />
                       Quick Create

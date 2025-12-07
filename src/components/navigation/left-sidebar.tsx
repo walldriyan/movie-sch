@@ -76,21 +76,22 @@ export default function LeftSidebar() {
                         <SearchBar />
                     </div>
                     <Button asChild size="sm" className="h-8 text-xs rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0">
-                        <Link href="/login">Login</Link>
+                        <Link href="/auth">Login</Link>
                     </Button>
                 </div>
-                {/* No sidebar = main content full width */}
+                {/* No sidebar = main content centered */}
                 <style jsx global>{`
                     main {
                         margin-left: 0 !important;
                         margin-right: 0 !important;
-                        padding-left: 0 !important;
-                        padding-right: 0 !important;
-                        width: 100% !important;
+                        display: flex !important;
+                        justify-content: center !important;
                     }
                     main > div {
                         width: 100% !important;
-                        max-width: 100% !important;
+                        max-width: 1400px !important;
+                        margin: 0 auto !important;
+                        padding: 0 16px !important;
                     }
                 `}</style>
             </>
@@ -168,7 +169,7 @@ export default function LeftSidebar() {
                     <UserButton />
                 ) : (
                     <Button asChild size="sm" className="h-8 text-xs">
-                        <Link href="/login">Login</Link>
+                        <Link href="/auth">Login</Link>
                     </Button>
                 )}
             </div>
@@ -259,10 +260,8 @@ export default function LeftSidebar() {
                     {/* Main Section */}
                     <div className="space-y-[5px]">
                         <NavItem href="/" icon={Home} label="Home" />
-                        {user && <NavItem href="/create" icon={Plus} label="Create" />}
-                        <NavItem href="/explore" icon={Compass} label="Explore" />
-                        {user && <NavItem href="/wall" icon={MessageSquare} label="Wall" />}
                         <NavItem href="/search" icon={Search} label="Search" />
+                        {user && <NavItem href="/activity" icon={Activity} label="Activity" />}
                     </div>
 
                     {/* Browse Section */}
@@ -270,17 +269,8 @@ export default function LeftSidebar() {
                     <div className="space-y-[5px]">
                         <NavItem href="/movies" icon={Film} label="Movies" />
                         <NavItem href="/series" icon={Tv} label="Series" />
+                        <NavItem href="/groups" icon={Radio} label="Groups" />
                     </div>
-
-                    {/* Library Section */}
-                    {user && (
-                        <>
-                            <GroupLabel label="Library" />
-                            <div className="space-y-[5px]">
-                                <NavItem href="/activity" icon={Activity} label="Activity Center" />
-                            </div>
-                        </>
-                    )}
                 </nav>
 
                 {/* ========== BOTTOM SECTION ========== */}
