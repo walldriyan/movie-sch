@@ -127,12 +127,12 @@ export default function FeedbackPage() {
             <div className="space-y-2">
               <Label htmlFor="title">Title</Label>
               <Input id="title" placeholder="A short summary of your feedback" {...form.register('title')} />
-              {form.formState.errors.title && <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>}
+              {form.formState.errors.title && <p className="text-sm text-destructive">{String(form.formState.errors.title.message)}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea id="description" placeholder="Describe your feedback in detail..." rows={6} {...form.register('description')} />
-              {form.formState.errors.description && <p className="text-sm text-destructive">{form.formState.errors.description.message}</p>}
+              {form.formState.errors.description && <p className="text-sm text-destructive">{String(form.formState.errors.description.message)}</p>}
             </div>
             <div className="space-y-2">
               <Label htmlFor="image">Attach an Image (Optional)</Label>
@@ -143,7 +143,7 @@ export default function FeedbackPage() {
                 ref={fileInputRef}
                 onChange={handleImageChange}
               />
-              {form.formState.errors.image && <p className="text-sm text-destructive">{form.formState.errors.image.message}</p>}
+              {form.formState.errors.image && <p className="text-sm text-destructive">{String(form.formState.errors.image.message)}</p>}
             </div>
             {previewImage && (
               <div className="relative w-48 h-48 border rounded-md">
