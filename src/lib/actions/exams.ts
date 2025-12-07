@@ -133,6 +133,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
     if (examId) { // Update an existing exam
         try {
+            // Increase transaction timeout for slow remote database connections (Supabase)
             await prisma.$transaction(async (tx) => {
                 console.log(`[SERVER] Updating exam ID: ${examId}`);
 
@@ -221,6 +222,9 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                         });
                     }
                 }
+            }, {
+                maxWait: 10000, // Default: 2000
+                timeout: 60000, // Default: 5000
             });
         } catch (e: any) {
             console.error("[SERVER ERROR] Transaction failed:", e);

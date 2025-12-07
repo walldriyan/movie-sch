@@ -84,7 +84,7 @@ export default function SearchBar() {
                     value={query}
                     onChange={handleInputChange}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
-                    className="w-[280px] pl-9 pr-8 h-9 bg-secondary border-border text-sm"
+                    className="w-[280px] pl-9 pr-8 h-9 bg-secondary/50 text-sm focus-visible:bg-secondary transition-colors"
                 />
                 {query && (
                     <button

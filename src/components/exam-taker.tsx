@@ -41,10 +41,13 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     const [loadingResults, setLoadingResults] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState(0); // Stepper state
     const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set()); // Track answered questions
+    const [userAnswers, setUserAnswers] = useState<Record<string, string | string[]>>({}); // Controlled state for answers
     const [showCompletionScreen, setShowCompletionScreen] = useState(false); // Show finish screen
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const formRef = useRef<HTMLFormElement | null>(null);
+
+
 
     // Memoized format time function
     const formatTime = useCallback((seconds: number) => {
@@ -52,6 +55,26 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         const m = Math.floor((seconds % 3600) / 60).toString().padStart(2, '0');
         const s = (seconds % 60).toString().padStart(2, '0');
         return `${h}:${m}:${s}`;
+    }, []);
+
+    // Handle answer changes - Controlled
+    const handleAnswerChange = useCallback((questionId: number, value: string | string[]) => {
+        setUserAnswers(prev => {
+            const key = `question-${questionId}`;
+            return { ...prev, [key]: value };
+        });
+
+        // Mark as answered if value is not empty
+        setAnsweredQuestions(prev => {
+            const next = new Set(prev);
+            const isEmpty = Array.isArray(value) ? value.length === 0 : !value;
+            if (isEmpty) {
+                next.delete(questionId);
+            } else {
+                next.add(questionId);
+            }
+            return next;
+        });
     }, []);
 
     // Memoized submit handler
@@ -64,27 +87,9 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             clearInterval(timerRef.current);
         }
 
-        const formData = new FormData(event.currentTarget);
-
-        const answers: Record<string, string | string[]> = {};
-        formData.forEach((value, key) => {
-            if (key.startsWith('question-')) {
-                const existing = answers[key];
-                if (existing) {
-                    if (Array.isArray(existing)) {
-                        existing.push(value as string);
-                    } else {
-                        answers[key] = [existing, value as string];
-                    }
-                } else {
-                    answers[key] = value as string;
-                }
-            }
-        });
-
-
+        // Use controlled state 'userAnswers' instead of FormData
         const payload = {
-            answers,
+            answers: userAnswers,
             timeTakenSeconds: timeTaken,
         };
 
@@ -152,14 +157,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         setHasStarted(true);
     }, []);
 
-    // Track answered questions
-    const handleAnswerChange = useCallback((questionId: number) => {
-        setAnsweredQuestions(prev => {
-            const next = new Set(prev);
-            next.add(questionId);
-            return next;
-        });
-    }, []);
+
 
     // Check if all questions are answered
     const allQuestionsAnswered = answeredQuestions.size >= exam.questions.length;
@@ -281,24 +279,43 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                                         <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-xs">Multiple Choice</span>
                                                         Select all correct answers
                                                     </p>
-                                                    {question.options.map(option => (
-                                                        <div key={option.id} className="flex items-center space-x-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 has-[:checked]:border-primary has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5 transition-all duration-300 cursor-pointer">
-                                                            <Checkbox
-                                                                id={`option-${option.id}`}
-                                                                name={`question-${question.id}`}
-                                                                value={String(option.id)}
-                                                                onCheckedChange={() => handleAnswerChange(question.id)}
-                                                            />
-                                                            <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer text-base">{option.text}</Label>
-                                                        </div>
-                                                    ))}
+                                                    {question.options.map(option => {
+                                                        const optId = String(option.id);
+                                                        const currentAnswers = userAnswers[`question-${question.id}`];
+                                                        const isChecked = Array.isArray(currentAnswers)
+                                                            ? currentAnswers.includes(optId)
+                                                            : currentAnswers === optId; // Fallback if single string somehow
+
+                                                        return (
+                                                            <div key={option.id} className="flex items-center space-x-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 has-[:checked]:border-primary has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5 transition-all duration-300 cursor-pointer">
+                                                                <Checkbox
+                                                                    id={`option-${option.id}`}
+                                                                    name={`question-${question.id}`}
+                                                                    value={optId}
+                                                                    checked={isChecked}
+                                                                    onCheckedChange={(checked) => {
+                                                                        const current = userAnswers[`question-${question.id}`] || [];
+                                                                        let newAnswers = Array.isArray(current) ? [...current] : [current as string];
+
+                                                                        if (checked) {
+                                                                            if (!newAnswers.includes(optId)) newAnswers.push(optId);
+                                                                        } else {
+                                                                            newAnswers = newAnswers.filter(id => id !== optId);
+                                                                        }
+                                                                        handleAnswerChange(question.id, newAnswers);
+                                                                    }}
+                                                                />
+                                                                <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer text-base">{option.text}</Label>
+                                                            </div>
+                                                        );
+                                                    })}
                                                 </div>
                                             ) : (
                                                 <RadioGroup
                                                     name={`question-${question.id}`}
-                                                    required
+                                                    value={userAnswers[`question-${question.id}`] as string || ""}
+                                                    onValueChange={(val) => handleAnswerChange(question.id, val)}
                                                     className="space-y-3"
-                                                    onValueChange={() => handleAnswerChange(question.id)}
                                                 >
                                                     {question.options.map(option => (
                                                         <div key={option.id} className="flex items-center space-x-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 has-[:checked]:border-primary has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5 transition-all duration-300 cursor-pointer">
@@ -314,7 +331,8 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                                 placeholder="Type your answer here..."
                                                 rows={6}
                                                 className="text-base"
-                                                onChange={(e) => e.target.value.length > 0 && handleAnswerChange(question.id)}
+                                                value={userAnswers[`question-${question.id}`] as string || ""}
+                                                onChange={(e) => handleAnswerChange(question.id, e.target.value)}
                                             />
                                         )}
                                     </div>
