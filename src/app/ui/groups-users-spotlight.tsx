@@ -11,9 +11,9 @@ import { Skeleton } from '@/components/ui/skeleton';
 const getRandomValue = (min: number, max: number) => Math.random() * (max - min) + min;
 
 type SkeletonItem = {
-    type: 'user' | 'group';
-    rotation: number;
-    position: string;
+  type: 'user' | 'group';
+  rotation: number;
+  position: string;
 };
 
 export default function GroupsUsersSpotlight({ users, groups, loading }: {
@@ -28,17 +28,17 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
   const [skeletons, setSkeletons] = useState<SkeletonItem[]>([]);
 
   const positionClasses = [
-      'top-1/4 left-1/4', 'top-1/2 right-1/4', 'bottom-1/4 left-1/2', 'top-1/3 right-1/3',
-      'bottom-1/3 left-1/4', 'top-1/2 left-1/3', 'bottom-1/4 right-1/2', 'top-1/4 right-1/4',
-      'bottom-1/2 left-1/2'
+    'top-1/4 left-1/4', 'top-1/2 right-1/4', 'bottom-1/4 left-1/2', 'top-1/3 right-1/3',
+    'bottom-1/3 left-1/4', 'top-1/2 left-1/3', 'bottom-1/4 right-1/2', 'top-1/4 right-1/4',
+    'bottom-1/2 left-1/2'
   ];
-  
+
   useEffect(() => {
     // Generate skeletons only on the client, after hydration
-    const generatedSkeletons = Array.from({ length: 9 }).map((_, index) => ({
-        type: index % 2 === 0 ? 'user' : 'group',
-        rotation: getRandomValue(-25, 25),
-        position: positionClasses[index % positionClasses.length],
+    const generatedSkeletons: SkeletonItem[] = Array.from({ length: 9 }).map((_, index) => ({
+      type: (index % 2 === 0 ? 'user' : 'group') as 'user' | 'group',
+      rotation: getRandomValue(-25, 25),
+      position: positionClasses[index % positionClasses.length],
     }));
     setSkeletons(generatedSkeletons);
   }, []); // Empty dependency array ensures this runs once on the client
@@ -106,7 +106,7 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
     const rotateAdjust = mousePos.x * 8;
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg) scale(1.05)`;
   };
-  
+
   const renderItem = (item: any, index: number) => {
     if (item.type === 'user') {
       return (
@@ -115,15 +115,15 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
           className={`absolute ${positionClasses[index % positionClasses.length]} -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out`}
           style={{ transform: getTransform(item.rotation, item.distance) }}
         >
-           <div className="relative group">
-              <Avatar className="w-20 h-20 md:w-24 md:h-24 border-4 border-white shadow-lg">
-                <AvatarImage src={item.image} alt={item.name || 'User'} />
-                <AvatarFallback>{item.name?.charAt(0) || 'U'}</AvatarFallback>
-              </Avatar>
-              <div className="absolute bottom-1 left-1/4 -translate-x-1/2 px-3 py-1 rounded-full bg-sky-950/90 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate">
-                {item.name}
-              </div>
-           </div>
+          <div className="relative group">
+            <Avatar className="w-20 h-20 md:w-24 md:h-24 border-4 border-white shadow-lg">
+              <AvatarImage src={item.image} alt={item.name || 'User'} />
+              <AvatarFallback>{item.name?.charAt(0) || 'U'}</AvatarFallback>
+            </Avatar>
+            <div className="absolute bottom-1 left-1/4 -translate-x-1/2 px-3 py-1 rounded-full bg-sky-950/90 backdrop-blur-sm text-white text-xs font-semibold max-w-[90%] truncate">
+              {item.name}
+            </div>
+          </div>
         </div>
       );
     }
@@ -140,8 +140,8 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
           }}
         >
           <div className="relative w-full h-full">
-            <Image src={item.image} alt={item.name}  fill
-  style={{ objectFit: 'cover' }} />
+            <Image src={item.image} alt={item.name} fill
+              style={{ objectFit: 'cover' }} />
             <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
             <p className="absolute bottom-2 left-2 text-white font-bold text-sm truncate">{item.name}</p>
           </div>
@@ -151,34 +151,34 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
 
     return null;
   };
-  
+
   const renderSkeletons = () => {
     return skeletons.map((skeleton, index) => {
-        if (skeleton.type === 'user') {
-           return (
-                <div
-                key={`skeleton-user-${index}`}
-                className={`absolute ${skeleton.position} -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out`}
-                style={{ transform: `rotate(${skeleton.rotation}deg)` }}
-                >
-                    <Skeleton className="w-20 h-20 md:w-24 md:h-24 rounded-full" />
-                </div>
-            )
-        } else {
-             return (
-                <div
-                key={`skeleton-group-${index}`}
-                className={`absolute ${skeleton.position} bg-muted rounded-lg shadow-xl overflow-hidden transition-all duration-500 ease-out w-40 md:w-48 -translate-x-1/2 -translate-y-1/2`}
-                style={{
-                    transform: `rotate(${skeleton.rotation}deg)`,
-                    height: '200px',
-                    aspectRatio: '11/17',
-                }}
-                >
-                    <Skeleton className="w-full h-full" />
-                </div>
-            )
-        }
+      if (skeleton.type === 'user') {
+        return (
+          <div
+            key={`skeleton-user-${index}`}
+            className={`absolute ${skeleton.position} -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out`}
+            style={{ transform: `rotate(${skeleton.rotation}deg)` }}
+          >
+            <Skeleton className="w-20 h-20 md:w-24 md:h-24 rounded-full" />
+          </div>
+        )
+      } else {
+        return (
+          <div
+            key={`skeleton-group-${index}`}
+            className={`absolute ${skeleton.position} bg-muted rounded-lg shadow-xl overflow-hidden transition-all duration-500 ease-out w-40 md:w-48 -translate-x-1/2 -translate-y-1/2`}
+            style={{
+              transform: `rotate(${skeleton.rotation}deg)`,
+              height: '200px',
+              aspectRatio: '11/17',
+            }}
+          >
+            <Skeleton className="w-full h-full" />
+          </div>
+        )
+      }
     });
   }
 

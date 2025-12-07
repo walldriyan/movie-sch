@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from 'react';
 export default function MetaSpotlight1() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Card data array
   const cards = [
@@ -95,7 +95,7 @@ export default function MetaSpotlight1() {
   ];
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
@@ -126,21 +126,21 @@ export default function MetaSpotlight1() {
     };
   }, []);
 
-  const getCardTransform = (baseRotate, distanceMultiplier, isHeroCard = false) => {
+  const getCardTransform = (baseRotate: number, distanceMultiplier: number, isHeroCard = false) => {
     if (!isHovering) {
       return isHeroCard ? 'translate(-50%, -50%)' : `rotate(${baseRotate}deg)`;
     }
     const moveX = mousePos.x * 30 * distanceMultiplier;
     const moveY = mousePos.y * 30 * distanceMultiplier;
     const rotateAdjust = mousePos.x * 5;
-    
+
     if (isHeroCard) {
       return `translate(calc(-50% + ${moveX}px), calc(-50% + ${moveY}px)) scale(1.02)`;
     }
     return `translate(${moveX}px, ${moveY}px) rotate(${baseRotate + rotateAdjust}deg)`;
   };
 
-  const renderCard = (card) => {
+  const renderCard = (card: typeof cards[0]) => {
     const isHero = card.type === 'hero';
     const cardWidth = isHero ? 'w-64 md:w-72' : 'w-32 md:w-36';
     const cardHeight = isHero ? 'h-[400px] md:h-[420px]' : 'h-44 md:h-52';
@@ -171,7 +171,7 @@ export default function MetaSpotlight1() {
 
         {card.type === 'grid' && (
           <div className="grid grid-cols-3 gap-2 p-2 md:p-3 bg-white">
-            {card.gridColors.map((color, idx) => (
+            {card.gridColors?.map((color, idx) => (
               <div key={idx} className={`${color} h-12 md:h-14 rounded`}></div>
             ))}
           </div>

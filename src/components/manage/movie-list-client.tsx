@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useTransition } from 'react';
-import type { Movie, User } from '@prisma/client';
+import type { Post, User } from '@prisma/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-type MovieWithDetails = Movie & { author: User, _count: { likedBy: number }};
+type MovieWithDetails = Post & { author: User, _count: { likedBy: number } };
 
 interface MovieListClientProps {
   movies: MovieWithDetails[];
@@ -55,12 +55,12 @@ export default function MovieListClient({
 
   const confirmDelete = () => {
     if (movieToDelete) {
-        handleAction(() => onDeleteConfirmed(movieToDelete.id))
+      handleAction(() => onDeleteConfirmed(movieToDelete.id))
     }
     setDeleteAlertOpen(false);
     setMovieToDelete(null);
   };
-  
+
   const handleStatusChangeWithTransition = (movieId: number, newStatus: string) => {
     handleAction(() => onStatusChange(movieId, newStatus));
   };
@@ -68,10 +68,10 @@ export default function MovieListClient({
   return (
     <>
       {React.cloneElement(children as React.ReactElement, {
-         onDeleteConfirmed: handleDeleteClick,
-         onStatusChange: handleStatusChangeWithTransition,
-         onFilterChange: (status: string | null) => handleAction(() => onFilterChange(status)),
-         onRefresh: () => handleAction(onRefresh),
+        onDeleteConfirmed: handleDeleteClick,
+        onStatusChange: handleStatusChangeWithTransition,
+        onFilterChange: (status: string | null) => handleAction(() => onFilterChange(status)),
+        onRefresh: () => handleAction(onRefresh),
       })}
       <AlertDialog open={deleteAlertOpen} onOpenChange={setDeleteAlertOpen}>
         <AlertDialogContent>

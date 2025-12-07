@@ -21,7 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import QuillEditor from '@/components/quill-editor';
 import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2 } from 'lucide-react';
 import Image from 'next/image';
-import type { Movie } from '@prisma/client';
+import type { Post } from '@prisma/client';
 import type { MovieFormData, MediaLink } from '@/lib/types';
 import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
 import { GenreInput } from './genre-input';
@@ -46,7 +46,7 @@ const movieSchema = z.object({
 
 type MovieFormValues = z.infer<typeof movieSchema>;
 
-type MovieWithLinks = Movie & { mediaLinks: MediaLink[], genres: string[] };
+type MovieWithLinks = Post & { mediaLinks: MediaLink[], genres: string[] };
 interface MovieFormProps {
   editingMovie: MovieWithLinks | null;
   onFormSubmit: (movieData: MovieFormData, id?: number) => Promise<void>;
@@ -66,35 +66,35 @@ export default function MovieForm({
     resolver: zodResolver(movieSchema),
     defaultValues: editingMovie
       ? {
-          title: editingMovie.title,
-          posterUrl: editingMovie.posterUrl || '',
-          description: editingMovie.description,
-          year: editingMovie.year,
-          duration: editingMovie.duration,
-          genres: editingMovie.genres || [],
-          directors: editingMovie.directors || '',
-          mainCast: editingMovie.mainCast || '',
-          imdbRating: editingMovie.imdbRating,
-          rottenTomatoesRating: editingMovie.rottenTomatoesRating || undefined,
-          googleRating: editingMovie.googleRating || undefined,
-          mediaLinks: editingMovie.mediaLinks || [],
-        }
+        title: editingMovie.title,
+        posterUrl: editingMovie.posterUrl || '',
+        description: editingMovie.description,
+        year: editingMovie.year,
+        duration: editingMovie.duration,
+        genres: editingMovie.genres || [],
+        directors: editingMovie.directors || '',
+        mainCast: editingMovie.mainCast || '',
+        imdbRating: editingMovie.imdbRating,
+        rottenTomatoesRating: editingMovie.rottenTomatoesRating || undefined,
+        googleRating: editingMovie.googleRating || undefined,
+        mediaLinks: editingMovie.mediaLinks || [],
+      }
       : {
-          title: '',
-          posterUrl: '',
-          description: '',
-          year: new Date().getFullYear(),
-          duration: '',
-          genres: [],
-          directors: '',
-          mainCast: '',
-          imdbRating: 0,
-          rottenTomatoesRating: undefined,
-          googleRating: undefined,
-          mediaLinks: [],
-        },
+        title: '',
+        posterUrl: '',
+        description: '',
+        year: new Date().getFullYear(),
+        duration: '',
+        genres: [],
+        directors: '',
+        mainCast: '',
+        imdbRating: 0,
+        rottenTomatoesRating: undefined,
+        googleRating: undefined,
+        mediaLinks: [],
+      },
   });
-  
+
   const { control, formState } = form;
   const posterUrlValue = form.watch('posterUrl');
 
@@ -284,46 +284,46 @@ export default function MovieForm({
                 )}
               />
             </div>
-             <FormField
-                control={form.control}
-                name="directors"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      Director(s) (comma-separated)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Christopher Nolan"
-                        {...field}
-                         value={field.value || ''}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-               <FormField
-                control={form.control}
-                name="mainCast"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="text-muted-foreground">
-                      Main Cast (comma-separated)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Cillian Murphy, Emily Blunt"
-                        {...field}
-                         value={field.value || ''}
-                        className="bg-transparent border-input"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+            <FormField
+              control={form.control}
+              name="directors"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">
+                    Director(s) (comma-separated)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Christopher Nolan"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-input"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="mainCast"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-muted-foreground">
+                    Main Cast (comma-separated)
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Cillian Murphy, Emily Blunt"
+                      {...field}
+                      value={field.value || ''}
+                      className="bg-transparent border-input"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name="genres"
@@ -333,7 +333,7 @@ export default function MovieForm({
                     Genres
                   </FormLabel>
                   <FormControl>
-                    <GenreInput 
+                    <GenreInput
                       value={field.value}
                       onChange={field.onChange}
                       placeholder="Select one or more genres"
@@ -343,11 +343,11 @@ export default function MovieForm({
                 </FormItem>
               )}
             />
-             <h3 className="text-lg font-semibold text-muted-foreground pt-4">
+            <h3 className="text-lg font-semibold text-muted-foreground pt-4">
               Ratings
             </h3>
-             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-               <FormField
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <FormField
                 control={form.control}
                 name="imdbRating"
                 render={({ field }) => (
@@ -367,7 +367,7 @@ export default function MovieForm({
                   </FormItem>
                 )}
               />
-               <FormField
+              <FormField
                 control={form.control}
                 name="rottenTomatoesRating"
                 render={({ field }) => (
@@ -388,7 +388,7 @@ export default function MovieForm({
                   </FormItem>
                 )}
               />
-                 <FormField
+              <FormField
                 control={form.control}
                 name="googleRating"
                 render={({ field }) => (
@@ -440,7 +440,7 @@ export default function MovieForm({
                       </FormItem>
                     )}
                   />
-                   <FormField
+                  <FormField
                     control={control}
                     name={`mediaLinks.${index}.url`}
                     render={({ field }) => (
@@ -472,7 +472,7 @@ export default function MovieForm({
               <Plus className="mr-2 h-4 w-4" /> Add Link
             </Button>
           </div>
-          
+
           {error && (
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
@@ -482,7 +482,7 @@ export default function MovieForm({
               </AlertDescription>
             </Alert>
           )}
-          
+
           <div className="flex justify-end pt-4">
             <Button type="submit" size="lg" disabled={formState.isSubmitting}>
               {formState.isSubmitting ? (

@@ -1,6 +1,6 @@
-import { useMotionValue, useTransform } from "framer-motion"
+import { useMotionValue, useTransform, motion } from "framer-motion"
 
-export default function CC_13_Drag_Transform(props) {
+export default function CC_13_Drag_Transform(props: Record<string, unknown>) {
     const x = useMotionValue(0)
     const scale = useTransform(x, [-150, 150], [1.5, 0.5])
     const rotate = useTransform(x, [-150, 150], [-90, 90])

@@ -9,10 +9,10 @@ import { Copyright, Mail, MapPin, Phone } from 'lucide-react';
 export default function MetaSpotlightPostGrid() {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isHovering, setIsHovering] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const handleMouseMove = (e) => {
+    const handleMouseMove = (e: MouseEvent) => {
       if (containerRef.current) {
         const rect = containerRef.current.getBoundingClientRect();
         const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
@@ -43,7 +43,7 @@ export default function MetaSpotlightPostGrid() {
     };
   }, []);
 
-  const getCardTransform = (baseRotate, distanceMultiplier) => {
+  const getCardTransform = (baseRotate: number, distanceMultiplier: number) => {
     if (!isHovering) {
       return `rotate(${baseRotate}deg)`;
     }
@@ -63,15 +63,15 @@ export default function MetaSpotlightPostGrid() {
       </div>
 
       {/* Cards Container */}
-      <div 
+      <div
         ref={containerRef}
         className="relative w-full max-w-[700px] h-[600px] flex items-center justify-center"
         style={{ perspective: '1000px' }}
       >
         {/* Background Card - Top Left */}
-        <div 
+        <div
           className="absolute left-0 top-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
+          style={{
             transform: getCardTransform(-12, 0.8),
             transformOrigin: 'center center'
           }}
@@ -91,9 +91,9 @@ export default function MetaSpotlightPostGrid() {
         </div>
 
         {/* Background Card - Bottom Left */}
-        <div 
+        <div
           className="absolute left-2 bottom-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
+          style={{
             transform: getCardTransform(6, 0.7),
             transformOrigin: 'center center'
           }}
@@ -108,11 +108,11 @@ export default function MetaSpotlightPostGrid() {
         </div>
 
         {/* Center Hero Card */}
-        <div 
+        <div
           className="relative z-10 transition-all duration-500 ease-out"
-          style={{ 
-            transform: isHovering 
-              ? `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px) scale(1.02)` 
+          style={{
+            transform: isHovering
+              ? `translate(${mousePos.x * 15}px, ${mousePos.y * 15}px) scale(1.02)`
               : 'translate(0, 0) scale(1)',
             transformOrigin: 'center center'
           }}
@@ -123,9 +123,9 @@ export default function MetaSpotlightPostGrid() {
         </div>
 
         {/* Background Card - Top Right */}
-        <div 
+        <div
           className="absolute right-0 top-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
+          style={{
             transform: getCardTransform(12, 0.8),
             transformOrigin: 'center center'
           }}
@@ -148,9 +148,9 @@ export default function MetaSpotlightPostGrid() {
         </div>
 
         {/* Background Card - Bottom Right */}
-        <div 
+        <div
           className="absolute right-2 bottom-8 w-36 bg-white rounded-2xl shadow-2xl overflow-hidden transition-all duration-500 ease-out"
-          style={{ 
+          style={{
             transform: getCardTransform(-6, 0.7),
             transformOrigin: 'center center'
           }}
@@ -167,7 +167,7 @@ export default function MetaSpotlightPostGrid() {
         </div>
       </div>
 
-       {/* Meta Logo */}
+      {/* Meta Logo */}
       <div className="absolute bottom-12 left-0 right-0 flex justify-center z-20">
         <div className="flex items-center gap-3">
           <div className="text-white text-5xl font-bold">∞</div>
@@ -190,8 +190,8 @@ export default function MetaSpotlightPostGrid() {
           <div>
             <h3 className="font-semibold mb-2">Address</h3>
             <div className="text-sm text-muted-foreground flex items-start gap-2">
-                <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
-                <p>123 Movie Lane,<br/>Hollywood, CA 90210</p>
+              <MapPin className="h-4 w-4 mt-1 flex-shrink-0" />
+              <p>123 Movie Lane,<br />Hollywood, CA 90210</p>
             </div>
           </div>
           {/* Legal */}
@@ -204,7 +204,7 @@ export default function MetaSpotlightPostGrid() {
             </ul>
           </div>
           {/* Socials */}
-           <div>
+          <div>
             <h3 className="font-semibold mb-2">Socials</h3>
             <ul className="space-y-2 text-sm">
               <li><Link href="#" className="text-muted-foreground hover:text-primary">Facebook</Link></li>
@@ -214,14 +214,13 @@ export default function MetaSpotlightPostGrid() {
           </div>
         </div>
         <div className="mt-8 pt-8 border-t border-white/10 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
-            <Copyright className="h-4 w-4" />
-            <span>{new Date().getFullYear()} CineVerse. All rights reserved.</span>
+          <Copyright className="h-4 w-4" />
+          <span>{new Date().getFullYear()} CineVerse. All rights reserved.</span>
         </div>
       </footer>
     </div>
   );
 }
 
-    
 
-    
+

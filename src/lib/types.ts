@@ -47,6 +47,7 @@ export type Post = Omit<PrismaPost, 'mediaLinks' | 'genres' | 'subtitles'> & {
     reviews: number;
   };
   isContentLocked?: boolean;
+  isLocked?: boolean;
 };
 
 export type Series = Omit<PrismaSeries, 'posts'> & {

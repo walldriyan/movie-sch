@@ -2,7 +2,7 @@
 'use client';
 
 import React from 'react';
-import type { Movie, User } from '@prisma/client';
+import type { Post, User } from '@prisma/client';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -53,7 +53,7 @@ import { Skeleton } from '../ui/skeleton';
 import { Avatar, AvatarImage, AvatarFallback } from '../ui/avatar';
 import ClientSideDate from './client-side-date';
 
-type MovieWithDetails = Movie & { author: User, _count: { likedBy: number }};
+type MovieWithDetails = Post & { author: User, _count: { likedBy: number } };
 
 interface MovieListProps {
   movies: MovieWithDetails[];
@@ -110,12 +110,12 @@ export default function MovieList({
         return 'outline';
     }
   };
-  
+
   return (
     <>
       <div className="flex items-center">
         <h1 className="font-semibold text-lg md:text-2xl">Manage Movies</h1>
-        <AuthGuard 
+        <AuthGuard
           requiredPermissions={[PERMISSIONS['post.create']]}
           fallback={<Skeleton className="ml-auto h-9 w-[150px] rounded-full" />}
         >
@@ -136,7 +136,7 @@ export default function MovieList({
             </div>
             <div className='flex items-center gap-2'>
               {isRefreshing ? (
-                  <Skeleton className="h-8 w-28" />
+                <Skeleton className="h-8 w-28" />
               ) : (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -192,8 +192,8 @@ export default function MovieList({
                     }
                   >
                     <TableCell className="font-medium">
-                       <div className="flex items-center gap-3">
-                         {movie.posterUrl ? (
+                      <div className="flex items-center gap-3">
+                        {movie.posterUrl ? (
                           <Image
                             alt={movie.title}
                             className="aspect-square rounded-md object-cover flex-shrink-0"
@@ -212,18 +212,18 @@ export default function MovieList({
                         >
                           {movie.title}
                         </Link>
-                       </div>
+                      </div>
                     </TableCell>
-                     <TableCell>
+                    <TableCell>
                       <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9 hidden sm:flex">
-                            <AvatarImage src={movie.author.image || ''} alt={movie.author.name || ''} />
-                            <AvatarFallback>{movie.author.name?.charAt(0) || 'U'}</AvatarFallback>
-                          </Avatar>
-                          <div>
-                            <div className="font-medium">{movie.author.name}</div>
-                            <div className="text-xs text-muted-foreground hidden md:block">{movie.author.email}</div>
-                          </div>
+                        <Avatar className="h-9 w-9 hidden sm:flex">
+                          <AvatarImage src={movie.author.image || ''} alt={movie.author.name || ''} />
+                          <AvatarFallback>{movie.author.name?.charAt(0) || 'U'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{movie.author.name}</div>
+                          <div className="text-xs text-muted-foreground hidden md:block">{movie.author.email}</div>
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -236,19 +236,19 @@ export default function MovieList({
                       )}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                       <ClientSideDate date={movie.createdAt} />
+                      <ClientSideDate date={movie.createdAt} />
                     </TableCell>
                     <TableCell className="hidden lg:table-cell text-right">
-                       <div className="flex justify-end items-center gap-4">
-                          <div className="flex items-center gap-1">
-                            <Eye className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{movie.viewCount}</span>
-                          </div>
-                           <div className="flex items-center gap-1">
-                            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
-                            <span className="text-sm">{movie._count.likedBy}</span>
-                          </div>
+                      <div className="flex justify-end items-center gap-4">
+                        <div className="flex items-center gap-1">
+                          <Eye className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{movie.viewCount}</span>
                         </div>
+                        <div className="flex items-center gap-1">
+                          <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{movie._count.likedBy}</span>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell>
                       <DropdownMenu>
@@ -273,7 +273,7 @@ export default function MovieList({
                           </AuthGuard>
 
                           <AuthGuard requiredPermissions={[PERMISSIONS['post.change_status']]}>
-                             <DropdownMenuSub>
+                            <DropdownMenuSub>
                               <DropdownMenuSubTrigger disabled={statusChangingMovieId === movie.id}>
                                 Change Status
                               </DropdownMenuSubTrigger>
@@ -299,7 +299,7 @@ export default function MovieList({
                             </DropdownMenuSub>
                             <DropdownMenuSeparator />
                           </AuthGuard>
-                          
+
                           <AuthGuard
                             requiredPermissions={[PERMISSIONS['post.delete']]}
                           >
