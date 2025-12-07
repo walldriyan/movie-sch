@@ -21,7 +21,7 @@ export async function createSeries(title: string): Promise<Series> {
   }
 
   const existingSeries = await prisma.series.findFirst({
-    where: { 
+    where: {
       title: {
         equals: title,
       }
@@ -38,7 +38,7 @@ export async function createSeries(title: string): Promise<Series> {
       authorId: session.user.id,
     },
   });
-  
+
   revalidatePath('/manage');
   return newSeries;
 }
@@ -75,7 +75,7 @@ export async function getPostsBySeriesId(seriesId: number) {
 
 export async function getSeriesByAuthorId(authorId: string, limit?: number) {
   const where = { authorId: authorId };
-  
+
   const seriesQuery: any = {
     where,
     include: {
@@ -95,18 +95,18 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
       updatedAt: 'desc',
     },
   };
-  
+
   if (limit) {
     seriesQuery.take = limit;
   }
-  
+
   const series = await prisma.series.findMany(seriesQuery);
-  
+
   const totalSeries = await prisma.series.count({ where });
 
-  const processedSeries = series.map(s => ({
+  const processedSeries = series.map((s: typeof series[0]) => ({
     ...s,
-    posts: s.posts.map(p => ({
+    posts: s.posts.map((p: typeof s.posts[0]) => ({
       ...p,
       genres: p.genres ? p.genres.split(',') : [],
     }))

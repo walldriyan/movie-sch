@@ -67,8 +67,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
       key={movie.id}
       className={cn(
         'relative block overflow-hidden rounded-xl shadow-[0_6px_20px_rgba(0,0,0,0.5)] cursor-pointer bg-[#0b0d0f] group min-h-[152px] md:min-h-0',
-        isFirst ? 'md:col-span-2 md:row-span-2' : 
-        (index % 5 === 1 ? 'md:row-span-2' : 'md:col-span-1')
+        isFirst ? 'md:col-span-2 md:row-span-2' :
+          (index % 5 === 1 ? 'md:row-span-2' : 'md:col-span-1')
       )}
     >
       <Link
@@ -92,16 +92,16 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/60 to-transparent" />
         <div className="absolute bottom-0 left-0 right-0 top-1/2 bg-gradient-to-t from-black/90 to-transparent pointer-events-none" />
-        
+
         {isFirst && <div className="absolute inset-0 backdrop-blur-sm mask-gradient bg-black/20" />}
-        
+
         {movie.isLockedByDefault && (
-            <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-10">
-                <Button variant="secondary" className="pointer-events-none">
-                    <Lock className="mr-2 h-4 w-4" />
-                    Locked
-                </Button>
-            </div>
+          <div className="absolute inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-10">
+            <Button variant="secondary" className="pointer-events-none">
+              <Lock className="mr-2 h-4 w-4" />
+              Locked
+            </Button>
+          </div>
         )}
 
         {mounted && <CategoryIcon type={movie.type} />}
@@ -122,13 +122,13 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
           </Avatar>
         </div>}
       </Link>
-      {mounted && series && series?._count?.posts > 0 && (
-          <Button asChild size="sm" variant="outline" className="absolute bottom-4 left-4 z-20 h-7 rounded-full bg-black/30 backdrop-blur-sm border-white/20 hover:bg-white/20">
-              <Link href={`/series/${series.id}`} onClick={(e) => e.stopPropagation()}>
-                  <List className="h-3 w-3" />
-                  <span>{series._count.posts}</span>
-              </Link>
-          </Button>
+      {mounted && series && (series._count?.posts ?? 0) > 0 && (
+        <Button asChild size="sm" variant="outline" className="absolute bottom-4 left-4 z-20 h-7 rounded-full bg-black/30 backdrop-blur-sm border-white/20 hover:bg-white/20">
+          <Link href={`/series/${series.id}`} onClick={(e) => e.stopPropagation()}>
+            <List className="h-3 w-3" />
+            <span>{series._count?.posts ?? 0}</span>
+          </Link>
+        </Button>
       )}
     </div>
   );

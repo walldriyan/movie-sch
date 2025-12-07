@@ -85,9 +85,9 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
         const newImageUrl = await uploadProfileImage(formData);
         if (newImageUrl) imageUrl = newImageUrl;
       } else if (data.image !== user.image) {
-        imageUrl = data.image;
+        imageUrl = data.image ?? null;
       }
-      
+
       let coverImageUrl = user.coverImage;
       if (coverImageFile) {
         const formData = new FormData();
@@ -95,7 +95,7 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
         const newCoverUrl = await uploadProfileCoverImage(formData);
         if (newCoverUrl) coverImageUrl = newCoverUrl;
       } else if (data.coverImage !== user.coverImage) {
-        coverImageUrl = data.coverImage;
+        coverImageUrl = data.coverImage ?? null;
       }
 
       const updateData = {
@@ -109,7 +109,7 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
       };
 
       await updateUserProfile(user.id, updateData);
-      
+
       toast({
         title: 'Profile updated',
         description: 'Your changes have been saved successfully.',
@@ -172,45 +172,45 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
                 {/* Cover Image */}
                 <FormItem>
                   <FormLabel>Cover Image</FormLabel>
-                   <div className="relative group aspect-[3/1] w-full bg-muted rounded-md p-2.5">
-                      {previewCoverImage ? (
-                          <Image src={previewCoverImage} alt="Cover preview"  fill className="object-cover rounded-md" />
-                      ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                              <p>No cover image</p>
-                          </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Button asChild variant="outline" className="bg-background/80">
-                             <label htmlFor="cover-image-file" className="cursor-pointer">
-                                  <Camera className="mr-2 h-4 w-4" />
-                                  Change Cover
-                              </label>
-                          </Button>
-                          <input
-                            id="cover-image-file"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageChange(e, 'cover')}
-                        />
+                  <div className="relative group aspect-[3/1] w-full bg-muted rounded-md p-2.5">
+                    {previewCoverImage ? (
+                      <Image src={previewCoverImage} alt="Cover preview" fill className="object-cover rounded-md" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <p>No cover image</p>
                       </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button asChild variant="outline" className="bg-background/80">
+                        <label htmlFor="cover-image-file" className="cursor-pointer">
+                          <Camera className="mr-2 h-4 w-4" />
+                          Change Cover
+                        </label>
+                      </Button>
+                      <input
+                        id="cover-image-file"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e, 'cover')}
+                      />
+                    </div>
                   </div>
                   <FormControl>
-                     <Input 
-                        placeholder='Or paste image URL'
-                        className="mt-2"
-                        defaultValue={user.coverImage || ''}
-                        onChange={(e) => {
-                            form.setValue('coverImage', e.target.value);
-                            setPreviewCoverImage(e.target.value);
-                            setCoverImageFile(null);
-                        }}
-                      />
+                    <Input
+                      placeholder='Or paste image URL'
+                      className="mt-2"
+                      defaultValue={user.coverImage || ''}
+                      onChange={(e) => {
+                        form.setValue('coverImage', e.target.value);
+                        setPreviewCoverImage(e.target.value);
+                        setCoverImageFile(null);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage>{form.formState.errors.coverImage?.message}</FormMessage>
                 </FormItem>
-                
+
                 {/* Avatar Image */}
                 <FormItem>
                   <FormLabel>Avatar</FormLabel>
@@ -225,34 +225,34 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
                         {user.name?.charAt(0).toUpperCase() || 'U'}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div className="flex-grow">
-                       <FormControl>
+                      <FormControl>
                         <Input
-                            id="picture-url"
-                            placeholder='Paste image URL'
-                            defaultValue={user.image || ''}
-                            onChange={(e) => {
-                                form.setValue('image', e.target.value);
-                                setPreviewImage(e.target.value);
-                                setImageFile(null);
-                            }}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground text-center my-2">OR</p>
-                        <Button asChild variant="outline" className='w-full'>
-                            <label htmlFor="picture-file" className="cursor-pointer">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload Image
-                            </label>
-                        </Button>
-                        <input
-                            id="picture-file"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageChange(e, 'avatar')}
+                          id="picture-url"
+                          placeholder='Paste image URL'
+                          defaultValue={user.image || ''}
+                          onChange={(e) => {
+                            form.setValue('image', e.target.value);
+                            setPreviewImage(e.target.value);
+                            setImageFile(null);
+                          }}
                         />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground text-center my-2">OR</p>
+                      <Button asChild variant="outline" className='w-full'>
+                        <label htmlFor="picture-file" className="cursor-pointer">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Image
+                        </label>
+                      </Button>
+                      <input
+                        id="picture-file"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e, 'avatar')}
+                      />
                     </div>
                   </div>
                   <FormMessage>{form.formState.errors.image?.message}</FormMessage>
@@ -290,7 +290,7 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="website"
@@ -298,7 +298,7 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
                     <FormItem>
                       <FormLabel>Website</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://your-website.com" {...field} value={field.value || ''}/>
+                        <Input placeholder="https://your-website.com" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -311,7 +311,7 @@ export default function EditProfileDialog({ user, triggerButton }: EditProfileDi
                     <FormItem>
                       <FormLabel>Twitter URL</FormLabel>
                       <FormControl>
-                        <Input placeholder="https://twitter.com/your-handle" {...field} value={field.value || ''}/>
+                        <Input placeholder="https://twitter.com/your-handle" {...field} value={field.value || ''} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

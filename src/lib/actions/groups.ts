@@ -317,7 +317,9 @@ export async function getGroupForProfile(groupId: string) {
         });
         if (membership) {
             isMember = membership.status === 'ACTIVE';
-            membershipStatus = membership.status;
+            membershipStatus = ['ACTIVE', 'PENDING'].includes(membership.status)
+                ? (membership.status as 'ACTIVE' | 'PENDING')
+                : null;
         }
     }
 
