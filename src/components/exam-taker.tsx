@@ -40,6 +40,8 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
     const [examResults, setExamResults] = useState<any>(null);
     const [loadingResults, setLoadingResults] = useState(false);
     const [currentQuestion, setCurrentQuestion] = useState(0); // Stepper state
+    const [answeredQuestions, setAnsweredQuestions] = useState<Set<number>>(new Set()); // Track answered questions
+    const [showCompletionScreen, setShowCompletionScreen] = useState(false); // Show finish screen
 
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const formRef = useRef<HTMLFormElement | null>(null);
@@ -150,6 +152,17 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         setHasStarted(true);
     }, []);
 
+    // Track answered questions
+    const handleAnswerChange = useCallback((questionId: number) => {
+        setAnsweredQuestions(prev => {
+            const next = new Set(prev);
+            next.add(questionId);
+            return next;
+        });
+    }, []);
+
+    // Check if all questions are answered
+    const allQuestionsAnswered = answeredQuestions.size >= exam.questions.length;
 
     if (!hasStarted) {
         return (
@@ -212,26 +225,37 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                     </CardHeader>
                     <form ref={formRef} onSubmit={handleFormSubmit}>
                         <CardContent className="space-y-6">
-                            {/* Stepper Progress Bar */}
-                            <div className="flex items-center gap-2 mb-4">
-                                {exam.questions.map((_, idx) => (
-                                    <button
-                                        key={idx}
-                                        type="button"
-                                        onClick={() => setCurrentQuestion(idx)}
-                                        className={cn(
-                                            "flex-1 h-2 rounded-full transition-all",
-                                            idx === currentQuestion ? "bg-primary" : idx < currentQuestion ? "bg-green-500" : "bg-muted"
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                            <p className="text-center text-sm text-muted-foreground">
-                                Question {currentQuestion + 1} of {exam.questions.length}
-                            </p>
+                            {/* Stepper Progress Bar - Hidden when submitted */}
+                            {!submittedId && (
+                                <>
+                                    <div className="flex items-center gap-1.5 mb-4">
+                                        {exam.questions.map((q, idx) => {
+                                            const isAnswered = answeredQuestions.has(q.id);
+                                            const isCurrent = idx === currentQuestion;
+                                            return (
+                                                <button
+                                                    key={idx}
+                                                    type="button"
+                                                    onClick={() => !showCompletionScreen && setCurrentQuestion(idx)}
+                                                    className={cn(
+                                                        "flex-1 h-3 rounded-full transition-all relative group",
+                                                        isCurrent ? "bg-primary ring-2 ring-primary/30" :
+                                                            isAnswered ? "bg-green-500" : "bg-muted hover:bg-muted-foreground/30"
+                                                    )}
+                                                    title={`Question ${idx + 1}${isAnswered ? ' ✓' : ''}`}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                    <div className="flex justify-between text-sm text-muted-foreground">
+                                        <span>Question {currentQuestion + 1} of {exam.questions.length}</span>
+                                        <span className="text-green-500">{answeredQuestions.size}/{exam.questions.length} answered</span>
+                                    </div>
+                                </>
+                            )}
 
-                            {/* Current Question Display */}
-                            {(() => {
+                            {/* Current Question Display - Hidden when submitted */}
+                            {!submittedId && !showCompletionScreen && (() => {
                                 const question = exam.questions[currentQuestion];
                                 if (!question) return null;
 
@@ -253,22 +277,31 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                         {question.type === 'MCQ' ? (
                                             question.isMultipleChoice ? (
                                                 <div className="space-y-3">
-                                                    <p className="text-xs text-muted-foreground mb-2">Select all correct answers</p>
+                                                    <p className="text-xs text-muted-foreground mb-2 flex items-center gap-2">
+                                                        <span className="bg-primary/20 text-primary px-2 py-0.5 rounded-full text-xs">Multiple Choice</span>
+                                                        Select all correct answers
+                                                    </p>
                                                     {question.options.map(option => (
-                                                        <div key={option.id} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-white/15 hover:border-white/25 has-[:checked]:border-primary has-[:checked]:bg-primary/10 transition-all duration-200">
+                                                        <div key={option.id} className="flex items-center space-x-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 has-[:checked]:border-primary has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5 transition-all duration-300 cursor-pointer">
                                                             <Checkbox
                                                                 id={`option-${option.id}`}
                                                                 name={`question-${question.id}`}
                                                                 value={String(option.id)}
+                                                                onCheckedChange={() => handleAnswerChange(question.id)}
                                                             />
                                                             <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer text-base">{option.text}</Label>
                                                         </div>
                                                     ))}
                                                 </div>
                                             ) : (
-                                                <RadioGroup name={`question-${question.id}`} required className="space-y-3">
+                                                <RadioGroup
+                                                    name={`question-${question.id}`}
+                                                    required
+                                                    className="space-y-3"
+                                                    onValueChange={() => handleAnswerChange(question.id)}
+                                                >
                                                     {question.options.map(option => (
-                                                        <div key={option.id} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-white/15 hover:border-white/25 has-[:checked]:border-primary has-[:checked]:bg-primary/10 transition-all duration-200">
+                                                        <div key={option.id} className="flex items-center space-x-3 p-4 rounded-xl border-2 border-white/10 hover:border-white/20 has-[:checked]:border-primary has-[:checked]:bg-gradient-to-r has-[:checked]:from-primary/10 has-[:checked]:to-primary/5 transition-all duration-300 cursor-pointer">
                                                             <RadioGroupItem value={String(option.id)} id={`option-${option.id}`} />
                                                             <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer text-base">{option.text}</Label>
                                                         </div>
@@ -281,308 +314,397 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                                 placeholder="Type your answer here..."
                                                 rows={6}
                                                 className="text-base"
+                                                onChange={(e) => e.target.value.length > 0 && handleAnswerChange(question.id)}
                                             />
                                         )}
                                     </div>
                                 );
                             })()}
 
-                            {/* Navigation Buttons */}
-                            <div className="flex justify-between items-center pt-4 border-t">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
-                                    disabled={currentQuestion === 0}
-                                >
-                                    <ChevronLeft className="mr-2 h-4 w-4" />
-                                    Previous
-                                </Button>
-
-                                <span className="text-sm text-muted-foreground">
-                                    {currentQuestion + 1} / {exam.questions.length}
-                                </span>
-
-                                {currentQuestion < exam.questions.length - 1 ? (
+                            {/* Navigation Buttons - Hidden when submitted */}
+                            {!submittedId && !showCompletionScreen && (
+                                <div className="flex justify-between items-center pt-6 border-t">
                                     <Button
                                         type="button"
                                         variant="outline"
-                                        onClick={() => setCurrentQuestion(prev => Math.min(exam.questions.length - 1, prev + 1))}
+                                        size="lg"
+                                        onClick={() => setCurrentQuestion(prev => Math.max(0, prev - 1))}
+                                        disabled={currentQuestion === 0}
+                                        className="px-6"
                                     >
-                                        Next
-                                        <ChevronRight className="ml-2 h-4 w-4" />
+                                        <ChevronLeft className="mr-2 h-4 w-4" />
+                                        Previous
                                     </Button>
-                                ) : (
-                                    <div className="w-24" /> /* Spacer */
-                                )}
-                            </div>
+
+                                    <div className="flex flex-col items-center">
+                                        <span className="text-sm font-semibold">{currentQuestion + 1} / {exam.questions.length}</span>
+                                        <span className="text-xs text-muted-foreground">{answeredQuestions.size} answered</span>
+                                    </div>
+
+                                    {currentQuestion < exam.questions.length - 1 ? (
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="lg"
+                                            onClick={() => setCurrentQuestion(prev => Math.min(exam.questions.length - 1, prev + 1))}
+                                            className="px-6"
+                                        >
+                                            Next
+                                            <ChevronRight className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            size="lg"
+                                            onClick={() => setShowCompletionScreen(true)}
+                                            className="px-6 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                                        >
+                                            Finish
+                                            <Check className="ml-2 h-4 w-4" />
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Completion Screen */}
+                            {showCompletionScreen && !submittedId && (
+                                <div className="mt-6 p-6 bg-gradient-to-br from-primary/10 via-background to-green-500/10 rounded-2xl border border-primary/20 text-center space-y-6">
+                                    <div className="text-6xl">🎯</div>
+                                    <div>
+                                        <h3 className="text-2xl font-bold mb-2">Ready to Submit?</h3>
+                                        <p className="text-muted-foreground mb-4">
+                                            You have answered <span className="font-bold text-green-500">{answeredQuestions.size}</span> out of <span className="font-bold">{exam.questions.length}</span> questions.
+                                        </p>
+                                        {!allQuestionsAnswered && (
+                                            <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4 text-sm text-yellow-500">
+                                                ⚠️ You haven't answered all questions. Unanswered questions will be marked as wrong.
+                                            </div>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="lg"
+                                            onClick={() => setShowCompletionScreen(false)}
+                                            className="px-8"
+                                        >
+                                            <ChevronLeft className="mr-2 h-4 w-4" />
+                                            Review Answers
+                                        </Button>
+                                        <Button
+                                            type="submit"
+                                            size="lg"
+                                            disabled={isSubmitting}
+                                            className="px-8 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                                        >
+                                            {isSubmitting ? (
+                                                <>
+                                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                                    Submitting...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <Send className="mr-2 h-4 w-4" />
+                                                    Submit Exam
+                                                </>
+                                            )}
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Submitted Success Screen */}
+                            {submittedId && (
+                                <div className="mt-6 p-8 bg-gradient-to-br from-green-500/20 via-background to-emerald-500/10 rounded-2xl border border-green-500/30 text-center space-y-6">
+                                    <div className="text-7xl">🎉</div>
+                                    <div>
+                                        <h3 className="text-3xl font-bold mb-2 text-green-500">Exam Submitted!</h3>
+                                        <p className="text-muted-foreground">
+                                            Your answers have been recorded successfully.
+                                        </p>
+                                    </div>
+                                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                        <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    size="lg"
+                                                    className="px-8 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-700"
+                                                >
+                                                    <Eye className="mr-2 h-5 w-5" />
+                                                    View Results
+                                                </Button>
+                                            </DialogTrigger>
+                                        </Dialog>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="lg"
+                                            onClick={() => {
+                                                setSubmittedId(null);
+                                                setHasStarted(false);
+                                                setTimeTaken(0);
+                                                setTimeLeft(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
+                                                setAnsweredQuestions(new Set());
+                                                setShowCompletionScreen(false);
+                                                setCurrentQuestion(0);
+                                            }}
+                                            className="px-8"
+                                        >
+                                            <RotateCcw className="mr-2 h-4 w-4" />
+                                            Try Again
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
                         </CardContent>
-                        <CardFooter className="flex flex-wrap gap-3 justify-center border-t pt-6">
-                            {submittedId ? (
-                                <>
-                                    <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
-                                        <DialogTrigger asChild>
-                                            <Button size="lg" variant="default">
-                                                <Eye className="mr-2 h-4 w-4" />
-                                                View Results
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col">
-                                            <DialogHeader>
-                                                <DialogTitle>Exam Results</DialogTitle>
-                                                <DialogDescription>Your submission results</DialogDescription>
-                                            </DialogHeader>
-                                            <ScrollArea className="flex-1">
-                                                {loadingResults ? (
-                                                    <div className="flex items-center justify-center h-64">
-                                                        <Loader2 className="h-8 w-8 animate-spin" />
-                                                    </div>
-                                                ) : examResults ? (() => {
-                                                    const totalPoints = examResults.submission.exam.questions.reduce((s: number, q: any) => s + q.points, 0);
-                                                    const percentage = totalPoints > 0 ? (examResults.submission.score / totalPoints) * 100 : 0;
-                                                    const correctCount = examResults.submission.answers.filter((a: any) => {
-                                                        const q = examResults.submission.exam.questions.find((q: any) => q.id === a.questionId);
-                                                        const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
-                                                        return opt?.isCorrect;
-                                                    }).length;
-                                                    const wrongCount = examResults.submission.exam.questions.length - correctCount;
+                        {/* Hidden CardFooter - Dialog only, no visible buttons */}
+                        <CardFooter className="hidden">
+                            {submittedId && (
+                                <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
+                                    <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col">
+                                        <DialogHeader>
+                                            <DialogTitle>Exam Results</DialogTitle>
+                                            <DialogDescription>Your submission results</DialogDescription>
+                                        </DialogHeader>
+                                        <ScrollArea className="flex-1">
+                                            {loadingResults ? (
+                                                <div className="flex items-center justify-center h-64">
+                                                    <Loader2 className="h-8 w-8 animate-spin" />
+                                                </div>
+                                            ) : examResults ? (() => {
+                                                const totalPoints = examResults.submission.exam.questions.reduce((s: number, q: any) => s + q.points, 0);
+                                                const percentage = totalPoints > 0 ? (examResults.submission.score / totalPoints) * 100 : 0;
+                                                const correctCount = examResults.submission.answers.filter((a: any) => {
+                                                    const q = examResults.submission.exam.questions.find((q: any) => q.id === a.questionId);
+                                                    const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
+                                                    return opt?.isCorrect;
+                                                }).length;
+                                                const wrongCount = examResults.submission.exam.questions.length - correctCount;
 
-                                                    return (
-                                                        <div className="p-4 space-y-6">
-                                                            {/* Score Summary Cards */}
-                                                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                                                <div className="text-center p-4 bg-muted rounded-lg">
-                                                                    <p className="text-3xl font-bold">{examResults.submission.score}/{totalPoints}</p>
-                                                                    <p className="text-xs text-muted-foreground mt-1">Total Score / මුළු ලකුණු</p>
-                                                                </div>
-                                                                <div className="text-center p-4 bg-muted rounded-lg">
-                                                                    <p className="text-3xl font-bold">{percentage.toFixed(0)}%</p>
-                                                                    <p className="text-xs text-muted-foreground mt-1">Percentage / ප්‍රතිශතය</p>
-                                                                </div>
-                                                                <div className="text-center p-4 bg-green-500/10 rounded-lg">
-                                                                    <p className="text-3xl font-bold text-green-500">{correctCount}</p>
-                                                                    <p className="text-xs text-muted-foreground mt-1">Correct / නිවැරදි</p>
-                                                                </div>
-                                                                <div className="text-center p-4 bg-red-500/10 rounded-lg">
-                                                                    <p className="text-3xl font-bold text-red-500">{wrongCount}</p>
-                                                                    <p className="text-xs text-muted-foreground mt-1">Wrong / වැරදි</p>
-                                                                </div>
+                                                return (
+                                                    <div className="p-4 space-y-6">
+                                                        {/* Score Summary Cards */}
+                                                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                                            <div className="text-center p-4 bg-muted rounded-lg">
+                                                                <p className="text-3xl font-bold">{examResults.submission.score}/{totalPoints}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1">Total Score / මුළු ලකුණු</p>
                                                             </div>
-
-                                                            {/* Pass/Fail Status */}
-                                                            <div className={cn(
-                                                                "text-center p-4 rounded-lg border-2",
-                                                                percentage >= 50 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"
-                                                            )}>
-                                                                <p className={cn("text-2xl font-bold", percentage >= 50 ? "text-green-500" : "text-red-500")}>
-                                                                    {percentage >= 50 ? "🎉 PASSED! / සමත්!" : "❌ FAILED / අසමත්"}
-                                                                </p>
-                                                                <p className="text-sm text-muted-foreground mt-1">
-                                                                    {percentage >= 50 ? "Congratulations! You passed this exam. / සුභ පැතුම්!" : "Better luck next time! / ඊළඟ වතාවේ හොඳින්!"}
-                                                                </p>
+                                                            <div className="text-center p-4 bg-muted rounded-lg">
+                                                                <p className="text-3xl font-bold">{percentage.toFixed(0)}%</p>
+                                                                <p className="text-xs text-muted-foreground mt-1">Percentage / ප්‍රතිශතය</p>
                                                             </div>
+                                                            <div className="text-center p-4 bg-green-500/10 rounded-lg">
+                                                                <p className="text-3xl font-bold text-green-500">{correctCount}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1">Correct / නිවැරදි</p>
+                                                            </div>
+                                                            <div className="text-center p-4 bg-red-500/10 rounded-lg">
+                                                                <p className="text-3xl font-bold text-red-500">{wrongCount}</p>
+                                                                <p className="text-xs text-muted-foreground mt-1">Wrong / වැරදි</p>
+                                                            </div>
+                                                        </div>
 
-                                                            {/* Question Review */}
-                                                            <div className="space-y-4">
-                                                                <h3 className="font-semibold text-lg border-b pb-2">📝 Answer Review / පිළිතුරු සමාලෝචනය</h3>
-                                                                {examResults.submission.exam.questions.map((q: any, i: number) => {
-                                                                    const userAnswers = examResults.submission.answers.filter((a: any) => a.questionId === q.id);
-                                                                    const correctOptions = q.options?.filter((o: any) => o.isCorrect) || [];
-                                                                    const totalCorrectCount = correctOptions.length;
+                                                        {/* Pass/Fail Status */}
+                                                        <div className={cn(
+                                                            "text-center p-4 rounded-lg border-2",
+                                                            percentage >= 50 ? "bg-green-500/10 border-green-500/30" : "bg-red-500/10 border-red-500/30"
+                                                        )}>
+                                                            <p className={cn("text-2xl font-bold", percentage >= 50 ? "text-green-500" : "text-red-500")}>
+                                                                {percentage >= 50 ? "🎉 PASSED! / සමත්!" : "❌ FAILED / අසමත්"}
+                                                            </p>
+                                                            <p className="text-sm text-muted-foreground mt-1">
+                                                                {percentage >= 50 ? "Congratulations! You passed this exam. / සුභ පැතුම්!" : "Better luck next time! / ඊළඟ වතාවේ හොඳින්!"}
+                                                            </p>
+                                                        </div>
 
-                                                                    // Calculate user's correct and wrong selections
-                                                                    const userCorrectSelections = userAnswers.filter((a: any) =>
-                                                                        q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
-                                                                    ).length;
-                                                                    const userWrongSelections = userAnswers.filter((a: any) =>
-                                                                        !q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
-                                                                    ).length;
-                                                                    const missedCorrect = totalCorrectCount - userCorrectSelections;
+                                                        {/* Question Review */}
+                                                        <div className="space-y-4">
+                                                            <h3 className="font-semibold text-lg border-b pb-2">📝 Answer Review / පිළිතුරු සමාලෝචනය</h3>
+                                                            {examResults.submission.exam.questions.map((q: any, i: number) => {
+                                                                const userAnswers = examResults.submission.answers.filter((a: any) => a.questionId === q.id);
+                                                                const correctOptions = q.options?.filter((o: any) => o.isCorrect) || [];
+                                                                const totalCorrectCount = correctOptions.length;
 
-                                                                    // Calculate marks
-                                                                    const marksPerCorrect = totalCorrectCount > 0 ? q.points / totalCorrectCount : q.points;
-                                                                    const earnedMarks = Math.round(userCorrectSelections * marksPerCorrect);
-                                                                    const lostMarks = q.points - earnedMarks;
-                                                                    const isFullMarks = earnedMarks === q.points;
-                                                                    const isPartial = earnedMarks > 0 && earnedMarks < q.points;
-                                                                    const isZero = earnedMarks === 0;
+                                                                // Calculate user's correct and wrong selections
+                                                                const userCorrectSelections = userAnswers.filter((a: any) =>
+                                                                    q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
+                                                                ).length;
+                                                                const userWrongSelections = userAnswers.filter((a: any) =>
+                                                                    !q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
+                                                                ).length;
+                                                                const missedCorrect = totalCorrectCount - userCorrectSelections;
 
-                                                                    return (
-                                                                        <div key={q.id} className="p-4 border rounded-lg space-y-3">
-                                                                            {/* Question Header */}
-                                                                            <div className="flex justify-between items-start">
-                                                                                <div className="flex-1">
-                                                                                    <p className="font-medium">Q{i + 1}. {q.text}</p>
-                                                                                    <p className="text-xs text-muted-foreground">Max Marks: {q.points} | ලකුණු: {q.points}</p>
-                                                                                </div>
-                                                                                {/* Quick Status Badge */}
-                                                                                <div className={cn(
-                                                                                    "px-3 py-1 rounded-full text-xs font-bold",
-                                                                                    isFullMarks && "bg-green-500/20 text-green-500",
-                                                                                    isPartial && "bg-yellow-500/20 text-yellow-500",
-                                                                                    isZero && "bg-red-500/20 text-red-500"
-                                                                                )}>
-                                                                                    {earnedMarks}/{q.points}
-                                                                                </div>
+                                                                // Calculate marks
+                                                                const marksPerCorrect = totalCorrectCount > 0 ? q.points / totalCorrectCount : q.points;
+                                                                const earnedMarks = Math.round(userCorrectSelections * marksPerCorrect);
+                                                                const lostMarks = q.points - earnedMarks;
+                                                                const isFullMarks = earnedMarks === q.points;
+                                                                const isPartial = earnedMarks > 0 && earnedMarks < q.points;
+                                                                const isZero = earnedMarks === 0;
+
+                                                                return (
+                                                                    <div key={q.id} className="p-4 border rounded-lg space-y-3">
+                                                                        {/* Question Header */}
+                                                                        <div className="flex justify-between items-start">
+                                                                            <div className="flex-1">
+                                                                                <p className="font-medium">Q{i + 1}. {q.text}</p>
+                                                                                <p className="text-xs text-muted-foreground">Max Marks: {q.points} | ලකුණු: {q.points}</p>
                                                                             </div>
+                                                                            {/* Quick Status Badge */}
+                                                                            <div className={cn(
+                                                                                "px-3 py-1 rounded-full text-xs font-bold",
+                                                                                isFullMarks && "bg-green-500/20 text-green-500",
+                                                                                isPartial && "bg-yellow-500/20 text-yellow-500",
+                                                                                isZero && "bg-red-500/20 text-red-500"
+                                                                            )}>
+                                                                                {earnedMarks}/{q.points}
+                                                                            </div>
+                                                                        </div>
 
-                                                                            {q.type === 'MCQ' ? (
-                                                                                <>
-                                                                                    {/* Options Display */}
-                                                                                    <div className="space-y-2">
-                                                                                        {q.options.map((opt: any) => {
-                                                                                            const isUserChoice = userAnswers.some((a: any) => a.selectedOptionId === opt.id);
-                                                                                            const isCorrect = opt.isCorrect;
+                                                                        {q.type === 'MCQ' ? (
+                                                                            <>
+                                                                                {/* Options Display */}
+                                                                                <div className="space-y-2">
+                                                                                    {q.options.map((opt: any) => {
+                                                                                        const isUserChoice = userAnswers.some((a: any) => a.selectedOptionId === opt.id);
+                                                                                        const isCorrect = opt.isCorrect;
 
-                                                                                            return (
-                                                                                                <div
-                                                                                                    key={opt.id}
-                                                                                                    className={cn(
-                                                                                                        "flex items-center gap-2 p-2 rounded-md text-sm border",
-                                                                                                        isCorrect && "bg-green-500/10 border-green-500/30",
-                                                                                                        isUserChoice && !isCorrect && "bg-red-500/10 border-red-500/30"
-                                                                                                    )}
-                                                                                                >
-                                                                                                    <div className="flex-shrink-0">
-                                                                                                        {isUserChoice && isCorrect && <Check className="h-4 w-4 text-green-500" />}
-                                                                                                        {isUserChoice && !isCorrect && <X className="h-4 w-4 text-red-500" />}
-                                                                                                        {!isUserChoice && isCorrect && <Target className="h-4 w-4 text-green-500" />}
-                                                                                                        {!isUserChoice && !isCorrect && <FileQuestion className="h-4 w-4 text-muted-foreground" />}
-                                                                                                    </div>
+                                                                                        return (
+                                                                                            <div
+                                                                                                key={opt.id}
+                                                                                                className={cn(
+                                                                                                    "flex items-center gap-2 p-2 rounded-md text-sm border",
+                                                                                                    isCorrect && "bg-green-500/10 border-green-500/30",
+                                                                                                    isUserChoice && !isCorrect && "bg-red-500/10 border-red-500/30"
+                                                                                                )}
+                                                                                            >
+                                                                                                <div className="flex-shrink-0">
+                                                                                                    {isUserChoice && isCorrect && <Check className="h-4 w-4 text-green-500" />}
+                                                                                                    {isUserChoice && !isCorrect && <X className="h-4 w-4 text-red-500" />}
+                                                                                                    {!isUserChoice && isCorrect && <Target className="h-4 w-4 text-green-500" />}
+                                                                                                    {!isUserChoice && !isCorrect && <FileQuestion className="h-4 w-4 text-muted-foreground" />}
+                                                                                                </div>
+                                                                                                <div className="flex-1">
                                                                                                     <p className={cn(
-                                                                                                        "flex-1",
                                                                                                         isCorrect && "font-semibold",
                                                                                                         isUserChoice && !isCorrect && "line-through"
                                                                                                     )}>{opt.text}</p>
-                                                                                                    {/* Mark indicators */}
+                                                                                                    {/* Sinhala explanations */}
                                                                                                     {isUserChoice && isCorrect && (
-                                                                                                        <span className="text-xs text-green-500 font-bold">+{marksPerCorrect.toFixed(1)}</span>
+                                                                                                        <p className="text-xs text-green-500 mt-0.5">✓ ඔබ තෝරපු පිළිතුර - නිවැරදියි!</p>
                                                                                                     )}
                                                                                                     {isUserChoice && !isCorrect && (
-                                                                                                        <span className="text-xs text-red-500 font-bold">Wrong</span>
+                                                                                                        <p className="text-xs text-red-500 mt-0.5">✗ ඔබ තෝරපු පිළිතුර - වැරදියි!</p>
                                                                                                     )}
                                                                                                     {!isUserChoice && isCorrect && (
-                                                                                                        <span className="text-xs text-yellow-500">Missed</span>
+                                                                                                        <p className="text-xs text-yellow-500 mt-0.5">🎯 මෙයයි නිවැරදි පිළිතුර</p>
                                                                                                     )}
                                                                                                 </div>
-                                                                                            );
-                                                                                        })}
-                                                                                    </div>
-
-                                                                                    {/* Detailed Marks Breakdown */}
-                                                                                    <div className="mt-3 p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
-                                                                                        <p className="font-semibold border-b pb-1">📊 Marks Breakdown / ලකුණු විස්තරය:</p>
-                                                                                        <div className="grid grid-cols-2 gap-2">
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <Check className="h-3 w-3 text-green-500" />
-                                                                                                <span>Correct: {userCorrectSelections}/{totalCorrectCount}</span>
+                                                                                                {/* Mark indicators */}
+                                                                                                {isUserChoice && isCorrect && (
+                                                                                                    <span className="text-xs bg-green-500/20 text-green-500 font-bold px-2 py-1 rounded-full">+{marksPerCorrect.toFixed(1)}</span>
+                                                                                                )}
+                                                                                                {isUserChoice && !isCorrect && (
+                                                                                                    <span className="text-xs bg-red-500/20 text-red-500 font-bold px-2 py-1 rounded-full">Wrong</span>
+                                                                                                )}
+                                                                                                {!isUserChoice && isCorrect && (
+                                                                                                    <span className="text-xs bg-yellow-500/20 text-yellow-500 font-bold px-2 py-1 rounded-full">Missed</span>
+                                                                                                )}
                                                                                             </div>
-                                                                                            <div className="flex items-center gap-2">
-                                                                                                <X className="h-3 w-3 text-red-500" />
-                                                                                                <span>Wrong: {userWrongSelections}</span>
-                                                                                            </div>
-                                                                                            {missedCorrect > 0 && (
-                                                                                                <div className="flex items-center gap-2">
-                                                                                                    <Target className="h-3 w-3 text-yellow-500" />
-                                                                                                    <span>Missed: {missedCorrect}</span>
-                                                                                                </div>
-                                                                                            )}
-                                                                                        </div>
-                                                                                        <div className="border-t pt-2 mt-2">
-                                                                                            <div className="flex justify-between">
-                                                                                                <span className="text-green-500">✓ Earned / ලැබූ:</span>
-                                                                                                <span className="font-bold text-green-500">+{earnedMarks}</span>
-                                                                                            </div>
-                                                                                            {lostMarks > 0 && (
-                                                                                                <div className="flex justify-between">
-                                                                                                    <span className="text-red-500">✗ Lost / අහිමි:</span>
-                                                                                                    <span className="font-bold text-red-500">-{lostMarks}</span>
-                                                                                                </div>
-                                                                                            )}
-                                                                                            <div className="flex justify-between border-t pt-1 mt-1">
-                                                                                                <span className="font-semibold">Final / අවසාන:</span>
-                                                                                                <span className={cn(
-                                                                                                    "font-bold",
-                                                                                                    isFullMarks && "text-green-500",
-                                                                                                    isPartial && "text-yellow-500",
-                                                                                                    isZero && "text-red-500"
-                                                                                                )}>{earnedMarks}/{q.points}</span>
-                                                                                            </div>
-                                                                                        </div>
-                                                                                    </div>
-                                                                                </>
-                                                                            ) : (
-                                                                                /* Essay Answer */
-                                                                                <div className="space-y-2">
-                                                                                    <div className="p-3 rounded-md bg-muted">
-                                                                                        <p className="text-xs font-semibold text-muted-foreground mb-1">Your Answer / ඔබේ පිළිතුර:</p>
-                                                                                        <p className="text-sm whitespace-pre-wrap">{userAnswers[0]?.customAnswer || 'No answer provided.'}</p>
-                                                                                    </div>
-                                                                                    {userAnswers[0]?.marksAwarded !== null && userAnswers[0]?.marksAwarded !== undefined ? (
-                                                                                        <div className="p-3 bg-green-500/10 border-green-500/30 rounded-lg border">
-                                                                                            <p className="font-semibold text-green-500 flex items-center gap-2">
-                                                                                                <Check className="h-4 w-4" />
-                                                                                                Graded: {userAnswers[0].marksAwarded} / {q.points}
-                                                                                            </p>
-                                                                                            {userAnswers[0].feedback && (
-                                                                                                <p className="text-sm text-muted-foreground mt-1">💬 {userAnswers[0].feedback}</p>
-                                                                                            )}
-                                                                                        </div>
-                                                                                    ) : (
-                                                                                        <div className="p-3 bg-blue-500/10 border-blue-500/30 rounded-lg border">
-                                                                                            <p className="font-semibold text-blue-500 flex items-center gap-2">
-                                                                                                <Pencil className="h-4 w-4" />
-                                                                                                ⏳ Pending Review / සමාලෝචනය බලාපොරොත්තුවෙන්
-                                                                                            </p>
-                                                                                            <p className="text-xs text-muted-foreground mt-1">
-                                                                                                This answer will be graded manually.
-                                                                                            </p>
-                                                                                        </div>
-                                                                                    )}
+                                                                                        );
+                                                                                    })}
                                                                                 </div>
-                                                                            )}
-                                                                        </div>
-                                                                    );
-                                                                })}
-                                                            </div>
+
+                                                                                {/* Detailed Marks Breakdown */}
+                                                                                <div className="mt-3 p-3 bg-muted/50 rounded-lg space-y-2 text-sm">
+                                                                                    <p className="font-semibold border-b pb-1">📊 Marks Breakdown / ලකුණු විස්තරය:</p>
+                                                                                    <div className="grid grid-cols-2 gap-2">
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <Check className="h-3 w-3 text-green-500" />
+                                                                                            <span>Correct: {userCorrectSelections}/{totalCorrectCount}</span>
+                                                                                        </div>
+                                                                                        <div className="flex items-center gap-2">
+                                                                                            <X className="h-3 w-3 text-red-500" />
+                                                                                            <span>Wrong: {userWrongSelections}</span>
+                                                                                        </div>
+                                                                                        {missedCorrect > 0 && (
+                                                                                            <div className="flex items-center gap-2">
+                                                                                                <Target className="h-3 w-3 text-yellow-500" />
+                                                                                                <span>Missed: {missedCorrect}</span>
+                                                                                            </div>
+                                                                                        )}
+                                                                                    </div>
+                                                                                    <div className="border-t pt-2 mt-2">
+                                                                                        <div className="flex justify-between">
+                                                                                            <span className="text-green-500">✓ Earned / ලැබූ:</span>
+                                                                                            <span className="font-bold text-green-500">+{earnedMarks}</span>
+                                                                                        </div>
+                                                                                        {lostMarks > 0 && (
+                                                                                            <div className="flex justify-between">
+                                                                                                <span className="text-red-500">✗ Lost / අහිමි:</span>
+                                                                                                <span className="font-bold text-red-500">-{lostMarks}</span>
+                                                                                            </div>
+                                                                                        )}
+                                                                                        <div className="flex justify-between border-t pt-1 mt-1">
+                                                                                            <span className="font-semibold">Final / අවසාන:</span>
+                                                                                            <span className={cn(
+                                                                                                "font-bold",
+                                                                                                isFullMarks && "text-green-500",
+                                                                                                isPartial && "text-yellow-500",
+                                                                                                isZero && "text-red-500"
+                                                                                            )}>{earnedMarks}/{q.points}</span>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </>
+                                                                        ) : (
+                                                                            /* Essay Answer */
+                                                                            <div className="space-y-2">
+                                                                                <div className="p-3 rounded-md bg-muted">
+                                                                                    <p className="text-xs font-semibold text-muted-foreground mb-1">Your Answer / ඔබේ පිළිතුර:</p>
+                                                                                    <p className="text-sm whitespace-pre-wrap">{userAnswers[0]?.customAnswer || 'No answer provided.'}</p>
+                                                                                </div>
+                                                                                {userAnswers[0]?.marksAwarded !== null && userAnswers[0]?.marksAwarded !== undefined ? (
+                                                                                    <div className="p-3 bg-green-500/10 border-green-500/30 rounded-lg border">
+                                                                                        <p className="font-semibold text-green-500 flex items-center gap-2">
+                                                                                            <Check className="h-4 w-4" />
+                                                                                            Graded: {userAnswers[0].marksAwarded} / {q.points}
+                                                                                        </p>
+                                                                                        {userAnswers[0].feedback && (
+                                                                                            <p className="text-sm text-muted-foreground mt-1">💬 {userAnswers[0].feedback}</p>
+                                                                                        )}
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <div className="p-3 bg-blue-500/10 border-blue-500/30 rounded-lg border">
+                                                                                        <p className="font-semibold text-blue-500 flex items-center gap-2">
+                                                                                            <Pencil className="h-4 w-4" />
+                                                                                            ⏳ Pending Review / සමාලෝචනය බලාපොරොත්තුවෙන්
+                                                                                        </p>
+                                                                                        <p className="text-xs text-muted-foreground mt-1">
+                                                                                            This answer will be graded manually.
+                                                                                        </p>
+                                                                                    </div>
+                                                                                )}
+                                                                            </div>
+                                                                        )}
+                                                                    </div>
+                                                                );
+                                                            })}
                                                         </div>
-                                                    );
-                                                })() : (
-                                                    <p className="text-center p-8">ප්‍රතිඵල පූරණය කළ නොහැක</p>
-                                                )}
-                                            </ScrollArea>
-                                            <DialogFooter>
-                                                <Button variant="outline" onClick={() => setShowResultsModal(false)}>Close</Button>
-                                                <Button onClick={() => window.print()}>
-                                                    <Download className="mr-2 h-4 w-4" /> Download PDF
-                                                </Button>
-                                            </DialogFooter>
-                                        </DialogContent>
-                                    </Dialog>
-                                    <Button variant="outline" size="lg" onClick={() => {
-                                        setSubmittedId(null);
-                                        setHasStarted(false);
-                                        setTimeTaken(0);
-                                        setTimeLeft(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
-                                    }}>
-                                        <RotateCcw className="mr-2 h-4 w-4" />
-                                        Try Again
-                                    </Button>
-                                </>
-                            ) : (
-                                <Button type="submit" size="lg" disabled={isSubmitting}>
-                                    {isSubmitting ? (
-                                        <>
-                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                            Submitting...
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Send className="mr-2 h-4 w-4" />
-                                            Submit Exam
-                                        </>
-                                    )}
-                                </Button>
+                                                    </div>
+                                                );
+                                            })() : (
+                                                <p className="text-center p-8">ප්‍රතිඵල පූරණය කළ නොහැක</p>
+                                            )}
+                                        </ScrollArea>
+                                        <DialogFooter>
+                                            <Button variant="outline" onClick={() => setShowResultsModal(false)}>Close</Button>
+                                            <Button onClick={() => window.print()}>
+                                                <Download className="mr-2 h-4 w-4" /> Download PDF
+                                            </Button>
+                                        </DialogFooter>
+                                    </DialogContent>
+                                </Dialog>
                             )}
                         </CardFooter>
                     </form>
