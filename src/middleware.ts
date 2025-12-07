@@ -31,7 +31,7 @@ function getClientIp(request: NextRequest): string {
   if (realIp) {
     return realIp;
   }
-  return request.ip ?? '127.0.0.1';
+  return '127.0.0.1';
 }
 
 export async function middleware(request: NextRequest) {

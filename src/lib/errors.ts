@@ -142,8 +142,8 @@ export function errorResponse(
         error: {
             type,
             message,
-            ...(code && { code }),
-            ...(details && { details }),
+            ...(code ? { code } : {}),
+            ...(details ? { details } : {}),
         },
     };
 }

@@ -217,7 +217,7 @@ export default function ActivityPageClient({ initialData }: ActivityPageClientPr
         const f = favorites.map(i => ({ ...i, type: 'favorite', date: i.createdAt }));
         const e = exams.map(i => ({ ...i, type: 'exam', date: i.createdAt }));
 
-        let merged = [];
+        let merged: Array<{ id: string; type: string; date: Date | string; title?: string; message?: string; description?: string; name?: string;[key: string]: unknown }> = [];
         if (filterType === 'all') merged = [...n, ...p, ...f, ...e];
         else if (filterType === 'notifications') merged = [...n];
         else if (filterType === 'posts') merged = [...p];
@@ -228,10 +228,10 @@ export default function ActivityPageClient({ initialData }: ActivityPageClientPr
         if (searchQuery) {
             const query = searchQuery.toLowerCase();
             merged = merged.filter(item =>
-                (item.title && item.title.toLowerCase().includes(query)) ||
-                (item.message && item.message.toLowerCase().includes(query)) ||
-                (item.description && item.description.toLowerCase().includes(query)) ||
-                (item.name && item.name.toLowerCase().includes(query))
+                (item.title && String(item.title).toLowerCase().includes(query)) ||
+                (item.message && String(item.message).toLowerCase().includes(query)) ||
+                (item.description && String(item.description).toLowerCase().includes(query)) ||
+                (item.name && String(item.name).toLowerCase().includes(query))
             );
         }
 

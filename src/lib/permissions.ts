@@ -62,3 +62,13 @@ export const SubtitleAccessLevel = {
   SUBSCRIBER_ONLY: 'SUBSCRIBER_ONLY',
   AUTHORIZED_ONLY: 'AUTHORIZED_ONLY',
 } as const;
+
+/**
+ * Check if a role has a specific permission
+ */
+export function hasPermission(role: string | undefined | null, permission: string): boolean {
+  if (!role) return false;
+  const rolePermissions = permissions[role];
+  if (!rolePermissions) return false;
+  return rolePermissions.includes(permission);
+}
