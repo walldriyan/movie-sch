@@ -68,15 +68,15 @@ export default function MovieForm({
       ? {
         title: editingMovie.title,
         posterUrl: editingMovie.posterUrl || '',
-        description: editingMovie.description,
-        year: editingMovie.year,
-        duration: editingMovie.duration,
+        description: editingMovie.description || '',
+        year: editingMovie.year ?? new Date().getFullYear(),
+        duration: editingMovie.duration || '',
         genres: editingMovie.genres || [],
         directors: editingMovie.directors || '',
         mainCast: editingMovie.mainCast || '',
-        imdbRating: editingMovie.imdbRating,
-        rottenTomatoesRating: editingMovie.rottenTomatoesRating || undefined,
-        googleRating: editingMovie.googleRating || undefined,
+        imdbRating: editingMovie.imdbRating ?? 0,
+        rottenTomatoesRating: editingMovie.rottenTomatoesRating ?? undefined,
+        googleRating: editingMovie.googleRating ?? undefined,
         mediaLinks: editingMovie.mediaLinks || [],
       }
       : {

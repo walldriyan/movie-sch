@@ -64,6 +64,9 @@ export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'review
   groupId?: string | null;
 };
 
+// Alias for backward compatibility
+export type MovieFormData = PostFormData;
+
 
 // Group Management Types
 export type MemberWithUser = PrismaGroupMember & { user: User };
