@@ -637,7 +637,7 @@ export async function getExamResultsForAdmin(examId: number) {
             answers: true
         },
         orderBy: {
-            score: 'desc'
+            submittedAt: 'desc'
         }
     });
 
