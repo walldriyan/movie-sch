@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect, useTransition } from 'react';
+import { useState, useEffect, useTransition, useCallback } from 'react';
 import type { User, Role } from '@prisma/client';
 import { getUsers, updateUserRole } from '@/lib/actions';
 import { Button } from '@/components/ui/button';
@@ -55,7 +55,7 @@ export default function ManageUsersPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isChangingStatus, startStatusChangeTransition] = useTransition();
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setIsRefreshing(true);
     try {
       const usersFromDb = await getUsers();
@@ -69,38 +69,38 @@ export default function ManageUsersPage() {
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [toast]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
-  
+  }, [fetchUsers]);
+
   const handleRefreshAndToast = () => {
     fetchUsers();
-    toast({ title: 'User list refreshed'});
+    toast({ title: 'User list refreshed' });
   }
 
   const handleStatusChange = (user: User, newStatus: string) => {
     startStatusChangeTransition(async () => {
-        try {
-            await updateUserRole(user.id, user.role as Role, newStatus, user.dailyPostLimit?.toString() ?? null);
-            toast({ title: 'Status Updated', description: `${user.name}'s status updated to ${newStatus}`});
-            fetchUsers();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        }
+      try {
+        await updateUserRole(user.id, user.role as Role, newStatus, user.dailyPostLimit?.toString() ?? null);
+        toast({ title: 'Status Updated', description: `${user.name}'s status updated to ${newStatus}` });
+        fetchUsers();
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      }
     });
   }
 
   const handleRoleChange = (user: User, newRole: Role) => {
     startStatusChangeTransition(async () => {
-        try {
-            await updateUserRole(user.id, newRole, user.permissionRequestStatus || 'NONE', user.dailyPostLimit?.toString() ?? null);
-            toast({ title: 'Role Updated', description: `${user.name}'s role updated to ${newRole}`});
-            fetchUsers();
-        } catch (error: any) {
-            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        }
+      try {
+        await updateUserRole(user.id, newRole, user.permissionRequestStatus || 'NONE', user.dailyPostLimit?.toString() ?? null);
+        toast({ title: 'Role Updated', description: `${user.name}'s role updated to ${newRole}` });
+        fetchUsers();
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      }
     });
   };
 
@@ -116,7 +116,7 @@ export default function ManageUsersPage() {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-             <div>
+            <div>
               <CardTitle>Users</CardTitle>
               <CardDescription>
                 A list of all users in the system.
@@ -154,7 +154,7 @@ export default function ManageUsersPage() {
                           </Badge>
                         )}
                       </div>
-                       {user.permissionRequestMessage && (
+                      {user.permissionRequestMessage && (
                         <p className="text-xs text-muted-foreground mt-1 italic truncate">
                           &quot;{user.permissionRequestMessage}&quot;
                         </p>
@@ -167,8 +167,8 @@ export default function ManageUsersPage() {
                           user.role === 'SUPER_ADMIN'
                             ? 'default'
                             : user.role === 'USER_ADMIN'
-                            ? 'secondary'
-                            : 'outline'
+                              ? 'secondary'
+                              : 'outline'
                         }
                       >
                         {user.role}
@@ -193,36 +193,36 @@ export default function ManageUsersPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                           <DropdownMenuSub>
-                              <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
-                              <DropdownMenuPortal>
-                                  <DropdownMenuSubContent>
-                                      <DropdownMenuRadioGroup
-                                          value={user.role}
-                                          onValueChange={(newRole) => handleRoleChange(user, newRole as Role)}
-                                      >
-                                        {Object.values(ROLES).map(role => (
-                                           <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
-                                        ))}
-                                      </DropdownMenuRadioGroup>
-                                  </DropdownMenuSubContent>
-                              </DropdownMenuPortal>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuRadioGroup
+                                  value={user.role}
+                                  onValueChange={(newRole) => handleRoleChange(user, newRole as Role)}
+                                >
+                                  {Object.values(ROLES).map(role => (
+                                    <DropdownMenuRadioItem key={role} value={role}>{role}</DropdownMenuRadioItem>
+                                  ))}
+                                </DropdownMenuRadioGroup>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
                           </DropdownMenuSub>
-                           <DropdownMenuSub>
-                              <DropdownMenuSubTrigger>Change Permission Status</DropdownMenuSubTrigger>
-                              <DropdownMenuPortal>
-                                  <DropdownMenuSubContent>
-                                      <DropdownMenuRadioGroup
-                                          value={user.permissionRequestStatus || 'NONE'}
-                                          onValueChange={(newStatus) => handleStatusChange(user, newStatus)}
-                                      >
-                                          <DropdownMenuRadioItem value="NONE">None</DropdownMenuRadioItem>
-                                          <DropdownMenuRadioItem value="PENDING">Pending</DropdownMenuRadioItem>
-                                          <DropdownMenuRadioItem value="APPROVED">Approved</DropdownMenuRadioItem>
-                                          <DropdownMenuRadioItem value="REJECTED">Rejected</DropdownMenuRadioItem>
-                                      </DropdownMenuRadioGroup>
-                                  </DropdownMenuSubContent>
-                              </DropdownMenuPortal>
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger>Change Permission Status</DropdownMenuSubTrigger>
+                            <DropdownMenuPortal>
+                              <DropdownMenuSubContent>
+                                <DropdownMenuRadioGroup
+                                  value={user.permissionRequestStatus || 'NONE'}
+                                  onValueChange={(newStatus) => handleStatusChange(user, newStatus)}
+                                >
+                                  <DropdownMenuRadioItem value="NONE">None</DropdownMenuRadioItem>
+                                  <DropdownMenuRadioItem value="PENDING">Pending</DropdownMenuRadioItem>
+                                  <DropdownMenuRadioItem value="APPROVED">Approved</DropdownMenuRadioItem>
+                                  <DropdownMenuRadioItem value="REJECTED">Rejected</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                              </DropdownMenuSubContent>
+                            </DropdownMenuPortal>
                           </DropdownMenuSub>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-destructive">

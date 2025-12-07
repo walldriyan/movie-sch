@@ -28,8 +28,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const feedbackSchema = z.object({
   title: z.string().min(5, 'Title must be at least 5 characters long.'),
   description: z.string().min(20, 'Description must be at least 20 characters long.'),
-  image: z.instanceof(File).optional()
-    .refine(file => !file || file.size <= 2 * 1024 * 1024, 'Image must be less than 2MB.'),
+  image: z.any().optional()
+    .refine(file => !file || (typeof File !== 'undefined' && file instanceof File && file.size <= 2 * 1024 * 1024), 'Image must be less than 2MB.'),
 });
 
 type FeedbackFormValues = z.infer<typeof feedbackSchema>;
@@ -58,7 +58,7 @@ export default function FeedbackPage() {
     router.push('/login');
     return null;
   }
-  
+
   const handleImageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -70,12 +70,12 @@ export default function FeedbackPage() {
       reader.readAsDataURL(file);
     }
   };
-  
+
   const removeImage = () => {
     setPreviewImage(null);
     form.setValue('image', undefined);
-    if(fileInputRef.current) {
-        fileInputRef.current.value = "";
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
   }
 
@@ -88,16 +88,16 @@ export default function FeedbackPage() {
         if (values.image) {
           formData.append('image', values.image);
         }
-        
+
         await submitFeedback(formData);
-        
+
         toast({
           title: 'Feedback Sent!',
           description: 'Thank you for your valuable feedback.',
         });
         form.reset();
         setPreviewImage(null);
-        if(fileInputRef.current) {
+        if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
       } catch (error: any) {
@@ -136,13 +136,13 @@ export default function FeedbackPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="image">Attach an Image (Optional)</Label>
-              <Input 
-                id="image" 
-                type="file" 
+              <Input
+                id="image"
+                type="file"
                 accept="image/*"
                 ref={fileInputRef}
                 onChange={handleImageChange}
-                />
+              />
               {form.formState.errors.image && <p className="text-sm text-destructive">{form.formState.errors.image.message}</p>}
             </div>
             {previewImage && (

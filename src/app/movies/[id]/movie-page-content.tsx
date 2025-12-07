@@ -222,7 +222,7 @@ export default function MoviePageContent({
         effectRan.current = true;
       }
     };
-  }, []); // Empty dependency array ensures this runs only once
+  }, [initialPost.id]); // Only runs once per post
 
   useEffect(() => {
     // This effect runs only once on mount to set the initial view count

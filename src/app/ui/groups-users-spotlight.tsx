@@ -27,11 +27,11 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
   const [items, setItems] = React.useState<any[]>([]);
   const [skeletons, setSkeletons] = useState<SkeletonItem[]>([]);
 
-  const positionClasses = [
+  const positionClasses = React.useMemo(() => [
     'top-1/4 left-1/4', 'top-1/2 right-1/4', 'bottom-1/4 left-1/2', 'top-1/3 right-1/3',
     'bottom-1/3 left-1/4', 'top-1/2 left-1/3', 'bottom-1/4 right-1/2', 'top-1/4 right-1/4',
     'bottom-1/2 left-1/2'
-  ];
+  ], []);
 
   useEffect(() => {
     // Generate skeletons only on the client, after hydration
@@ -41,7 +41,7 @@ export default function GroupsUsersSpotlight({ users, groups, loading }: {
       position: positionClasses[index % positionClasses.length],
     }));
     setSkeletons(generatedSkeletons);
-  }, []); // Empty dependency array ensures this runs once on the client
+  }, [positionClasses]);
 
   React.useEffect(() => {
     const userItems = users.slice(0, 5).map(user => ({
