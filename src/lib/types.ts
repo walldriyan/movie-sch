@@ -126,7 +126,7 @@ export type GroupForEditing = Pick<PrismaGroup, 'id' | 'name' | 'description' | 
 export type ExamResultSubmission = PrismaSubmission & {
   user: Pick<User, 'id' | 'name' | 'email' | 'image'>;
   answers: PrismaSubmissionAnswer[];
-  attemptHistory: JsonValue[];
+  attemptHistory?: any;
 };
 
 export type ExamWithSubmissions = PrismaExam & {

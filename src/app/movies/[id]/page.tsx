@@ -58,7 +58,7 @@ function serializeReview(review: any): any {
   };
 }
 
-export default async function MoviePage({ params }: { params: Promise<{ id: string }>}) {
+export default async function MoviePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const postId = Number(resolvedParams.id);
 
@@ -68,7 +68,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
 
   const session = await auth();
   const postData = await getPost(postId);
-  
+
   if (!postData) {
     notFound();
   }
@@ -80,27 +80,27 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
   if (user && (user.role === ROLES.SUPER_ADMIN || user.id === postData.authorId)) {
     isContentLocked = false;
   } else if (postData.visibility === 'GROUP_ONLY') {
-      if (!user) {
-        isContentLocked = true; // Not logged in, so lock group content
-      } else {
-        const membership = await prisma.groupMember.findFirst({
-            where: {
-                groupId: postData.groupId,
-                userId: user.id,
-                status: 'ACTIVE'
-            }
-        });
-        if (!membership) {
-            isContentLocked = true; // Logged in but not a member, so lock
+    if (!user) {
+      isContentLocked = true; // Not logged in, so lock group content
+    } else {
+      const membership = await prisma.groupMember.findFirst({
+        where: {
+          groupId: postData.groupId || undefined,
+          userId: user.id,
+          status: 'ACTIVE'
         }
+      });
+      if (!membership) {
+        isContentLocked = true; // Logged in but not a member, so lock
       }
+    }
   } else if (postData.isLockedByDefault) {
     isContentLocked = true;
     // In a future step, we could add exam pass checking logic here for logged-in users.
     // For now, if it's locked by default and the user is not an admin/author, it's locked.
   }
   // --- End Server-Side Lock Logic ---
-  
+
   // Serialize subtitles with permissions
   const subtitlesWithPermissions: any[] = await Promise.all(
     (postData.subtitles || []).map(async (subtitle: any) => ({
@@ -115,7 +115,7 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
       canDownload: await canUserDownloadSubtitle(subtitle.id),
     }))
   );
-  
+
   // The full post object is large. We only need specific fields for the client component.
   const serializablePostForClient = {
     id: postData.id,
@@ -139,25 +139,25 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     authorId: postData.authorId,
     groupId: postData.groupId,
     isContentLocked: isContentLocked, // Pass calculated lock status
-    
+
     // Serialize nested objects
     author: serializeUser(postData.author),
-    
+
     reviews: (postData.reviews || [])
       .map(serializeReview)
       .filter(Boolean),
-    
+
     series: postData.series ? {
       id: postData.series.id,
       title: postData.series.title,
     } : null,
-    
+
     exam: postData.exam ? {
-        id: postData.exam.id,
-        title: postData.exam.title,
-        description: postData.exam.description,
+      id: postData.exam.id,
+      title: postData.exam.title,
+      description: postData.exam.description,
     } : null,
-    
+
     mediaLinks: (postData.mediaLinks || []).map((link: any) => ({
       id: link.id,
       url: link.url,
@@ -168,15 +168,15 @@ export default async function MoviePage({ params }: { params: Promise<{ id: stri
     _count: postData._count,
     likedBy: (postData.likedBy || []).map(serializeUser),
     dislikedBy: (postData.dislikedBy || []).map(serializeUser),
-    favoritePosts: (postData.favoritePosts || []).map((fp:any) => ({
-        userId: fp.userId,
-        postId: fp.postId,
-        createdAt: serializeDate(fp.createdAt),
+    favoritePosts: (postData.favoritePosts || []).map((fp: any) => ({
+      userId: fp.userId,
+      postId: fp.postId,
+      createdAt: serializeDate(fp.createdAt),
     })),
   };
 
   return (
-    <MoviePageContent 
+    <MoviePageContent
       initialPost={serializablePostForClient}
       initialSubtitles={subtitlesWithPermissions}
       session={session}

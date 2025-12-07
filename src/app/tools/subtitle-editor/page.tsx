@@ -58,7 +58,7 @@ const secondsToSrtTime = (seconds: number): string => {
 const parseSrt = (srtContent: string): Omit<SubtitleEntry, 'id'>[] => {
     console.log("--- [SRT Parser] පියවර 1: SRT ගොනුව parse කිරීම ආරම්භ විය.");
     const blocks = srtContent.trim().split(/\r?\n\r?\n/);
-    const parsed = blocks.map(block => {
+    const parsed = blocks.map((block): Omit<SubtitleEntry, 'id'> | null => {
         const lines = block.split(/\r?\n/);
         if (lines.length < 3) return null;
         const timeMatch = lines[1]?.match(/(\d{2}:\d{2}:\d{2},\d{3}) --> (\d{2}:\d{2}:\d{2},\d{3})/);
@@ -86,24 +86,24 @@ export default function SubtitleEditorPage() {
     const [duration, setDuration] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [currentSubtitle, setCurrentSubtitle] = useState<SubtitleEntry | null>(null);
-    
+
     // PERFORMANCE FIX: Local input values - මේවා render trigger කරන්නේ නැහැ!
     const inputValuesRef = useRef<Map<number, string>>(new Map());
-    
+
     // States for debug overlay
     const [isBuffering, setIsBuffering] = useState(false);
     const [bufferedAmount, setBufferedAmount] = useState(0);
-    
+
     // Fix 2: Enter key processing flag එකක් add කරමු
     const isProcessingEnter = useRef(false);
-    
+
     // CRITICAL FIX: Manual subtitle change tracking
     const manualSubtitleChangeRef = useRef(false);
     const manualSubtitleTimerRef = useRef<NodeJS.Timeout | null>(null);
-    
+
     // PERFORMANCE: Debounce timer for auto-save
     const saveTimerRef = useRef<Map<number, NodeJS.Timeout>>(new Map());
-    
+
     const playerRef = useRef<ReactPlayer>(null);
     const videoInputRef = useRef<HTMLInputElement>(null);
     const subtitleInputRef = useRef<HTMLInputElement>(null);
@@ -118,14 +118,14 @@ export default function SubtitleEditorPage() {
         const tx = db.transaction(SUBTITLE_STORE, 'readonly');
         const allSubs = await tx.store.getAll();
         setSubtitles(allSubs);
-        
+
         // Load existing values into ref
         const valueMap = new Map<number, string>();
         allSubs.forEach(sub => {
             if (sub.sinhala) valueMap.set(sub.id, sub.sinhala);
         });
         inputValuesRef.current = valueMap;
-        
+
         console.log(`--- [DB] Subtitles ${allSubs.length} ක් DB එකෙන් load කරන ලදී. State යාවත්කාලීන විය.`);
     };
 
@@ -133,7 +133,7 @@ export default function SubtitleEditorPage() {
         console.log("--- [useEffect] පළමු render එකෙන් පසු subtitles load කිරීමේ effect එක ක්‍රියාත්මක විය.");
         loadSubtitlesFromDB();
     }, []);
-    
+
     useEffect(() => {
         if (activeRowRef.current) {
             console.log(`--- [useEffect] Active subtitle (ID: ${currentSubtitle?.id}) වෙනස් විය. අදාළ row එක scroll කරමින් පවතී.`);
@@ -155,7 +155,7 @@ export default function SubtitleEditorPage() {
             console.log(`--- [File Handling] Video URL එක state එකට set කරන ලදී: ${url}`);
         }
     };
-    
+
     const handleSubtitleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
         console.log("--- [File Handling] Subtitle ගොනුවක් තෝරාගෙන ඇත.");
         const file = event.target.files?.[0];
@@ -164,7 +164,7 @@ export default function SubtitleEditorPage() {
             reader.onload = async (e) => {
                 const content = e.target?.result as string;
                 const parsedSubs = parseSrt(content);
-                
+
                 console.log("--- [DB] පැරණි subtitles clear කරමින්, අලුත් ඒවා DB එකට add කරමින් පවතී.");
                 const db = await dbPromise!;
                 const tx = db.transaction(SUBTITLE_STORE, 'readwrite');
@@ -173,15 +173,15 @@ export default function SubtitleEditorPage() {
                     await tx.store.add(sub as any);
                 }
                 await tx.done;
-                
+
                 await loadSubtitlesFromDB();
                 inputValuesRef.current.clear();
-                toast({ title: 'Subtitles Loaded', description: `${parsedSubs.length} lines loaded into the editor.`})
+                toast({ title: 'Subtitles Loaded', description: `${parsedSubs.length} lines loaded into the editor.` })
             };
             reader.readAsText(file);
         }
     };
-    
+
     // PERFORMANCE FIX: Debounced save - save කිරීම Enter button එකට පමණක්
     const saveChanges = async (id: number, text: string) => {
         console.log(`--- [Save] saveChanges function එක ක්‍රියාත්මක විය. ID: ${id}, Text: "${text}"`);
@@ -195,22 +195,22 @@ export default function SubtitleEditorPage() {
             } else {
                 console.warn(`--- [Save] DB එකේ ID: ${id} සොයා ගැනීමට නොහැකි විය.`);
             }
-            
+
             console.log(`--- [Save] Optimistic UI: ප්‍රධාන 'subtitles' state එක update කරමින් පවතී.`);
             setSubtitles(prevSubs => prevSubs.map(s => s.id === id ? { ...s, sinhala: text } : s));
             console.log(`--- [Save] Optimistic UI: State එක update කරන ලදී.`);
         }
     };
-    
+
     // PERFORMANCE FIX: Input change - state update කරන්නේ නැහැ, ref එකේ පමණක් store කරනවා
     const handleSinhalaChange = useCallback((id: number, text: string) => {
         // Ref එකේ value එක update කරමු - මේක render trigger කරන්නේ නැහැ!
         inputValuesRef.current.set(id, text);
-        
+
         // Input element එකම directly update කරමු (React re-render නැතිව)
         const overlayInput = document.getElementById(`overlay-input-${id}`) as HTMLInputElement;
         const tableInput = document.getElementById(`sub-input-${id}`) as HTMLInputElement;
-        
+
         if (overlayInput && overlayInput !== document.activeElement) {
             overlayInput.value = text;
         }
@@ -218,7 +218,7 @@ export default function SubtitleEditorPage() {
             tableInput.value = text;
         }
     }, []);
-    
+
     // Fix handleKeyDown - Enter button එකට පමණක් save කරනවා
     const handleKeyDown = async (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
@@ -227,14 +227,14 @@ export default function SubtitleEditorPage() {
                 e.preventDefault();
                 return;
             }
-            
+
             e.preventDefault();
             isProcessingEnter.current = true;
             console.log("--- [Input Event] 'Enter' key එක press කරන ලදී.");
-            
+
             const currentTarget = e.target as HTMLInputElement;
             const idMatch = currentTarget.id.match(/\d+/);
-            
+
             if (!idMatch) {
                 console.warn("--- [Input Event] 'Enter': Input ID එක සොයා ගැනීමට නොහැකි විය.");
                 isProcessingEnter.current = false;
@@ -243,43 +243,43 @@ export default function SubtitleEditorPage() {
 
             const idAsNum = parseInt(idMatch[0], 10);
             const currentText = currentTarget.value;
-            
+
             console.log(`--- [Input Event] 'Enter': ID: ${idAsNum}, Text: "${currentText}" save කිරීම ආරම්භ විය.`);
-            
+
             try {
                 // Save කරමු
                 await saveChanges(idAsNum, currentText);
                 console.log("--- [Input Event] 'Enter': Save කිරීම අවසන්. ඊළඟ subtitle එකට jump වීමට සූදානම්.");
-                
+
                 // Ref වලින් clear කරමු
                 inputValuesRef.current.delete(idAsNum);
-                
+
                 const currentIndex = subtitles.findIndex(s => s.id === idAsNum);
                 const nextSub = subtitles[currentIndex + 1];
-        
+
                 if (nextSub) {
                     console.log(`--- [Input Event] 'Enter': ඊළඟ subtitle (ID: ${nextSub.id}) එක හමු විය. Player එක ${nextSub.startTime} තත්පරයට seek කරමින් පවතී.`);
-                    
+
                     setPlaying(false);
-                    
+
                     // CRITICAL FIX: Progress callback එක ignore කරන්න flag එක set කරමු
                     manualSubtitleChangeRef.current = true;
-                    
+
                     // පැරණි timer එක clear කරමු
                     if (manualSubtitleTimerRef.current) {
                         clearTimeout(manualSubtitleTimerRef.current);
                     }
-                    
+
                     // Subtitle එක set කර seek කරමු
                     setCurrentSubtitle(nextSub);
                     playerRef.current?.seekTo(nextSub.startTime);
-                    
+
                     // 500ms යන තුරු progress updates ignore කරමු (video seek complete වෙන්න)
                     manualSubtitleTimerRef.current = setTimeout(() => {
                         manualSubtitleChangeRef.current = false;
                         console.log("--- [Input Event] Manual subtitle change flag එක reset විය.");
                     }, 500);
-                    
+
                     // Focus එක සකසමු
                     setTimeout(() => {
                         if (overlayInputRef.current) {
@@ -311,7 +311,7 @@ export default function SubtitleEditorPage() {
         }
 
         const activeSub = subtitles.find(s => state.playedSeconds >= s.startTime && state.playedSeconds <= s.endTime);
-        
+
         if (activeSub?.id !== currentSubtitle?.id) {
             console.log(`--- [Progress] Active subtitle වෙනස් විය: ${activeSub?.id || 'none'}`);
             setCurrentSubtitle(activeSub || null);
@@ -324,34 +324,34 @@ export default function SubtitleEditorPage() {
         playerRef.current?.seekTo(newPlayed, 'fraction');
         console.log(`--- [Player Control] Slider එක මගින් video එක ${Math.round(newPlayed * 100)}% වෙත seek කරන ලදී.`);
     };
-    
+
     const handleSeekStep = (seconds: number) => {
         const newTime = (playerRef.current?.getCurrentTime() || 0) + seconds;
         playerRef.current?.seekTo(newTime);
         console.log(`--- [Player Control] Video එක තත්පර ${seconds} කින් ${seconds > 0 ? 'ඉදිරියට' : 'පිටුපසට'} seek කරන ලදී.`);
     };
-    
+
     const handleSubtitleJump = (direction: 'next' | 'prev') => {
         console.log(`--- [Player Control] '${direction}' subtitle jump button එක click කරන ලදී.`);
         setPlaying(false);
         const time = playerRef.current?.getCurrentTime() || currentTime;
         console.log(`--- [Player Control] Jump: දැනට පවතින වේලාව: ${time}`);
-      
+
         // CRITICAL FIX: වේලාව භාවිතා කර current subtitle index එක නිවැරදිව හඳුනා ගනිමු
         // සරල logic: වේලාව >= startTime වන අන්තිම subtitle එක තෝරන්න
         let currentIndex = -1;
-        
+
         for (let i = subtitles.length - 1; i >= 0; i--) {
             if (time >= subtitles[i].startTime) {
                 currentIndex = i;
                 break;
             }
         }
-        
+
         console.log(`--- [Player Control] Jump: Current index: ${currentIndex}, Subtitle: ${currentIndex >= 0 ? subtitles[currentIndex].id : 'none'}`);
-        
+
         let targetSub: SubtitleEntry | undefined;
-    
+
         if (direction === 'next') {
             if (currentIndex >= 0 && currentIndex < subtitles.length - 1) {
                 targetSub = subtitles[currentIndex + 1];
@@ -372,26 +372,26 @@ export default function SubtitleEditorPage() {
                 targetSub = subtitles[0];
             }
         }
-      
+
         if (targetSub) {
             const targetIndex = subtitles.findIndex(s => s.id === targetSub!.id);
             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එක (ID: ${targetSub.id}, Index: ${targetIndex}) හමු විය. Player එක ${targetSub.startTime} තත්පරයට seek කරමින් පවතී.`);
-            
+
             // CRITICAL FIX: Manual jump වෙලාත් progress ignore කරමු
             manualSubtitleChangeRef.current = true;
-            
+
             if (manualSubtitleTimerRef.current) {
                 clearTimeout(manualSubtitleTimerRef.current);
             }
-            
+
             setCurrentSubtitle(targetSub);
             playerRef.current?.seekTo(targetSub.startTime);
-            
+
             manualSubtitleTimerRef.current = setTimeout(() => {
                 manualSubtitleChangeRef.current = false;
                 console.log("--- [Jump] Manual subtitle change flag එක reset විය.");
             }, 500);
-            
+
             setTimeout(() => {
                 if (overlayInputRef.current) {
                     overlayInputRef.current.focus();
@@ -399,8 +399,8 @@ export default function SubtitleEditorPage() {
                 }
             }, 100);
         } else {
-             console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එකක් හමු නොවීය. (${direction === 'next' ? 'End of video' : 'Start of video'})`);
-             toast({
+            console.log(`--- [Player Control] Jump: ඉලක්ක subtitle එකක් හමු නොවීය. (${direction === 'next' ? 'End of video' : 'Start of video'})`);
+            toast({
                 variant: "destructive",
                 title: "Navigation Limit",
                 description: `You are at the ${direction === 'next' ? 'last' : 'first'} subtitle.`,
@@ -414,7 +414,7 @@ export default function SubtitleEditorPage() {
         playerRef.current?.seekTo(startTime);
         setPlaying(false);
     }
-    
+
     const handleSave = () => {
         console.log("--- [File Handling] 'Save Sinhala SRT' button එක click කරන ලදී.");
         let srtContent = '';
@@ -434,7 +434,7 @@ export default function SubtitleEditorPage() {
         toast({ title: 'File Saved', description: 'Your Sinhala subtitle file has been downloaded.' });
         console.log("--- [File Handling] SRT ගොනුව සාර්ථකව generate කර download කරන ලදී.");
     };
-    
+
     // Helper function - input value එක get කිරීමට
     const getInputValue = (sub: SubtitleEntry) => {
         return inputValuesRef.current.get(sub.id) ?? sub.sinhala ?? '';
@@ -443,12 +443,12 @@ export default function SubtitleEditorPage() {
     return (
         <main className="max-w-7xl mx-auto p-4 md:p-8 pt-6 space-y-6">
             <h1 className="text-3xl font-bold">Subtitle Editor</h1>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div className="md:col-span-1 flex flex-col gap-4">
-                     <div className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
+                    <div className="aspect-video relative bg-black flex-grow rounded-lg overflow-hidden">
                         <div className="absolute top-2 left-2 z-20 bg-black/50 text-white text-xs font-mono p-2 rounded-lg pointer-events-none">
-                            <h4 className="font-bold mb-1 flex items-center gap-2"><Info className="w-4 h-4"/>Debug Info</h4>
+                            <h4 className="font-bold mb-1 flex items-center gap-2"><Info className="w-4 h-4" />Debug Info</h4>
                             <p>Duration: {secondsToSrtTime(duration)}</p>
                             <p>Current: {secondsToSrtTime(currentTime)}</p>
                             <p>Buffered: {secondsToSrtTime(bufferedAmount)}</p>
@@ -540,7 +540,7 @@ export default function SubtitleEditorPage() {
                 </div>
 
                 <div className="md:col-span-1">
-                     <Card className="flex flex-col h-[calc(100vh-12rem)]">
+                    <Card className="flex flex-col h-[calc(100vh-12rem)]">
                         <CardHeader>
                             <div className="flex flex-col sm:flex-row gap-4 justify-between">
                                 <div>
@@ -548,14 +548,14 @@ export default function SubtitleEditorPage() {
                                     <CardDescription>Load files, then click a row to seek video and start editing.</CardDescription>
                                 </div>
                                 <div className="flex flex-col gap-2 pt-2 flex-shrink-0">
-                                <Button variant="outline" onClick={() => videoInputRef.current?.click()}>
-                                        <Upload className="w-4 h-4 mr-2"/> Select Video
+                                    <Button variant="outline" onClick={() => videoInputRef.current?.click()}>
+                                        <Upload className="w-4 h-4 mr-2" /> Select Video
                                     </Button>
                                     <Button variant="outline" onClick={() => subtitleInputRef.current?.click()}>
-                                        <Subtitles className="w-4 h-4 mr-2"/> Select Subtitle File
+                                        <Subtitles className="w-4 h-4 mr-2" /> Select Subtitle File
                                     </Button>
                                     <Button onClick={handleSave} >
-                                        <Save className="w-4 h-4 mr-2"/> Save Sinhala SRT
+                                        <Save className="w-4 h-4 mr-2" /> Save Sinhala SRT
                                     </Button>
                                     <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoFileChange} />
                                     <input ref={subtitleInputRef} type="file" accept=".srt,.vtt" className="hidden" onChange={handleSubtitleFileChange} />
@@ -563,7 +563,7 @@ export default function SubtitleEditorPage() {
                             </div>
                         </CardHeader>
                         <CardContent className="flex-grow overflow-hidden flex flex-col">
-                           <div className="flex items-center justify-between mb-4 p-2 border-t">
+                            <div className="flex items-center justify-between mb-4 p-2 border-t">
                                 <Button variant="outline" size="sm" onClick={() => handleSubtitleJump('prev')}>
                                     <ChevronLeft className="h-4 w-4 mr-1" />
                                     Prev Sub
@@ -583,8 +583,8 @@ export default function SubtitleEditorPage() {
                                     </TableHeader>
                                     <TableBody>
                                         {subtitles.length > 0 ? subtitles.map((sub) => (
-                                            <TableRow 
-                                                key={sub.id} 
+                                            <TableRow
+                                                key={sub.id}
                                                 ref={currentSubtitle?.id === sub.id ? activeRowRef : null}
                                                 onClick={() => handleRowClick(sub.startTime)}
                                                 className={cn("cursor-pointer", currentSubtitle?.id === sub.id && 'bg-primary/10')}
@@ -594,11 +594,11 @@ export default function SubtitleEditorPage() {
                                                 </TableCell>
                                                 <TableCell className="space-y-2 pr-4">
                                                     <p className="text-sm text-muted-foreground">{sub.english}</p>
-                                                    <Input 
+                                                    <Input
                                                         key={`table-${sub.id}`}
                                                         id={`sub-input-${sub.id}`}
-                                                        type="text" 
-                                                        placeholder="Enter Sinhala translation..." 
+                                                        type="text"
+                                                        placeholder="Enter Sinhala translation..."
                                                         className="bg-transparent border-0 border-b border-input rounded-none focus-visible:ring-0 focus-visible:border-primary text-base p-1 h-auto"
                                                         defaultValue={getInputValue(sub)}
                                                         onChange={(e) => handleSinhalaChange(sub.id, e.target.value)}
