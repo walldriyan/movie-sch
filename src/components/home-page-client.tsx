@@ -329,264 +329,220 @@ export default function HomePageClient({
                 {/* Hero Section */}
                 <HeroSection user={session?.user} />
 
-                <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
+                {/* Main Content Area - Aligned with Hero */}
+                <section className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-12 relative z-10 space-y-16">
 
-                    {/* Section Header - Featured/Trending */}
-                    <div className="mb-8">
-                        <div className="flex items-center gap-3 mb-2">
-                            <div className="p-2 rounded-lg bg-primary/10">
-                                <TrendingUp className="w-5 h-5 text-primary" />
+                    {/* SECTION 1: Featured & Filters */}
+                    <div>
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                            {/* Title */}
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
+                                    <TrendingUp className="w-6 h-6 text-primary" />
+                                </div>
+                                <div>
+                                    <h2 className="text-3xl font-bold tracking-tight">{siteConfig.sections.featured.title}</h2>
+                                    <p className="text-muted-foreground">{siteConfig.sections.featured.subtitle}</p>
+                                </div>
                             </div>
-                            <h2 className="text-2xl sm:text-3xl font-bold">{siteConfig.sections.featured.title}</h2>
                         </div>
-                        <p className="text-muted-foreground ml-12">{siteConfig.sections.featured.subtitle}</p>
-                    </div>
 
-
-                    {/* Filter Section - Suno.com Style Banner */}
-                    <div className="mb-8 mx-3 rounded-xl overflow-hidden bg-gradient-to-br from-card/80 via-card/60 to-card/40 backdrop-blur-sm border border-white/5 p-6">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            {/* Filter Tabs */}
-                            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1">
-                                <Button asChild variant={'ghost'} size="sm" className={cn(
-                                    "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
-                                    !typeFilter && !lockStatus ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
-                                )}>
-                                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
-                                        <Film className="w-4 h-4" />
-                                        <span>All</span>
-                                    </Link>
-                                </Button>
-                                {typeFilters.map(filter => (
-                                    <Button key={filter.value} asChild variant={'ghost'} size="sm" className={cn(
-                                        "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
-                                        typeFilter === filter.value && !lockStatus ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
+                        {/* Filter Section - Aligned Full Width */}
+                        <div className="mb-10 rounded-2xl overflow-hidden bg-white/[0.03] border border-white/5 p-4 md:p-6 backdrop-blur-md">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
+                                {/* Filter Tabs */}
+                                <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 w-full pb-1 sm:pb-0">
+                                    <Button asChild variant={'ghost'} size="sm" className={cn(
+                                        "rounded-full px-4 h-9 transition-all text-sm font-medium",
+                                        !typeFilter && !lockStatus ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90' : 'bg-white/5 text-muted-foreground hover:text-white hover:bg-white/10'
                                     )}>
-                                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
-                                            {filter.icon}
-                                            <span>{filter.label}</span>
+                                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
+                                            <Film className="w-4 h-4" />
+                                            <span>All</span>
                                         </Link>
                                     </Button>
-                                ))}
-                                <Button asChild variant={'ghost'} size="sm" className={cn(
-                                    "rounded-full hover:bg-white/10 flex-shrink-0 transition-all",
-                                    lockStatus === 'locked' ? 'bg-white/10 text-white' : 'text-white/70 hover:text-white'
-                                )}>
-                                    <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
-                                        <Lock className="w-4 h-4" />
-                                        <span>Locked</span>
-                                    </Link>
+                                    {typeFilters.map(filter => (
+                                        <Button key={filter.value} asChild variant={'ghost'} size="sm" className={cn(
+                                            "rounded-full px-4 h-9 transition-all text-sm font-medium",
+                                            typeFilter === filter.value && !lockStatus ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90' : 'bg-white/5 text-muted-foreground hover:text-white hover:bg-white/10'
+                                        )}>
+                                            <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
+                                                {filter.icon}
+                                                <span>{filter.label}</span>
+                                            </Link>
+                                        </Button>
+                                    ))}
+                                    <div className="w-px h-6 bg-white/10 mx-2" />
+                                    <Button asChild variant={'ghost'} size="sm" className={cn(
+                                        "rounded-full px-4 h-9 transition-all text-sm font-medium",
+                                        lockStatus === 'locked' ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-white/5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10'
+                                    )}>
+                                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
+                                            <Lock className="w-3.5 h-3.5" />
+                                            <span>Locked</span>
+                                        </Link>
+                                    </Button>
+                                </div>
+
+                                {/* Sort Dropdown */}
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="outline" size="sm" className="rounded-full bg-black/20 border-white/10 text-white/90 hover:bg-white/10 hover:text-white px-4 h-9 min-w-[100px] justify-between">
+                                            <span className="flex items-center gap-2">
+                                                <ListFilter className="w-4 h-4 text-muted-foreground" />
+                                                Sort
+                                            </span>
+                                            <ChevronRight className="w-3 h-3 opacity-50 rotate-90" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-56 bg-[#111112] border-white/10 text-white" align="end">
+                                        <DropdownMenuLabel>Sort Content</DropdownMenuLabel>
+                                        <DropdownMenuSeparator className="bg-white/10" />
+                                        <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })} scroll={false}><DropdownMenuRadioItem value="newest" className="focus:bg-white/10 focus:text-white">Newest First</DropdownMenuRadioItem></Link>
+                                        <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })} scroll={false}><DropdownMenuRadioItem value="oldest" className="focus:bg-white/10 focus:text-white">Oldest First</DropdownMenuRadioItem></Link>
+                                        <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })} scroll={false}><DropdownMenuRadioItem value="imdb" className="focus:bg-white/10 focus:text-white">Top Rated</DropdownMenuRadioItem></Link>
+
+                                        <DropdownMenuSeparator className="bg-white/10" />
+                                        <DropdownMenuLabel>Time Period</DropdownMenuLabel>
+                                        <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })} scroll={false}><DropdownMenuRadioItem value="today" className="focus:bg-white/10 focus:text-white">Today</DropdownMenuRadioItem></Link>
+                                        <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })} scroll={false}><DropdownMenuRadioItem value="week" className="focus:bg-white/10 focus:text-white">This Week</DropdownMenuRadioItem></Link>
+                                        <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })} scroll={false}><DropdownMenuRadioItem value="all" className="focus:bg-white/10 focus:text-white">All Time</DropdownMenuRadioItem></Link>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
+
+                        {/* Posts Grid */}
+                        {posts.length === 0 && !loading ? (
+                            <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
+                                <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
+                                    <Clapperboard className="w-10 h-10 text-muted-foreground" />
+                                </div>
+                                <h1 className="text-2xl font-bold mb-2">No Content Found</h1>
+                                <p className="text-muted-foreground mb-8 max-w-sm mx-auto">No posts match the current filters. Try changing the category or sorting.</p>
+                                <Button asChild variant="secondary" className="rounded-full">
+                                    <Link href="/">Clear Filters</Link>
                                 </Button>
                             </div>
+                        ) : (
+                            <>
+                                <PostGrid posts={posts} />
 
-                            {/* Sort Dropdown */}
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="rounded-full bg-white/5 hover:bg-white/10 border border-white/10 flex-shrink-0 text-white/90">
-                                        <ListFilter className="mr-2 h-4 w-4" />
-                                        Sort
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56" align="end">
-                                    <DropdownMenuLabel>Sort by</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-desc', type: typeFilter, lockStatus })} scroll={false}>
-                                        <DropdownMenuRadioItem value="newest">
-                                            <Clock className="mr-2 h-4 w-4" /> Newest
-                                        </DropdownMenuRadioItem>
-                                    </Link>
-                                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'updatedAt-asc', type: typeFilter, lockStatus })} scroll={false}>
-                                        <DropdownMenuRadioItem value="oldest">
-                                            <Clock className="mr-2 h-4 w-4" /> Oldest
-                                        </DropdownMenuRadioItem>
-                                    </Link>
-                                    <Link href={buildQueryString({ timeFilter, page: 1, sortBy: 'imdbRating-desc', type: typeFilter, lockStatus })} scroll={false}>
-                                        <DropdownMenuRadioItem value="imdb">
-                                            <Star className="mr-2 h-4 w-4" /> IMDb Rating
-                                        </DropdownMenuRadioItem>
-                                    </Link>
-
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuLabel>Filter by date</DropdownMenuLabel>
-                                    <DropdownMenuSeparator />
-                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'today', type: typeFilter, lockStatus })} scroll={false}>
-                                        <DropdownMenuRadioItem value="today">
-                                            <Calendar className="mr-2 h-4 w-4" /> Today
-                                        </DropdownMenuRadioItem>
-                                    </Link>
-                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_week', type: typeFilter, lockStatus })} scroll={false}>
-                                        <DropdownMenuRadioItem value="this_week">
-                                            <Calendar className="mr-2 h-4 w-4" /> This Week
-                                        </DropdownMenuRadioItem>
-                                    </Link>
-                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'this_month', type: typeFilter, lockStatus })} scroll={false}>
-                                        <DropdownMenuRadioItem value="this_month">
-                                            <Calendar className="mr-2 h-4 w-4" /> This Month
-                                        </DropdownMenuRadioItem>
-                                    </Link>
-                                    <Link href={buildQueryString({ sortBy, page: 1, timeFilter: 'all', type: typeFilter, lockStatus })} scroll={false}>
-                                        <DropdownMenuRadioItem value="all">
-                                            <Calendar className="mr-2 h-4 w-4" /> All Time
-                                        </DropdownMenuRadioItem>
-                                    </Link>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
+                                {totalPages > 1 && (
+                                    <div className="mt-12 flex justify-center">
+                                        <Pagination>
+                                            <PaginationContent className="bg-black/20 backdrop-blur-md rounded-full border border-white/5 p-1">
+                                                <PaginationItem>
+                                                    <PaginationPrevious
+                                                        href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter, lockStatus })}
+                                                        scroll={false}
+                                                        className={cn("rounded-full h-10 w-10 p-0 flex items-center justify-center bg-transparent hover:bg-white/10", currentPage <= 1 && "pointer-events-none opacity-50")}
+                                                    />
+                                                </PaginationItem>
+                                                <PaginationItem>
+                                                    <span className="px-6 text-sm font-medium text-white/80">Page {currentPage} of {totalPages}</span>
+                                                </PaginationItem>
+                                                <PaginationItem>
+                                                    <PaginationNext
+                                                        href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter, lockStatus })}
+                                                        scroll={false}
+                                                        className={cn("rounded-full h-10 w-10 p-0 flex items-center justify-center bg-transparent hover:bg-white/10", currentPage >= totalPages && "pointer-events-none opacity-50")}
+                                                    />
+                                                </PaginationItem>
+                                            </PaginationContent>
+                                        </Pagination>
+                                    </div>
+                                )}
+                            </>
+                        )}
                     </div>
 
-                    {/* Posts Grid */}
-                    {posts.length === 0 && !loading ? (
-                        <div className="text-center py-16">
-                            <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-muted/30 flex items-center justify-center">
-                                <Film className="w-10 h-10 text-muted-foreground" />
+
+                    {/* SECTION 2: Creators */}
+                    <div className="relative">
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
+                                    <Users className="w-6 h-6 text-blue-400" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold tracking-tight">{siteConfig.sections.creators.title}</h2>
+                                    <p className="text-muted-foreground">{siteConfig.sections.creators.subtitle}</p>
+                                </div>
                             </div>
-                            <h1 className="text-2xl font-bold mb-2">No Content Found</h1>
-                            <p className="text-muted-foreground mb-6">No posts match the current filters. Try adjusting your search.</p>
-                            <Button asChild>
-                                <Link href="/">Clear Filters</Link>
+                            <Button variant="ghost" className="rounded-full hover:bg-white/10" asChild>
+                                <Link href="/search?view=creators">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
                             </Button>
                         </div>
-                    ) : (
-                        <>
-                            <PostGrid posts={posts} />
 
-                            {totalPages > 1 && (
-                                <Pagination className="mt-12">
-                                    <PaginationContent>
-                                        <PaginationItem>
-                                            <PaginationPrevious
-                                                href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter, lockStatus })}
-                                                scroll={false}
-                                                className={cn(
-                                                    "bg-white/5 hover:bg-white/10 border-white/10",
-                                                    currentPage <= 1 && "pointer-events-none opacity-50"
-                                                )}
-                                            >
-                                            </PaginationPrevious>
-                                        </PaginationItem>
-
-                                        <PaginationItem>
-                                            <span className="px-4 py-2 rounded-md text-sm font-medium">
-                                                Page {currentPage} of {totalPages}
-                                            </span>
-                                        </PaginationItem>
-
-                                        <PaginationItem>
-                                            <PaginationNext
-                                                href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter, lockStatus })}
-                                                scroll={false}
-                                                className={cn(
-                                                    "bg-white/5 hover:bg-white/10 border-white/10",
-                                                    currentPage >= totalPages && "pointer-events-none opacity-50"
-                                                )}
-                                            >
-                                            </PaginationNext>
-                                        </PaginationItem>
-                                    </PaginationContent>
-                                </Pagination>
-                            )}
-
-
-                            <Separator className="my-12 bg-white/5" />
-
-                            {/* Creators Section */}
-                            <section className="mb-12">
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-blue-500/10">
-                                            <Users className="w-5 h-5 text-blue-400" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-2xl font-bold">{siteConfig.sections.creators.title}</h2>
-                                            <p className="text-muted-foreground text-sm">{siteConfig.sections.creators.subtitle}</p>
-                                        </div>
+                        {loading ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="flex flex-col items-center">
+                                        <Skeleton className="w-28 h-28 rounded-full" />
+                                        <Skeleton className="h-4 w-24 mt-4" />
                                     </div>
-                                    <Button variant="ghost" className="text-muted-foreground hover:text-primary" asChild>
-                                        <Link href="/search">
-                                            View All <ChevronRight className="w-4 h-4 ml-1" />
-                                        </Link>
-                                    </Button>
-                                </div>
-
-                                {loading ? (
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-x-8 gap-y-4">
-                                        {[...Array(5)].map((_, i) => (
-                                            <div key={i} className="flex flex-col items-center">
-                                                <Skeleton className="w-24 h-24 rounded-full" />
-                                                <Skeleton className="h-4 w-20 mt-2" />
-                                                <Skeleton className="h-3 w-16 mt-1" />
-                                            </div>
-                                        ))}
-                                    </div>
-                                ) : users.length > 0 ? (
-                                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 justify-center gap-x-8 gap-y-6">
-                                        {users.map(user => {
-                                            const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
-                                            return (
-                                                <Link href={`/profile/${user.id}`} key={user.id} className="flex flex-col items-center group">
-                                                    <Avatar className="w-20 h-20 sm:w-24 sm:h-24 text-3xl border-2 border-transparent group-hover:border-primary transition-all group-hover:scale-105">
-                                                        {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} />}
-                                                        <AvatarFallback className="text-xl font-semibold bg-gradient-to-br from-primary/20 to-primary/5">
-                                                            {user.name?.charAt(0).toUpperCase() || 'U'}
-                                                        </AvatarFallback>
-                                                    </Avatar>
-                                                    <div className='text-center mt-3'>
-                                                        <h3 className="font-semibold group-hover:text-primary transition-colors">{user.name}</h3>
-                                                        <p className="text-xs text-muted-foreground">{user.role === 'USER' ? 'Creator' : user.role.replace('_', ' ')}</p>
+                                ))}
+                            </div>
+                        ) : users.length > 0 ? (
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                                {users.map(user => {
+                                    const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
+                                    return (
+                                        <Link href={`/profile/${user.id}`} key={user.id} className="group flex flex-col items-center p-4 rounded-3xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/5">
+                                            <div className="relative mb-4">
+                                                <Avatar className="w-24 h-24 border-2 border-white/10 group-hover:border-primary/50 group-hover:scale-105 transition-all shadow-xl">
+                                                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} className="object-cover" />}
+                                                    <AvatarFallback className="text-2xl bg-[#1a1a1a]">{user.name?.charAt(0) || 'U'}</AvatarFallback>
+                                                </Avatar>
+                                                {user.role !== 'USER' && (
+                                                    <div className="absolute -bottom-1 -right-1 bg-primary text-black text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-[#111112]">
+                                                        PRO
                                                     </div>
-                                                </Link>
-                                            )
-                                        })}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-center p-16 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-                                        <Users className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold">No Creators Yet</h3>
-                                        <p className="text-muted-foreground mt-2 text-sm">Be the first to join our community!</p>
-                                    </div>
-                                )}
-                            </section>
-
-                            <Separator className="my-12 bg-white/5" />
-
-                            {/* Collections/Groups Section */}
-                            <section>
-                                <div className="flex items-center justify-between mb-8">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 rounded-lg bg-purple-500/10">
-                                            <Globe className="w-5 h-5 text-purple-400" />
-                                        </div>
-                                        <div>
-                                            <h2 className="text-2xl font-bold">{siteConfig.sections.collections.title}</h2>
-                                            <p className="text-muted-foreground text-sm">{siteConfig.sections.collections.subtitle}</p>
-                                        </div>
-                                    </div>
-                                    <Button variant="ghost" className="text-muted-foreground hover:text-primary" asChild>
-                                        <Link href="/groups">
-                                            View All <ChevronRight className="w-4 h-4 ml-1" />
+                                                )}
+                                            </div>
+                                            <h3 className="font-semibold text-center truncate w-full group-hover:text-primary transition-colors">{user.name}</h3>
+                                            <p className="text-xs text-muted-foreground">{user.role === 'USER' ? 'Member' : 'Creator'}</p>
                                         </Link>
-                                    </Button>
+                                    )
+                                })}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 text-muted-foreground">No creators available.</div>
+                        )}
+                    </div>
+
+                    {/* SECTION 3: Collections */}
+                    <div>
+                        <div className="flex items-center justify-between mb-8">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
+                                    <Folder className="w-6 h-6 text-purple-400" />
                                 </div>
-                                {loading ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                                        {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-56 w-full rounded-xl" />)}
-                                    </div>
-                                ) : groups.length > 0 ? (
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
-                                        {groups.map((group) => (
-                                            <GroupCard key={group.id} group={group} />
-                                        ))}
-                                    </div>
-                                ) : (
-                                    <div className="flex flex-col items-center justify-center text-center p-16 border border-dashed border-white/10 rounded-2xl bg-white/[0.02]">
-                                        <Globe className="h-12 w-12 text-muted-foreground mb-4" />
-                                        <h3 className="text-lg font-semibold">No Collections Yet</h3>
-                                        <p className="text-muted-foreground mt-2 text-sm">Collections will appear here when available.</p>
-                                    </div>
-                                )}
-                            </section>
-                        </>
-                    )}
+                                <div>
+                                    <h2 className="text-2xl font-bold tracking-tight">{siteConfig.sections.collections.title}</h2>
+                                    <p className="text-muted-foreground">{siteConfig.sections.collections.subtitle}</p>
+                                </div>
+                            </div>
+                            <Button variant="ghost" className="rounded-full hover:bg-white/10" asChild>
+                                <Link href="/groups">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
+                            </Button>
+                        </div>
+
+                        {loading ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 rounded-3xl" />)}
+                            </div>
+                        ) : groups.length > 0 ? (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {groups.map((group) => (
+                                    <GroupCard key={group.id} group={group} />
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 text-muted-foreground">No collections available.</div>
+                        )}
+                    </div>
                 </section>
 
                 {/* Footer */}
