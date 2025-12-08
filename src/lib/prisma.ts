@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { withAccelerate } from '@prisma/extension-accelerate';
 
 // Declare EdgeRuntime for type checking
 declare const EdgeRuntime: string | undefined;
@@ -6,22 +7,21 @@ declare const EdgeRuntime: string | undefined;
 // Extend NodeJS global type to prevent memory leaks
 declare global {
   // eslint-disable-next-line no-var
-  var prisma: PrismaClient | undefined;
+  var prisma: ReturnType<typeof createPrismaClient> | undefined;
 }
 
 // Check if we're in Edge runtime (middleware)
 const isEdgeRuntime = typeof EdgeRuntime !== 'undefined';
 
-
-// Connection pool configuration for production
-const prismaClientSingleton = () => {
+// Create Prisma client with Accelerate extension
+const createPrismaClient = () => {
   return new PrismaClient({
-    log: ['error'], // Disabled verbose logging to speed up compilation
-  });
+    log: ['error'],
+  }).$extends(withAccelerate());
 };
 
 // Prevent multiple instances of Prisma Client in development (memory leak prevention)
-const prisma = globalThis.prisma ?? prismaClientSingleton();
+const prisma = globalThis.prisma ?? createPrismaClient();
 
 // In development, store the instance to prevent hot-reload memory leaks
 if (process.env.NODE_ENV !== 'production') {
