@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getPosts, getPost, getFavoritePostsByUserId, getSeriesByAuthorId } from '@/lib/actions/posts/read';
+import { getPosts, getPost, getFavoritePostsByUserId } from '@/lib/actions/posts/read';
+import { getSeriesByAuthorId } from '@/lib/actions/series';
 import { getNotifications } from '@/lib/actions/notifications';
 import { getExamForTaker, getExamResults, getExamsForUser } from '@/lib/actions/exams';
 import { getPublicGroups } from '@/lib/actions/groups';
@@ -233,7 +234,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         const postId = Number(movieId);
         if (isNaN(postId)) notFound();
 
-        const postData = await getPost(postId);
+        const postData = await getPost(postId) as any;
         if (!postData) notFound();
 
         // Server-Side Lock Logic
@@ -311,7 +312,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         return (
             <MoviePageContent
                 initialPost={serializablePostForClient}
-                initialSubtitles={subtitlesWithPermissions}
+                initialSubtitles={subtitlesWithPermissions as any}
                 session={session}
             />
         );

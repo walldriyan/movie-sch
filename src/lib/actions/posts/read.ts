@@ -109,7 +109,7 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     const totalPages = Math.ceil(totalPosts / limit);
 
     return {
-        posts: posts.map(p => ({
+        posts: (posts as any[]).map((p: any) => ({
             ...p,
             createdAt: p.createdAt.toISOString(),
             updatedAt: p.updatedAt.toISOString(),
@@ -173,8 +173,18 @@ export async function getFavoritePosts() {
     const session = await auth();
     const userId = session?.user?.id;
     if (!userId) return [];
-    const favs = await prisma.favoritePost.findMany({ where: { userId, post: { status: 'PUBLISHED' } }, include: { post: { include: { author: true, series: true, likedBy: true, _count: true } } }, orderBy: { createdAt: 'desc' } });
-    return favs.map(f => ({ ...f.post, genres: f.post.genres ? f.post.genres.split(',') : [] }));
+    const favs = await prisma.favoritePost.findMany({ where: { userId, post: { status: 'PUBLISHED' } }, include: { post: { include: { author: true, series: true, likedBy: true, _count: true } } }, orderBy: { createdAt: 'desc' } }) as any[];
+    return favs.map((f: any) => ({ ...f.post, genres: f.post.genres ? f.post.genres.split(',') : [] }));
+}
+
+export async function getFavoritePostsByUserId(userId: string) {
+    if (!userId) return [];
+    const favs = await prisma.favoritePost.findMany({
+        where: { userId, post: { status: 'PUBLISHED' } },
+        include: { post: { include: { author: true, series: true, likedBy: true, _count: true } } },
+        orderBy: { createdAt: 'desc' }
+    }) as any[];
+    return favs.map((f: any) => ({ ...f.post, genres: f.post.genres ? f.post.genres.split(',') : [] }));
 }
 
 export async function searchPostsForExam(query: string) {
