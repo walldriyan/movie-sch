@@ -199,7 +199,7 @@ export default function LeftSidebar() {
             <aside
                 className={cn(
                     "fixed left-4 top-4 bottom-4 z-40 p-4 pb-6", // Floating positioning
-                    "rounded-[2rem] shadow-2xl", // High rounding
+                    "rounded-[2rem]", // High rounding
                     "bg-[#111112] border border-white/[0.08]", // Dark Gray / Zinc-900ish, very subtle border
                     "flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 cubic-bezier(0.25, 0.1, 0.25, 1)",
                     sidebarWidth,
