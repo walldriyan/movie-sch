@@ -66,24 +66,30 @@ export default function LeftSidebar() {
         localStorage.setItem('sidebar-collapsed', String(newState));
     };
 
-    // Apply styles dynamically for non-logged in users
+    // Apply styles dynamically for non-logged in users and hidden sidebar
     useEffect(() => {
         const main = document.querySelector('main') as HTMLElement;
         if (!main) return;
 
-        if (!isLoggedIn) {
+        if (!isLoggedIn || shouldHideSidebar) {
+            // No sidebar visible - reset margins
             main.style.marginLeft = '0';
             main.style.marginRight = '0';
-            main.style.display = 'flex';
-            main.style.justifyContent = 'center';
+            if (!isLoggedIn) {
+                main.style.display = 'flex';
+                main.style.justifyContent = 'center';
+            } else {
+                main.style.display = '';
+                main.style.justifyContent = '';
+            }
         } else {
-            // Logged in - apply sidebar margin
+            // Logged in with visible sidebar - apply sidebar margin
             const isMobile = window.innerWidth <= 768;
             main.style.marginLeft = isMobile ? '0' : (isCollapsed ? '70px' : '220px');
             main.style.display = '';
             main.style.justifyContent = '';
         }
-    }, [isLoggedIn, isCollapsed]);
+    }, [isLoggedIn, isCollapsed, shouldHideSidebar]);
 
     if (!isLoggedIn) {
         return (

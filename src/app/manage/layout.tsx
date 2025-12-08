@@ -92,7 +92,7 @@ export default function ManageLayout({
     return (
       <div className="flex min-h-screen">
         {/* Sidebar Skeleton */}
-        <div className="w-64 border-r border-white/5 bg-background p-4">
+        <div className="w-56 border-r border-white/5 bg-background p-4">
           <div className="space-y-4">
             <Skeleton className="h-16 w-full rounded-xl" />
             <div className="space-y-2 pt-4">
@@ -121,7 +121,7 @@ export default function ManageLayout({
   return (
     <div className="flex min-h-screen bg-background">
       {/* Sidebar - Suno.com Style */}
-      <aside className="fixed left-0 top-0 h-screen w-64 border-r border-white/5 bg-background z-40">
+      <aside className="fixed left-0 top-0 h-screen w-56 border-r border-white/5 bg-background z-40">
         {/* Sidebar Header */}
         <div className="p-5 border-b border-white/5">
           <div className="flex items-center justify-between">
@@ -197,7 +197,7 @@ export default function ManageLayout({
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-64 min-h-screen">
+      <main className="flex-1 ml-56 min-h-screen">
         {/* Hero Section with Gradient */}
         <div className="relative">
           {/* Background Gradients */}
@@ -207,8 +207,8 @@ export default function ManageLayout({
           </div>
 
           {/* Hero Content */}
-          <div className="relative px-8 pt-8 pb-6">
-            <div className="max-w-6xl mx-auto">
+          <div className="relative pl-4 pr-6 pt-8 pb-6">
+            <div className="w-full">
               <div className="flex items-center justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-white mb-1">
@@ -232,8 +232,8 @@ export default function ManageLayout({
         </div>
 
         {/* Main Content Area */}
-        <div className="px-8 pb-8">
-          <div className="max-w-6xl mx-auto">
+        <div className="pl-4 pr-6 pb-8">
+          <div className="w-full">
             {children}
           </div>
         </div>
