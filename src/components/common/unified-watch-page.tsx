@@ -265,33 +265,51 @@ export default function UnifiedWatchPage({
 
                             {/* Reviews */}
                             <TabsContent value="reviews" className="animate-in fade-in slide-in-from-left-4 duration-300 min-h-[300px]">
-                                <div className="max-w-3xl">
-                                    <div className="mb-8 p-6 bg-muted/30 rounded-2xl">
-                                        <h3 className="text-lg font-semibold mb-4">Leave a comment</h3>
-                                        <ReviewForm
-                                            postId={post.id}
-                                            isSubmitting={false}
-                                            onSubmitReview={async () => { }}
-                                            session={session}
-                                        />
+                                <div className="flex flex-col xl:flex-row gap-8 items-stretch">
+                                    <div className="flex-1 w-full max-w-3xl">
+                                        <div className="mb-8 p-6 bg-muted/30 rounded-2xl">
+                                            <h3 className="text-lg font-semibold mb-4">Leave a comment</h3>
+                                            <ReviewForm
+                                                postId={post.id}
+                                                isSubmitting={false}
+                                                onSubmitReview={async () => { }}
+                                                session={session}
+                                            />
+                                        </div>
+                                        <div className="space-y-6">
+                                            {post.reviews && post.reviews.length > 0 ? (
+                                                post.reviews.map((review: any) => (
+                                                    <ReviewCard
+                                                        key={review.id}
+                                                        review={review}
+                                                        session={session}
+                                                        onReviewSubmit={async () => { }}
+                                                        onReviewDelete={async () => { }}
+                                                    />
+                                                ))
+                                            ) : (
+                                                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-2xl">
+                                                    <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-20" />
+                                                    <p>No reviews yet.</p>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                    <div className="space-y-6">
-                                        {post.reviews && post.reviews.length > 0 ? (
-                                            post.reviews.map((review: any) => (
-                                                <ReviewCard
-                                                    key={review.id}
-                                                    review={review}
-                                                    session={session}
-                                                    onReviewSubmit={async () => { }}
-                                                    onReviewDelete={async () => { }}
-                                                />
-                                            ))
-                                        ) : (
-                                            <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-2xl">
-                                                <MessageCircle className="w-10 h-10 mx-auto mb-2 opacity-20" />
-                                                <p>No reviews yet.</p>
+
+                                    {/* AD SIDEBAR (Right side of reviews) */}
+                                    <div className="hidden xl:block w-[300px] shrink-0">
+                                        <div className="h-full p-6 rounded-2xl bg-muted/30 flex flex-col items-center justify-center text-center">
+                                            <span className="text-muted-foreground/50 text-xs font-bold uppercase tracking-widest mb-4">Advertisement</span>
+                                            <div className="w-full aspect-[3/4] bg-gradient-to-br from-white/5 to-transparent rounded-xl flex items-center justify-center border border-white/5 mb-4 group cursor-pointer hover:border-primary/30 transition-colors">
+                                                <div className="text-center">
+                                                    <Film className="w-8 h-8 text-white/20 mx-auto mb-2 group-hover:text-primary/50 transition-colors" />
+                                                    <span className="text-xs text-muted-foreground/40 font-medium">Ad Space</span>
+                                                </div>
                                             </div>
-                                        )}
+                                            <p className="text-[10px] text-muted-foreground/30 max-w-[200px]">
+                                                Support our platform by viewing our sponsors.
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </TabsContent>
