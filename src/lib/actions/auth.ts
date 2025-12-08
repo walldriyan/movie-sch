@@ -55,7 +55,8 @@ export async function doSignIn(
 // This Server Action can be used if you need to perform server-side logic before signing out.
 // For a simple sign-out, using the client-side signOut() is often easier and more reliable for UI updates.
 export async function doSignOut() {
-  await signOut({ redirectTo: '/' });
+  await signOut({ redirect: false });
+  redirect('/');
 }
 
 export async function registerUser(
