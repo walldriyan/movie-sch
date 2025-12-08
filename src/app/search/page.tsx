@@ -467,6 +467,61 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             genres: Array.isArray(p.genres) ? p.genres : (typeof p.genres === 'string' ? p.genres.split(',') : []),
         }));
 
+        // Check if this post belongs to a Series
+        if (postData.seriesId) {
+            // It's an episode! Fetch series context to show Episode List in sidebar
+            const [series, allSeriesPosts] = await Promise.all([
+                getSeriesById(postData.seriesId),
+                getPostsBySeriesId(postData.seriesId),
+            ]);
+
+            if (series) {
+                // Serialize Series
+                const serializedSeries = {
+                    ...series,
+                    createdAt: serializeDate(series.createdAt),
+                    updatedAt: serializeDate(series.updatedAt),
+                };
+
+                // Serialize All Posts (Episodes) & Check Locks
+                // Optimization: We know current user's groups if we fetched them? 
+                // For now, simple check: If user is admin/author -> Unlocked.
+                // If visibility GROUP_ONLY -> Locked (client visual only, true check on click).
+                const serializedAllPosts = allSeriesPosts.map(p => {
+                    let isLocked = false;
+                    if (p.visibility === 'GROUP_ONLY') {
+                        // Ideally we check group membership here, but for list view, 
+                        // we can show lock if not admin/author.
+                        if (!user || (user.role !== ROLES.SUPER_ADMIN && user.id !== p.authorId)) {
+                            isLocked = true;
+                        }
+                    } else if (p.isLockedByDefault) {
+                        isLocked = true;
+                    }
+
+                    return {
+                        ...p,
+                        createdAt: serializeDate(p.createdAt),
+                        updatedAt: serializeDate(p.updatedAt),
+                        publishedAt: serializeDate(p.publishedAt),
+                        isLocked
+                    };
+                });
+
+                return (
+                    <UnifiedWatchPage
+                        type="SERIES"
+                        post={serializablePostForClient}
+                        series={serializedSeries as any}
+                        allPosts={serializedAllPosts}
+                        formattedSubtitles={subtitlesWithPermissions}
+                        session={session}
+                    />
+                );
+            }
+        }
+
+        // It's a Standalone Movie -> Proceed with Related Posts
         return (
             <UnifiedWatchPage
                 type="MOVIE"
