@@ -2,7 +2,7 @@
     "$schema": "https://openapi.vercel.sh/vercel.json",
     "framework": "nextjs",
     "buildCommand": "npm run vercel-build",
-    "installCommand": "npm install --ignore-scripts",
+    "installCommand": "npm install",
     "build": {
         "env": {
             "PRISMA_GENERATE_DATAPROXY": "true"
