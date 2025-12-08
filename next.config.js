@@ -41,17 +41,22 @@ const nextConfig = {
       'zod',
       'cmdk',
     ],
-    // Exclude heavy dev dependencies from output tracing
-    outputFileTracingExcludes: {
-      '*': [
-        'node_modules/@swc/core-linux-x64-gnu',
-        'node_modules/@swc/core-linux-x64-musl',
-        'node_modules/@esbuild/linux-x64',
-        'node_modules/webpack',
-        'node_modules/terser',
-      ],
-    },
   },
+
+  // Exclude heavy dev dependencies and engines from output tracing
+  outputFileTracingExcludes: {
+    '*': [
+      'node_modules/@swc/core-linux-x64-gnu',
+      'node_modules/@swc/core-linux-x64-musl',
+      'node_modules/@esbuild/linux-x64',
+      'node_modules/webpack',
+      'node_modules/terser',
+      'node_modules/@prisma/engines',
+      'node_modules/@prisma/client/runtime/*.node',
+      'node_modules/@prisma/client/libquery_engine*',
+    ],
+  },
+
 
   // Remove console logs in production for smaller JS bundles
   compiler: {
@@ -76,9 +81,6 @@ const nextConfig = {
   // Power pages with headers
   poweredByHeader: false,
 
-  // Enable SWC Minification (default true in Next 13+, explicit here)
-  swcMinify: true,
-
   // Generate unique build IDs
   generateBuildId: async () => {
     return process.env.VERCEL_GIT_COMMIT_SHA || `build-${Date.now()}`;
@@ -89,9 +91,6 @@ const nextConfig = {
     'jsdom',
     'parse5',
     'isomorphic-dompurify',
-    '@prisma/client',
-    'prisma',
-    'bcryptjs',
   ],
 
   // ================================================================
