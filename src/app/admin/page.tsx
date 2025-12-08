@@ -3,15 +3,15 @@
 import { useState, useEffect, useTransition, useCallback, useMemo } from 'react';
 import type { User, Role, Group, Post } from '@prisma/client';
 import { getUsers, updateUserRole, getGroups, getGroupsForForm, getSetting, updateSetting, getPostsForAdmin, getExamsForAdmin } from '@/lib/actions';
-import { Button } from '@/components/ui/button';
+import { Button } from '../../components/ui/button';
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
     CardTitle,
-} from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+} from '../../components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar';
 import {
     Table,
     TableBody,
@@ -19,8 +19,8 @@ import {
     TableHead,
     TableHeader,
     TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
+} from '../../components/ui/table';
+import { Badge } from '../../components/ui/badge';
 import {
     MoreHorizontal,
     PlusCircle,
