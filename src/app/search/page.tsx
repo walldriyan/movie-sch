@@ -1,7 +1,8 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import { getPosts, getPost, getFavoritePostsByUserId } from '@/lib/actions/posts/read';
-import { getSeriesByAuthorId } from '@/lib/actions/series';
+import Link from 'next/link';
+import { getSeriesByAuthorId, getSeriesById, getPostsBySeriesId } from '@/lib/actions/series';
 import { getNotifications } from '@/lib/actions/notifications';
 import { getExamForTaker, getExamResults, getExamsForUser } from '@/lib/actions/exams';
 import { getPublicGroups } from '@/lib/actions/groups';
@@ -9,7 +10,7 @@ import { canUserDownloadSubtitle } from '@/lib/actions/subtitles';
 import { getUsers } from '@/lib/actions/users';
 import { auth } from '@/auth';
 import SearchPageClient from '@/components/search-page-client';
-import MovieWatchPage from '@/components/movie/movie-watch-page';
+import UnifiedWatchPage from '@/components/common/unified-watch-page';
 import ExamTaker from '@/components/exam-taker';
 import ProfileHeader from '@/components/profile/profile-header';
 import ProfilePostList from '@/components/profile/profile-post-list';
@@ -30,6 +31,8 @@ interface SearchPageProps {
         sortBy?: string;
         page?: string;
         movieId?: string;
+        seriesId?: string;
+        post?: string; // For episode ID in series
         examId?: string;
         profileId?: string;
         filter?: string;
@@ -100,6 +103,8 @@ async function getUserStats(userId: string) {
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const params = await searchParams;
     const movieId = params.movieId;
+    const seriesId = params.seriesId;
+    const postParam = params.post;
     const examId = params.examId;
     const profileId = params.profileId;
     const query = params.q || '';
@@ -227,7 +232,144 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 </div>
             </div>
         );
+
     }
+
+    // ===== SERIES WATCH PAGE =====
+    if (seriesId) {
+        const id = parseInt(seriesId, 10);
+        if (isNaN(id)) return notFound();
+
+        const [series, allPosts] = await Promise.all([
+            getSeriesById(id),
+            getPostsBySeriesId(id),
+        ]);
+
+        if (!series) return notFound();
+
+        // Determine active post (episode)
+        let activePost = allPosts[0];
+        if (postParam) {
+            const pid = parseInt(postParam, 10);
+            if (!isNaN(pid)) {
+                const found = allPosts.find(p => p.id === pid);
+                if (found) activePost = found;
+            }
+        }
+
+        if (!activePost) {
+            // Series empty? Handle gracefully
+            return (
+                <div className="min-h-screen pt-24 text-center">
+                    <p>No episodes available.</p>
+                </div>
+            )
+        }
+
+        // Check content lock for Active Post
+        // (Reusing similar logic to Movie, can be refactored to shared function later)
+        let isContentLocked = false;
+        const user = session?.user;
+        const postData = await getPost(activePost.id) as any; // Re-fetch full post data including author/relations
+        // Note: getPostsBySeriesId usually returns lighter objects, but getPost returns full details including subtitles/mediaLinks
+
+        if (!postData) return notFound();
+
+        if (user && (user.role === ROLES.SUPER_ADMIN || user.id === postData.authorId)) {
+            isContentLocked = false;
+        } else if (postData.visibility === 'GROUP_ONLY') {
+            if (!user) {
+                isContentLocked = true;
+            } else {
+                const membership = await prisma.groupMember.findFirst({
+                    where: { groupId: postData.groupId || undefined, userId: user.id, status: 'ACTIVE' }
+                });
+                if (!membership) isContentLocked = true;
+            }
+        } else if (postData.isLockedByDefault) {
+            isContentLocked = true;
+        }
+
+        // Serialize subtitles
+        const subtitlesWithPermissions = await Promise.all(
+            (postData.subtitles || []).map(async (subtitle: any) => ({
+                id: subtitle.id,
+                language: subtitle.language,
+                url: subtitle.url,
+                uploaderName: subtitle.uploaderName,
+                postId: subtitle.postId,
+                userId: subtitle.userId,
+                createdAt: serializeDate(subtitle.createdAt),
+                updatedAt: serializeDate(subtitle.updatedAt),
+                canDownload: await canUserDownloadSubtitle(subtitle.id),
+            }))
+        );
+
+        // Serialize Series
+        const serializedSeries = {
+            ...series,
+            createdAt: serializeDate(series.createdAt),
+            updatedAt: serializeDate(series.updatedAt),
+        };
+
+        // Serialize Active Post (Detailed)
+        // Similar to Movie serialization logic
+        const serializedActivePost = {
+            id: postData.id,
+            title: postData.title,
+            description: postData.description,
+            posterUrl: postData.posterUrl,
+            type: postData.type,
+            genres: postData.genres || [],
+            year: postData.year,
+            duration: postData.duration,
+            viewCount: postData.viewCount || 0,
+            status: postData.status,
+            visibility: postData.visibility,
+            seriesId: postData.seriesId,
+            orderInSeries: postData.orderInSeries,
+            authorId: postData.authorId,
+            groupId: postData.groupId,
+            isContentLocked,
+            author: serializeUser(postData.author),
+            reviews: (postData.reviews || []).map(serializeReview).filter(Boolean),
+            exam: postData.exam ? { id: postData.exam.id, title: postData.exam.title, description: postData.exam.description } : null,
+            mediaLinks: (postData.mediaLinks || []).map((link: any) => ({ id: link.id, url: link.url, type: link.type })),
+            _count: postData._count,
+            likedBy: (postData.likedBy || []).map(serializeUser),
+            dislikedBy: (postData.dislikedBy || []).map(serializeUser),
+            favoritePosts: (postData.favoritePosts || []).map((fp: any) => ({
+                userId: fp.userId,
+                postId: fp.postId,
+                createdAt: serializeDate(fp.createdAt),
+            })),
+        };
+
+        // Serialize All Posts (List for sidebar)
+        const serializedAllPosts = allPosts.map(p => ({
+            ...p,
+            createdAt: serializeDate(p.createdAt),
+            updatedAt: serializeDate(p.updatedAt),
+            publishedAt: serializeDate(p.publishedAt),
+            // We might need 'isLocked' status for list items too, but that requires complex checking for EACH episode.
+            // For now, let's assume sidebar list items show lock only if we have that data readily.
+            // getPostsBySeriesId might include enough info?
+            // If performance allows, ideally we check lock for all, but for speed, maybe skip or implement simpler check.
+            isLocked: p.visibility === 'GROUP_ONLY' || p.isLockedByDefault
+        }));
+
+        return (
+            <UnifiedWatchPage
+                type="SERIES"
+                post={serializedActivePost}
+                series={serializedSeries as any}
+                allPosts={serializedAllPosts}
+                formattedSubtitles={subtitlesWithPermissions}
+                session={session}
+            />
+        );
+    }
+
 
     // ===== MOVIE DETAIL VIEW =====
     if (movieId) {
@@ -326,7 +468,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         }));
 
         return (
-            <MovieWatchPage
+            <UnifiedWatchPage
+                type="MOVIE"
                 post={serializablePostForClient}
                 relatedPosts={relatedPosts}
                 formattedSubtitles={subtitlesWithPermissions}

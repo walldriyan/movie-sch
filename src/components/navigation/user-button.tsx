@@ -92,10 +92,10 @@ export default function UserButton() {
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
-          className="relative h-10 rounded-full px-2 space-x-2 justify-start"
+          className="relative h-10 rounded-full px-2 space-x-2 justify-start bg-[#111112] border border-white/[0.08] hover:bg-white/10 hover:text-white text-white transition-colors"
         >
           <div className="relative">
-            <Avatar className="cursor-pointer h-8 w-8">
+            <Avatar className="cursor-pointer h-7 w-7 md:h-8 md:w-8">
               <AvatarImage
                 src={user.image || userAvatarPlaceholder?.imageUrl}
                 alt={user.name || 'User'}
@@ -108,13 +108,13 @@ export default function UserButton() {
             <ConnectivityIndicator />
           </div>
           <div className="flex-col items-start hidden md:flex">
-            <span className="text-xs font-medium">{user.name}</span>
+            <span className="text-xs font-medium text-white">{user.name}</span>
             <Badge
               variant={getBadgeVariant(user.role)}
               className={cn(
-                'h-auto px-1 py-0 text-[9px] leading-tight',
+                'h-auto px-1 py-0 text-[9px] leading-tight border-white/20 text-white/70',
                 {
-                  'bg-green-500/80': user.role === ROLES.SUPER_ADMIN,
+                  'bg-green-500/80 text-white': user.role === ROLES.SUPER_ADMIN,
                 }
               )}
             >
@@ -123,7 +123,7 @@ export default function UserButton() {
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 p-2">
+      <DropdownMenuContent align="end" className="w-56 p-2 bg-[#111112] border-white/[0.08] rounded-2xl text-white/90">
         <DropdownMenuLabel>
           <p>My Account</p>
           <p className="text-xs text-muted-foreground font-normal truncate">

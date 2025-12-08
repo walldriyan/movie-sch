@@ -46,12 +46,15 @@ export default function CreateButton() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button
+          variant="ghost"
+          className="rounded-full bg-[#111112] border border-white/[0.08] text-white hover:bg-white/10 hover:text-white transition-colors h-10 px-4"
+        >
           <PlusCircle className="mr-2 h-5 w-5" />
           <span>Create</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
+      <DropdownMenuContent align="end" className="w-56 bg-[#111112] border-white/[0.08] rounded-2xl p-2 text-white/90">
         <DropdownMenuLabel>Create New</DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => handleNavigation('/manage?create=true')}>

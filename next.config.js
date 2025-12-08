@@ -71,6 +71,7 @@ const nextConfig = {
       { source: '/movies', destination: '/search?type=MOVIE', permanent: true },
       { source: '/movies/:id', destination: '/search?movieId=:id', permanent: true },
       { source: '/series', destination: '/search?type=TV_SERIES', permanent: true },
+      { source: '/series/:id', destination: '/search?seriesId=:id', permanent: true },
       { source: '/groups', destination: '/search?type=groups', permanent: true },
       { source: '/exams/:id', destination: '/search?examId=:id', permanent: true },
       { source: '/profile/:username', destination: '/search?profileId=:username', permanent: true },

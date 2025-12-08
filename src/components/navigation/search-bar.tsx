@@ -80,16 +80,16 @@ export default function SearchBar() {
                 <input
                     ref={inputRef}
                     type="text"
-                    placeholder="Search movies, series..."
+                    placeholder="Search..."
                     value={query}
                     onChange={handleInputChange}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
-                    className="flex h-9 w-[280px] rounded-md bg-secondary/50 px-3 py-2 pl-9 pr-8 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 focus-visible:bg-secondary transition-colors"
+                    className="flex h-10 w-[280px] rounded-full bg-[#111112] border border-white/[0.08] px-4 py-2 pl-10 pr-9 text-sm text-white placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-sm"
                 />
                 {query && (
                     <button
                         onClick={() => { setQuery(''); setResults([]); setIsOpen(false); }}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-white transition-colors"
                     >
                         <X className="w-4 h-4" />
                     </button>
@@ -98,7 +98,7 @@ export default function SearchBar() {
 
             {/* Dropdown Results */}
             {isOpen && (query.length >= 2 || results.length > 0) && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-card border border-border rounded-lg shadow-xl overflow-hidden z-50 max-h-[400px] overflow-y-auto">
+                <div className="absolute top-full left-0 right-0 mt-2 bg-[#111112] border border-white/[0.08] rounded-2xl shadow-2xl overflow-hidden z-50 max-h-[400px] overflow-y-auto">
                     {isLoading ? (
                         <div className="flex items-center justify-center py-8">
                             <Loader2 className="w-5 h-5 animate-spin text-muted-foreground" />
