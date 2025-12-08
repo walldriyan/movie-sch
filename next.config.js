@@ -54,6 +54,9 @@ const nextConfig = {
       'node_modules/@prisma/engines',
       'node_modules/@prisma/client/runtime/*.node',
       'node_modules/@prisma/client/libquery_engine*',
+      './.next/cache/**/*', // Exclude build cache
+      '.next/cache/**/*',
+      '.next/trace',
     ],
   },
 

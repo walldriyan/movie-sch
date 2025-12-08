@@ -1,51 +1,23 @@
-# Dependencies
+.next/
 node_modules/
-
-# Development files
-.env.local
-.env.development
-.env.test
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Testing
+.git/
+.github/
 coverage/
-.nyc_output/
-__tests__/
+tests/
 *.test.ts
 *.test.tsx
-*.spec.ts
-*.spec.tsx
 jest.config.js
-
-# IDE
-.idea/
-.vscode/
-*.swp
-*.swo
-
-# Build artifacts
-.next/
-out/
-public/
-
-# Misc
-*.md
-!README.md
-.git/
-.gitignore
-.eslintcache
-.turbo/
-*.tsbuildinfo
-
-# Scripts (not needed in production)
-scripts/
-
-# Prisma migrations (not needed, using db push)
+cypress/
+*.cy.ts
+.env
+.env.local
+.env.*
 prisma/migrations/
-
-# Local database
-*.db
-*.db-journal
+scripts/
+README.md
+LICENSE
+.eslintrc.json
+tsconfig.json
+postcss.config.js
+tailwind.config.ts
+public/mock-images/
