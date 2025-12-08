@@ -29,6 +29,7 @@ jest.config.js
 # Build artifacts
 .next/
 out/
+public/
 
 # Misc
 *.md

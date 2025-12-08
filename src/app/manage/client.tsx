@@ -11,7 +11,15 @@ import { getPostsForAdmin, getPost } from '@/lib/actions/posts/read';
 import type { PostFormData } from '@/lib/types';
 import { PERMISSIONS, ROLES, MovieStatus } from '@/lib/permissions';
 import PostList from '@/components/manage/post-list';
-import PostForm from '@/components/manage/post-form';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '@/components/ui/skeleton';
+
+const PostForm = dynamic(() => import('@/components/manage/post-form'), {
+  loading: () => <div className="space-y-4">
+    <Skeleton className="h-8 w-1/3" />
+    <Skeleton className="h-[500px] w-full" />
+  </div>
+});
 import type { Session } from 'next-auth';
 import { RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';

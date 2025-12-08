@@ -11,6 +11,55 @@ const nextConfig = {
   // PRODUCTION OPTIMIZATION
   // ================================================================
 
+  // Aggressive size reduction options
+  experimental: {
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-accordion',
+      '@radix-ui/react-alert-dialog',
+      '@radix-ui/react-avatar',
+      '@radix-ui/react-checkbox',
+      '@radix-ui/react-collapsible',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-label',
+      '@radix-ui/react-menubar',
+      '@radix-ui/react-popover',
+      '@radix-ui/react-progress',
+      '@radix-ui/react-radio-group',
+      '@radix-ui/react-scroll-area',
+      '@radix-ui/react-select',
+      '@radix-ui/react-separator',
+      '@radix-ui/react-slider',
+      '@radix-ui/react-slot',
+      '@radix-ui/react-switch',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-tooltip',
+      'date-fns',
+      'react-hook-form',
+      'zod',
+      'cmdk',
+    ],
+    // Exclude heavy dev dependencies from output tracing
+    outputFileTracingExcludes: {
+      '*': [
+        'node_modules/@swc/core-linux-x64-gnu',
+        'node_modules/@swc/core-linux-x64-musl',
+        'node_modules/@esbuild/linux-x64',
+        'node_modules/webpack',
+        'node_modules/terser',
+      ],
+    },
+  },
+
+  // Remove console logs in production for smaller JS bundles
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error'],
+    } : false,
+  },
+
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -26,6 +75,9 @@ const nextConfig = {
 
   // Power pages with headers
   poweredByHeader: false,
+
+  // Enable SWC Minification (default true in Next 13+, explicit here)
+  swcMinify: true,
 
   // Generate unique build IDs
   generateBuildId: async () => {
@@ -131,40 +183,6 @@ const nextConfig = {
     }
 
     return config;
-  },
-
-  // ================================================================
-  // EXPERIMENTAL FEATURES - Package optimization
-  // ================================================================
-  experimental: {
-    optimizePackageImports: [
-      'lucide-react',
-      '@radix-ui/react-accordion',
-      '@radix-ui/react-alert-dialog',
-      '@radix-ui/react-avatar',
-      '@radix-ui/react-checkbox',
-      '@radix-ui/react-collapsible',
-      '@radix-ui/react-dialog',
-      '@radix-ui/react-dropdown-menu',
-      '@radix-ui/react-label',
-      '@radix-ui/react-menubar',
-      '@radix-ui/react-popover',
-      '@radix-ui/react-progress',
-      '@radix-ui/react-radio-group',
-      '@radix-ui/react-scroll-area',
-      '@radix-ui/react-select',
-      '@radix-ui/react-separator',
-      '@radix-ui/react-slider',
-      '@radix-ui/react-slot',
-      '@radix-ui/react-switch',
-      '@radix-ui/react-tabs',
-      '@radix-ui/react-toast',
-      '@radix-ui/react-tooltip',
-      'date-fns',
-      'react-hook-form',
-      'zod',
-      'cmdk',
-    ],
   },
 
   // ================================================================

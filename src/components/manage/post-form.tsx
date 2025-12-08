@@ -29,7 +29,12 @@ import {
 } from "@/components/ui/command";
 import { Switch } from '@/components/ui/switch';
 
-import QuillEditor from '@/components/quill-editor';
+import dynamic from 'next/dynamic';
+const QuillEditor = dynamic(() => import('@/components/quill-editor'), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[200px] w-full" />,
+});
+
 import { ArrowLeft, Upload, X, Image as ImageIcon, Loader2, AlertCircle, Plus, Trash2, ChevronsUpDown, Check, PlusCircle, Eye, Users, Lock, Unlock, Info } from 'lucide-react';
 import Image from 'next/image';
 import type { Post, Group } from '@prisma/client';
