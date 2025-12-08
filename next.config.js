@@ -67,19 +67,19 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'lh3.googleusercontent.com', // Google OAuth profile images
+        hostname: 'lh3.googleusercontent.com',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: 'avatars.githubusercontent.com', // GitHub avatars
+        hostname: 'avatars.githubusercontent.com',
         port: '',
         pathname: '/**',
       },
       {
         protocol: 'https',
-        hostname: '**.supabase.co', // Supabase storage
+        hostname: '**.supabase.co',
         port: '',
         pathname: '/**',
       },
@@ -88,6 +88,54 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+  },
+
+  // ================================================================
+  // REDIRECTS - Reduce serverless function count (FREE - no function cost!)
+  // ================================================================
+  async redirects() {
+    return [
+      // Movies page -> Search with MOVIE filter
+      {
+        source: '/movies',
+        destination: '/search?type=MOVIE',
+        permanent: true,
+      },
+      // Series page -> Search with TV_SERIES filter  
+      {
+        source: '/series',
+        destination: '/search?type=TV_SERIES',
+        permanent: true,
+      },
+      // Admin exams pages -> Main admin page
+      {
+        source: '/admin/exams',
+        destination: '/admin',
+        permanent: true,
+      },
+      {
+        source: '/admin/exams/:id',
+        destination: '/admin',
+        permanent: true,
+      },
+      {
+        source: '/admin/exams/:id/results',
+        destination: '/admin',
+        permanent: true,
+      },
+      // Activity page -> Home
+      {
+        source: '/activity',
+        destination: '/',
+        permanent: false,
+      },
+      // Exams results -> Exams page with tab
+      {
+        source: '/exams/:id/results',
+        destination: '/exams/:id?tab=results',
+        permanent: true,
+      },
+    ];
   },
 
   // ================================================================
@@ -124,7 +172,6 @@ const nextConfig = {
           },
         ],
       },
-      // Cache static assets
       {
         source: '/static/:path*',
         headers: [
@@ -134,7 +181,6 @@ const nextConfig = {
           },
         ],
       },
-      // Cache images
       {
         source: '/uploads/:path*',
         headers: [
@@ -151,7 +197,6 @@ const nextConfig = {
   // WEBPACK CONFIGURATION
   // ================================================================
   webpack: (config, { isServer, dev }) => {
-    // Ignore OpenTelemetry warnings
     if (isServer) {
       config.ignoreWarnings = [
         ...(config.ignoreWarnings || []),
@@ -162,11 +207,10 @@ const nextConfig = {
       ];
     }
 
-    // Production optimizations - DISABLED for speed as per user request
     if (!dev) {
       config.optimization = {
         ...config.optimization,
-        minimize: false, // Disabling minification to speed up build
+        minimize: false,
       };
     }
 
@@ -176,43 +220,7 @@ const nextConfig = {
   // ================================================================
   // EXPERIMENTAL FEATURES
   // ================================================================
-  experimental: {
-    // Server Actions are stable in Next.js 15, removing experimental config to avoid issues
-    // serverActions: {
-    //   bodySizeLimit: '2mb',
-    // },
-    // Optimize package imports - DISABLED FOR DEBUGGING
-    // optimizePackageImports: [
-    //   'lucide-react',
-    //   '@radix-ui/react-icons',
-    //   '@radix-ui/react-accordion',
-    //   '@radix-ui/react-alert-dialog',
-    //   '@radix-ui/react-avatar',
-    //   '@radix-ui/react-checkbox',
-    //   '@radix-ui/react-collapsible',
-    //   '@radix-ui/react-dialog',
-    //   '@radix-ui/react-dropdown-menu',
-    //   '@radix-ui/react-label',
-    //   '@radix-ui/react-menubar',
-    //   '@radix-ui/react-popover',
-    //   '@radix-ui/react-progress',
-    //   '@radix-ui/react-radio-group',
-    //   '@radix-ui/react-scroll-area',
-    //   '@radix-ui/react-select',
-    //   '@radix-ui/react-separator',
-    //   '@radix-ui/react-slider',
-    //   '@radix-ui/react-slot',
-    //   '@radix-ui/react-switch',
-    //   '@radix-ui/react-tabs',
-    //   '@radix-ui/react-toast',
-    //   '@radix-ui/react-tooltip',
-    //   'date-fns',
-    //   'framer-motion',
-    //   'recharts',
-    //   'react-hook-form',
-    //   'zod',
-    // ],
-  },
+  experimental: {},
 
   // ================================================================
   // LOGGING
@@ -224,6 +232,4 @@ const nextConfig = {
   },
 };
 
-// Apply bundle analyzer wrapper
 module.exports = withBundleAnalyzer(nextConfig);
-

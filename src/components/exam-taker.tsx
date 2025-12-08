@@ -482,17 +482,29 @@ function ResultsView({ examResults }: { examResults: any }) {
     const totalPoints = submission.exam.questions.reduce((s: number, q: any) => s + q.points, 0);
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
 
-    const correctCount = submission.answers.filter((a: any) => {
-        const q = submission.exam.questions.find((q: any) => q.id === a.questionId);
+    const correctCount = submission.exam.questions.filter((q: any) => {
+        const userAnswersForQ = submission.answers.filter((a: any) => a.questionId === q.id);
+
         if (q.type === 'MCQ') {
-            const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
-            return opt?.isCorrect;
+            // For MCQ: check if user got at least one correct and no wrong answers
+            const correctOptions = q.options?.filter((o: any) => o.isCorrect) || [];
+            const userCorrectSelections = userAnswersForQ.filter((a: any) =>
+                q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
+            ).length;
+            const userWrongSelections = userAnswersForQ.filter((a: any) =>
+                !q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect
+            ).length;
+
+            // Counted as correct only if user got all correct options and no wrong ones
+            return userCorrectSelections === correctOptions.length && userWrongSelections === 0;
         }
-        if (a.marksAwarded !== null && a.marksAwarded > 0) return true;
-        return false;
+
+        // For non-MCQ: check if marks were awarded
+        const answer = userAnswersForQ[0];
+        return answer?.marksAwarded !== null && answer?.marksAwarded > 0;
     }).length;
 
-    const wrongCount = submission.exam.questions.length - correctCount;
+    const wrongCount = Math.max(0, submission.exam.questions.length - correctCount);
 
     return (
         <div className="space-y-8 py-4 font-sans">
