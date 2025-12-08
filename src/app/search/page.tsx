@@ -1,16 +1,25 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getPosts, getPost } from '@/lib/actions/posts/read';
+import { getPosts, getPost, getFavoritePostsByUserId, getSeriesByAuthorId } from '@/lib/actions/posts/read';
 import { getNotifications } from '@/lib/actions/notifications';
-import { getExamsForUser } from '@/lib/actions/exams';
+import { getExamForTaker, getExamResults, getExamsForUser } from '@/lib/actions/exams';
 import { getPublicGroups } from '@/lib/actions/groups';
 import { canUserDownloadSubtitle } from '@/lib/actions/subtitles';
+import { getUsers } from '@/lib/actions/users';
 import { auth } from '@/auth';
 import SearchPageClient from '@/components/search-page-client';
 import MoviePageContent from '@/components/movie/movie-page-content';
+import ExamTaker from '@/components/exam-taker';
+import ProfileHeader from '@/components/profile/profile-header';
+import ProfilePostList from '@/components/profile/profile-post-list';
+import ProfileSidebar from '@/components/profile/profile-sidebar';
+import ProfileSeriesList from '@/components/profile/profile-series-list';
+import ProfileExamList from '@/components/profile/profile-exam-list';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { User as PrismaUser } from '@prisma/client';
 
 interface SearchPageProps {
     searchParams: Promise<{
@@ -19,7 +28,12 @@ interface SearchPageProps {
         timeFilter?: string;
         sortBy?: string;
         page?: string;
-        movieId?: string; // Movie detail view
+        movieId?: string;
+        examId?: string;
+        profileId?: string;
+        filter?: string;
+        view?: string;
+        submissionId?: string;
     }>;
 }
 
@@ -73,19 +87,146 @@ function serializeReview(review: any): any {
         replies: (review.replies || []).map(serializeReview).filter(Boolean),
     };
 }
+// Get user stats for profile
+async function getUserStats(userId: string) {
+    const [postsCount, favoritesCount] = await Promise.all([
+        prisma.post.count({ where: { authorId: userId } }),
+        prisma.favoritePost.count({ where: { userId: userId } }),
+    ]);
+    return { postsCount, favoritesCount, followersCount: 0, followingCount: 0 };
+}
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
     const params = await searchParams;
     const movieId = params.movieId;
+    const examId = params.examId;
+    const profileId = params.profileId;
     const query = params.q || '';
     const type = params.type;
     const timeFilter = params.timeFilter || 'all';
     const sortBy = params.sortBy || 'updatedAt-desc';
     const page = parseInt(params.page || '1', 10);
+    const profileFilter = params.filter || 'posts';
+    const examView = params.view;
+    const submissionIdParam = params.submissionId;
 
     // Get current user session
     const session = await auth();
     const userId = session?.user?.id;
+
+    // ===== EXAM VIEW =====
+    if (examId) {
+        if (!session?.user) return notFound();
+
+        const examIdNum = parseInt(examId, 10);
+        if (isNaN(examIdNum)) return notFound();
+
+        // Check if viewing results
+        if (examView === 'results' && submissionIdParam) {
+            const submissionId = parseInt(submissionIdParam, 10);
+            if (isNaN(submissionId)) return notFound();
+
+            try {
+                const { submission, submissionCount } = await getExamResults(submissionId);
+                if (submission.examId !== examIdNum) return notFound();
+
+                const totalPoints = submission.exam.questions.reduce((sum: number, q: any) => sum + q.points, 0);
+                const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
+
+                return (
+                    <div className="min-h-screen bg-background py-8 px-4 pt-24">
+                        <div className="max-w-3xl mx-auto space-y-6">
+                            <h1 className="font-semibold text-2xl">{submission.exam.title}</h1>
+                            <div className="text-4xl font-bold">{submission.score}/{totalPoints} ({percentage.toFixed(0)}%)</div>
+                        </div>
+                    </div>
+                );
+            } catch (error) {
+                return (
+                    <div className="flex items-center justify-center min-h-screen">
+                        <Alert variant="destructive" className="max-w-lg">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Error</AlertTitle>
+                            <AlertDescription>Could not load results</AlertDescription>
+                        </Alert>
+                    </div>
+                );
+            }
+        }
+
+        // Show exam taker
+        try {
+            const exam = await getExamForTaker(examIdNum);
+            if (!exam) return notFound();
+            return <ExamTaker exam={exam} />;
+        } catch (error) {
+            return (
+                <div className="flex items-center justify-center min-h-screen">
+                    <Alert variant="destructive" className="max-w-lg">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Access Denied</AlertTitle>
+                        <AlertDescription>You cannot access this exam</AlertDescription>
+                    </Alert>
+                </div>
+            );
+        }
+    }
+
+    // ===== PROFILE VIEW =====
+    if (profileId) {
+        const allUsers = await getUsers();
+        const profileUser = allUsers.find(u => u.id === profileId) as PrismaUser | undefined;
+        if (!profileUser) return notFound();
+
+        const isOwnProfile = session?.user?.id === profileUser.id;
+        const stats = await getUserStats(profileUser.id);
+
+        let displayPosts: any[] = [];
+        let displaySeries: any[] = [];
+        let displayExams: any[] = [];
+        let totalSeriesCount = 0;
+
+        if (profileFilter === 'posts') {
+            const { posts } = await getPosts({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
+            displayPosts = posts || [];
+        } else if (profileFilter === 'favorites') {
+            displayPosts = await getFavoritePostsByUserId(profileUser.id) || [];
+        } else if (profileFilter === 'series') {
+            const { series, totalSeries } = await getSeriesByAuthorId(profileUser.id, 10);
+            displaySeries = series || [];
+            totalSeriesCount = totalSeries;
+        } else if (profileFilter === 'exams') {
+            if (isOwnProfile || session?.user?.role === ROLES.SUPER_ADMIN) {
+                displayExams = await getExamsForUser(profileUser.id);
+            }
+        }
+
+        return (
+            <div className="min-h-screen bg-background">
+                <ProfileHeader user={profileUser} currentFilter={profileFilter} isOwnProfile={isOwnProfile} stats={stats} />
+                <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-16">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+                        <div className="lg:col-span-3">
+                            <div className="rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent border border-white/[0.04] p-6">
+                                {profileFilter === 'series' ? (
+                                    <ProfileSeriesList series={displaySeries} isOwnProfile={isOwnProfile} profileUser={profileUser} totalSeries={totalSeriesCount} />
+                                ) : profileFilter === 'exams' ? (
+                                    <ProfileExamList exams={displayExams} isOwnProfile={isOwnProfile} />
+                                ) : (
+                                    <ProfilePostList posts={displayPosts} isOwnProfile={isOwnProfile} currentFilter={profileFilter} profileUser={profileUser} />
+                                )}
+                            </div>
+                        </div>
+                        <aside className="lg:col-span-1">
+                            <div className="sticky top-24">
+                                <ProfileSidebar profileUser={profileUser} loggedInUser={session?.user} />
+                            </div>
+                        </aside>
+                    </div>
+                </div>
+            </div>
+        );
+    }
 
     // ===== MOVIE DETAIL VIEW =====
     if (movieId) {

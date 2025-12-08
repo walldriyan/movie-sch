@@ -72,11 +72,12 @@ const nextConfig = {
       { source: '/movies/:id', destination: '/search?movieId=:id', permanent: true },
       { source: '/series', destination: '/search?type=TV_SERIES', permanent: true },
       { source: '/groups', destination: '/search?type=groups', permanent: true },
+      { source: '/exams/:id', destination: '/search?examId=:id', permanent: true },
+      { source: '/profile/:username', destination: '/search?profileId=:username', permanent: true },
       { source: '/admin/exams', destination: '/admin', permanent: true },
       { source: '/admin/exams/:id', destination: '/admin', permanent: true },
       { source: '/admin/exams/:id/results', destination: '/admin', permanent: true },
       { source: '/activity', destination: '/', permanent: false },
-      { source: '/exams/:id/results', destination: '/exams/:id?tab=results', permanent: true },
     ];
   },
 
