@@ -21,19 +21,18 @@ import MovieInteractionButtons from '@/components/movie/movie-interaction-button
 import ReviewForm from '@/components/review-form';
 import ReviewCard from '@/components/review-card';
 import DOMPurify from 'isomorphic-dompurify';
+import AdManager from '@/components/common/ad-manager';
+import type { AdConfig } from '@/lib/actions/ads';
 
 interface UnifiedWatchPageProps {
     type: 'MOVIE' | 'SERIES';
-    post: any; // The main post to watch (Movie or Active Episode)
+    post: any;
     session: Session | null;
     formattedSubtitles: any[];
-
-    // Movie Specific
     relatedPosts?: any[];
-
-    // Series Specific
     series?: Series;
-    allPosts?: any[]; // All episodes for the series
+    allPosts?: any[];
+    adConfig: AdConfig;
 }
 
 export default function UnifiedWatchPage({
@@ -43,9 +42,14 @@ export default function UnifiedWatchPage({
     formattedSubtitles,
     relatedPosts = [],
     series,
-    allPosts = []
+    allPosts = [],
+    adConfig
 }: UnifiedWatchPageProps) {
     const router = useRouter();
+
+    // ... (existing helper logic) ...
+
+
 
     // --- Helper Logic ---
     const videoLink = useMemo(() => {
@@ -298,18 +302,7 @@ export default function UnifiedWatchPage({
 
                                     {/* AD SIDEBAR (Right side of reviews) */}
                                     <div className="hidden xl:block w-[300px] shrink-0">
-                                        <div className="h-full p-6 rounded-2xl bg-muted/30 flex flex-col items-center justify-center text-center">
-                                            <span className="text-muted-foreground/50 text-xs font-bold uppercase tracking-widest mb-4">Advertisement</span>
-                                            <div className="w-full aspect-[3/4] bg-gradient-to-br from-white/5 to-transparent rounded-xl flex items-center justify-center border border-white/5 mb-4 group cursor-pointer hover:border-primary/30 transition-colors">
-                                                <div className="text-center">
-                                                    <Film className="w-8 h-8 text-white/20 mx-auto mb-2 group-hover:text-primary/50 transition-colors" />
-                                                    <span className="text-xs text-muted-foreground/40 font-medium">Ad Space</span>
-                                                </div>
-                                            </div>
-                                            <p className="text-[10px] text-muted-foreground/30 max-w-[200px]">
-                                                Support our platform by viewing our sponsors.
-                                            </p>
-                                        </div>
+                                        <AdManager initialConfig={adConfig} userRole={session?.user?.role} />
                                     </div>
                                 </div>
                             </TabsContent>

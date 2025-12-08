@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
+import { getAdConfig } from '@/lib/actions/ads';
 import { getPosts, getPost, getFavoritePostsByUserId } from '@/lib/actions/posts/read';
 import Link from 'next/link';
 import { getSeriesByAuthorId, getSeriesById, getPostsBySeriesId } from '@/lib/actions/series';
@@ -115,6 +116,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const profileFilter = params.filter || 'posts';
     const examView = params.view;
     const submissionIdParam = params.submissionId;
+
+    // Fetch Global Ad Config
+    const adConfig = await getAdConfig();
 
     // Get current user session
     const session = await auth();
@@ -366,6 +370,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 allPosts={serializedAllPosts}
                 formattedSubtitles={subtitlesWithPermissions}
                 session={session}
+                adConfig={adConfig}
             />
         );
     }
@@ -516,6 +521,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         allPosts={serializedAllPosts}
                         formattedSubtitles={subtitlesWithPermissions}
                         session={session}
+                        adConfig={adConfig}
                     />
                 );
             }
@@ -529,6 +535,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 relatedPosts={relatedPosts}
                 formattedSubtitles={subtitlesWithPermissions}
                 session={session}
+                adConfig={adConfig}
             />
         );
     }
