@@ -68,7 +68,7 @@ export async function getGroups() {
     );
 
     // Step 4: Combine the data
-    const groupsWithAllCounts = groups.map(group => ({
+    const groupsWithAllCounts = groups.map((group: any) => ({
         ...group,
         _count: {
             members: group._count.members,
@@ -395,11 +395,11 @@ export async function getPublicGroups(limit = 10) {
         },
         take: limit,
     });
-    return groups.map(group => ({
+    return groups.map((group: any) => ({
         ...group,
         createdAt: group.createdAt.toISOString(),
         updatedAt: group.updatedAt.toISOString(),
-        posts: group.posts.map(post => ({ ...post }))
+        posts: group.posts.map((post: any) => ({ ...post }))
     }));
 }
 
@@ -501,7 +501,7 @@ export async function manageGroupJoinRequest(groupId: string, userId: string, ac
         throw new Error("Group not found");
     }
 
-    const canManage = actor?.role === ROLES.SUPER_ADMIN || group.createdById === actor?.id || group.members.some(m => m.userId === actor?.id);
+    const canManage = actor?.role === ROLES.SUPER_ADMIN || group.createdById === actor?.id || (group as any).members.some((m: any) => m.userId === actor?.id);
     if (!canManage) {
         throw new Error("Not authorized to manage requests for this group.");
     }

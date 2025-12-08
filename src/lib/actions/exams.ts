@@ -420,8 +420,8 @@ export async function getExamForTaker(examId: number) {
         if (membership) {
             hasAccess = true;
         }
-    } else if (exam.postId && exam.post) { // Regular post-based access
-        if (exam.post.visibility === 'PUBLIC') {
+    } else if (exam.postId && (exam as any).post) { // Regular post-based access
+        if ((exam as any).post.visibility === 'PUBLIC') {
             hasAccess = true;
         }
     } else if (!exam.groupId && !exam.postId) {
@@ -758,9 +758,9 @@ export async function getExamsForUser(userId: string) {
     });
 
     // Calculate total points from questions
-    return exams.map(exam => ({
+    return exams.map((exam: any) => ({
         ...exam,
-        totalPoints: exam.questions.reduce((sum, q) => sum + q.points, 0),
+        totalPoints: exam.questions.reduce((sum: number, q: any) => sum + q.points, 0),
         submissionCount: exam.submissions.length > 0 ? exam.submissions[0].attemptCount : 0,
         latestSubmission: exam.submissions[0] || null,
     }));
