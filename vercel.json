@@ -5,8 +5,7 @@
     "installCommand": "npm install",
     "git": {
         "deploymentEnabled": {
-            "main": false,
-            "v50": false
+            "main": true
         }
     },
     "ignoreCommand": "exit 0",
