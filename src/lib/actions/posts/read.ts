@@ -63,7 +63,11 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
         else if (timeFilter === 'this_month') whereClause.createdAt = { gte: startOfMonth(now), lte: endOfMonth(now) };
     }
 
-    if (type) whereClause.type = type as any;
+    // Only apply type filter if it's a valid PostType enum value
+    const validPostTypes = ['MOVIE', 'TV_SERIES', 'OTHER'];
+    if (type && validPostTypes.includes(type.toUpperCase())) {
+        whereClause.type = type.toUpperCase() as any;
+    }
 
     if (search && search.trim()) {
         const term = search.trim().toLowerCase();
