@@ -13,6 +13,7 @@ import { signIn as nextAuthSignIn } from 'next-auth/react';
 import React from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Captcha from '@/components/auth/captcha';
 
 // Google Icon Component
 function GoogleIcon({ className }: { className?: string }) {
@@ -91,6 +92,8 @@ export default function AuthPage() {
     const [registerState, registerAction] = useActionState(registerUser, { message: null });
     const [showPassword, setShowPassword] = useState(false);
     const [activeTab, setActiveTab] = useState(searchParams.get('mode') === 'register' ? 'register' : 'login');
+    const [loginCaptcha, setLoginCaptcha] = useState<string | null>(null);
+    const [registerCaptcha, setRegisterCaptcha] = useState<string | null>(null);
 
     const error = searchParams.get('error');
     const errorMessage = error === 'OAuthAccountNotLinked'
@@ -232,6 +235,9 @@ export default function AuthPage() {
                                     </div>
                                 )}
 
+                                <Captcha onChange={setLoginCaptcha} />
+                                <input type="hidden" name="captchaToken" value={loginCaptcha || ''} />
+
                                 <SubmitButton text="Sign In" loadingText="Signing in..." />
                             </form>
                         </TabsContent>
@@ -316,6 +322,9 @@ export default function AuthPage() {
                                         </p>
                                     </div>
                                 )}
+
+                                <Captcha onChange={setRegisterCaptcha} />
+                                <input type="hidden" name="captchaToken" value={registerCaptcha || ''} />
 
                                 <SubmitButton text="Create Account" loadingText="Creating account..." />
                             </form>

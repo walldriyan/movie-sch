@@ -8,6 +8,7 @@ import prisma from '@/lib/prisma';
 import { Prisma, Role } from '@prisma/client';
 import { revalidatePath } from 'next/cache';
 import { signIn, signOut } from '@/auth';
+import { validateRecaptcha } from '@/lib/recaptcha';
 
 // Updated doSignIn to return a status object instead of relying on redirect
 export async function doSignIn(
@@ -15,6 +16,13 @@ export async function doSignIn(
   formData: FormData
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const captchaToken = formData.get('captchaToken') as string;
+    const isCaptchaValid = await validateRecaptcha(captchaToken);
+
+    if (!isCaptchaValid) {
+      return { success: false, error: 'CAPTCHA verification failed. Please try again.' };
+    }
+
     await signIn('credentials', {
       ...Object.fromEntries(formData),
       redirect: false, // Important: prevent default redirect to handle it manually
@@ -28,7 +36,7 @@ export async function doSignIn(
     if ((error as any).type === 'redirect') {
       return { success: true };
     }
-    
+
     if (error instanceof AuthError) {
       switch (error.type) {
         case 'CredentialsSignin':
@@ -62,7 +70,14 @@ export async function registerUser(
   if (!name || !email || !password) {
     return { message: 'A required field is missing.', input: formInput };
   }
-  
+
+  const captchaToken = formData.get('captchaToken') as string;
+  const isCaptchaValid = await validateRecaptcha(captchaToken);
+
+  if (!isCaptchaValid) {
+    return { message: 'CAPTCHA verification failed. Please try again.', input: formInput };
+  }
+
   let userRole: Role = Role.USER;
   try {
     const hashedPassword = await bcrypt.hash(password, 12);
@@ -72,10 +87,10 @@ export async function registerUser(
       email === process.env.SUPER_ADMIN_EMAIL
     ) {
       const existingSuperAdmin = await prisma.user.findFirst({
-          where: { role: Role.SUPER_ADMIN }
+        where: { role: Role.SUPER_ADMIN }
       });
       if (!existingSuperAdmin) {
-          userRole = Role.SUPER_ADMIN;
+        userRole = Role.SUPER_ADMIN;
       }
     }
 
@@ -89,13 +104,13 @@ export async function registerUser(
     });
 
   } catch (error: any) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError) {
-          if (error.code === 'P2002') { // Unique constraint violation
-              return { message: 'An account with this email already exists.', input: formInput };
-          }
+    if (error instanceof Prisma.PrismaClientKnownRequestError) {
+      if (error.code === 'P2002') { // Unique constraint violation
+        return { message: 'An account with this email already exists.', input: formInput };
       }
-      console.error('Registration Error:', error);
-      return { message: 'An unexpected error occurred during registration.', input: formInput };
+    }
+    console.error('Registration Error:', error);
+    return { message: 'An unexpected error occurred during registration.', input: formInput };
   }
 
   redirect('/login');
