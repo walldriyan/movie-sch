@@ -5,7 +5,7 @@ import { getSeriesById, getPostsBySeriesId } from '@/lib/actions/series';
 import { getPost } from '@/lib/actions/posts/read';
 import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
-import SeriesWatchPage from '@/components/series/series-watch-page';
+import SeriesWatchPage from '../../../components/series/series-watch-page';
 import { ROLES } from '@/lib/permissions';
 
 interface SeriesDetailPageProps {
