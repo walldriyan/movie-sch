@@ -302,12 +302,18 @@ export default function LeftSidebar() {
                                     className="relative flex items-center gap-3 p-1.5 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group"
                                 >
                                     <div className="relative w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors">
-                                        <Image
-                                            src={user.image || '/avatar-placeholder.png'}
-                                            alt={user.name || 'User'}
-                                            fill
-                                            className="object-cover"
-                                        />
+                                        {user.image ? (
+                                            <Image
+                                                src={user.image}
+                                                alt={user.name || 'User'}
+                                                fill
+                                                className="object-cover"
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+                                                {user.name?.charAt(0).toUpperCase() || 'U'}
+                                            </div>
+                                        )}
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-xs font-medium text-white group-hover:text-white/80 transition-colors max-w-[120px] truncate">
@@ -328,12 +334,18 @@ export default function LeftSidebar() {
                                     href={`/profile/${user.id}`}
                                     className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/10 hover:border-white/30 transition-colors"
                                 >
-                                    <Image
-                                        src={user.image || '/avatar-placeholder.png'}
-                                        alt={'User'}
-                                        fill
-                                        className="object-cover"
-                                    />
+                                    {user.image ? (
+                                        <Image
+                                            src={user.image}
+                                            alt={user.name || 'User'}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    ) : (
+                                        <div className="w-full h-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center text-white text-sm font-bold">
+                                            {user.name?.charAt(0).toUpperCase() || 'U'}
+                                        </div>
+                                    )}
                                 </Link>
                             </div>
                         )}
