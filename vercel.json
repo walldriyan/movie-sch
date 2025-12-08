@@ -10,11 +10,17 @@
     },
     "ignoreCommand": "if [ \"$VERCEL_GIT_COMMIT_REF\" == \"main\" ]; then exit 1; else exit 0; fi",
     "functions": {
-        "src/app/api/**/*.ts": {
-            "maxDuration": 10
+        "src/app/**/*.ts": {
+            "maxDuration": 10,
+            "excludeFiles": "node_modules/.prisma/client/libquery_engine-*"
         },
-        "src/app/api/health/route.ts": {
-            "maxDuration": 10
+        "src/app/**/*.tsx": {
+            "maxDuration": 10,
+            "excludeFiles": "node_modules/.prisma/client/libquery_engine-*"
+        },
+        "src/app/api/**/*.ts": {
+            "maxDuration": 10,
+            "excludeFiles": "node_modules/.prisma/client/libquery_engine-*"
         }
     },
     "crons": [],
