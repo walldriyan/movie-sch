@@ -38,6 +38,7 @@ export default function LeftSidebar() {
     const pathname = usePathname();
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
+    const [isHidden, setIsHidden] = useState(false); // Default open, logo-only mode off
 
     const user = session?.user;
     const canManage = useMemo(() =>
@@ -86,13 +87,15 @@ export default function LeftSidebar() {
             }
         } else {
             // Logged in with visible sidebar - apply sidebar margin
-            // Increased margin to account for floating sidebar + gap
             const isMobile = window.innerWidth <= 768;
-            main.style.marginLeft = isMobile ? '0' : (isCollapsed ? '110px' : '290px');
+            // If isHidden (logo only), margin is smaller (e.g. 100px so content doesn't hit logo) 
+            // or maybe 0 if it floats over? Let's keep a small margin to respect the logo space.
+            const margin = isHidden ? '90px' : (isCollapsed ? '130px' : '310px');
+            main.style.marginLeft = isMobile ? '0' : margin;
             main.style.display = '';
             main.style.justifyContent = '';
         }
-    }, [isLoggedIn, isCollapsed, shouldHideSidebar]);
+    }, [isLoggedIn, isCollapsed, shouldHideSidebar, isHidden]);
 
     if (!isLoggedIn) {
         return (
@@ -111,7 +114,11 @@ export default function LeftSidebar() {
 
     if (shouldHideSidebar) return null;
 
-    const sidebarWidth = isCollapsed ? 'w-[80px]' : 'w-[250px]';
+    // Dimensions based on state
+    // Hidden: Small square for logo
+    // Normal: Full height, variable width
+    const sidebarWidth = isHidden ? 'w-[72px]' : (isCollapsed ? 'w-[80px]' : 'w-[250px]');
+    const sidebarHeight = isHidden ? 'h-[72px]' : 'h-[calc(100vh-2rem)]';
 
     // Cinematic NavItem with Dark Gray/iOS feel
     const NavItem = ({
@@ -127,7 +134,7 @@ export default function LeftSidebar() {
         show?: boolean;
         badge?: string;
     }) => {
-        if (!show) return null;
+        if (!show || isHidden) return null; // Don't render items if hidden
         const active = isActive(href);
 
         return (
@@ -168,7 +175,7 @@ export default function LeftSidebar() {
 
     // Group Label component
     const GroupLabel = ({ label }: { label: string }) => {
-        if (isCollapsed) return <div className="h-6" />;
+        if (isCollapsed || isHidden) return <div className="h-0" />;
         return (
             <div className="px-4 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] font-bold text-white/30 select-none">
                 {label}
@@ -198,113 +205,162 @@ export default function LeftSidebar() {
             {/* Floating Sidebar Container (iOS Style) */}
             <aside
                 className={cn(
-                    "fixed left-4 top-4 bottom-4 z-40 p-4 pb-6", // Floating positioning
+                    "fixed left-4 top-4 z-40 transition-all duration-500 cubic-bezier(0.25, 1, 0.5, 1)", // Smooth spring-like transition
                     "rounded-[2rem]", // High rounding
-                    "bg-[#111112] border border-white/[0.08]", // Dark Gray / Zinc-900ish, very subtle border
-                    "flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 cubic-bezier(0.25, 0.1, 0.25, 1)",
+                    "bg-[#111112] border border-white/[0.08]", // Dark Gray / Zinc-900ish
+                    "flex flex-col",
                     sidebarWidth,
+                    sidebarHeight,
+                    // If hidden, center content (logo). If not, normal padding/overflow.
+                    isHidden ? "items-center justify-center p-0 cursor-pointer hover:bg-white/5 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg" : "p-4 pb-6 overflow-y-auto overflow-x-hidden shadow-none",
                     mobileOpen ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
                 )}
+                onClick={(e) => {
+                    // If hidden, click anywhere to expand
+                    if (isHidden) {
+                        setIsHidden(false);
+                    }
+                }}
             >
-                {/* Logo Area */}
-                <div className={cn(
-                    "flex items-center mb-8 pt-2",
-                    isCollapsed ? "justify-center" : "justify-between px-2"
-                )}>
-                    <Link href="/" className="flex items-center gap-2 group">
-                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold shadow-lg group-hover:bg-white/20 transition-all">
+
+                {/* 1. HIDDEN MODE: JUST LOGO */}
+                {isHidden && (
+                    <div className="w-full h-full flex items-center justify-center group">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-primary to-purple-600 flex items-center justify-center text-white font-bold shadow-lg shadow-primary/20">
                             {siteConfig.name.charAt(0)}
                         </div>
-                        {!isCollapsed && (
-                            <span className="text-xl font-bold tracking-tight text-white group-hover:text-white/80 transition-colors">
-                                {siteConfig.name}
-                            </span>
+                    </div>
+                )}
+
+                {/* 2. NORMAL MODE: FULL CONTENT */}
+                {!isHidden && (
+                    <>
+                        {/* Logo Area */}
+                        <div className={cn(
+                            "flex items-center mb-8 pt-2",
+                            isCollapsed ? "justify-center flex-col gap-4" : "justify-between px-2"
+                        )}>
+                            <Link href="/" className="flex items-center gap-2 group">
+                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold shadow-lg group-hover:bg-white/20 transition-all">
+                                    {siteConfig.name.charAt(0)}
+                                </div>
+                                {!isCollapsed && (
+                                    <span className="text-xl font-bold tracking-tight text-white group-hover:text-white/80 transition-colors">
+                                        {siteConfig.name}
+                                    </span>
+                                )}
+                            </Link>
+
+                            {/* CONTROLS: Close (Hide) & Collapse */}
+                            <div className="flex items-center gap-1">
+                                {!isCollapsed && (
+                                    <>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                                            title="Mini Sidebar"
+                                        >
+                                            <ChevronLeft className="w-4 h-4" />
+                                        </button>
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); setIsHidden(true); }}
+                                            className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                            title="Close to Logo"
+                                        >
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Collapsed Mode Controls (since header is squashed) */}
+                        {isCollapsed && (
+                            <div className="flex flex-col items-center gap-2 mb-6">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+                                    title="Expand Width"
+                                >
+                                    <ChevronRight className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setIsHidden(true); }}
+                                    className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
+                                    title="Close to Logo"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
                         )}
-                    </Link>
-                    {!isCollapsed && (
-                        <button
-                            onClick={toggleCollapse}
-                            className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                        >
-                            <ChevronLeft className="w-4 h-4" />
-                        </button>
-                    )}
-                </div>
 
-                {isCollapsed && (
-                    <button
-                        onClick={toggleCollapse}
-                        className="mx-auto mb-6 w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                    >
-                        <ChevronRight className="w-4 h-4" />
-                    </button>
-                )}
-
-                {/* User Profile Area (Floating Bubble) */}
-                {user && !isCollapsed && (
-                    <div className="mb-6 px-1">
-                        <Link
-                            href={`/profile/${user.id}`}
-                            className="relative flex items-center gap-3 p-1.5 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group"
-                        >
-                            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors">
-                                <Image
-                                    src={user.image || '/avatar-placeholder.png'}
-                                    alt={user.name || 'User'}
-                                    fill
-                                    className="object-cover"
-                                />
+                        {/* User Profile Area (Floating Bubble) */}
+                        {user && !isCollapsed && (
+                            <div className="mb-6 px-1">
+                                <Link
+                                    href={`/profile/${user.id}`}
+                                    className="relative flex items-center gap-3 p-1.5 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group"
+                                >
+                                    <div className="relative w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors">
+                                        <Image
+                                            src={user.image || '/avatar-placeholder.png'}
+                                            alt={user.name || 'User'}
+                                            fill
+                                            className="object-cover"
+                                        />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-medium text-white group-hover:text-white/80 transition-colors max-w-[120px] truncate">
+                                            {user.name}
+                                        </span>
+                                        <span className="text-[10px] text-white/40 uppercase tracking-wider">
+                                            {user.role === 'SUPER_ADMIN' ? 'Admin' : 'Member'}
+                                        </span>
+                                    </div>
+                                    <ChevronRight className="ml-auto mr-2 w-3 h-3 text-white/30 group-hover:text-white/60 transition-colors" />
+                                </Link>
                             </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs font-medium text-white group-hover:text-white/80 transition-colors max-w-[120px] truncate">
-                                    {user.name}
-                                </span>
-                                <span className="text-[10px] text-white/40 uppercase tracking-wider">
-                                    {user.role === 'SUPER_ADMIN' ? 'Admin' : 'Member'}
-                                </span>
+                        )}
+
+                        {user && isCollapsed && (
+                            <div className="mb-6 flex justify-center">
+                                <Link
+                                    href={`/profile/${user.id}`}
+                                    className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/10 hover:border-white/30 transition-colors"
+                                >
+                                    <Image
+                                        src={user.image || '/avatar-placeholder.png'}
+                                        alt={'User'}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </Link>
                             </div>
-                            <ChevronRight className="ml-auto mr-2 w-3 h-3 text-white/30 group-hover:text-white/60 transition-colors" />
-                        </Link>
-                    </div>
+                        )}
+
+                        {/* Navigation Items */}
+                        <nav className="flex-1 space-y-2">
+                            <NavItem href="/" icon={Home} label="Home" />
+                            <NavItem href="/search" icon={Search} label="Search" />
+                            {user && <NavItem href="/activity" icon={Activity} label="Activity" badge="New" />}
+
+                            <GroupLabel label="Library" />
+                            <div className="space-y-1">
+                                <NavItem href="/movies" icon={Film} label="Movies" />
+                                <NavItem href="/series" icon={Tv} label="Series" />
+                                <NavItem href="/groups" icon={Radio} label="Groups" />
+                                <NavItem href="/favorites" icon={Heart} label="Favorites" />
+                            </div>
+                        </nav>
+
+                        {/* Bottom Section */}
+                        <div className="mt-auto pt-6 border-t border-white/5 space-y-2">
+                            {canManage && (
+                                <NavItem href="/manage" icon={Shield} label="Dashboard" badge="Admin" />
+                            )}
+                        </div>
+                    </>
                 )}
-
-                {user && isCollapsed && (
-                    <div className="mb-6 flex justify-center">
-                        <Link
-                            href={`/profile/${user.id}`}
-                            className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/10 hover:border-white/30 transition-colors"
-                        >
-                            <Image
-                                src={user.image || '/avatar-placeholder.png'}
-                                alt={'User'}
-                                fill
-                                className="object-cover"
-                            />
-                        </Link>
-                    </div>
-                )}
-
-                {/* Navigation Items */}
-                <nav className="flex-1 space-y-2">
-                    <NavItem href="/" icon={Home} label="Home" />
-                    <NavItem href="/search" icon={Search} label="Search" />
-                    {user && <NavItem href="/activity" icon={Activity} label="Activity" badge="New" />}
-
-                    <GroupLabel label="Library" />
-                    <div className="space-y-1">
-                        <NavItem href="/movies" icon={Film} label="Movies" />
-                        <NavItem href="/series" icon={Tv} label="Series" />
-                        <NavItem href="/groups" icon={Radio} label="Groups" />
-                        <NavItem href="/favorites" icon={Heart} label="Favorites" />
-                    </div>
-                </nav>
-
-                {/* Bottom Section */}
-                <div className="mt-auto pt-6 border-t border-white/5 space-y-2">
-                    {canManage && (
-                        <NavItem href="/manage" icon={Shield} label="Dashboard" badge="Admin" />
-                    )}
-                </div>
 
             </aside>
 
