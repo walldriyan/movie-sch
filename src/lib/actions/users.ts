@@ -77,48 +77,7 @@ export async function getPostsByUserId(userId: string, includePrivate: boolean =
 }
 
 
-export async function getFavoritePostsByUserId(userId: string) {
-  const favoritePosts = await prisma.favoritePost.findMany({
-    where: { userId, post: { status: 'PUBLISHED' } },
-    include: {
-      post: {
-        include: {
-          author: true,
-          series: {
-            include: {
-              _count: {
-                select: { posts: true }
-              }
-            }
-          },
-          likedBy: {
-            select: {
-              id: true,
-              name: true,
-              image: true,
-            },
-            take: 5,
-          },
-          _count: {
-            select: {
-              likedBy: true,
-              reviews: true,
-            }
-          }
-        },
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
-  });
-
-  return favoritePosts.map(fav => ({
-    ...fav.post,
-    genres: fav.post.genres ? fav.post.genres.split(',') : [],
-  }));
-}
-
+// NOTE: getFavoritePostsByUserId is now in posts/read.ts to avoid duplicate exports
 
 export async function uploadProfileImage(formData: FormData): Promise<string | null> {
   const file = formData.get('image') as File;

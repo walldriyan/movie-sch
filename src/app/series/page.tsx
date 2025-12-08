@@ -1,5 +1,3 @@
-'use server';
-
 import { getPosts } from '@/lib/actions/posts/read';
 import SeriesPageClient from './series-page-client';
 

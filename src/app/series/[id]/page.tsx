@@ -1,5 +1,3 @@
-'use server';
-
 import { notFound } from 'next/navigation';
 import { getSeriesById, getPostsBySeriesId } from '@/lib/actions/series';
 import { getPost } from '@/lib/actions/posts/read';
