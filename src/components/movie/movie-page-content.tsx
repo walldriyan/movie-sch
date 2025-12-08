@@ -401,7 +401,7 @@ export default function MoviePageContent({
                   <Separator className="my-12" />
                   <PostViewsAndLikes post={post} viewCount={viewCount} />
                   <Separator className="my-12" />
-                  <SponsoredAdCard />
+                  <SponsoredAdCard slotId="post_bottom" />
                   <Separator className="my-12" />
                   <section id="recommendations">
                     <h2 className="font-serif text-3xl font-bold mb-8">
@@ -452,7 +452,7 @@ export default function MoviePageContent({
                         )}
                       </CardContent>
                     </Card>
-                    <SponsoredAdCard />
+                    <SponsoredAdCard slotId="post_sidebar" />
                   </div>
                 </aside>
               </div>
@@ -512,7 +512,7 @@ export default function MoviePageContent({
             </TabsContent>
 
             <TabsContent value="subtitles" className='px-4 md:px-0'>
-              <SponsoredAdCard />
+              <SponsoredAdCard slotId="post_subtitles" />
               <section id="subtitles" className="my-12">
                 <h2 className="font-serif text-3xl font-bold mb-6">Subtitles</h2>
                 <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">

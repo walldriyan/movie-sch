@@ -70,6 +70,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import GroupsClient from '@/components/admin/groups-client';
 import ExamsClient from '@/components/admin/exams-client';
+import AdsManager from '@/components/admin/ads-manager';
+import { getAdsConfig } from '@/lib/actions/ads';
 import type { GroupWithCount } from '@/lib/types';
 
 // Settings Schema
@@ -604,6 +606,10 @@ export default function AdminDashboard() {
                         <SettingsIcon className="h-4 w-4" />
                         <span className="hidden sm:inline">Settings</span>
                     </TabsTrigger>
+                    <TabsTrigger value="ads" className="flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        <span className="hidden sm:inline">Ads</span>
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="users">
@@ -621,7 +627,35 @@ export default function AdminDashboard() {
                 <TabsContent value="settings">
                     <SettingsTab />
                 </TabsContent>
+
+                <TabsContent value="ads">
+                    <AdsTab />
+                </TabsContent>
             </Tabs>
         </div>
     );
+}
+
+// Ads Tab Wrapper
+function AdsTab() {
+    const [ads, setAds] = useState<Awaited<ReturnType<typeof getAdsConfig>>>([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        async function fetchAds() {
+            try {
+                const data = await getAdsConfig();
+                setAds(data);
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchAds();
+    }, []);
+
+    if (isLoading) {
+        return <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    }
+
+    return <AdsManager initialAds={ads} />;
 }
