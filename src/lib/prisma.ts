@@ -1,8 +1,5 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from '@prisma/client/edge';
 import { withAccelerate } from '@prisma/extension-accelerate';
-
-// Declare EdgeRuntime for type checking
-declare const EdgeRuntime: string | undefined;
 
 // Extend NodeJS global type to prevent memory leaks
 declare global {
@@ -10,14 +7,9 @@ declare global {
   var prisma: ReturnType<typeof createPrismaClient> | undefined;
 }
 
-// Check if we're in Edge runtime (middleware)
-const isEdgeRuntime = typeof EdgeRuntime !== 'undefined';
-
-// Create Prisma client with Accelerate extension
+// Create Prisma client with Accelerate extension (edge-compatible, no query engine)
 const createPrismaClient = () => {
-  return new PrismaClient({
-    log: ['error'],
-  }).$extends(withAccelerate());
+  return new PrismaClient().$extends(withAccelerate());
 };
 
 // Prevent multiple instances of Prisma Client in development (memory leak prevention)
@@ -26,21 +18,6 @@ const prisma = globalThis.prisma ?? createPrismaClient();
 // In development, store the instance to prevent hot-reload memory leaks
 if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = prisma;
-}
-
-// Graceful shutdown handlers - only in Node.js runtime, not Edge
-if (!isEdgeRuntime && typeof process !== 'undefined' && typeof process.on === 'function') {
-  const handleShutdown = async () => {
-    console.log('[Prisma] Disconnecting...');
-    await prisma.$disconnect();
-    process.exit(0);
-  };
-
-  // Only add these handlers in production to avoid issues with hot reload
-  if (process.env.NODE_ENV === 'production') {
-    process.on('SIGINT', handleShutdown);
-    process.on('SIGTERM', handleShutdown);
-  }
 }
 
 // Utility function to serialize Prisma objects (removes Date and Decimal issues)
