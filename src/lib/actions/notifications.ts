@@ -74,7 +74,7 @@ export async function sendNotification(
 export async function getNotifications(options: { page?: number; limit?: number } = {}) {
   const session = await auth();
   const user = session?.user;
-  
+
   const { page = 1, limit = 10 } = options;
   const skip = (page - 1) * limit;
 
@@ -83,7 +83,7 @@ export async function getNotifications(options: { page?: number; limit?: number 
   }
 
   const total = await prisma.userNotification.count({
-      where: { userId: user.id },
+    where: { userId: user.id },
   });
 
   const userNotifications = await prisma.userNotification.findMany({
@@ -100,9 +100,9 @@ export async function getNotifications(options: { page?: number; limit?: number 
     take: limit,
   });
 
-  const items = userNotifications.map(un => ({
+  const items = userNotifications.map((un: any) => ({
     ...un.notification,
-    status: un.status, 
+    status: un.status,
     id: un.notificationId,
     createdAt: un.notification.createdAt.toISOString(),
     updatedAt: un.notification.updatedAt.toISOString(),
@@ -112,25 +112,25 @@ export async function getNotifications(options: { page?: number; limit?: number 
 }
 
 export async function updateNotificationStatus(notificationId: string, status: NotificationStatus): Promise<UserNotification | null> {
-    const session = await auth();
-    if (!session?.user) {
-        throw new Error("Not authenticated");
-    }
-    const userId = session.user.id;
+  const session = await auth();
+  if (!session?.user) {
+    throw new Error("Not authenticated");
+  }
+  const userId = session.user.id;
 
-    const userNotification = await prisma.userNotification.findUnique({
-      where: { userId_notificationId: { userId, notificationId } },
-    });
+  const userNotification = await prisma.userNotification.findUnique({
+    where: { userId_notificationId: { userId, notificationId } },
+  });
 
-    if (!userNotification) {
-      console.warn(`UserNotification record not found for userId: ${userId} and notificationId: ${notificationId}`);
-      return null;
-    }
+  if (!userNotification) {
+    console.warn(`UserNotification record not found for userId: ${userId} and notificationId: ${notificationId}`);
+    return null;
+  }
 
-    const updatedUserNotification = await prisma.userNotification.update({
-        where: { userId_notificationId: { userId, notificationId } },
-        data: { status },
-    });
-    revalidatePath('/');
-    return updatedUserNotification;
+  const updatedUserNotification = await prisma.userNotification.update({
+    where: { userId_notificationId: { userId, notificationId } },
+    data: { status },
+  });
+  revalidatePath('/');
+  return updatedUserNotification;
 }

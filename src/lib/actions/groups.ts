@@ -64,7 +64,7 @@ export async function getGroups() {
 
     // Step 3: Create a map for easy lookup
     const pendingCountsMap = new Map(
-        pendingCounts.map(item => [item.groupId, item._count.userId])
+        (pendingCounts as any[]).map(item => [item.groupId, item._count.userId])
     );
 
     // Step 4: Combine the data
@@ -344,6 +344,7 @@ export async function getGroupForProfile(groupId: string) {
                     id: true,
                     name: true,
                     image: true,
+                    // role: true // If needed
                 },
                 take: 5,
             },

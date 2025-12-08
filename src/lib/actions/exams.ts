@@ -273,7 +273,7 @@ export async function getExamsForAdmin() {
         }
     });
 
-    return exams.map(exam => ({
+    return exams.map((exam: any) => ({
         ...exam,
         _count: {
             ...exam._count,

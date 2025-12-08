@@ -99,9 +99,9 @@ export async function getSeriesByAuthorId(authorId: string, limit?: number) {
 
   const totalSeries = await prisma.series.count({ where });
 
-  const processedSeries = series.map(s => ({
+  const processedSeries = series.map((s: any) => ({
     ...s,
-    posts: s.posts.map(p => ({
+    posts: s.posts.map((p: any) => ({
       ...p,
       genres: p.genres ? p.genres.split(',') : [],
     }))
