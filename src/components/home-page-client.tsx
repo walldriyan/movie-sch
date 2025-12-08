@@ -89,7 +89,7 @@ const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex =
 // ========================================
 // HERO SECTION - Suno.com Style with Rounded Banner
 // ========================================
-const HeroSection = () => {
+const HeroSection = ({ user }: { user?: any }) => {
     return (
         <section className="relative pt-16 pb-8">
             {/* Suno-style Hero Banner - compact height */}
@@ -147,6 +147,28 @@ const HeroSection = () => {
                         </Button>
                     </div>
                 </div>
+
+                {/* User Profile - Absolute Bottom Center - Magnified & Clickable */}
+                {user && (
+                    <Link href={`/profile/${user.id}`} className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-4 duration-700 group cursor-pointer">
+                        <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-black/50 shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:border-primary/50">
+                            {user.image && <AvatarImage src={user.image} alt={user.name || 'User'} className="object-cover" />}
+                            <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-primary to-purple-600 text-white">
+                                {user.name?.charAt(0).toUpperCase() || 'U'}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="text-center group-hover:text-primary transition-colors duration-300">
+                            <h3 className="font-bold text-white text-xl md:text-2xl drop-shadow-md flex items-center gap-2 justify-center bg-black/30 backdrop-blur-sm px-4 py-1 rounded-full border border-white/5">
+                                {user.name}
+                                {user.role !== 'USER' && (
+                                    <span className="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded border border-primary/20">
+                                        {user.role === 'SUPER_ADMIN' ? 'Admin' : 'Creator'}
+                                    </span>
+                                )}
+                            </h3>
+                        </div>
+                    </Link>
+                )}
 
                 {/* Scroll up indicator */}
                 <button className="absolute top-4 right-4 w-8 h-8 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors">
@@ -305,7 +327,7 @@ export default function HomePageClient({
         <TooltipProvider>
             <div className="w-full bg-background text-foreground">
                 {/* Hero Section */}
-                <HeroSection />
+                <HeroSection user={session?.user} />
 
                 <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 relative z-10">
 
@@ -573,3 +595,4 @@ export default function HomePageClient({
         </TooltipProvider>
     );
 }
+
