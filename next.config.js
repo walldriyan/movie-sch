@@ -32,9 +32,7 @@ const nextConfig = {
     return process.env.VERCEL_GIT_COMMIT_SHA || `build-${Date.now()}`;
   },
 
-  // ================================================================
-  // BUNDLE SIZE OPTIMIZATION - External packages (not bundled in serverless)
-  // ================================================================
+  // External packages (not bundled in serverless)
   serverExternalPackages: [
     'jsdom',
     'parse5',
@@ -42,14 +40,6 @@ const nextConfig = {
     '@prisma/client',
     'prisma',
     'bcryptjs',
-    '@tiptap/react',
-    '@tiptap/starter-kit',
-    '@tiptap/extension-image',
-    '@tiptap/extension-link',
-    '@tiptap/extension-underline',
-    'recharts',
-    'framer-motion',
-    'react-player',
   ],
 
   // ================================================================
@@ -116,7 +106,7 @@ const nextConfig = {
   },
 
   // ================================================================
-  // WEBPACK CONFIGURATION - Enable minification for smaller bundles
+  // WEBPACK CONFIGURATION
   // ================================================================
   webpack: (config, { isServer, dev }) => {
     if (isServer) {
@@ -129,7 +119,6 @@ const nextConfig = {
       ];
     }
 
-    // Enable minification in production for smaller bundles
     if (!dev) {
       config.optimization = {
         ...config.optimization,
@@ -146,7 +135,6 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: [
       'lucide-react',
-      '@radix-ui/react-icons',
       '@radix-ui/react-accordion',
       '@radix-ui/react-alert-dialog',
       '@radix-ui/react-avatar',
@@ -169,7 +157,6 @@ const nextConfig = {
       '@radix-ui/react-toast',
       '@radix-ui/react-tooltip',
       'date-fns',
-      'recharts',
       'react-hook-form',
       'zod',
       'cmdk',
