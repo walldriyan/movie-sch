@@ -18,7 +18,7 @@ npx prisma db push
 git push origin v54:main --force
 
 
-
+okkk
 
 To get started, take a look at src/app/page.tsx.
 sudo apt-get update
