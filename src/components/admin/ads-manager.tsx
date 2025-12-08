@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import Image from 'next/image';
-import { updateAdsConfig, type AdUnit as AdUnitType } from '@/lib/actions/ads';
+import { updateAdsConfig, type AdUnit } from '@/lib/actions/ads';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -13,15 +13,15 @@ import { Loader2, Plus, Trash2, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface AdsManagerProps {
-    initialAds: AdUnitType[];
+    initialAds: AdUnit[];
 }
 
-export default function AdsManager({ initialAds }: AdsManagerProps) {
-    const [ads, setAds] = useState<AdUnitType[]>(initialAds);
+export default function AdsManagerInternal({ initialAds }: AdsManagerProps) {
+    const [ads, setAds] = useState<AdUnit[]>(initialAds);
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
-    const handleUpdate = (id: string, field: keyof AdUnitType, value: any) => {
+    const handleUpdate = (id: string, field: keyof AdUnit, value: any) => {
         setAds(prev => prev.map(ad => ad.id === id ? { ...ad, [field]: value } : ad));
     };
 
