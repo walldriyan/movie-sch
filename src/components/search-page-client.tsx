@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import {
     Search, Play, Info, ChevronRight, Film, Tv, Folder,
     Clock, TrendingUp, Star, Calendar, Sparkles, ArrowRight,
-    Volume2, VolumeX, Heart, Bookmark, Lock, Users, Globe,
-    FileText, Bell, MessageSquare, GraduationCap
+    Lock, Users, Globe,
+    Bell, GraduationCap, X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Post } from '@/lib/types';
@@ -91,54 +91,54 @@ function PostCard({ post, variant = 'normal' }: {
             className="group block"
         >
             <div className={cn(
-                "relative overflow-hidden rounded-2xl bg-gradient-to-br from-white/[0.08] to-white/[0.02] border border-white/[0.08]",
-                "transition-all duration-300 hover:border-purple-500/30 hover:shadow-xl hover:shadow-purple-500/10 hover:scale-[1.02]",
-                variant === 'featured' ? 'h-[380px]' : variant === 'compact' ? 'h-[220px]' : 'h-[320px]'
+                "relative overflow-hidden rounded-xl bg-card border border-white/5",
+                "transition-all duration-300 hover:border-purple-500/30 hover:shadow-2xl hover:shadow-purple-500/10 hover:-translate-y-1",
+                variant === 'featured' ? 'aspect-[16/9]' : variant === 'compact' ? 'aspect-[2/3]' : 'aspect-[2/3]'
             )}>
                 {/* Image Container */}
-                <div className="relative w-full h-[65%] overflow-hidden">
+                <div className="absolute inset-0">
                     <Image
                         src={imgSrc}
                         alt={post.title}
                         fill
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="object-cover transition-transform duration-700 group-hover:scale-110"
                         onError={handleImageError}
                     />
                     {/* Image Overlay Gradient */}
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
 
                     {/* Type Badge */}
-                    <div className="absolute top-3 left-3">
-                        <span className="px-2.5 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] text-white font-medium">
+                    <div className="absolute top-3 left-3 z-10">
+                        <span className="px-2 py-0.5 rounded-md bg-black/40 backdrop-blur-md border border-white/10 text-[10px] text-white font-medium uppercase tracking-wider">
                             {post.type === 'MOVIE' ? 'Movie' : post.type === 'TV_SERIES' ? 'Series' : 'Other'}
                         </span>
                     </div>
 
                     {/* Rating Badge */}
                     {post.imdbRating && (
-                        <div className="absolute top-3 right-3 flex items-center gap-1 px-2 py-1 rounded-full bg-yellow-500/25 backdrop-blur-md">
-                            <Star className="w-3.5 h-3.5 text-yellow-400 fill-yellow-400" />
-                            <span className="text-[11px] text-yellow-400 font-bold">{post.imdbRating}/10</span>
+                        <div className="absolute top-3 right-3 z-10 flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-yellow-500/20 backdrop-blur-md border border-yellow-500/20">
+                            <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                            <span className="text-[10px] text-yellow-400 font-bold">{post.imdbRating}</span>
                         </div>
                     )}
 
-                    {/* Play Button Overlay on Hover */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-                        <div className="w-14 h-14 rounded-full bg-white/25 backdrop-blur-sm flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
-                            <Play className="w-6 h-6 text-white fill-white ml-1" />
+                    {/* Play Button Overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-10">
+                        <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-md border border-white/20 flex items-center justify-center transform scale-75 group-hover:scale-100 transition-transform duration-300">
+                            <Play className="w-5 h-5 text-white fill-white ml-0.5" />
                         </div>
                     </div>
                 </div>
 
-                {/* Content Section */}
-                <div className="p-4 h-[35%] flex flex-col justify-between">
+                {/* Content Section Overlay */}
+                <div className="absolute inset-x-0 bottom-0 p-4 z-10">
                     {/* Genres */}
                     {getGenresArray(post.genres).length > 0 && (
-                        <div className="flex flex-wrap gap-1.5 mb-2">
+                        <div className="flex flex-wrap gap-1 mb-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 transform translate-y-2 group-hover:translate-y-0">
                             {getGenresArray(post.genres).slice(0, 2).map((genre, idx) => (
                                 <span
                                     key={idx}
-                                    className="px-2 py-0.5 rounded-full bg-purple-500/20 text-[10px] text-purple-300 font-medium"
+                                    className="px-1.5 py-0.5 rounded-sm bg-purple-500/20 text-[9px] text-purple-200 font-medium"
                                 >
                                     {genre}
                                 </span>
@@ -148,27 +148,24 @@ function PostCard({ post, variant = 'normal' }: {
 
                     {/* Title */}
                     <h3 className={cn(
-                        "text-white font-semibold leading-tight mb-2 line-clamp-2",
-                        variant === 'featured' ? 'text-lg' : 'text-sm'
+                        "text-white font-bold leading-tight line-clamp-2 group-hover:text-purple-300 transition-colors",
+                        variant === 'featured' ? 'text-2xl mb-2' : 'text-base mb-1'
                     )}>
                         {post.title}
                     </h3>
 
-                    {/* Author & Date Row */}
-                    <div className="flex items-center justify-between mt-auto">
+                    {/* Meta Info */}
+                    <div className="flex items-center justify-between text-[11px] text-white/50 font-medium">
                         <div className="flex items-center gap-2">
-                            <Avatar className="h-6 w-6 border border-white/10">
-                                <AvatarImage src={post.author?.image || ''} />
-                                <AvatarFallback className="text-[9px] bg-gradient-to-br from-purple-500/50 to-pink-500/50 text-white">
-                                    {post.author?.name?.charAt(0) || 'U'}
-                                </AvatarFallback>
-                            </Avatar>
-                            <span className="text-[11px] text-white/60 font-medium">{post.author?.name || 'Unknown'}</span>
+                            <span>{post.year || 'N/A'}</span>
+                            {post.duration && (
+                                <>
+                                    <span className="w-0.5 h-0.5 rounded-full bg-white/30" />
+                                    <span>{post.duration}</span>
+                                </>
+                            )}
                         </div>
-
-                        <span className="text-[10px] text-white/40">
-                            <ClientRelativeDate date={post.updatedAt} />
-                        </span>
+                        <ClientRelativeDate date={post.updatedAt} />
                     </div>
                 </div>
             </div>
@@ -225,221 +222,128 @@ function HeroSection({ post, onSearch }: {
     };
 
     return (
-        <section className="relative overflow-hidden">
-            {/* Main Hero Container with 100px margin */}
-            <div className="mx-[100px] my-6">
-                <div className="relative rounded-3xl overflow-hidden aspect-[21/9]">
-                    {/* Background - YouTube Video, Image, or Gradient */}
-                    {youtubeVideoId ? (
-                        <iframe
-                            src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=0&mute=1&controls=1&modestbranding=1&rel=0`}
-                            title={post?.title || 'Featured Video'}
-                            className="absolute inset-0 w-full h-full rounded-3xl"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                            allowFullScreen
-                        />
-                    ) : hasValidImage ? (
-                        <>
-                            <Image
-                                src={post!.posterUrl!}
-                                alt={post?.title || 'Featured'}
-                                fill
-                                className="object-cover"
-                                priority
-                                onError={() => setImgError(true)}
-                            />
-                            {/* Gradient Overlays */}
-                            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/70 to-transparent" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent" />
-                        </>
-                    ) : (
-                        /* Dark black/maroon gradient fallback */
-                        <div className="absolute inset-0 bg-gradient-to-br from-[#1a0a0a] via-[#0d0d0d] to-[#0a0a0a]">
-                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,_var(--tw-gradient-stops))] from-rose-900/30 via-transparent to-transparent" />
-                            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_right,_var(--tw-gradient-stops))] from-purple-900/20 via-transparent to-transparent" />
-                        </div>
-                    )}
+        <section className="relative mb-12">
+            <div className="relative rounded-3xl overflow-hidden aspect-[21/9] shadow-2xl bg-black border border-white/5 mx-auto">
+                {/* Background - YouTube Video, Image, or Gradient */}
+                {youtubeVideoId ? (
+                    <iframe
+                        src={`https://www.youtube.com/embed/${youtubeVideoId}?autoplay=0&mute=1&controls=0&modestbranding=1&rel=0&loop=1&playlist=${youtubeVideoId}`}
+                        title={post?.title || 'Featured Video'}
+                        className="absolute inset-0 w-full h-full object-cover scale-110 pointer-events-none opacity-40"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    />
+                ) : hasValidImage ? (
+                    <Image
+                        src={post!.posterUrl!}
+                        alt={post?.title || 'Featured'}
+                        fill
+                        className="object-cover opacity-60"
+                        priority
+                        onError={() => setImgError(true)}
+                    />
+                ) : (
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-900/20 via-black to-black" />
+                )}
 
-                    {/* Content Overlay - Only show for image/gradient, not for video */}
-                    {!youtubeVideoId && (
-                        <div className="absolute inset-0 flex flex-col justify-end p-12">
-                            {post ? (
-                                <>
-                                    {/* Badge */}
-                                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-gradient-to-r from-pink-500 to-purple-500 text-white text-xs font-semibold w-fit mb-4">
-                                        <Sparkles className="w-3.5 h-3.5" />
-                                        <span>{post.type === 'MOVIE' ? 'FEATURED POST' : post.type === 'TV_SERIES' ? 'FEATURED SERIES' : 'TRENDING NOW'}</span>
-                                    </div>
+                {/* Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-background via-transparent to-transparent opacity-80" />
 
-                                    {/* Title */}
-                                    <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 leading-tight max-w-3xl">
-                                        {post.title}
-                                    </h1>
+                {/* Content Overlay */}
+                <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-12 lg:p-16">
+                    <div className="max-w-4xl">
+                        {post ? (
+                            <>
+                                {/* Badge */}
+                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/10 text-xs font-semibold text-white/90 mb-6">
+                                    <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                                    <span>{post.type === 'MOVIE' ? 'FEATURED MOVIE' : post.type === 'TV_SERIES' ? 'FEATURED SERIES' : 'TRENDING'}</span>
+                                </div>
 
-                                    {/* Real Meta Info */}
-                                    <div className="flex items-center gap-4 mb-4 text-sm text-white/70 flex-wrap">
-                                        {post.imdbRating && post.imdbRating > 0 && (
-                                            <span className="flex items-center gap-1.5 bg-yellow-500/20 px-2 py-1 rounded-full">
-                                                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                                                <span className="text-yellow-400 font-bold">{post.imdbRating.toFixed(1)}</span>
-                                            </span>
-                                        )}
-                                        {post.year && (
-                                            <span className="flex items-center gap-1.5">
-                                                <Calendar className="w-4 h-4" />
-                                                {post.year}
-                                            </span>
-                                        )}
-                                        {post.duration && (
-                                            <span className="flex items-center gap-1.5">
-                                                <Clock className="w-4 h-4" />
-                                                {post.duration}
-                                            </span>
-                                        )}
-                                        {post.viewCount !== undefined && post.viewCount > 0 && (
-                                            <span className="flex items-center gap-1.5">
-                                                <TrendingUp className="w-4 h-4" />
-                                                {post.viewCount.toLocaleString()} views
-                                            </span>
-                                        )}
-                                    </div>
+                                {/* Title */}
+                                <h1 className="text-4xl md:text-6xl font-black text-white mb-6 leading-tight tracking-tight drop-shadow-2xl">
+                                    {post.title}
+                                </h1>
 
-                                    {/* Genres */}
-                                    {getGenresArray(post.genres).length > 0 && (
-                                        <div className="flex items-center gap-2 mb-5">
-                                            {getGenresArray(post.genres).slice(0, 4).map((genre, idx) => (
-                                                <span key={idx} className="px-3 py-1 rounded-full bg-white/10 text-white/80 text-xs font-medium">
-                                                    {genre}
-                                                </span>
-                                            ))}
+                                {/* Meta Info */}
+                                <div className="flex items-center gap-6 mb-8 text-sm text-white/70 font-medium">
+                                    {post.imdbRating && post.imdbRating > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                            <span className="text-yellow-500 font-bold">{post.imdbRating.toFixed(1)}</span>
                                         </div>
                                     )}
-
-                                    {/* Description */}
-                                    {post.description && (
-                                        <p className="text-white/60 text-sm md:text-base max-w-2xl mb-6 line-clamp-2">
-                                            {post.description.replace(/<[^>]*>/g, '')}
-                                        </p>
+                                    {post.year && (
+                                        <div className="flex items-center gap-2">
+                                            <Calendar className="w-4 h-4" />
+                                            <span>{post.year}</span>
+                                        </div>
                                     )}
+                                    {post.duration && (
+                                        <div className="flex items-center gap-2">
+                                            <Clock className="w-4 h-4" />
+                                            <span>{post.duration}</span>
+                                        </div>
+                                    )}
+                                    {post.viewCount !== undefined && post.viewCount > 0 && (
+                                        <div className="flex items-center gap-2">
+                                            <TrendingUp className="w-4 h-4" />
+                                            <span>{post.viewCount.toLocaleString()} views</span>
+                                        </div>
+                                    )}
+                                </div>
 
-                                    {/* CTA Buttons */}
-                                    <div className="flex items-center gap-3">
+                                {/* Description */}
+                                {post.description && (
+                                    <p className="text-lg text-white/60 max-w-2xl mb-8 line-clamp-2 leading-relaxed">
+                                        {post.description.replace(/<[^>]*>/g, '')}
+                                    </p>
+                                )}
+
+                                {/* CTA Buttons & Search */}
+                                <div className="flex flex-col md:flex-row items-center gap-6">
+                                    <div className="flex items-center gap-4 w-full md:w-auto">
                                         <Button
                                             asChild
-                                            className="bg-white text-black hover:bg-white/90 font-semibold h-12 px-8 rounded-full"
+                                            className="bg-white text-black hover:bg-white/90 font-bold h-12 px-8 rounded-full shadow-lg shadow-white/5 transition-transform hover:scale-105"
                                         >
                                             <Link href={`/movies/${post.id}`}>
                                                 <Play className="w-5 h-5 mr-2 fill-black" />
-                                                View Details
-                                            </Link>
-                                        </Button>
-                                        <Button
-                                            asChild
-                                            variant="ghost"
-                                            className="bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 font-semibold h-12 px-6 rounded-full border border-white/20"
-                                        >
-                                            <Link href={`/movies/${post.id}`}>
-                                                <Info className="w-4 h-4 mr-2" />
-                                                More Info
+                                                Watch Now
                                             </Link>
                                         </Button>
                                     </div>
-                                </>
-                            ) : (
-                                /* Empty state when no featured post */
-                                <div className="text-center py-8">
-                                    <h2 className="text-3xl font-bold text-white mb-2">Discover Amazing Content</h2>
-                                    <p className="text-white/50">Search for posts, series, and more</p>
+
+                                    {/* Search Bar in Hero */}
+                                    <form onSubmit={handleSubmit} className="relative w-full md:w-96">
+                                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
+                                        <Input
+                                            type="text"
+                                            placeholder="Search movies, series..."
+                                            value={localQuery}
+                                            onChange={(e) => setLocalQuery(e.target.value)}
+                                            className="w-full h-12 pl-12 pr-4 bg-white/10 backdrop-blur-md border-white/10 rounded-full text-white placeholder:text-white/30 focus:bg-white/20 focus:border-white/20 transition-all font-medium"
+                                        />
+                                    </form>
                                 </div>
-                            )}
-                        </div>
-                    )}
-                </div>
-            </div>
-
-            {/* Search Bar - Below hero */}
-            <div className="mx-[100px] mb-6">
-                <form onSubmit={handleSubmit} className="relative max-w-2xl">
-                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
-                    <Input
-                        type="text"
-                        placeholder="Search posts, series, topics..."
-                        value={localQuery}
-                        onChange={(e) => setLocalQuery(e.target.value)}
-                        className="w-full h-14 pl-12 pr-4 bg-white/[0.03] backdrop-blur-sm border-white/10 rounded-2xl text-white placeholder:text-white/30 focus:bg-white/[0.06] focus:border-purple-500/30"
-                    />
-                </form>
-            </div>
-        </section>
-    );
-}
-
-// ========================================
-// TRENDING CARD COMPONENT
-// ========================================
-function TrendingCard({ genre, post }: { genre: string; post: Post | undefined }) {
-    const defaultImage = getDefaultPoster(post?.id || 0);
-    const [imgSrc, setImgSrc] = useState(post?.posterUrl || defaultImage);
-
-    return (
-        <Link
-            href={`/search?q=${encodeURIComponent(genre)}`}
-            className="flex-shrink-0 relative w-40 h-28 rounded-xl overflow-hidden group"
-        >
-            <Image
-                src={imgSrc}
-                alt={genre}
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                onError={() => setImgSrc(defaultImage)}
-            />
-            <div className="absolute inset-0 bg-black/50 group-hover:bg-black/40 transition-colors" />
-            <span className="absolute top-3 left-3 px-2 py-1 rounded-full bg-white/20 backdrop-blur-sm text-xs text-white font-medium">
-                {genre}
-            </span>
-        </Link>
-    );
-}
-
-// ========================================
-// TRENDING CATEGORY BAR
-// ========================================
-function TrendingBar({ posts }: { posts: Post[] }) {
-    // Get unique genres from posts - hooks must be called unconditionally
-    const genres = useMemo(() => {
-        if (posts.length === 0) return [];
-        const allGenres = posts.flatMap(p => getGenresArray(p.genres));
-        const uniqueGenres = [...new Set(allGenres)].slice(0, 6);
-        return uniqueGenres;
-    }, [posts]);
-
-    // Get posts for each genre
-    const genrePosts = useMemo(() => {
-        if (posts.length === 0 || genres.length === 0) return [];
-        return genres.map(genre => ({
-            genre,
-            post: posts.find(p => getGenresArray(p.genres).includes(genre)),
-        })).filter(g => g.post);
-    }, [genres, posts]);
-
-    // Early returns after hooks
-    if (posts.length === 0) return null;
-    if (genrePosts.length === 0) return null;
-
-    return (
-        <section className="py-8 px-[22px]">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-white">Trending Now</h2>
-                    <Button variant="ghost" className="text-white/60 hover:text-white">
-                        See more <ChevronRight className="w-4 h-4 ml-1" />
-                    </Button>
-                </div>
-
-                <div className="flex gap-4 overflow-x-auto no-scrollbar pb-2">
-                    {genrePosts.map(({ genre, post }) => (
-                        <TrendingCard key={genre} genre={genre} post={post} />
-                    ))}
+                            </>
+                        ) : (
+                            /* Empty state */
+                            <div className="py-8">
+                                <h2 className="text-4xl md:text-5xl font-bold text-white mb-6">Discover the World of Knowledge</h2>
+                                <form onSubmit={handleSubmit} className="relative w-full max-w-xl">
+                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-white/40" />
+                                    <Input
+                                        type="text"
+                                        placeholder="Search topics, posts, or exams..."
+                                        value={localQuery}
+                                        onChange={(e) => setLocalQuery(e.target.value)}
+                                        className="w-full h-14 pl-12 pr-4 bg-white/10 backdrop-blur-md border-white/10 rounded-full text-white placeholder:text-white/30 focus:bg-white/20 focus:border-white/20 transition-all text-lg"
+                                    />
+                                </form>
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </section>
@@ -480,7 +384,6 @@ export default function SearchPageClient({
     userNotifications = [],
     userExams = [],
     userGroups = [],
-    // Explore data
     trendingPosts = [],
     newReleases = [],
     topRatedPosts = [],
@@ -498,7 +401,6 @@ export default function SearchPageClient({
                 sp.delete(key);
             }
         });
-        // Reset to page 1 when filters change
         if (!params.page) {
             sp.set('page', '1');
         }
@@ -509,9 +411,8 @@ export default function SearchPageClient({
         router.push(buildUrl({ q: newQuery || undefined }));
     };
 
-    // Permission-based grouping of posts
+    // Grouping
     const groupedPosts = useMemo(() => {
-        // Type-safe access to post properties
         const lockedPosts = initialPosts.filter(post =>
             (post as any).isLockedByDefault || (post as any).requiresExamToUnlock
         );
@@ -523,456 +424,228 @@ export default function SearchPageClient({
             !(post as any).requiresExamToUnlock &&
             (post as any).visibility !== 'GROUP_ONLY'
         );
-
         return { lockedPosts, groupOnlyPosts, publicPosts };
     }, [initialPosts]);
 
     return (
-        <div className="min-h-screen bg-background pt-[80px]">
-            {/* Hero Section with Featured Post */}
-            <HeroSection post={featuredPost} onSearch={handleSearch} />
+        <div className="min-h-screen bg-background pt-24 pb-12">
+            <div className="max-w-[1600px] mx-auto px-4 md:px-6">
 
-            {/* Filter Bar */}
-            <section className="px-[100px] py-6">
-                <div className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-4">
-                    <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                        {/* Type Filters */}
-                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                            {TYPE_FILTERS.map(filter => {
-                                const Icon = filter.icon;
-                                const isActive = (filter.value === '' && !currentType) || filter.value === currentType;
-                                return (
+                {/* Hero Section */}
+                <HeroSection post={featuredPost} onSearch={handleSearch} />
+
+                {/* Filters & Tools Bar */}
+                <div className="sticky top-20 z-40 mb-8 p-1">
+                    <div className="bg-background/80 backdrop-blur-xl border border-white/5 rounded-2xl p-2 shadow-sm">
+                        <div className="flex flex-col lg:flex-row items-center gap-4">
+
+                            {/* Type Tabs */}
+                            <div className="flex items-center p-1 bg-white/5 rounded-xl">
+                                {TYPE_FILTERS.map(filter => {
+                                    const Icon = filter.icon;
+                                    const isActive = (filter.value === '' && !currentType) || filter.value === currentType;
+                                    return (
+                                        <Link
+                                            key={filter.value}
+                                            href={buildUrl({ type: filter.value || undefined })}
+                                            scroll={false}
+                                            className={cn(
+                                                "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all",
+                                                isActive
+                                                    ? "bg-white/10 text-white shadow-sm"
+                                                    : "text-muted-foreground hover:text-white hover:bg-white/5"
+                                            )}
+                                        >
+                                            <Icon className="w-4 h-4" />
+                                            <span className="hidden sm:inline">{filter.label}</span>
+                                        </Link>
+                                    );
+                                })}
+                            </div>
+
+                            <div className="w-px h-8 bg-white/10 hidden lg:block" />
+
+                            {/* Additional Filters */}
+                            <div className="flex items-center gap-2 w-full lg:w-auto overflow-x-auto no-scrollbar pb-1 lg:pb-0">
+                                {TIME_FILTERS.map(filter => (
                                     <Link
                                         key={filter.value}
-                                        href={buildUrl({ type: filter.value || undefined })}
+                                        href={buildUrl({ timeFilter: filter.value })}
                                         scroll={false}
                                         className={cn(
-                                            "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all whitespace-nowrap",
-                                            isActive
-                                                ? "bg-white/[0.1] text-white"
-                                                : "text-white/50 hover:text-white/80 hover:bg-white/[0.05]"
+                                            "flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-medium border transition-all",
+                                            currentTimeFilter === filter.value
+                                                ? "bg-purple-500/10 border-purple-500/20 text-purple-400"
+                                                : "bg-transparent border-white/10 text-muted-foreground hover:border-white/20 hover:text-white"
                                         )}
                                     >
-                                        <Icon className="w-4 h-4" />
                                         {filter.label}
                                     </Link>
-                                );
-                            })}
-                        </div>
+                                ))}
+                            </div>
 
-                        {/* Time & Sort Filters + Reset */}
-                        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-                            {TIME_FILTERS.map(filter => (
+                            <div className="ml-auto flex items-center gap-2">
                                 <Link
-                                    key={filter.value}
-                                    href={buildUrl({ timeFilter: filter.value })}
+                                    href={buildUrl({ sortBy: currentSortBy === 'updatedAt-desc' ? 'imdbRating-desc' : 'updatedAt-desc' })}
                                     scroll={false}
-                                    className={cn(
-                                        "px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
-                                        currentTimeFilter === filter.value
-                                            ? "bg-purple-500/20 text-purple-400"
-                                            : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
-                                    )}
+                                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium text-muted-foreground hover:text-white hover:bg-white/5 transition-colors"
                                 >
-                                    {filter.label}
+                                    <ArrowRight className="w-4 h-4" />
+                                    Sort: {SORT_OPTIONS.find(o => o.value === currentSortBy)?.label || 'Latest'}
                                 </Link>
-                            ))}
 
-                            <div className="w-px h-4 bg-white/[0.1] mx-2" />
-
-                            {SORT_OPTIONS.map(option => {
-                                const Icon = option.icon;
-                                return (
-                                    <Link
-                                        key={option.value}
-                                        href={buildUrl({ sortBy: option.value })}
-                                        scroll={false}
-                                        className={cn(
-                                            "flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap",
-                                            currentSortBy === option.value
-                                                ? "bg-pink-500/20 text-pink-400"
-                                                : "text-white/40 hover:text-white/60 hover:bg-white/[0.05]"
-                                        )}
-                                    >
-                                        <Icon className="w-3 h-3" />
-                                        {option.label}
-                                    </Link>
-                                );
-                            })}
-
-                            {/* Reset Filters Button */}
-                            {(currentType || currentTimeFilter !== 'all' || currentSortBy !== 'updatedAt-desc' || query) && (
-                                <>
-                                    <div className="w-px h-4 bg-white/[0.1] mx-2" />
+                                {(currentType || currentTimeFilter !== 'all' || currentSortBy !== 'updatedAt-desc' || query) && (
                                     <Link
                                         href="/search"
-                                        scroll={false}
-                                        className="px-3 py-1.5 rounded-full text-xs font-medium text-red-400 hover:bg-red-500/10 transition-all whitespace-nowrap"
+                                        className="p-2 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                                        title="Clear all filters"
                                     >
-                                        Reset All
+                                        <X className="w-4 h-4" />
                                     </Link>
-                                </>
-                            )}
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            {/* ========================================
-                EXPLORE SECTIONS - Only show when no query
-               ======================================== */}
-            {!query && (trendingPosts.length > 0 || newReleases.length > 0 || topRatedPosts.length > 0 || allGenres.length > 0) && (
+                {/* Quick Access User Stats (if any) */}
+                {(userNotifications.length > 0 || userExams.length > 0 || userGroups.length > 0) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
+                        {userNotifications.length > 0 && (
+                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-blue-900/10 to-transparent border border-blue-500/10 hover:border-blue-500/20 transition-colors">
+                                <div className="p-3 rounded-xl bg-blue-500/10 text-blue-400">
+                                    <Bell className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-semibold text-blue-100 truncate">Notifications</h4>
+                                    <p className="text-xs text-blue-300/60 truncate">{userNotifications[0]?.title}</p>
+                                </div>
+                                <Link href="/notifications" className="text-xs font-bold text-blue-400 hover:text-blue-300 whitespace-nowrap">View All</Link>
+                            </div>
+                        )}
+                        {userExams.length > 0 && (
+                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-purple-900/10 to-transparent border border-purple-500/10 hover:border-purple-500/20 transition-colors">
+                                <div className="p-3 rounded-xl bg-purple-500/10 text-purple-400">
+                                    <GraduationCap className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-semibold text-purple-100 truncate">Exams pending</h4>
+                                    <p className="text-xs text-purple-300/60">{userExams.length} exams available</p>
+                                </div>
+                                <Link href="/exams" className="text-xs font-bold text-purple-400 hover:text-purple-300 whitespace-nowrap">Start Now</Link>
+                            </div>
+                        )}
+                        {userGroups.length > 0 && (
+                            <div className="flex items-center gap-4 p-4 rounded-2xl bg-gradient-to-br from-green-900/10 to-transparent border border-green-500/10 hover:border-green-500/20 transition-colors">
+                                <div className="p-3 rounded-xl bg-green-500/10 text-green-400">
+                                    <Users className="w-5 h-5" />
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <h4 className="text-sm font-semibold text-green-100 truncate">Your Groups</h4>
+                                    <p className="text-xs text-green-300/60 truncate">{userGroups.length} active groups</p>
+                                </div>
+                                <Link href="/groups" className="text-xs font-bold text-green-400 hover:text-green-300 whitespace-nowrap">View All</Link>
+                            </div>
+                        )}
+                    </div>
+                )}
+
+                {/* RESULTS GRID */}
                 <div className="space-y-8">
-                    {/* Browse by Genre */}
-                    {allGenres.length > 0 && (
-                        <section className="px-[22px]">
-                            <div className="max-w-7xl mx-auto">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <Folder className="w-5 h-5 text-purple-400" />
-                                        Browse by Genre
-                                    </h2>
-                                </div>
-                                <div className="flex flex-wrap gap-2">
-                                    {allGenres.map((genre) => (
-                                        <Link
-                                            key={genre}
-                                            href={`/search?q=${encodeURIComponent(genre)}`}
-                                            className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-white/80 text-sm font-medium hover:from-purple-500/30 hover:to-pink-500/30 hover:text-white transition-all"
-                                        >
-                                            {genre}
-                                        </Link>
-                                    ))}
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Trending Section */}
-                    {trendingPosts.length > 0 && (
-                        <section className="px-[22px]">
-                            <div className="max-w-7xl mx-auto">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <TrendingUp className="w-5 h-5 text-orange-400" />
-                                        Trending Now
-                                    </h2>
-                                    <Link
-                                        href="/search?sortBy=viewCount-desc"
-                                        className="text-sm text-white/50 hover:text-white flex items-center gap-1"
-                                    >
-                                        See all <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                    {trendingPosts.slice(0, 6).map((post) => (
-                                        <PostCard key={post.id} post={post} variant="compact" />
-                                    ))}
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
-                    {/* New Releases Section */}
-                    {newReleases.length > 0 && (
-                        <section className="px-[22px]">
-                            <div className="max-w-7xl mx-auto">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <Sparkles className="w-5 h-5 text-green-400" />
-                                        New Releases
-                                    </h2>
-                                    <Link
-                                        href="/search?sortBy=publishedAt-desc"
-                                        className="text-sm text-white/50 hover:text-white flex items-center gap-1"
-                                    >
-                                        See all <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                    {newReleases.slice(0, 6).map((post) => (
-                                        <PostCard key={post.id} post={post} variant="compact" />
-                                    ))}
-                                </div>
-                            </div>
-                        </section>
-                    )}
-
-                    {/* Top Rated Section */}
-                    {topRatedPosts.length > 0 && (
-                        <section className="px-[22px]">
-                            <div className="max-w-7xl mx-auto">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
-                                        Top Rated
-                                    </h2>
-                                    <Link
-                                        href="/search?sortBy=imdbRating-desc"
-                                        className="text-sm text-white/50 hover:text-white flex items-center gap-1"
-                                    >
-                                        See all <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                                    {topRatedPosts.slice(0, 6).map((post) => (
-                                        <PostCard key={post.id} post={post} variant="compact" />
-                                    ))}
-                                </div>
-                            </div>
-                        </section>
-                    )}
-                </div>
-            )}
-
-            {/* User-Specific Content Sections */}
-            {(userNotifications.length > 0 || userExams.length > 0 || userGroups.length > 0) && (
-                <section className="px-[22px] py-6">
-                    <div className="max-w-7xl mx-auto">
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-
-                            {/* Notifications Card */}
-                            {userNotifications.length > 0 && (
-                                <div className="rounded-2xl bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border border-blue-500/20 p-5">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 rounded-lg bg-blue-500/20">
-                                            <Bell className="w-5 h-5 text-blue-400" />
-                                        </div>
-                                        <h3 className="text-lg font-semibold text-white">Notifications</h3>
-                                        <span className="ml-auto px-2.5 py-0.5 rounded-full bg-blue-500/20 text-blue-400 text-xs font-medium">
-                                            {userNotifications.length}
-                                        </span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {userNotifications.slice(0, 3).map((notif: any, idx: number) => (
-                                            <div key={notif.id || idx} className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.05]">
-                                                <p className="text-sm text-white font-medium line-clamp-1">{notif.title}</p>
-                                                <p className="text-xs text-white/50 line-clamp-1 mt-1">{notif.message}</p>
-                                            </div>
-                                        ))}
-                                    </div>
-                                    <Link href="/notifications" className="flex items-center justify-center gap-2 mt-4 py-2 rounded-lg bg-blue-500/10 text-blue-400 text-sm font-medium hover:bg-blue-500/20 transition-colors">
-                                        View All <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                            )}
-
-                            {/* Exams Card */}
-                            {userExams.length > 0 && (
-                                <div className="rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 border border-purple-500/20 p-5">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 rounded-lg bg-purple-500/20">
-                                            <GraduationCap className="w-5 h-5 text-purple-400" />
-                                        </div>
-                                        <h3 className="text-lg font-semibold text-white">Available Exams</h3>
-                                        <span className="ml-auto px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
-                                            {userExams.length}
-                                        </span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {userExams.slice(0, 3).map((exam: any, idx: number) => (
-                                            <Link key={exam.id || idx} href={`/exams/${exam.id}`} className="block p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-colors">
-                                                <p className="text-sm text-white font-medium line-clamp-1">{exam.title}</p>
-                                                <div className="flex items-center gap-2 mt-1">
-                                                    <span className="text-xs text-white/50">{exam._count?.questions || 0} questions</span>
-                                                    {exam.durationMinutes && (
-                                                        <>
-                                                            <span className="text-white/30">•</span>
-                                                            <span className="text-xs text-white/50">{exam.durationMinutes} min</span>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                    <Link href="/exams" className="flex items-center justify-center gap-2 mt-4 py-2 rounded-lg bg-purple-500/10 text-purple-400 text-sm font-medium hover:bg-purple-500/20 transition-colors">
-                                        View All Exams <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                            )}
-
-                            {/* Groups Card */}
-                            {userGroups.length > 0 && (
-                                <div className="rounded-2xl bg-gradient-to-br from-green-500/10 to-emerald-500/10 border border-green-500/20 p-5">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 rounded-lg bg-green-500/20">
-                                            <Users className="w-5 h-5 text-green-400" />
-                                        </div>
-                                        <h3 className="text-lg font-semibold text-white">Groups</h3>
-                                        <span className="ml-auto px-2.5 py-0.5 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
-                                            {userGroups.length}
-                                        </span>
-                                    </div>
-                                    <div className="space-y-3">
-                                        {userGroups.slice(0, 3).map((group: any, idx: number) => (
-                                            <Link key={group.id || idx} href={`/groups/${group.id}`} className="block p-3 rounded-xl bg-white/[0.03] border border-white/[0.05] hover:bg-white/[0.06] transition-colors">
-                                                <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-green-500/30 to-emerald-500/30 flex items-center justify-center">
-                                                        <Users className="w-5 h-5 text-green-400" />
-                                                    </div>
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-sm text-white font-medium line-clamp-1">{group.name}</p>
-                                                        <p className="text-xs text-white/50">{group._count?.members || 0} members</p>
-                                                    </div>
-                                                </div>
-                                            </Link>
-                                        ))}
-                                    </div>
-                                    <Link href="/groups" className="flex items-center justify-center gap-2 mt-4 py-2 rounded-lg bg-green-500/10 text-green-400 text-sm font-medium hover:bg-green-500/20 transition-colors">
-                                        View All Groups <ChevronRight className="w-4 h-4" />
-                                    </Link>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            {/* Results Section */}
-            <section className="px-[22px] py-6">
-                <div className="max-w-7xl mx-auto">
-                    {/* Results Header */}
-                    <div className="flex items-center justify-between mb-8">
-                        <div>
-                            <h2 className="text-2xl font-bold text-white">
-                                {query ? `Results for "${query}"` : 'Browse All'}
-                            </h2>
-                            <p className="text-white/50 text-sm mt-1">
-                                {initialPosts.length} items found
-                            </p>
-                        </div>
+                    {/* Header */}
+                    <div className="flex items-end justify-between border-b border-white/5 pb-2">
+                        <h2 className="text-xl font-bold text-white leading-tight">
+                            {query ? `Search Results for "${query}"` : 'Browse Content'}
+                        </h2>
+                        <span className="text-sm text-muted-foreground">{initialPosts.length} items</span>
                     </div>
 
                     {initialPosts.length > 0 ? (
-                        <div className="space-y-12">
-                            {/* Locked/Premium Content Section */}
-                            {groupedPosts.lockedPosts.length > 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 rounded-lg bg-gradient-to-br from-amber-500/20 to-orange-500/20 border border-amber-500/30">
-                                            <Lock className="w-5 h-5 text-amber-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-white">Premium Content</h3>
-                                            <p className="text-sm text-white/50">Locked posts - Exam or subscription required</p>
-                                        </div>
-                                        <span className="ml-auto px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 text-xs font-medium">
-                                            {groupedPosts.lockedPosts.length} items
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                        {groupedPosts.lockedPosts.map((post) => (
-                                            <PostCard key={post.id} post={post} variant="normal" />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Group Only Content Section */}
-                            {groupedPosts.groupOnlyPosts.length > 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-500/30">
-                                            <Users className="w-5 h-5 text-purple-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-white">Group Content</h3>
-                                            <p className="text-sm text-white/50">Posts visible to group members only</p>
-                                        </div>
-                                        <span className="ml-auto px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 text-xs font-medium">
-                                            {groupedPosts.groupOnlyPosts.length} items
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                        {groupedPosts.groupOnlyPosts.map((post) => (
-                                            <PostCard key={post.id} post={post} variant="normal" />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
-                            {/* Public Content Section */}
-                            {groupedPosts.publicPosts.length > 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3 mb-4">
-                                        <div className="p-2 rounded-lg bg-gradient-to-br from-green-500/20 to-emerald-500/20 border border-green-500/30">
-                                            <Globe className="w-5 h-5 text-green-400" />
-                                        </div>
-                                        <div>
-                                            <h3 className="text-lg font-semibold text-white">Public Content</h3>
-                                            <p className="text-sm text-white/50">Available to everyone</p>
-                                        </div>
-                                        <span className="ml-auto px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium">
-                                            {groupedPosts.publicPosts.length} items
-                                        </span>
-                                    </div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                                        {groupedPosts.publicPosts.map((post, index) => {
-                                            let variant: 'featured' | 'normal' | 'compact' = 'normal';
-                                            if (index % 7 === 0) variant = 'featured';
-                                            else if (index % 5 === 4) variant = 'compact';
-
-                                            const spanClass = variant === 'featured' ? 'sm:col-span-2 lg:col-span-2 xl:col-span-1' : '';
-
-                                            return (
-                                                <div key={post.id} className={spanClass}>
-                                                    <PostCard post={post} variant={variant} />
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                </div>
-                            )}
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-8">
+                            {initialPosts.map(post => (
+                                <PostCard key={post.id} post={post} />
+                            ))}
                         </div>
                     ) : (
-                        <div className="text-center py-20 rounded-2xl bg-white/[0.02] border border-white/[0.06]">
-                            <Film className="h-12 w-12 text-white/20 mx-auto mb-4" />
-                            <h3 className="text-white/60 font-medium text-lg">No results found</h3>
-                            <p className="text-white/40 text-sm mt-2">
-                                Try adjusting your search or filters
-                            </p>
-                            <Button asChild variant="ghost" className="mt-6">
-                                <Link href="/search">Clear all filters</Link>
+                        <div className="flex flex-col items-center justify-center py-24 text-center rounded-3xl bg-white/[0.02] border border-white/5 border-dashed">
+                            <Film className="w-16 h-16 text-white/10 mb-6" />
+                            <h3 className="text-2xl font-bold text-white mb-2">No results found</h3>
+                            <p className="text-muted-foreground mb-8 max-w-sm">We couldn't find anything matching your search. Try different keywords or filters.</p>
+                            <Button onClick={() => router.push('/search')} variant="outline" className="border-white/10 hover:bg-white/5">
+                                Clear Filters
                             </Button>
                         </div>
                     )}
 
                     {/* Pagination */}
                     {totalPages > 1 && (
-                        <Pagination className="mt-12">
-                            <PaginationContent>
-                                <PaginationItem>
-                                    <PaginationPrevious
-                                        href={buildUrl({ page: String(Math.max(1, currentPage - 1)) })}
-                                        scroll={false}
-                                        className={cn(
-                                            "bg-white/5 hover:bg-white/10 border-white/10",
-                                            currentPage <= 1 && "pointer-events-none opacity-50"
-                                        )}
-                                    />
-                                </PaginationItem>
-
-                                <PaginationItem>
-                                    <span className="px-4 py-2 rounded-md text-sm font-medium text-white/70">
+                        <div className="pt-12 flex justify-center">
+                            <Pagination className="bg-white/5 backdrop-blur-md rounded-full px-4 py-2 border border-white/5 w-auto inline-flex">
+                                <PaginationContent>
+                                    <PaginationItem>
+                                        <PaginationPrevious
+                                            href={buildUrl({ page: String(Math.max(1, currentPage - 1)) })}
+                                            scroll={true}
+                                            className={cn("hover:bg-white/10 hover:text-white transition-colors", currentPage <= 1 && "pointer-events-none opacity-50")}
+                                        />
+                                    </PaginationItem>
+                                    <PaginationItem className="px-4 text-sm font-medium text-white/70">
                                         Page {currentPage} of {totalPages}
-                                    </span>
-                                </PaginationItem>
-
-                                <PaginationItem>
-                                    <PaginationNext
-                                        href={buildUrl({ page: String(Math.min(totalPages, currentPage + 1)) })}
-                                        scroll={false}
-                                        className={cn(
-                                            "bg-white/5 hover:bg-white/10 border-white/10",
-                                            currentPage >= totalPages && "pointer-events-none opacity-50"
-                                        )}
-                                    />
-                                </PaginationItem>
-                            </PaginationContent>
-                        </Pagination>
+                                    </PaginationItem>
+                                    <PaginationItem>
+                                        <PaginationNext
+                                            href={buildUrl({ page: String(Math.min(totalPages, currentPage + 1)) })}
+                                            scroll={true}
+                                            className={cn("hover:bg-white/10 hover:text-white transition-colors", currentPage >= totalPages && "pointer-events-none opacity-50")}
+                                        />
+                                    </PaginationItem>
+                                </PaginationContent>
+                            </Pagination>
+                        </div>
                     )}
                 </div>
-            </section>
+
+                {/* EXPLORE SECTIONS (Only if no search) */}
+                {!query && (
+                    <div className="mt-24 space-y-16">
+                        {trendingPosts.length > 0 && (
+                            <section>
+                                <div className="flex items-center justify-between mb-8">
+                                    <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                                        <TrendingUp className="w-6 h-6 text-pink-500" />
+                                        Trending Now
+                                    </h3>
+                                    <Link href="/search?sortBy=viewCount-desc" className="text-sm font-medium text-pink-400 hover:text-pink-300">View All</Link>
+                                </div>
+                                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    {trendingPosts.slice(0, 6).map(post => <PostCard key={post.id} post={post} variant="compact" />)}
+                                </div>
+                            </section>
+                        )}
+
+                        {allGenres.length > 0 && (
+                            <section>
+                                <h3 className="text-2xl font-bold text-white mb-8 flex items-center gap-2">
+                                    <Folder className="w-6 h-6 text-blue-400" />
+                                    Browse by Genre
+                                </h3>
+                                <div className="flex flex-wrap gap-3">
+                                    {allGenres.map(genre => (
+                                        <Link
+                                            key={genre}
+                                            href={`/search?q=${encodeURIComponent(genre)}`}
+                                            className="px-5 py-2.5 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-105 transition-all text-sm font-medium text-white/80 hover:text-white"
+                                        >
+                                            {genre}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </section>
+                        )}
+                    </div>
+                )}
+
+            </div>
         </div>
     );
 }
