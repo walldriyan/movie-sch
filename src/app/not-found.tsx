@@ -8,11 +8,14 @@ export default function NotFound() {
     return (
         <div className="min-h-screen w-full flex flex-col items-center justify-center bg-black text-white px-4 relative overflow-hidden">
 
-            {/* Background Gradients - Suno Vibe */}
+            {/* Background Gradients - Subtle Dark Theme */}
             <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
-                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px] animate-pulse" />
-                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-pink-600/20 rounded-full blur-[120px] animate-pulse delay-1000" />
-                <div className="absolute top-[20%] right-[20%] w-[20%] h-[20%] bg-blue-600/10 rounded-full blur-[80px]" />
+                {/* Main dark gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-b from-black via-[#0a0a0a] to-[#111111]" />
+
+                {/* Subtle static glows */}
+                <div className="absolute top-[-20%] left-[20%] w-[60%] h-[60%] bg-white/[0.03] rounded-full blur-[120px]" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-white/[0.02] rounded-full blur-[100px]" />
             </div>
 
             <div className="z-10 flex flex-col items-center text-center max-w-2xl px-6">
@@ -31,13 +34,14 @@ export default function NotFound() {
                     animation: float 6s ease-in-out infinite;
                 }
             `}} />
-                    <div className="absolute inset-4 rounded-full bg-gradient-to-tr from-purple-500/20 to-pink-500/20 blur-[50px] animate-pulse" />
+                    <div className="absolute inset-4 rounded-full bg-white/5 blur-[50px]" />
                     <Image
                         src="/cat.png"
                         alt="Lost Cat"
                         fill
                         className="object-contain drop-shadow-2xl z-10"
                         priority
+                        unoptimized // This helps if Vercel image optimization is failing for some reason
                     />
                 </div>
 
@@ -48,7 +52,7 @@ export default function NotFound() {
 
                 <p className="text-lg md:text-xl text-white/60 mb-8 leading-relaxed font-light">
                     Something went wrong. It seems you've wandered off the script, <br className="hidden md:block" />
-                    or perhaps you don't have the <span className="text-purple-400 font-medium">Clearance Card</span> to enter this area.
+                    or perhaps you don't have the <span className="text-white font-medium">Clearance Card</span> to enter this area.
                 </p>
 
                 {/* Action Buttons */}
