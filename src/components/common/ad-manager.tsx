@@ -16,8 +16,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { cn } from '@/lib/utils';
-import { saveAdConfig, type AdConfig } from '@/lib/actions/ads';
+import { updateAdsConfig, type AdUnit } from '@/lib/actions/ads';
 import { useToast } from "@/hooks/use-toast"
+
+// Legacy support interface
+interface AdConfig {
+    imageUrl: string;
+    linkUrl: string;
+    enabled: boolean;
+}
 
 interface AdManagerProps {
     initialConfig: AdConfig;
@@ -37,14 +44,26 @@ export default function AdManager({ initialConfig, userRole }: AdManagerProps) {
     const handleSave = async () => {
         setIsLoading(true);
         try {
-            await saveAdConfig(tempConfig);
+            // Convert to new AdUnit format for saving
+            const newAdUnits: AdUnit[] = [{
+                id: 'watch_page_main',
+                name: 'Watch Page Main Ad',
+                imageUrl: tempConfig.imageUrl,
+                linkUrl: tempConfig.linkUrl,
+                width: 300,
+                height: 250,
+                active: tempConfig.enabled
+            }];
+
+            await updateAdsConfig(newAdUnits);
+
             setConfig(tempConfig);
             setIsOpen(false);
             toast({
                 title: "Ad configuration saved",
                 description: "The advertisement settings have been updated globally.",
             })
-            router.refresh(); // Refresh to update any server-side nuances if needed
+            router.refresh();
         } catch (error) {
             toast({
                 title: "Failed to save configuration",
@@ -64,9 +83,6 @@ export default function AdManager({ initialConfig, userRole }: AdManagerProps) {
         setIsOpen(true);
     };
 
-    // If disabled and not admin, show nothing? Or show placeholder?
-    // User said "alluser lata add visible wenna one", implies enabled.
-    // If not enabled and not admin, maybe hide it? 
     if (!config.enabled && !isSuperAdmin) {
         return null;
     }
@@ -75,7 +91,6 @@ export default function AdManager({ initialConfig, userRole }: AdManagerProps) {
         <>
             <div className={cn(
                 "group relative h-full w-full rounded-2xl bg-muted/30 overflow-hidden flex flex-col items-center justify-center text-center p-6 transition-all",
-                // Add specific height full to match parent flex stretch
             )}>
                 {/* Content */}
                 {config.imageUrl ? (
@@ -84,11 +99,6 @@ export default function AdManager({ initialConfig, userRole }: AdManagerProps) {
                         target="_blank"
                         rel="noopener noreferrer"
                         className="relative w-full h-full flex items-center justify-center"
-                        onClick={(e) => {
-                            // If user is admin and clicks specifically to edit? 
-                            // Actually user said "mouse move krama... popup model one".
-                            // Let's rely on the edit button overlay for editing.
-                        }}
                     >
                         <div className="relative w-full h-full min-h-[200px]">
                             <Image
@@ -100,7 +110,6 @@ export default function AdManager({ initialConfig, userRole }: AdManagerProps) {
                         </div>
                     </a>
                 ) : (
-                    // Placeholder State
                     <div className="flex flex-col items-center justify-center text-center">
                         <span className="text-muted-foreground/50 text-xs font-bold uppercase tracking-widest mb-4">Advertisement</span>
                         <div className="w-full aspect-[3/4] max-w-[200px] bg-gradient-to-br from-white/5 to-transparent rounded-xl flex items-center justify-center border border-white/5 mb-4 group-hover:border-primary/30 transition-colors">

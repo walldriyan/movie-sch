@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
-import { getAdConfig } from '@/lib/actions/ads';
+import { getAdsConfig } from '@/lib/actions/ads';
 import { getPosts, getPost, getFavoritePostsByUserId } from '@/lib/actions/posts/read';
 import Link from 'next/link';
 import { getSeriesByAuthorId, getSeriesById, getPostsBySeriesId } from '@/lib/actions/series';
@@ -118,7 +118,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const submissionIdParam = params.submissionId;
 
     // Fetch Global Ad Config
-    const adConfig = await getAdConfig();
+    const ads = await getAdsConfig();
+    const activeAd = ads.find(a => a.active);
+    const adConfig = activeAd ? {
+        imageUrl: activeAd.imageUrl,
+        linkUrl: activeAd.linkUrl,
+        enabled: true
+    } : {
+        imageUrl: '',
+        linkUrl: '',
+        enabled: false
+    };
 
     // Get current user session
     const session = await auth();
