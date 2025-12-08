@@ -202,19 +202,38 @@ export default function SeriesWatchPage({
                             )}
                         </div>
 
-                        {/* SEPARATOR 1: Post Content / Tabs */}
+                        {/* SEPARATOR 1: Post Content */}
                         <div className="my-8 flex items-center gap-4 opacity-50">
                             <Separator className="flex-1" />
-                            <span className="text-xs text-muted-foreground uppercase tracking-widest">Details</span>
+                            <span className="text-xs text-muted-foreground uppercase tracking-widest">Description</span>
                             <Separator className="flex-1" />
                         </div>
 
-                        {/* TABS: Description, Reviews, Subtitles */}
-                        <Tabs defaultValue="overview" className="w-full">
+                        {/* STATIC OVERVIEW / DESCRIPTION */}
+                        <div className="space-y-8 min-h-[100px] mb-12">
+                            <div
+                                className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
+                                dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+                            />
+                            {activePost.exam && activePost.exam.length > 0 && (
+                                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-start gap-4">
+                                    <div className="p-3 bg-primary/10 rounded-full">
+                                        <CheckCircle2 className="w-6 h-6 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-lg mb-1">Knowledge Check</h3>
+                                        <p className="text-muted-foreground mb-4">Complete the exam for this episode.</p>
+                                        <Link href={`/exams/${activePost.exam[0].id}`}>
+                                            <Button>Start Exam</Button>
+                                        </Link>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* TABS: Reviews, Subtitles ONLY */}
+                        <Tabs defaultValue="reviews" className="w-full">
                             <TabsList className="mb-8 w-full justify-start h-auto p-1 bg-muted/50 rounded-xl">
-                                <TabsTrigger value="overview" className="flex-1 md:flex-none gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
-                                    <FileText className="w-4 h-4" /> Overview
-                                </TabsTrigger>
                                 <TabsTrigger value="reviews" className="flex-1 md:flex-none gap-2 py-2.5 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm">
                                     <MessageCircle className="w-4 h-4" /> Reviews ({activePost._count?.reviews || 0})
                                 </TabsTrigger>
@@ -223,27 +242,7 @@ export default function SeriesWatchPage({
                                 </TabsTrigger>
                             </TabsList>
 
-                            <TabsContent value="overview" className="space-y-8 animate-in fade-in slide-in-from-left-4 duration-300 min-h-[300px]">
-                                <div
-                                    className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
-                                    dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
-                                />
-                                {activePost.exam && activePost.exam.length > 0 && (
-                                    <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-start gap-4">
-                                        <div className="p-3 bg-primary/10 rounded-full">
-                                            <CheckCircle2 className="w-6 h-6 text-primary" />
-                                        </div>
-                                        <div>
-                                            <h3 className="font-semibold text-lg mb-1">Knowledge Check</h3>
-                                            <p className="text-muted-foreground mb-4">Complete the exam for this episode.</p>
-                                            <Link href={`/exams/${activePost.exam[0].id}`}>
-                                                <Button>Start Exam</Button>
-                                            </Link>
-                                        </div>
-                                    </div>
-                                )}
-                            </TabsContent>
-
+                            {/* Reviews Tab */}
                             <TabsContent value="reviews" className="animate-in fade-in slide-in-from-left-4 duration-300 min-h-[300px]">
                                 <div className="max-w-3xl">
                                     <div className="mb-8 p-6 bg-muted/30 rounded-2xl">
