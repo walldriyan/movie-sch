@@ -6,38 +6,38 @@
 
 @layer base {
   :root {
-    /* Minimalistic Grayscale - Pure Dark Grays Only */
-    --background: 0 0% 6%;
-    --foreground: 0 0% 90%;
+    /* Rich Cinematic Dark Theme */
+    --background: 240 5% 6%;
+    --foreground: 0 0% 95%;
 
-    --card: 0 0% 8%;
-    --card-foreground: 0 0% 90%;
+    --card: 240 4% 8%;
+    --card-foreground: 0 0% 95%;
 
-    --popover: 0 0% 7%;
-    --popover-foreground: 0 0% 90%;
+    --popover: 240 5% 7%;
+    --popover-foreground: 0 0% 95%;
 
-    /* Gray accent - no color */
+    /* Gray accent - preserved but aligned */
     --primary: 0 0% 85%;
     --primary-foreground: 0 0% 8%;
 
-    --secondary: 0 0% 12%;
+    --secondary: 240 4% 12%;
     --secondary-foreground: 0 0% 85%;
 
-    --muted: 0 0% 11%;
-    --muted-foreground: 0 0% 50%;
+    --muted: 240 4% 10%;
+    --muted-foreground: 240 4% 60%;
 
-    --accent: 0 0% 14%;
+    --accent: 240 4% 12%;
     --accent-foreground: 0 0% 90%;
 
     --destructive: 0 50% 45%;
     --destructive-foreground: 0 0% 98%;
 
     /* Visible but subtle borders */
-    --border: 0 0% 16%;
-    --input: 0 0% 16%;
-    --ring: 0 0% 70%;
+    --border: 240 4% 12%;
+    --input: 240 4% 12%;
+    --ring: 240 4% 70%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     --chart-1: 0 0% 75%;
     --chart-2: 0 0% 60%;
@@ -46,10 +46,10 @@
     --chart-5: 0 0% 55%;
 
     /* Sidebar seamless */
-    --sidebar-background: 0 0% 6%;
+    --sidebar-background: 240 5% 6%;
     --sidebar-foreground: 0 0% 70%;
-    --sidebar-border: 0 0% 14%;
-    --sidebar-accent: 0 0% 11%;
+    --sidebar-border: 240 4% 10%;
+    --sidebar-accent: 240 4% 10%;
     --sidebar-accent-foreground: 0 0% 90%;
     --sidebar-ring: 0 0% 70%;
 

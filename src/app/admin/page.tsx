@@ -11,6 +11,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
     Table,
     TableBody,
@@ -217,54 +218,59 @@ function UsersTab() {
 
     return (
         <div className="space-y-4">
-            <Card>
-                <CardHeader>
+            <Card className="bg-[#111112] border-white/5 shadow-2xl overflow-hidden">
+                <CardHeader className="bg-white/[0.02] border-b border-white/5 pb-6">
                     <div className="flex items-center justify-between">
                         <div>
-                            <CardTitle>Users</CardTitle>
-                            <CardDescription>
-                                A list of all users in the system.
+                            <CardTitle>User Management</CardTitle>
+                            <CardDescription className="mt-1">
+                                View and manage user roles, permissions, and status.
                             </CardDescription>
                         </div>
-                        <Button variant="outline" size="icon" onClick={handleRefreshAndToast} disabled={isRefreshing}>
+                        <Button variant="outline" size="icon" onClick={handleRefreshAndToast} disabled={isRefreshing} className="rounded-full bg-transparent border-white/10 hover:bg-white/10 text-white">
                             <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                         </Button>
                     </div>
                 </CardHeader>
-                <CardContent className="overflow-x-auto">
+                <CardContent className="p-0">
                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Name</TableHead>
-                                <TableHead>Email</TableHead>
-                                <TableHead>Role</TableHead>
-                                <TableHead>Post Limit</TableHead>
-                                <TableHead>
-                                    <span className="sr-only">Actions</span>
-                                </TableHead>
+                        <TableHeader className="bg-white/[0.02]">
+                            <TableRow className="border-white/5 hover:bg-transparent">
+                                <TableHead className="pl-6 h-12 text-white/50 font-medium">User</TableHead>
+                                <TableHead className="h-12 text-white/50 font-medium">Email</TableHead>
+                                <TableHead className="h-12 text-white/50 font-medium">Role</TableHead>
+                                <TableHead className="h-12 text-white/50 font-medium">Post Limit</TableHead>
+                                <TableHead className="h-12 text-white/50 font-medium text-right pr-6">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {users.length > 0 ? (
                                 users.map((user) => (
-                                    <TableRow key={user.id}>
-                                        <TableCell className="font-medium max-w-xs">
-                                            <div className="flex items-center gap-2">
-                                                <span>{user.name}</span>
-                                                {user.permissionRequestStatus === 'PENDING' && (
-                                                    <Badge variant="outline" className='border-yellow-500 text-yellow-500'>
-                                                        <ShieldQuestion className="mr-1 h-3 w-3" />
-                                                        Request
-                                                    </Badge>
-                                                )}
+                                    <TableRow key={user.id} className="border-white/5 hover:bg-white/[0.02] transition-colors">
+                                        <TableCell className="font-medium max-w-xs pl-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <Avatar className="w-9 h-9 border border-white/10">
+                                                    <AvatarImage src={user.image || undefined} alt={user.name || 'U'} />
+                                                    <AvatarFallback className="bg-white/10 text-xs">{user.name?.substr(0, 2).toUpperCase() || 'U'}</AvatarFallback>
+                                                </Avatar>
+                                                <div className="flex flex-col">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm font-semibold text-white/90">{user.name}</span>
+                                                        {user.permissionRequestStatus === 'PENDING' && (
+                                                            <Badge variant="outline" className='border-yellow-500/50 text-yellow-500 bg-yellow-500/10 text-[10px] px-1.5 py-0 h-5'>
+                                                                Request
+                                                            </Badge>
+                                                        )}
+                                                    </div>
+                                                    {user.permissionRequestMessage && (
+                                                        <p className="text-[11px] text-muted-foreground italic truncate max-w-[150px]">
+                                                            &quot;{user.permissionRequestMessage}&quot;
+                                                        </p>
+                                                    )}
+                                                </div>
                                             </div>
-                                            {user.permissionRequestMessage && (
-                                                <p className="text-xs text-muted-foreground mt-1 italic truncate">
-                                                    &quot;{user.permissionRequestMessage}&quot;
-                                                </p>
-                                            )}
                                         </TableCell>
-                                        <TableCell>{user.email}</TableCell>
+                                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
                                         <TableCell>
                                             <Badge
                                                 variant={
@@ -274,33 +280,40 @@ function UsersTab() {
                                                             ? 'secondary'
                                                             : 'outline'
                                                 }
+                                                className={cn(
+                                                    "capitalize",
+                                                    user.role === 'SUPER_ADMIN' && "bg-primary text-primary-foreground hover:bg-primary/90",
+                                                    user.role === 'USER_ADMIN' && "bg-white/10 text-white hover:bg-white/20",
+                                                    user.role === 'USER' && "border-white/10 text-muted-foreground"
+                                                )}
                                             >
-                                                {user.role}
+                                                {user.role.replace('_', ' ').toLowerCase()}
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline">
+                                            <Badge variant="outline" className="border-white/10 text-muted-foreground font-mono">
                                                 {user.dailyPostLimit === null ? 'Default' : user.dailyPostLimit}
                                             </Badge>
                                         </TableCell>
-                                        <TableCell>
+                                        <TableCell className="text-right pr-6">
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button
                                                         aria-haspopup="true"
                                                         size="icon"
                                                         variant="ghost"
+                                                        className="h-8 w-8 rounded-full hover:bg-white/10"
                                                     >
                                                         <MoreHorizontal className="h-4 w-4" />
                                                         <span className="sr-only">Toggle menu</span>
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
+                                                <DropdownMenuContent align="end" className="bg-[#111112] border-white/10">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuSub>
                                                         <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
                                                         <DropdownMenuPortal>
-                                                            <DropdownMenuSubContent>
+                                                            <DropdownMenuSubContent className="bg-[#111112] border-white/10">
                                                                 <DropdownMenuRadioGroup
                                                                     value={user.role}
                                                                     onValueChange={(newRole) => handleRoleChange(user, newRole as Role)}
@@ -315,7 +328,7 @@ function UsersTab() {
                                                     <DropdownMenuSub>
                                                         <DropdownMenuSubTrigger>Change Permission Status</DropdownMenuSubTrigger>
                                                         <DropdownMenuPortal>
-                                                            <DropdownMenuSubContent>
+                                                            <DropdownMenuSubContent className="bg-[#111112] border-white/10">
                                                                 <DropdownMenuRadioGroup
                                                                     value={user.permissionRequestStatus || 'NONE'}
                                                                     onValueChange={(newStatus) => handleStatusChange(user, newStatus)}
@@ -328,8 +341,8 @@ function UsersTab() {
                                                             </DropdownMenuSubContent>
                                                         </DropdownMenuPortal>
                                                     </DropdownMenuSub>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem className="text-destructive">
+                                                    <DropdownMenuSeparator className="bg-white/10" />
+                                                    <DropdownMenuItem className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                                         Delete User
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
@@ -339,8 +352,8 @@ function UsersTab() {
                                 ))
                             ) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="h-24 text-center">
-                                        {isRefreshing ? <Loader2 className="h-6 w-6 animate-spin mx-auto" /> : 'No users found.'}
+                                    <TableCell colSpan={5} className="h-32 text-center text-muted-foreground border-white/5">
+                                        {isRefreshing ? <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /> : 'No users found.'}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -425,17 +438,17 @@ function SettingsTab() {
         <div className="space-y-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <FileText className="h-5 w-5" />
+                    <Card className="bg-[#111112] border-white/5 shadow-md">
+                        <CardHeader className="border-b border-white/5 pb-4">
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <FileText className="h-5 w-5 text-primary" />
                                 Content & Post Limits
                             </CardTitle>
                             <CardDescription>
                                 Manage limits for content creation across the platform.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-6">
                             {isLoading ? (
                                 <div className="space-y-2">
                                     <Skeleton className="h-5 w-1/4" />
@@ -449,7 +462,7 @@ function SettingsTab() {
                                         <FormItem className="max-w-sm">
                                             <FormLabel>Default Daily Post Limit</FormLabel>
                                             <FormControl>
-                                                <Input type="number" placeholder="10" {...field} />
+                                                <Input type="number" placeholder="10" {...field} className="bg-white/5 border-white/10" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -459,17 +472,17 @@ function SettingsTab() {
                         </CardContent>
                     </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                                <UsersIcon className="h-5 w-5" />
+                    <Card className="bg-[#111112] border-white/5 shadow-md">
+                        <CardHeader className="border-b border-white/5 pb-4">
+                            <CardTitle className="flex items-center gap-2 text-lg">
+                                <UsersIcon className="h-5 w-5 text-primary" />
                                 Micro Post Settings
                             </CardTitle>
                             <CardDescription>
                                 Control which user groups can see the Micro Posts tab on the homepage.
                             </CardDescription>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="pt-6">
                             {isLoading ? (
                                 <div className="space-y-2">
                                     <Skeleton className="h-5 w-1/4" />
@@ -580,55 +593,56 @@ function ExamsTab() {
 // Main Admin Dashboard
 export default function AdminDashboard() {
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="font-semibold text-lg md:text-2xl flex items-center gap-2">
-                    <SettingsIcon className="h-6 w-6" />
+        <div className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto space-y-8">
+            <div className="flex flex-col gap-2">
+                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
+                    <ShieldQuestion className="h-8 w-8 text-primary" />
                     Admin Dashboard
                 </h1>
+                <p className="text-muted-foreground">Manage users, groups, content, and system configurations.</p>
             </div>
 
-            <Tabs defaultValue="users" className="space-y-4">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="users" className="flex items-center gap-2">
-                        <UsersIcon className="h-4 w-4" />
+            <Tabs defaultValue="users" className="space-y-8">
+                <TabsList className="bg-white/5 border border-white/10 p-1 rounded-full w-full max-w-2xl h-auto grid grid-cols-5 gap-1">
+                    <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
+                        <UsersIcon className="h-4 w-4 mr-2" />
                         <span className="hidden sm:inline">Users</span>
                     </TabsTrigger>
-                    <TabsTrigger value="groups" className="flex items-center gap-2">
-                        <UsersRound className="h-4 w-4" />
+                    <TabsTrigger value="groups" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
+                        <UsersRound className="h-4 w-4 mr-2" />
                         <span className="hidden sm:inline">Groups</span>
                     </TabsTrigger>
-                    <TabsTrigger value="exams" className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
+                    <TabsTrigger value="exams" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
+                        <BookOpen className="h-4 w-4 mr-2" />
                         <span className="hidden sm:inline">Exams</span>
                     </TabsTrigger>
-                    <TabsTrigger value="settings" className="flex items-center gap-2">
-                        <SettingsIcon className="h-4 w-4" />
+                    <TabsTrigger value="settings" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
+                        <SettingsIcon className="h-4 w-4 mr-2" />
                         <span className="hidden sm:inline">Settings</span>
                     </TabsTrigger>
-                    <TabsTrigger value="ads" className="flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
+                    <TabsTrigger value="ads" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
+                        <FileText className="h-4 w-4 mr-2" />
                         <span className="hidden sm:inline">Ads</span>
                     </TabsTrigger>
                 </TabsList>
 
-                <TabsContent value="users">
+                <TabsContent value="users" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <UsersTab />
                 </TabsContent>
 
-                <TabsContent value="groups">
+                <TabsContent value="groups" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <GroupsTab />
                 </TabsContent>
 
-                <TabsContent value="exams">
+                <TabsContent value="exams" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <ExamsTab />
                 </TabsContent>
 
-                <TabsContent value="settings">
+                <TabsContent value="settings" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <SettingsTab />
                 </TabsContent>
 
-                <TabsContent value="ads">
+                <TabsContent value="ads" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <AdsTab />
                 </TabsContent>
             </Tabs>
