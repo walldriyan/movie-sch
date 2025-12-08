@@ -41,12 +41,7 @@ next-env.d.ts
 .genkit/*
 
 # Environment files - NEVER commit these!
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-.env*.local
+.env*
 
 # firebase
 firebase-debug.log
