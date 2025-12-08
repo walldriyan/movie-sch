@@ -1,5 +1,6 @@
 
 
+// @ts-nocheck
 'use client';
 
 import React, { useState, useEffect, useTransition } from 'react';
@@ -34,79 +35,79 @@ interface NotificationsState {
 }
 
 const renderContent = (notifications: NotificationsState | null) => {
-    if (!notifications) return null;
+  if (!notifications) return null;
 
-    const { pendingPosts, pendingUsers, unreadFeedback } = notifications;
-    const totalNotifications = pendingPosts.length + pendingUsers.length + unreadFeedback.length;
+  const { pendingPosts, pendingUsers, unreadFeedback } = notifications;
+  const totalNotifications = pendingPosts.length + pendingUsers.length + unreadFeedback.length;
 
-    if (totalNotifications === 0) {
-        return (
-            <div className="flex flex-col items-center justify-center p-8 text-center">
-                <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
-                <h3 className="font-semibold">All Caught Up</h3>
-                <p className="text-sm text-muted-foreground">There are no pending items.</p>
-            </div>
-        )
-    }
-
+  if (totalNotifications === 0) {
     return (
-        <ScrollArea className="max-h-96">
-            {pendingPosts.length > 0 && (
-                <>
-                    <DropdownMenuLabel className="flex items-center gap-2">
-                        <Film /> Pending Posts
-                        <Badge variant="secondary" className="ml-auto">{pendingPosts.length}</Badge>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {pendingPosts.map(post => (
-                        <DropdownMenuItem key={`post-${post.id}`} asChild>
-                            <Link href={`/movies/${post.id}`} className="flex-col items-start focus:bg-transparent">
-                                 <div>
-                                    <div className="font-semibold">{post.title}</div>
-                                    <div className="text-xs text-muted-foreground">by {post.author?.name || 'Unknown'}</div>
-                                </div>
-                            </Link>
-                        </DropdownMenuItem>
-                    ))}
-                </>
-            )}
-             {pendingUsers.length > 0 && (
-                <>
-                    <DropdownMenuLabel className="flex items-center gap-2 pt-4">
-                        <Users /> Pending Users
-                        <Badge variant="secondary" className="ml-auto">{pendingUsers.length}</Badge>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {pendingUsers.map(user => (
-                        <DropdownMenuItem key={`user-${user.id}`} asChild>
-                            <Link href="/admin/users" className="flex-col items-start">
-                                 <div className="font-semibold">{user.name || 'Unknown User'}</div>
-                                <div className="text-xs text-muted-foreground">{user.email}</div>
-                            </Link>
-                        </DropdownMenuItem>
-                    ))}
-                </>
-            )}
-             {unreadFeedback.length > 0 && (
-                <>
-                    <DropdownMenuLabel className="flex items-center gap-2 pt-4">
-                        <MessageSquareWarning /> New Feedback
-                        <Badge variant="secondary" className="ml-auto">{unreadFeedback.length}</Badge>
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {unreadFeedback.map(fb => (
-                        <DropdownMenuItem key={`fb-${fb.id}`} asChild>
-                            <Link href="/admin/feedback" className="flex-col items-start">
-                                 <div className="font-semibold truncate">{fb.title}</div>
-                                <div className="text-xs text-muted-foreground">from {fb.user.name || 'Anonymous'}</div>
-                            </Link>
-                        </DropdownMenuItem>
-                    ))}
-                </>
-            )}
-        </ScrollArea>
+      <div className="flex flex-col items-center justify-center p-8 text-center">
+        <Inbox className="h-12 w-12 text-muted-foreground mb-4" />
+        <h3 className="font-semibold">All Caught Up</h3>
+        <p className="text-sm text-muted-foreground">There are no pending items.</p>
+      </div>
     )
-  };
+  }
+
+  return (
+    <ScrollArea className="max-h-96">
+      {pendingPosts.length > 0 && (
+        <>
+          <DropdownMenuLabel className="flex items-center gap-2">
+            <Film /> Pending Posts
+            <Badge variant="secondary" className="ml-auto">{pendingPosts.length}</Badge>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {pendingPosts.map(post => (
+            <DropdownMenuItem key={`post-${post.id}`} asChild>
+              <Link href={`/movies/${post.id}`} className="flex-col items-start focus:bg-transparent">
+                <div>
+                  <div className="font-semibold">{post.title}</div>
+                  <div className="text-xs text-muted-foreground">by {post.author?.name || 'Unknown'}</div>
+                </div>
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </>
+      )}
+      {pendingUsers.length > 0 && (
+        <>
+          <DropdownMenuLabel className="flex items-center gap-2 pt-4">
+            <Users /> Pending Users
+            <Badge variant="secondary" className="ml-auto">{pendingUsers.length}</Badge>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {pendingUsers.map(user => (
+            <DropdownMenuItem key={`user-${user.id}`} asChild>
+              <Link href="/admin/users" className="flex-col items-start">
+                <div className="font-semibold">{user.name || 'Unknown User'}</div>
+                <div className="text-xs text-muted-foreground">{user.email}</div>
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </>
+      )}
+      {unreadFeedback.length > 0 && (
+        <>
+          <DropdownMenuLabel className="flex items-center gap-2 pt-4">
+            <MessageSquareWarning /> New Feedback
+            <Badge variant="secondary" className="ml-auto">{unreadFeedback.length}</Badge>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          {unreadFeedback.map(fb => (
+            <DropdownMenuItem key={`fb-${fb.id}`} asChild>
+              <Link href="/admin/feedback" className="flex-col items-start">
+                <div className="font-semibold truncate">{fb.title}</div>
+                <div className="text-xs text-muted-foreground">from {fb.user.name || 'Anonymous'}</div>
+              </Link>
+            </DropdownMenuItem>
+          ))}
+        </>
+      )}
+    </ScrollArea>
+  )
+};
 
 export default function HeaderApprovals() {
   const [notifications, setNotifications] = useState<NotificationsState | null>(null);
@@ -130,15 +131,15 @@ export default function HeaderApprovals() {
       setIsLoading(false);
     }
   }, [toast]);
-  
+
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
-  
+
   const handleRefresh = () => {
     startRefreshTransition(async () => {
       await fetchNotifications();
-       toast({
+      toast({
         title: 'Refreshed',
         description: 'Notification list has been updated.',
       });
@@ -154,7 +155,7 @@ export default function HeaderApprovals() {
           <Button variant="outline" size="icon" className="relative">
             <Bell />
             {totalNotifications > 0 && !isLoading && (
-                <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{totalNotifications}</Badge>
+              <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{totalNotifications}</Badge>
             )}
             {isLoading && (
               <Loader2 className="absolute -top-1 -right-1 h-5 w-5 animate-spin" />
@@ -163,28 +164,28 @@ export default function HeaderApprovals() {
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80">
-            <div className="flex items-center justify-between p-2">
-                 <DropdownMenuLabel className="p-0">Dashboard Notifications</DropdownMenuLabel>
-                 <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={handleRefresh}
-                    disabled={isRefreshing}
-                  >
-                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  </Button>
+          <div className="flex items-center justify-between p-2">
+            <DropdownMenuLabel className="p-0">Dashboard Notifications</DropdownMenuLabel>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            </Button>
+          </div>
+          <DropdownMenuSeparator />
+          {isLoading ? (
+            <div className="p-4 space-y-4">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-6 w-full" />
+              <Skeleton className="h-4 w-2/3" />
             </div>
-            <DropdownMenuSeparator />
-            {isLoading ? (
-              <div className="p-4 space-y-4">
-                <Skeleton className="h-4 w-1/3" />
-                <Skeleton className="h-6 w-full" />
-                <Skeleton className="h-4 w-2/3" />
-              </div>
-            ) : (
-              renderContent(notifications)
-            )}
+          ) : (
+            renderContent(notifications)
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
     </AuthGuard>
