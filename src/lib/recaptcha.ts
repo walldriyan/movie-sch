@@ -3,15 +3,16 @@
 export async function validateRecaptcha(token: string | null): Promise<boolean> {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
+    // If secret key is not configured, skip reCAPTCHA validation entirely
     if (!secretKey) {
-        // In development, if no key is set, we might want to bypass (or warn).
-        // For safety, let's log error and return false, forcing the user to set it up.
-        if (process.env.NODE_ENV === 'development') {
-            console.warn('RECAPTCHA_SECRET_KEY is missing. Recaptcha validation passed for development purposes.');
-            return true;
-        }
-        console.error('RECAPTCHA_SECRET_KEY is missing!');
-        return false;
+        console.info('RECAPTCHA_SECRET_KEY is not configured. Skipping reCAPTCHA validation.');
+        return true;
+    }
+
+    // If bypass token is provided (when site key wasn't configured on client), skip validation
+    if (token === '__skip_captcha__') {
+        console.info('reCAPTCHA bypass token received. Skipping validation.');
+        return true;
     }
 
     if (!token) {

@@ -15,7 +15,7 @@ npx prisma generate
 npx prisma db push
 
 
-git push origin v53:main --force
+git push origin v54:main --force
 
 
 
