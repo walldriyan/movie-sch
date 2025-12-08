@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, Timer, Send, PlayCircle, Clock, Loader2, Check, Eye, RotateCcw, Download, X, Target, FileQuestion, ChevronLeft, ChevronRight, Pencil } from 'lucide-react';
+import { AlertCircle, Timer, Send, PlayCircle, Clock, Loader2, Check, Eye, RotateCcw, Download, X, Target, FileQuestion, ChevronLeft, ChevronRight, Pencil, Info } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { submitExam, getExamResults } from '@/lib/actions';
@@ -122,6 +122,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             setTimeTaken(prev => prev + 1);
             setTimeLeft(prevTime => {
                 if (prevTime <= 1) {
+                    // Time Up Logic
                     if (timerRef.current) clearInterval(timerRef.current);
                     if (formRef.current && !isSubmitting) {
                         setIsSubmitting(true);
@@ -136,6 +137,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
             });
         }, 1000);
 
+        // Cleanup timer on component unmount to prevent memory leaks
         return () => {
             if (timerRef.current) clearInterval(timerRef.current);
         };
@@ -452,7 +454,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                 <Dialog open={showResultsModal} onOpenChange={setShowResultsModal}>
                                     <DialogContent className="sm:max-w-3xl h-[90vh] flex flex-col bg-[#0a0a0a] border-white/10 text-white">
                                         <DialogHeader>
-                                            <DialogTitle className="text-2xl font-bold">Performance Report</DialogTitle>
+                                            <DialogTitle className="text-2xl font-bold font-sans">Performance Report / ප්‍රතිඵල වාර්තාව</DialogTitle>
                                             <DialogDescription>Detailed analysis of your submission.</DialogDescription>
                                         </DialogHeader>
                                         <ScrollArea className="flex-1 pr-4">
@@ -480,15 +482,12 @@ function ResultsView({ examResults }: { examResults: any }) {
     const totalPoints = submission.exam.questions.reduce((s: number, q: any) => s + q.points, 0);
     const percentage = totalPoints > 0 ? (submission.score / totalPoints) * 100 : 0;
 
-    // Calculate correct/wrong counts
     const correctCount = submission.answers.filter((a: any) => {
         const q = submission.exam.questions.find((q: any) => q.id === a.questionId);
-        // For MCQ
         if (q.type === 'MCQ') {
             const opt = q?.options.find((o: any) => o.id === a.selectedOptionId);
             return opt?.isCorrect;
         }
-        // For Custom Answer, check if marks > 0 (manual grading)
         if (a.marksAwarded !== null && a.marksAwarded > 0) return true;
         return false;
     }).length;
@@ -496,7 +495,7 @@ function ResultsView({ examResults }: { examResults: any }) {
     const wrongCount = submission.exam.questions.length - correctCount;
 
     return (
-        <div className="space-y-8 py-4">
+        <div className="space-y-8 py-4 font-sans">
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-5 bg-white/5 rounded-2xl border border-white/5 text-center shadow-lg">
@@ -519,7 +518,7 @@ function ResultsView({ examResults }: { examResults: any }) {
 
             {/* Questions Review */}
             <div className="space-y-8">
-                <h3 className="text-2xl font-bold flex items-center gap-3 border-b border-white/10 pb-4">
+                <h3 className="text-xl md:text-2xl font-bold flex items-center gap-3 border-b border-white/10 pb-4">
                     <FileQuestion className="h-6 w-6 text-primary" />
                     <span>Question Breakdown & Analysis</span>
                 </h3>
@@ -527,24 +526,23 @@ function ResultsView({ examResults }: { examResults: any }) {
                 {submission.exam.questions.map((q: any, i: number) => {
                     const userAnswers = submission.answers.filter((a: any) => a.questionId === q.id);
 
-                    // Calculation logic
+                    // Advanced Calc Logic
                     const correctOptions = q.options?.filter((o: any) => o.isCorrect) || [];
                     const totalCorrectCount = correctOptions.length;
 
                     const userCorrectSelections = userAnswers.filter((a: any) => q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect).length;
                     const userWrongSelections = userAnswers.filter((a: any) => !q.options?.find((o: any) => o.id === a.selectedOptionId)?.isCorrect).length;
 
-                    const marksPerCorrect = totalCorrectCount > 0 ? q.points / totalCorrectCount : q.points;
-
-                    // Calculate earned marks (Logic might need to align with server if server handles partials differently, 
-                    // but for display we replicate it)
+                    // Calculate earned marks (Proportional)
                     let earnedMarks = 0;
                     if (q.type === 'MCQ') {
-                        earnedMarks = Math.round(userCorrectSelections * marksPerCorrect);
-                        // Prevent negative or overflow if any weird logic, but typically capped at q.points
+                        if (totalCorrectCount > 0) {
+                            // Logic: Each correct selection gives (Points / TotalCorrect). 
+                            // Any wrong selection could arguably deduct, but for now we follow the "partial for correct" rule.
+                            earnedMarks = Math.round(userCorrectSelections * (q.points / totalCorrectCount));
+                        }
                         if (earnedMarks > q.points) earnedMarks = q.points;
                     } else {
-                        // For manual answers
                         earnedMarks = userAnswers[0]?.marksAwarded ?? 0;
                     }
 
@@ -563,7 +561,6 @@ function ResultsView({ examResults }: { examResults: any }) {
 
                     return (
                         <div key={q.id} className="group relative overflow-hidden bg-white/[0.02] border border-white/5 rounded-3xl transition-all hover:bg-white/[0.04]">
-                            {/* Status bar on left */}
                             <div className={cn("absolute left-0 top-0 bottom-0 w-1.5",
                                 isFullMarks ? "bg-green-500" : isPartial ? "bg-yellow-500" : q.type !== 'MCQ' && userAnswers[0]?.marksAwarded === null ? "bg-blue-500" : "bg-red-500"
                             )} />
@@ -617,13 +614,14 @@ function ResultsView({ examResults }: { examResults: any }) {
                                                 icon = <X className="h-5 w-5 text-red-500" />;
                                                 feedback = <span className="text-xs text-red-500 font-medium block mt-1">✗ ඔබ තෝරපු පිළිතුර - වැරදියි!</span>;
                                             } else if (!isUserChoice && isCorrect) {
-                                                styles = "border-yellow-500/50 bg-yellow-500/10 opacity-100";
-                                                icon = <Target className="h-5 w-5 text-yellow-500" />;
-                                                feedback = <span className="text-xs text-yellow-500 font-medium block mt-1">🎯 මෙයයි නිවැරදි පිළිතුර (Missed)</span>;
+                                                // Missed correct answer styling (Green-Dot Border)
+                                                styles = "border-green-500 border-2 border-dashed bg-green-500/5 opacity-100";
+                                                icon = <Target className="h-5 w-5 text-green-500" />;
+                                                feedback = <span className="text-xs text-green-500 font-medium block mt-1">🎯 මගහැරුණු නිවැරදි පිළිතුර (Missed)</span>;
                                             }
 
                                             return (
-                                                <div key={opt.id} className={cn("relative p-4 rounded-xl border flex items-start gap-3 transition-all", styles)}>
+                                                <div key={opt.id} className={cn("relative p-4 rounded-xl flex items-start gap-3 transition-all cursor-default", styles)}>
                                                     <div className="mt-0.5 flex-shrink-0">{icon || <div className="w-5 h-5 rounded-full border border-white/20" />}</div>
                                                     <div className="flex-1">
                                                         <p className="text-sm md:text-base font-medium">{opt.text}</p>
@@ -648,7 +646,6 @@ function ResultsView({ examResults }: { examResults: any }) {
                                                     </div>
                                                 </div>
                                             )}
-                                            {/* If graded manually */}
                                             {userAnswers[0]?.marksAwarded !== null && (
                                                 <div className="bg-green-500/10 border border-green-500/30 p-4 rounded-xl text-green-400 text-sm">
                                                     <p className="font-bold flex items-center gap-2"><Check className="h-4 w-4" /> Graded / ලකුණු ලබා දී ඇත</p>
@@ -662,7 +659,11 @@ function ResultsView({ examResults }: { examResults: any }) {
                                 {/* Detailed Breakdown Footer */}
                                 {q.type === 'MCQ' && (
                                     <div className="bg-black/20 rounded-xl p-4 text-xs md:text-sm space-y-2 border border-white/5">
-                                        <p className="font-bold text-white/50 uppercase tracking-widest text-[10px] mb-2">Analysis / විශ්ලේෂණය</p>
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Info className="h-4 w-4 text-white/50" />
+                                            <p className="font-bold text-white/50 uppercase tracking-widest text-[10px]">Analysis / විශ්ලේෂණය</p>
+                                        </div>
+
                                         <div className="grid grid-cols-2 gap-4">
                                             <div>
                                                 <div className="flex justify-between text-muted-foreground">
@@ -687,16 +688,28 @@ function ResultsView({ examResults }: { examResults: any }) {
                                                 )}
                                             </div>
                                         </div>
+
+                                        {/* Advanced Sinhala Explanations */}
+                                        {userCorrectSelections > 0 && userCorrectSelections < totalCorrectCount && userWrongSelections === 0 && (
+                                            <div className="mt-3 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg text-yellow-500">
+                                                <p className="text-xs font-semibold">⚠️ Partial Marks Awarded</p>
+                                                <p className="text-xs opacity-90 mt-1">
+                                                    මෙම ප්‍රශ්නයට නිවැරදි පිළිතුරු කිහිපයක් ඇත. ඔබ ඉන් කොටසක් පමණක් තෝරාගෙන ඇති බැවින් ඔබට හිමිවන්නේ ලකුණු වලින් කොටසක් පමණි.
+                                                    (Since you selected only some of the correct answers, you received partial marks.)
+                                                </p>
+                                            </div>
+                                        )}
+
                                         {userWrongSelections > 0 && (
-                                            <p className="text-red-400/80 text-xs mt-2 border-t border-white/5 pt-2">
-                                                * මීට අමතරව ඔබ වැරදි පිළිතුරු {userWrongSelections} ක් තෝරාගෙන ඇත.
-                                                {/* Sinhala: Also you selected X wrong answers */}
+                                            <p className="text-red-400/80 text-xs mt-2 border-t border-white/5 pt-2 flex items-start gap-2">
+                                                <X className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                                ඔබ වැරදි පිළිතුරු {userWrongSelections} ක් තෝරාගෙන ඇති බැවින් ලකුණු අඩු වී ඇත.
                                             </p>
                                         )}
-                                        {userCorrectSelections < totalCorrectCount && (
-                                            <p className="text-yellow-400/80 text-xs mt-1">
-                                                * ඔබට නිවැරදි පිළිතුරු {totalCorrectCount - userCorrectSelections} ක් මඟ හැරී ඇත.
-                                                {/* Sinhala: You missed X correct answers */}
+                                        {userCorrectSelections < totalCorrectCount && userWrongSelections > 0 && (
+                                            <p className="text-yellow-400/80 text-xs mt-1 flex items-start gap-2">
+                                                <Target className="h-3 w-3 mt-0.5 flex-shrink-0" />
+                                                තවද ඔබට නිවැරදි පිළිතුරු {totalCorrectCount - userCorrectSelections} ක් මඟ හැරී ඇත.
                                             </p>
                                         )}
                                     </div>
@@ -710,7 +723,7 @@ function ResultsView({ examResults }: { examResults: any }) {
     );
 }
 
-// Helper Badge component since we removed imports
+// Helper Badge component
 function Badge({ className, variant, children, ...props }: any) {
     return <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2", className)} {...props}>{children}</span>
 }
