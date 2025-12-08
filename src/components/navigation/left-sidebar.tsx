@@ -18,6 +18,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Radio,
+    LogOut
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
@@ -30,6 +31,7 @@ import { Button } from '@/components/ui/button';
 import UserButton from './user-button';
 import CreateButton from './create-button';
 import SearchBar from './search-bar';
+import Image from 'next/image';
 
 export default function LeftSidebar() {
     const { data: session, status } = useSession();
@@ -84,8 +86,9 @@ export default function LeftSidebar() {
             }
         } else {
             // Logged in with visible sidebar - apply sidebar margin
+            // Increased margin to account for floating sidebar + gap
             const isMobile = window.innerWidth <= 768;
-            main.style.marginLeft = isMobile ? '0' : (isCollapsed ? '70px' : '220px');
+            main.style.marginLeft = isMobile ? '0' : (isCollapsed ? '110px' : '290px');
             main.style.display = '';
             main.style.justifyContent = '';
         }
@@ -94,12 +97,11 @@ export default function LeftSidebar() {
     if (!isLoggedIn) {
         return (
             <>
-                {/* Top-right controls for non-logged users */}
                 <div className="fixed top-3 right-4 z-50 flex items-center gap-2">
                     <div className="hidden md:block">
                         <SearchBar />
                     </div>
-                    <Button asChild size="sm" className="h-8 text-xs rounded-md bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white border-0">
+                    <Button asChild size="sm" className="h-8 text-xs rounded-full bg-white/10 hover:bg-white/20 text-white border border-white/5 backdrop-blur-md">
                         <Link href="/auth">Login</Link>
                     </Button>
                 </div>
@@ -109,9 +111,9 @@ export default function LeftSidebar() {
 
     if (shouldHideSidebar) return null;
 
-    const sidebarWidth = isCollapsed ? 'w-[70px]' : 'w-[220px]';
+    const sidebarWidth = isCollapsed ? 'w-[80px]' : 'w-[250px]';
 
-    // Suno-style NavItem
+    // Cinematic NavItem with Dark Gray/iOS feel
     const NavItem = ({
         href,
         icon: Icon,
@@ -133,22 +135,32 @@ export default function LeftSidebar() {
                 href={href}
                 title={isCollapsed ? label : undefined}
                 className={cn(
-                    "flex items-center gap-3 px-3 py-[6px] rounded transition-colors",
-                    "hover:text-foreground",
-                    active ? "text-foreground font-medium" : "text-muted-foreground",
-                    isCollapsed && "justify-center px-2"
+                    "group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300",
+                    "border border-transparent",
+                    active
+                        ? "bg-white/10 text-white shadow-sm"  // Brighter active state for dark gray bg
+                        : "text-muted-foreground hover:bg-white/5 hover:text-white",
+                    isCollapsed && "justify-center px-0 w-12 h-12 mx-auto"
                 )}
             >
-                <Icon className="w-[18px] h-[18px] flex-shrink-0" />
+                <Icon className={cn(
+                    "w-5 h-5 flex-shrink-0 transition-transform duration-300",
+                    active ? "scale-110 text-white" : "group-hover:scale-110"
+                )} />
+
                 {!isCollapsed && (
-                    <>
-                        <span className="text-sm">{label}</span>
-                        {badge && (
-                            <span className="ml-auto text-[10px] bg-secondary text-foreground px-1.5 py-0.5 rounded text-xs">
-                                {badge}
-                            </span>
-                        )}
-                    </>
+                    <span className={cn(
+                        "text-sm font-medium tracking-wide transition-all",
+                        active ? "translate-x-1" : "group-hover:translate-x-1"
+                    )}>
+                        {label}
+                    </span>
+                )}
+
+                {!isCollapsed && badge && (
+                    <span className="ml-auto text-[9px] bg-white/20 text-white px-2 py-0.5 rounded-full font-bold">
+                        {badge}
+                    </span>
                 )}
             </Link>
         );
@@ -156,9 +168,9 @@ export default function LeftSidebar() {
 
     // Group Label component
     const GroupLabel = ({ label }: { label: string }) => {
-        if (isCollapsed) return <div className="h-3" />;
+        if (isCollapsed) return <div className="h-6" />;
         return (
-            <div className="px-3 pt-4 pb-1 text-[11px] font-medium text-muted-foreground/50 uppercase tracking-wider">
+            <div className="px-4 mt-6 mb-2 text-[10px] uppercase tracking-[0.2em] font-bold text-white/30 select-none">
                 {label}
             </div>
         );
@@ -166,156 +178,140 @@ export default function LeftSidebar() {
 
     return (
         <>
-            {/* Absolute positioned top-right controls */}
-            <div className="fixed top-3 right-4 z-50 flex items-center gap-2">
+            {/* Top Right Controls */}
+            <div className="fixed top-6 right-8 z-50 flex items-center gap-3">
                 <div className="hidden md:block">
                     <SearchBar />
                 </div>
-
                 {canManage && <CreateButton />}
-
-                {status === 'authenticated' && user ? (
-                    <UserButton />
-                ) : (
-                    <Button asChild size="sm" className="h-8 text-xs">
-                        <Link href="/auth">Login</Link>
-                    </Button>
-                )}
+                <UserButton />
             </div>
 
             {/* Mobile menu button */}
             <button
-                className="fixed top-3 left-3 z-50 md:hidden p-2 hover:bg-secondary rounded"
+                className="fixed top-4 left-4 z-50 md:hidden p-2.5 bg-zinc-900/80 backdrop-blur-md border border-white/10 text-white rounded-xl shadow-lg"
                 onClick={() => setMobileOpen(!mobileOpen)}
             >
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
 
-            {/* Sidebar */}
+            {/* Floating Sidebar Container (iOS Style) */}
             <aside
                 className={cn(
-                    "fixed left-0 top-0 h-screen z-40 p-4",
-                    "bg-background border-r border-border",
-                    "flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-200",
+                    "fixed left-4 top-4 bottom-4 z-40 p-4 pb-6", // Floating positioning
+                    "rounded-[2rem] shadow-2xl", // High rounding
+                    "bg-[#111112] border border-white/[0.08]", // Dark Gray / Zinc-900ish, very subtle border
+                    "flex flex-col overflow-y-auto overflow-x-hidden transition-all duration-300 cubic-bezier(0.25, 0.1, 0.25, 1)",
                     sidebarWidth,
-                    mobileOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+                    mobileOpen ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
                 )}
             >
-                {/* Logo - SUNO style with arrow toggle */}
+                {/* Logo Area */}
                 <div className={cn(
-                    "px-5 py-5 flex items-center",
-                    isCollapsed ? "justify-center px-3" : "justify-between"
+                    "flex items-center mb-8 pt-2",
+                    isCollapsed ? "justify-center" : "justify-between px-2"
                 )}>
-                    <Link href="/" className="flex items-center">
-                        {isCollapsed ? (
-                            <span className="text-xl font-bold">{siteConfig.name.charAt(0)}</span>
-                        ) : (
-                            <span className="text-2xl font-bold tracking-tight">{siteConfig.name.toUpperCase()}</span>
+                    <Link href="/" className="flex items-center gap-2 group">
+                        <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold shadow-lg group-hover:bg-white/20 transition-all">
+                            {siteConfig.name.charAt(0)}
+                        </div>
+                        {!isCollapsed && (
+                            <span className="text-xl font-bold tracking-tight text-white group-hover:text-white/80 transition-colors">
+                                {siteConfig.name}
+                            </span>
                         )}
                     </Link>
                     {!isCollapsed && (
                         <button
                             onClick={toggleCollapse}
-                            className="text-muted-foreground hover:text-foreground p-1"
-                            title="Collapse sidebar"
+                            className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                         >
                             <ChevronLeft className="w-4 h-4" />
                         </button>
                     )}
                 </div>
 
-                {/* Expand button when collapsed */}
                 {isCollapsed && (
                     <button
                         onClick={toggleCollapse}
-                        className="mx-auto mb-3 text-muted-foreground hover:text-foreground p-1"
-                        title="Expand sidebar"
+                        className="mx-auto mb-6 w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
                     >
                         <ChevronRight className="w-4 h-4" />
                     </button>
                 )}
 
-                {/* User Profile Area - at top like Suno */}
+                {/* User Profile Area (Floating Bubble) */}
                 {user && !isCollapsed && (
-                    <div className="px-3 mb-4">
+                    <div className="mb-6 px-1">
                         <Link
                             href={`/profile/${user.id}`}
-                            className="flex items-center gap-3 px-2 py-2 rounded hover:bg-secondary/50 transition-colors"
+                            className="relative flex items-center gap-3 p-1.5 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group"
                         >
-                            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-medium text-white">
-                                {user.name?.charAt(0) || 'U'}
+                            <div className="relative w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors">
+                                <Image
+                                    src={user.image || '/avatar-placeholder.png'}
+                                    alt={user.name || 'User'}
+                                    fill
+                                    className="object-cover"
+                                />
                             </div>
-                            <span className="text-sm text-muted-foreground flex-1 truncate">{user.name || 'User'}</span>
-                            <ChevronRight className="w-4 h-4 text-muted-foreground rotate-90" />
+                            <div className="flex flex-col">
+                                <span className="text-xs font-medium text-white group-hover:text-white/80 transition-colors max-w-[120px] truncate">
+                                    {user.name}
+                                </span>
+                                <span className="text-[10px] text-white/40 uppercase tracking-wider">
+                                    {user.role === 'SUPER_ADMIN' ? 'Admin' : 'Member'}
+                                </span>
+                            </div>
+                            <ChevronRight className="ml-auto mr-2 w-3 h-3 text-white/30 group-hover:text-white/60 transition-colors" />
                         </Link>
                     </div>
                 )}
 
-                {/* Collapsed user avatar */}
                 {user && isCollapsed && (
-                    <div className="px-2 mb-4 flex justify-center">
+                    <div className="mb-6 flex justify-center">
                         <Link
                             href={`/profile/${user.id}`}
-                            title={user.name || 'Profile'}
-                            className="w-8 h-8 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center text-sm font-medium text-white hover:opacity-80"
+                            className="relative w-10 h-10 rounded-full overflow-hidden border-2 border-white/10 hover:border-white/30 transition-colors"
                         >
-                            {user.name?.charAt(0) || 'U'}
+                            <Image
+                                src={user.image || '/avatar-placeholder.png'}
+                                alt={'User'}
+                                fill
+                                className="object-cover"
+                            />
                         </Link>
                     </div>
                 )}
 
-                {/* Main Navigation - with group labels, 5px gap */}
-                <nav className="flex-1 px-1">
-                    {/* Main Section */}
-                    <div className="space-y-[5px]">
-                        <NavItem href="/" icon={Home} label="Home" />
-                        <NavItem href="/search" icon={Search} label="Search" />
-                        {user && <NavItem href="/activity" icon={Activity} label="Activity" />}
-                    </div>
+                {/* Navigation Items */}
+                <nav className="flex-1 space-y-2">
+                    <NavItem href="/" icon={Home} label="Home" />
+                    <NavItem href="/search" icon={Search} label="Search" />
+                    {user && <NavItem href="/activity" icon={Activity} label="Activity" badge="New" />}
 
-                    {/* Browse Section */}
-                    <GroupLabel label="Browse" />
-                    <div className="space-y-[5px]">
+                    <GroupLabel label="Library" />
+                    <div className="space-y-1">
                         <NavItem href="/movies" icon={Film} label="Movies" />
                         <NavItem href="/series" icon={Tv} label="Series" />
                         <NavItem href="/groups" icon={Radio} label="Groups" />
+                        <NavItem href="/favorites" icon={Heart} label="Favorites" />
                     </div>
                 </nav>
 
-                {/* ========== BOTTOM SECTION ========== */}
-                <div className="mt-auto border-t border-border">
-                    {/* Admin Dashboard - if admin */}
+                {/* Bottom Section */}
+                <div className="mt-auto pt-6 border-t border-white/5 space-y-2">
                     {canManage && (
-                        <div className="px-1 py-2">
-                            <Link
-                                href="/manage"
-                                title={isCollapsed ? "Dashboard" : undefined}
-                                className={cn(
-                                    "flex items-center gap-3 px-3 py-[6px] rounded transition-colors",
-                                    "hover:text-foreground",
-                                    isActive('/manage') ? "text-foreground font-medium" : "text-muted-foreground",
-                                    isCollapsed && "justify-center px-2"
-                                )}
-                            >
-                                <Shield className="w-[18px] h-[18px] flex-shrink-0" />
-                                {!isCollapsed && (
-                                    <>
-                                        <span className="text-sm flex-1">Dashboard</span>
-                                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                                    </>
-                                )}
-                            </Link>
-                        </div>
+                        <NavItem href="/manage" icon={Shield} label="Dashboard" badge="Admin" />
                     )}
                 </div>
+
             </aside>
-
-
 
             {/* Mobile overlay */}
             {mobileOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 z-30 md:hidden"
+                    className="fixed inset-0 bg-black/80 backdrop-blur-sm z-30 md:hidden"
                     onClick={() => setMobileOpen(false)}
                 />
             )}
