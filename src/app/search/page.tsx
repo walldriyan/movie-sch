@@ -18,8 +18,8 @@ interface SearchPageProps {
 }
 
 export const metadata = {
-    title: 'Search | Fiddle',
-    description: 'Search and discover educational content, articles, and more on Fiddle.',
+    title: 'Search & Explore | Fiddle',
+    description: 'Search and discover movies, series, and educational content on Fiddle.',
 };
 
 export default async function SearchPage({ searchParams }: SearchPageProps) {
@@ -47,11 +47,56 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     }
     filters.sortBy = sortBy;
 
+    // Main posts query
     const { posts: rawPosts, totalPages } = await getPosts({
         page,
         limit: 10,
         filters
     });
+
+    // Explore data - fetch only when no search query (default explore view)
+    let trendingPosts: any[] = [];
+    let newReleases: any[] = [];
+    let topRatedPosts: any[] = [];
+    let allGenres: string[] = [];
+
+    if (!query && page === 1) {
+        try {
+            const [trendingResult, newReleasesResult, topRatedResult] = await Promise.allSettled([
+                // Trending - most viewed
+                getPosts({ page: 1, limit: 6, filters: { sortBy: 'viewCount-desc' } }),
+                // New Releases - latest published
+                getPosts({ page: 1, limit: 6, filters: { sortBy: 'publishedAt-desc' } }),
+                // Top Rated - highest IMDB rating
+                getPosts({ page: 1, limit: 6, filters: { sortBy: 'imdbRating-desc' } }),
+            ]);
+
+            if (trendingResult.status === 'fulfilled') {
+                trendingPosts = trendingResult.value.posts || [];
+            }
+            if (newReleasesResult.status === 'fulfilled') {
+                newReleases = newReleasesResult.value.posts || [];
+            }
+            if (topRatedResult.status === 'fulfilled') {
+                topRatedPosts = topRatedResult.value.posts || [];
+            }
+
+            // Extract unique genres from all posts
+            const allPosts = [...rawPosts, ...trendingPosts, ...newReleases, ...topRatedPosts];
+            const genreSet = new Set<string>();
+            allPosts.forEach(post => {
+                const genres = Array.isArray(post.genres)
+                    ? post.genres
+                    : typeof post.genres === 'string'
+                        ? post.genres.split(',').map((g: string) => g.trim()).filter(Boolean)
+                        : [];
+                genres.forEach((g: string) => genreSet.add(g));
+            });
+            allGenres = Array.from(genreSet).slice(0, 12);
+        } catch (error) {
+            console.error('Error fetching explore data:', error);
+        }
+    }
 
     // Fetch user-specific data in parallel
     let userNotifications: any[] = [];
@@ -113,9 +158,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     userNotifications={userNotifications}
                     userExams={userExams}
                     userGroups={userGroups}
+                    // Explore data
+                    trendingPosts={trendingPosts as any[]}
+                    newReleases={newReleases as any[]}
+                    topRatedPosts={topRatedPosts as any[]}
+                    allGenres={allGenres}
                 />
             </Suspense>
         </div>
     );
 }
-

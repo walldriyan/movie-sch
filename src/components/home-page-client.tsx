@@ -502,7 +502,7 @@ export default function HomePageClient({
                                         </div>
                                     </div>
                                     <Button variant="ghost" className="text-muted-foreground hover:text-primary" asChild>
-                                        <Link href="/explore">
+                                        <Link href="/search">
                                             View All <ChevronRight className="w-4 h-4 ml-1" />
                                         </Link>
                                     </Button>

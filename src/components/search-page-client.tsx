@@ -461,6 +461,11 @@ interface SearchPageClientProps {
     userNotifications?: any[];
     userExams?: any[];
     userGroups?: any[];
+    // Explore data
+    trendingPosts?: any[];
+    newReleases?: any[];
+    topRatedPosts?: any[];
+    allGenres?: string[];
 }
 
 export default function SearchPageClient({
@@ -475,6 +480,11 @@ export default function SearchPageClient({
     userNotifications = [],
     userExams = [],
     userGroups = [],
+    // Explore data
+    trendingPosts = [],
+    newReleases = [],
+    topRatedPosts = [],
+    allGenres = [],
 }: SearchPageClientProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
@@ -607,6 +617,113 @@ export default function SearchPageClient({
                     </div>
                 </div>
             </section>
+
+            {/* ========================================
+                EXPLORE SECTIONS - Only show when no query
+               ======================================== */}
+            {!query && (trendingPosts.length > 0 || newReleases.length > 0 || topRatedPosts.length > 0 || allGenres.length > 0) && (
+                <div className="space-y-8">
+                    {/* Browse by Genre */}
+                    {allGenres.length > 0 && (
+                        <section className="px-[22px]">
+                            <div className="max-w-7xl mx-auto">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <Folder className="w-5 h-5 text-purple-400" />
+                                        Browse by Genre
+                                    </h2>
+                                </div>
+                                <div className="flex flex-wrap gap-2">
+                                    {allGenres.map((genre) => (
+                                        <Link
+                                            key={genre}
+                                            href={`/search?q=${encodeURIComponent(genre)}`}
+                                            className="px-4 py-2 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-white/80 text-sm font-medium hover:from-purple-500/30 hover:to-pink-500/30 hover:text-white transition-all"
+                                        >
+                                            {genre}
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Trending Section */}
+                    {trendingPosts.length > 0 && (
+                        <section className="px-[22px]">
+                            <div className="max-w-7xl mx-auto">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <TrendingUp className="w-5 h-5 text-orange-400" />
+                                        Trending Now
+                                    </h2>
+                                    <Link
+                                        href="/search?sortBy=viewCount-desc"
+                                        className="text-sm text-white/50 hover:text-white flex items-center gap-1"
+                                    >
+                                        See all <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    {trendingPosts.slice(0, 6).map((post) => (
+                                        <PostCard key={post.id} post={post} variant="compact" />
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* New Releases Section */}
+                    {newReleases.length > 0 && (
+                        <section className="px-[22px]">
+                            <div className="max-w-7xl mx-auto">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <Sparkles className="w-5 h-5 text-green-400" />
+                                        New Releases
+                                    </h2>
+                                    <Link
+                                        href="/search?sortBy=publishedAt-desc"
+                                        className="text-sm text-white/50 hover:text-white flex items-center gap-1"
+                                    >
+                                        See all <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    {newReleases.slice(0, 6).map((post) => (
+                                        <PostCard key={post.id} post={post} variant="compact" />
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Top Rated Section */}
+                    {topRatedPosts.length > 0 && (
+                        <section className="px-[22px]">
+                            <div className="max-w-7xl mx-auto">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                        <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                                        Top Rated
+                                    </h2>
+                                    <Link
+                                        href="/search?sortBy=imdbRating-desc"
+                                        className="text-sm text-white/50 hover:text-white flex items-center gap-1"
+                                    >
+                                        See all <ChevronRight className="w-4 h-4" />
+                                    </Link>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                    {topRatedPosts.slice(0, 6).map((post) => (
+                                        <PostCard key={post.id} post={post} variant="compact" />
+                                    ))}
+                                </div>
+                            </div>
+                        </section>
+                    )}
+                </div>
+            )}
 
             {/* User-Specific Content Sections */}
             {(userNotifications.length > 0 || userExams.length > 0 || userGroups.length > 0) && (
