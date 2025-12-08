@@ -184,10 +184,10 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
       console.log('[EXAMS_CLIENT] Exam data loaded:', examToEdit);
 
       // Add post to list if not already there
-      if (examToEdit.postId && examToEdit.post) {
+      if ((examToEdit as any).postId && (examToEdit as any).post) {
         const postExists = posts.some(p => p.id === examToEdit.postId);
         if (!postExists) {
-          setPosts(prev => [examToEdit.post as PostWithGroup, ...prev]);
+          setPosts(prev => [(examToEdit as any).post as any as PostWithGroup, ...prev]);
         }
       }
 
@@ -206,18 +206,18 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
         attemptsAllowed: examToEdit.attemptsAllowed,
         startDate: examToEdit.startDate,
         endDate: examToEdit.endDate,
-        questions: examToEdit.questions.map(q => ({
+        questions: (examToEdit as any).questions.map((q: any) => ({
           id: q.id,
           text: q.text,
           points: q.points,
           type: q.type,
           isMultipleChoice: q.isMultipleChoice,
-          options: q.options.map(o => ({
+          options: q.options.map((o: any) => ({
             id: o.id,
             text: o.text,
             isCorrect: o.isCorrect
           })),
-          images: q.images?.map(img => ({ url: img.url })) || []
+          images: q.images?.map((img: any) => ({ url: img.url })) || []
         }))
       });
 
@@ -272,16 +272,16 @@ export default function ExamsClient({ initialPosts, initialGroups, initialExams 
         status: examToExport.status,
         durationMinutes: examToExport.durationMinutes,
         attemptsAllowed: examToExport.attemptsAllowed,
-        questions: examToExport.questions.map(q => ({
+        questions: (examToExport as any).questions.map((q: any) => ({
           text: q.text,
           points: q.points,
           type: q.type,
           isMultipleChoice: q.isMultipleChoice,
-          options: q.options.map(o => ({
+          options: q.options.map((o: any) => ({
             text: o.text,
             isCorrect: o.isCorrect,
           })),
-          images: q.images?.map(img => ({ url: img.url })) || [],
+          images: q.images?.map((img: any) => ({ url: img.url })) || [],
         })),
       };
 

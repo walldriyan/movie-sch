@@ -60,24 +60,289 @@ mee@sch.com
 
 
 
-git fetch --prune
+Complete Local Testing Guide
+1️⃣ Production Build Test කරන්න (වැදගත්ම එක!)
+bash# Step 1: Clean everything
+rm -rf .next node_modules/.cache
 
-git branch -a
+# Step 2: Production build එකක් හදාගන්න
+npm run build
 
- 
-git branch -D 18Group
-git branch -D v19improve
-git branch -D v23noti
+# Step 3: Production mode එකේ run කරන්න
+npm start
 
+# Step 4: Browser එකේ test කරන්න
+# http://localhost:3000
+2️⃣ Build Size Check කරන්න
+bash# Next.js build size report එක බලන්න
+npm run build
 
-  git branch -D v10
-   git branch -D v11
-   git branch -D v112
-   git branch -D v12
-   git branch -D v14
+# Terminal එකේ මේ වගේ එයි:
+# Page                                       Size     First Load JS
+# ┌ ○ /                                     5.2 kB          87 kB
+# └ ○ /manage                              12.3 kB          94 kB
 
-   git branch -D 15v
-   git branch -D v16
-   git branch -D v21groupsfetures
+# .next folder size check කරන්න
+du -sh .next/*
 
+# විශේෂයෙන් මේවා බලන්න:
+du -sh .next/cache      # මේක 0-50MB විතර විය යුතුයි
+du -sh .next/server     # මේක 150MB අඩු විය යුතුයි
+3️⃣ Vercel CLI එකෙන් Local Test කරන්න (හොඳම method!)
+bash# Step 1: Vercel CLI install කරන්න
+npm i -g vercel
 
+# Step 2: Login වෙන්න
+vercel login
+
+# Step 3: Local production build එකක් test කරන්න
+vercel build --prod
+
+# මේකෙන් පෙන්නන්නේ:
+# - Total size
+# - Each function size
+# - Warnings about size limits
+
+# Step 4: Local deploy simulation
+vercel --prod --confirm=false
+
+# මේකෙන් deploy නොකර test කරන්න පුළුවන්
+4️⃣ Bundle Analysis කරන්න
+bash# Step 1: Package install කරන්න (ඔයා දැනටමත් තියෙනවා)
+# @next/bundle-analyzer already in devDependencies
+
+# Step 2: next.config.js update කරන්න
+next.config.js:
+javascriptconst withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
+module.exports = withBundleAnalyzer({
+  // ඔයාගේ existing config
+  reactStrictMode: true,
+  // ...
+})
+bash# Step 3: Analyze කරන්න
+ANALYZE=true npm run build
+
+# Browser එකේ automatically open වෙයි
+# කොයි packages වැඩිද පේනවා
+5️⃣ Automated Testing Setup
+A. Pre-commit Hook Setup (Git commit කරන්න කලින් test)
+bash# Step 1: Husky install කරන්න
+npm install -D husky
+
+# Step 2: Initialize කරන්න
+npx husky init
+
+# Step 3: Pre-commit hook එකක් හදාගන්න
+echo 'npm run lint && npm run typecheck' > .husky/pre-commit
+B. GitHub Actions Setup (Push කරන්න කලින් auto test)
+.github/workflows/test.yml file එකක් හදාගන්න:
+yamlname: Build & Size Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Generate Prisma Client
+      run: npx prisma generate
+    
+    - name: Run TypeScript check
+      run: npm run typecheck
+    
+    - name: Run Linter
+      run: npm run lint
+    
+    - name: Build project
+      run: npm run build
+      env:
+        SKIP_ENV_VALIDATION: true
+    
+    - name: Check build size
+      run: |
+        echo "Build Size Report:"
+        du -sh .next/
+        du -sh .next/server/
+        du -sh .next/cache/
+        
+        # Size check (250 MB limit)
+        SIZE=$(du -sm .next/server/ | cut -f1)
+        if [ $SIZE -gt 200 ]; then
+          echo "⚠️ Warning: Build size is ${SIZE}MB (approaching 250MB limit)"
+          exit 1
+        fi
+6️⃣ Custom Build Check Script
+scripts/pre-deploy-check.ts (ඔයා දැනටමත් තියෙනවා):
+typescript// scripts/build-check.ts හදාගන්න
+import { execSync } from 'child_process';
+import { statSync, readdirSync } from 'fs';
+import { join } from 'path';
+
+const MAX_SIZE_MB = 200; // Safety margin before 250MB
+const BUILD_DIR = '.next/server';
+
+function getFolderSize(dir: string): number {
+  let size = 0;
+  try {
+    const files = readdirSync(dir);
+    for (const file of files) {
+      const filePath = join(dir, file);
+      const stats = statSync(filePath);
+      if (stats.isDirectory()) {
+        size += getFolderSize(filePath);
+      } else {
+        size += stats.size;
+      }
+    }
+  } catch (error) {
+    console.error(`Error reading ${dir}:`, error);
+  }
+  return size;
+}
+
+async function checkBuildSize() {
+  console.log('🔍 Checking build size...\n');
+
+  // Clean build
+  console.log('🧹 Cleaning previous build...');
+  execSync('rm -rf .next', { stdio: 'inherit' });
+
+  // Generate Prisma
+  console.log('📦 Generating Prisma client...');
+  execSync('npx prisma generate', { stdio: 'inherit' });
+
+  // Build
+  console.log('🔨 Building project...');
+  execSync('npm run build', { stdio: 'inherit' });
+
+  // Check sizes
+  const serverSize = getFolderSize(BUILD_DIR);
+  const sizeMB = (serverSize / (1024 * 1024)).toFixed(2);
+
+  console.log('\n📊 Build Size Report:');
+  console.log(`Server bundle: ${sizeMB} MB`);
+  console.log(`Limit: ${MAX_SIZE_MB} MB`);
+
+  if (parseFloat(sizeMB) > MAX_SIZE_MB) {
+    console.error(`\n❌ Build size (${sizeMB}MB) exceeds ${MAX_SIZE_MB}MB!`);
+    process.exit(1);
+  }
+
+  console.log('\n✅ Build size check passed!');
+}
+
+checkBuildSize().catch((error) => {
+  console.error('Error:', error);
+  process.exit(1);
+});
+bash# Run කරන්න
+npx tsx scripts/build-check.ts
+7️⃣ Complete Testing Checklist
+bash# 1. Code quality
+npm run lint
+npm run typecheck
+
+# 2. Tests run කරන්න (if you have tests)
+npm run test
+
+# 3. Clean build
+rm -rf .next node_modules/.cache
+npm run build
+
+# 4. Size check
+du -sh .next/server/
+
+# 5. Production test
+npm start
+# Browser එකේ test කරන්න
+
+# 6. Vercel simulation
+vercel build --prod
+
+# 7. Bundle analysis (optional)
+ANALYZE=true npm run build
+8️⃣ NPM Scripts Update කරන්න
+package.json:
+json{
+  "scripts": {
+    "precheck": "npm run lint && npm run typecheck",
+    "build:test": "rm -rf .next && npm run build && du -sh .next/server/",
+    "deploy:check": "npm run precheck && npm run build:test && echo '✅ Ready to deploy!'",
+    "vercel:local": "vercel build --prod"
+  }
+}
+9️⃣ Daily Workflow
+bash# Morning routine (before coding):
+git pull origin main
+npm install  # if package.json changed
+
+# Before commit:
+npm run precheck      # Lint + TypeCheck
+npm run build:test    # Build + Size check
+
+# Before deploy:
+npm run deploy:check  # Full check
+vercel build --prod   # Vercel simulation
+
+# Deploy:
+git push origin main
+🔟 IDE Setup (VS Code)
+.vscode/settings.json:
+json{
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  },
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "files.exclude": {
+    ".next": true,
+    "node_modules": true
+  }
+}
+.vscode/tasks.json:
+json{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Deploy Check",
+      "type": "shell",
+      "command": "npm run deploy:check",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Test",
+      "type": "shell",
+      "command": "npm run build:test",
+      "problemMatcher": []
+    }
+  ]
+}
+🎯 Summary - දැන් කරන්න ඕනේ:
+
+✅ npm run build - Local build test
+✅ npm start - Production mode test
+✅ vercel build --prod - Deployment simulation
+✅ ANALYZE=true npm run build - Bundle analysis
+✅ GitHub Actions setup කරන්න
+✅ Pre-commit hooks add කරන්න
+
+මේ හැම එකකම pass උනාම තමයි GitHub push කරන්න ඕනේ!

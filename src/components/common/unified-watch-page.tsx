@@ -22,7 +22,7 @@ import ReviewForm from '@/components/review-form';
 import ReviewCard from '@/components/review-card';
 import DOMPurify from 'isomorphic-dompurify';
 import AdManager from '@/components/common/ad-manager';
-import type { AdConfig } from '@/lib/actions/ads';
+import type { AdUnit } from '@/lib/actions/ads';
 
 interface UnifiedWatchPageProps {
     type: 'MOVIE' | 'SERIES';
@@ -32,7 +32,7 @@ interface UnifiedWatchPageProps {
     relatedPosts?: any[];
     series?: Series;
     allPosts?: any[];
-    adConfig: AdConfig;
+    adConfig: AdUnit[];
 }
 
 export default function UnifiedWatchPage({
@@ -81,6 +81,16 @@ export default function UnifiedWatchPage({
     const getAllPostsIndex = (posts: any[], id: number) => {
         return posts.findIndex(p => p.id === id) + 1;
     };
+
+    const activeAd = useMemo(() => {
+        return adConfig.find(ad => ad.active);
+    }, [adConfig]);
+
+    const legacyAdConfig = useMemo(() => ({
+        imageUrl: activeAd?.imageUrl || '',
+        linkUrl: activeAd?.linkUrl || '',
+        enabled: !!activeAd
+    }), [activeAd]);
 
     return (
         <div className="min-h-screen bg-background pt-24 pb-12">
@@ -302,7 +312,7 @@ export default function UnifiedWatchPage({
 
                                     {/* AD SIDEBAR (Right side of reviews) */}
                                     <div className="hidden xl:block w-[300px] shrink-0">
-                                        <AdManager initialConfig={adConfig} userRole={session?.user?.role} />
+                                        <AdManager initialConfig={legacyAdConfig} userRole={session?.user?.role} />
                                     </div>
                                 </div>
                             </TabsContent>

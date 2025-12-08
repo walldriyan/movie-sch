@@ -332,7 +332,7 @@ export default function ExamResultsClient({ exam, initialSubmissions }: { exam: 
         startRefreshTransition(async () => {
             try {
                 const { submissions: freshSubmissions } = await getExamResultsForAdmin(exam.id);
-                setSubmissions(freshSubmissions);
+                setSubmissions(freshSubmissions as any);
                 toast({ title: 'Results Refreshed' });
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Error', description: error.message });

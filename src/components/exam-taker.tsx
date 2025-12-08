@@ -17,8 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { AlertCircle, Timer, Send, PlayCircle, Clock, Loader2, Check, Eye, RotateCcw, Download, X, Target, FileQuestion, ChevronLeft, ChevronRight, Pencil, Info } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
-import { submitExam, getExamResults } from '@/lib/actions';
-import type { getExamForTaker } from '@/lib/actions';
+import { submitExam, getExamResults, getExamForTaker } from '@/lib/actions';
 import { Checkbox } from './ui/checkbox';
 import { Textarea } from './ui/textarea';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -27,8 +26,9 @@ import { cn } from '@/lib/utils';
 
 type Exam = NonNullable<Awaited<ReturnType<typeof getExamForTaker>>>;
 
-export default function ExamTaker({ exam }: { exam: Exam }) {
+export default function ExamTaker({ exam }: { exam: any }) {
     const router = useRouter();
+    const questions = exam?.questions || []; // Ensure questions is defined
     const [hasStarted, setHasStarted] = useState(false);
     const [timeLeft, setTimeLeft] = useState(exam.durationMinutes ? exam.durationMinutes * 60 : Infinity);
     const [timeTaken, setTimeTaken] = useState(0);
@@ -148,8 +148,8 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
         setHasStarted(true);
     }, []);
 
-    const allQuestionsAnswered = answeredQuestions.size >= exam.questions.length;
-    const unansweredCount = exam.questions.length - answeredQuestions.size;
+    const allQuestionsAnswered = answeredQuestions.size >= questions.length;
+    const unansweredCount = questions.length - answeredQuestions.size;
 
     if (!hasStarted) {
         return (
@@ -166,7 +166,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                 </span>
                             )}
                             <span className="flex items-center gap-2 bg-white/5 px-4 py-1.5 rounded-full border border-white/5">
-                                <FileQuestion className="h-4 w-4 text-primary" /> {exam.questions.length} Questions
+                                <FileQuestion className="h-4 w-4 text-primary" /> {questions.length} Questions
                             </span>
                         </CardDescription>
                     </CardHeader>
@@ -216,17 +216,17 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                             {!submittedId && (
                                 <div className="mb-8">
                                     <div className="flex justify-between items-end mb-2 px-2">
-                                        <span className="text-sm font-medium text-muted-foreground">Question {currentQuestion + 1} <span className="text-muted-foreground/40">/ {exam.questions.length}</span></span>
-                                        <span className="text-xs text-primary font-bold">{Math.round(((currentQuestion + 1) / exam.questions.length) * 100)}%</span>
+                                        <span className="text-sm font-medium text-muted-foreground">Question {currentQuestion + 1} <span className="text-muted-foreground/40">/ {questions.length}</span></span>
+                                        <span className="text-xs text-primary font-bold">{Math.round(((currentQuestion + 1) / questions.length) * 100)}%</span>
                                     </div>
                                     <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-primary transition-all duration-500 ease-out"
-                                            style={{ width: `${((currentQuestion + 1) / exam.questions.length) * 100}%` }}
+                                            style={{ width: `${((currentQuestion + 1) / questions.length) * 100}%` }}
                                         />
                                     </div>
                                     <div className="flex gap-1 mt-2 justify-center opacity-30 hover:opacity-100 transition-opacity">
-                                        {exam.questions.map((_, idx) => (
+                                        {questions.map((_: any, idx: number) => (
                                             <div
                                                 key={idx}
                                                 className={cn("h-1 w-1 rounded-full transition-colors",
@@ -239,7 +239,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
 
                             {/* Question Container */}
                             {!submittedId && !showCompletionScreen && (() => {
-                                const question = exam.questions[currentQuestion];
+                                const question = questions[currentQuestion];
                                 if (!question) return null;
 
                                 return (
@@ -354,10 +354,10 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                         <ChevronLeft className="mr-2 h-5 w-5" /> Previous
                                     </Button>
 
-                                    {currentQuestion < exam.questions.length - 1 ? (
+                                    {currentQuestion < questions.length - 1 ? (
                                         <Button
                                             type="button"
-                                            onClick={() => setCurrentQuestion(prev => Math.min(exam.questions.length - 1, prev + 1))}
+                                            onClick={() => setCurrentQuestion(prev => Math.min(questions.length - 1, prev + 1))}
                                             className="rounded-full px-8 py-6 h-auto text-lg font-bold bg-white text-black hover:bg-white/90 shadow-xl shadow-white/10"
                                         >
                                             Next Question <ChevronRight className="ml-2 h-5 w-5" />
@@ -380,7 +380,7 @@ export default function ExamTaker({ exam }: { exam: Exam }) {
                                     <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-6 text-6xl shadow-inner">🏁</div>
                                     <h3 className="text-3xl font-bold mb-3">All Done?</h3>
                                     <p className="text-muted-foreground text-lg mb-8">
-                                        You've answered <span className={cn("font-bold text-white", unansweredCount > 0 ? "text-yellow-500" : "text-green-500")}>{answeredQuestions.size}</span> / {exam.questions.length} questions.
+                                        You've answered <span className={cn("font-bold text-white", unansweredCount > 0 ? "text-yellow-500" : "text-green-500")}>{answeredQuestions.size}</span> / {questions.length} questions.
                                     </p>
 
                                     {(!allQuestionsAnswered) && (
@@ -553,21 +553,6 @@ function ResultsView({ examResults }: { examResults: any }) {
                             // Any wrong selection could arguably deduct, but for now we follow the "partial for correct" rule.
                             earnedMarks = Math.round(userCorrectSelections * (q.points / totalCorrectCount));
                         }
-                        if (earnedMarks > q.points) earnedMarks = q.points;
-                    } else {
-                        earnedMarks = userAnswers[0]?.marksAwarded ?? 0;
-                    }
-
-                    const lostMarks = q.points - earnedMarks;
-                    const isFullMarks = earnedMarks === q.points;
-                    const isPartial = earnedMarks > 0 && earnedMarks < q.points;
-                    const isZero = earnedMarks === 0;
-
-                    // Determine status text
-                    let statusText = "Pending";
-                    if (q.type === 'MCQ' || userAnswers[0]?.marksAwarded !== null) {
-                        if (isFullMarks) statusText = "Correct / නිවැරදියි";
-                        else if (isZero) statusText = "Wrong / වැරදියි";
                         else statusText = "Partial / අර්ධ ලකුණු";
                     }
 

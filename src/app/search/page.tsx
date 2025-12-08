@@ -380,7 +380,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 allPosts={serializedAllPosts}
                 formattedSubtitles={subtitlesWithPermissions}
                 session={session}
-                adConfig={adConfig}
+                adConfig={ads}
             />
         );
     }
@@ -531,7 +531,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                         allPosts={serializedAllPosts}
                         formattedSubtitles={subtitlesWithPermissions}
                         session={session}
-                        adConfig={adConfig}
+                        adConfig={ads}
                     />
                 );
             }
@@ -545,7 +545,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 relatedPosts={relatedPosts}
                 formattedSubtitles={subtitlesWithPermissions}
                 session={session}
-                adConfig={adConfig}
+                adConfig={ads}
             />
         );
     }
