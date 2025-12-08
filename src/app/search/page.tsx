@@ -9,7 +9,7 @@ import { canUserDownloadSubtitle } from '@/lib/actions/subtitles';
 import { getUsers } from '@/lib/actions/users';
 import { auth } from '@/auth';
 import SearchPageClient from '@/components/search-page-client';
-import MoviePageContent from '@/components/movie/movie-page-content';
+import MovieWatchPage from '@/components/movie/movie-watch-page';
 import ExamTaker from '@/components/exam-taker';
 import ProfileHeader from '@/components/profile/profile-header';
 import ProfilePostList from '@/components/profile/profile-post-list';
@@ -309,10 +309,27 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             })),
         };
 
+        // Fetch related posts for sidebar (e.g. Trending of same type)
+        const { posts: relatedRaw } = await getPosts({
+            page: 1,
+            limit: 10,
+            filters: { type: postData.type || 'MOVIE', sortBy: 'viewCount-desc' }
+        });
+
+        // Serialize related posts
+        const relatedPosts = relatedRaw.filter(p => p.id !== postData.id).map(p => ({
+            ...p,
+            createdAt: serializeDate(p.createdAt),
+            updatedAt: serializeDate(p.updatedAt),
+            publishedAt: serializeDate(p.publishedAt),
+            genres: Array.isArray(p.genres) ? p.genres : (typeof p.genres === 'string' ? p.genres.split(',') : []),
+        }));
+
         return (
-            <MoviePageContent
-                initialPost={serializablePostForClient}
-                initialSubtitles={subtitlesWithPermissions as any}
+            <MovieWatchPage
+                post={serializablePostForClient}
+                relatedPosts={relatedPosts}
+                formattedSubtitles={subtitlesWithPermissions}
                 session={session}
             />
         );
