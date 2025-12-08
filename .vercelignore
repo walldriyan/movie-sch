@@ -14,13 +14,11 @@ yarn-error.log*
 coverage/
 .nyc_output/
 __tests__/
-src/__tests__/
 *.test.ts
 *.test.tsx
 *.spec.ts
 *.spec.tsx
 jest.config.js
-jest.setup.js
 
 # IDE
 .idea/
@@ -29,8 +27,8 @@ jest.setup.js
 *.swo
 
 # Build artifacts
-.next/cache
-.next/trace
+.next/
+out/
 
 # Misc
 *.md
@@ -40,29 +38,13 @@ jest.setup.js
 .eslintcache
 .turbo/
 *.tsbuildinfo
-*.d.ts.map
 
 # Scripts (not needed in production)
 scripts/
 
-# Prisma - exclude extra schemas and cache
+# Prisma migrations (not needed, using db push)
 prisma/migrations/
-prisma/*.sqlite.prisma
-prisma/*.postgres.prisma
-prisma/schema.sqlite.prisma
-prisma/schema.postgres.prisma
-node_modules/.prisma/client/libquery_engine-*
 
 # Local database
 *.db
 *.db-journal
-*.sqlite
-
-# Fonts source (if not used)
-Fonts/WEB/fonts/*/
-
-# Documentation
-docs/
-CHANGELOG.md
-CONTRIBUTING.md
-
