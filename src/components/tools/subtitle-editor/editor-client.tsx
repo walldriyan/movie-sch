@@ -457,7 +457,7 @@ export default function SubtitleEditorClient() {
                             </div>
                         </div>
 
-                        <div className="h-[260px] shrink-0 bg-card/30 backdrop-blur-md border-t border-white/5 p-6 flex flex-col gap-4">
+                        <div className="h-[260px] shrink-0 bg-card/30 backdrop-blur-md border-t border-white/5 p-5 flex flex-col gap-3">
                             <div className="w-full px-1">
                                 <Slider
                                     value={[sliderValue]}
@@ -509,14 +509,15 @@ export default function SubtitleEditorClient() {
                             </div>
 
                             {activeIndex !== -1 ? (
-                                <div className="flex flex-col gap-3">
-                                    <div className="bg-black/20 rounded-xl border border-white/5 px-4 py-3">
-                                        <div className="text-[10px] text-muted-foreground mb-1 uppercase tracking-wider font-bold opacity-60">Original</div>
-                                        <p className="text-sm font-medium leading-relaxed text-muted-foreground/90">
+                                <div className="flex flex-col gap-2 flex-1">
+                                    {/* Original Subtitle - Above Input */}
+                                    <div className="bg-black/30 rounded-xl border border-white/10 px-4 py-2">
+                                        <p className="text-base font-medium leading-relaxed text-sky-400">
                                             {stripHtmlTags(subtitles[activeIndex].text)}
                                         </p>
                                     </div>
 
+                                    {/* Translation Input - Below Original */}
                                     <div className="relative">
                                         <Input
                                             ref={inputRef}
@@ -525,11 +526,11 @@ export default function SubtitleEditorClient() {
                                             onKeyDown={handleEnterKey}
                                             onBlur={handleSaveInput}
                                             placeholder="Enter Sinhala translation..."
-                                            className="h-14 pl-4 pr-24 text-lg bg-black/20 border-white/10 focus:border-primary/50 focus:bg-black/30 rounded-xl shadow-inner transition-all"
+                                            className="h-12 w-full pl-4 pr-24 text-lg bg-black/20 border-white/10 focus:border-primary/50 focus:bg-black/30 rounded-xl shadow-inner transition-all"
                                             autoComplete="off"
                                         />
-                                        <div className="absolute right-2 top-2 bottom-2 flex items-center">
-                                            <kbd className="hidden sm:inline-flex h-8 items-center gap-1 rounded border border-white/10 bg-white/5 px-2 font-mono text-[10px] font-medium text-muted-foreground">
+                                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                                            <kbd className="hidden sm:inline-flex h-7 items-center gap-1 rounded border border-white/10 bg-white/5 px-2 font-mono text-[10px] font-medium text-muted-foreground">
                                                 <span className="text-xs">↵</span> ENTER
                                             </kbd>
                                         </div>
