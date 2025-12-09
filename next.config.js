@@ -132,7 +132,7 @@ const nextConfig = {
       { source: '/admin/exams', destination: '/admin', permanent: true },
       { source: '/admin/exams/:id', destination: '/admin', permanent: true },
       { source: '/admin/exams/:id/results', destination: '/admin', permanent: true },
-      { source: '/activity', destination: '/', permanent: false },
+
     ];
   },
 

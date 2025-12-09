@@ -210,8 +210,9 @@ export default function LeftSidebar() {
                     "bg-card/60 backdrop-blur-xl border border-border/40 shadow-xl",
                     "flex flex-col",
                     sidebarWidth,
-                    sidebarHeight,
-                    // If hidden, center content (logo). If not, normal padding/overflow.
+                    // Height: Fit content but max screen height minus margins
+                    isHidden ? "h-[72px]" : "h-auto max-h-[calc(100vh-2rem)]",
+                    // If hidden, center content. If not, normal padding.
                     isHidden ? "items-center justify-center p-0 cursor-pointer hover:bg-white/5 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg" : "p-4 pb-6 overflow-y-auto overflow-x-hidden shadow-none",
                     mobileOpen ? "translate-x-0" : "-translate-x-[120%] md:translate-x-0"
                 )}
@@ -350,18 +351,17 @@ export default function LeftSidebar() {
                             </div>
                         )}
 
-                        {/* Navigation Items */}
                         <nav className="flex-1 space-y-2">
                             <NavItem href="/" icon={Home} label="Home" />
                             <NavItem href="/search" icon={Search} label="Search" />
-                            {user && <NavItem href="/activity" icon={Activity} label="Activity" badge="New" />}
-
-                            <GroupLabel label="Library" />
-                            <div className="space-y-1">
-                                <NavItem href="/movies" icon={Film} label="Movies" />
-                                <NavItem href="/series" icon={Tv} label="Series" />
-                                <NavItem href="/groups" icon={Radio} label="Groups" />
-                            </div>
+                            {user && (
+                                <NavItem
+                                    href="/activity"
+                                    icon={Activity}
+                                    label="Activity"
+                                    badge="New"
+                                />
+                            )}
                         </nav>
 
                         {/* Bottom Section */}

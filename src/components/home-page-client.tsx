@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight, RotateCcw } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -184,51 +184,44 @@ const HeroSection = ({ user }: { user?: any }) => {
 // ========================================
 const Footer = () => {
     return (
-        <footer className="bg-background border-t border-border mt-16">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-                    {/* Brand Column */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="flex items-center gap-2">
-                            <div className="w-10 h-10 rounded-xl bg-primary/20 flex items-center justify-center">
-                                <Film className="w-6 h-6 text-primary" />
-                            </div>
-                            <span className="font-bold text-xl">{siteConfig.name}</span>
-                        </div>
-                        <p className="text-sm text-muted-foreground max-w-sm">
-                            {siteConfig.footer.description}
-                        </p>
-                        {/* Social Links */}
-                        <div className="flex items-center gap-3 pt-2">
-                            <SocialLink href={siteConfig.social.twitter} icon="twitter" />
-                            <SocialLink href={siteConfig.social.instagram} icon="instagram" />
-                            <SocialLink href={siteConfig.social.youtube} icon="youtube" />
-                            <SocialLink href={siteConfig.social.discord} icon="discord" />
-                        </div>
-                    </div>
+        <footer className="relative mt-24 pb-12">
+            <div className="max-w-4xl mx-auto px-6 flex flex-col items-center text-center">
 
-                    {/* Footer Columns */}
-                    {siteConfig.footer.columns.map((column, index) => (
-                        <div key={index}>
-                            <h3 className="font-semibold text-white mb-4">{column.title}</h3>
-                            <ul className="space-y-3">
-                                {column.links.map((link, linkIndex) => (
-                                    <li key={linkIndex}>
-                                        <Link href={link.href} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                                            {link.label}
-                                        </Link>
-                                    </li>
-                                ))}
-                            </ul>
-                        </div>
+                {/* Brand Logo & Name */}
+                <div className="flex items-center justify-center gap-3 mb-6 mt-12">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center shadow-[0_0_15px_rgba(236,72,153,0.1)]">
+                        <Film className="w-6 h-6 text-primary" />
+                    </div>
+                    <span className="font-bold text-3xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">{siteConfig.name}</span>
+                </div>
+
+                {/* Description */}
+                <p className="text-muted-foreground max-w-lg mb-8 text-sm leading-relaxed">
+                    {siteConfig.footer.description}
+                </p>
+
+                {/* Navigation Links - Centered Row */}
+                <div className="flex flex-wrap justify-center gap-6 mb-8">
+                    {siteConfig.footer.columns.flatMap(col => col.links).map((link, i) => (
+                        <Link key={i} href={link.href} className="text-sm font-medium text-white/60 hover:text-primary transition-colors">
+                            {link.label}
+                        </Link>
                     ))}
                 </div>
 
+                {/* Social Links */}
+                <div className="flex items-center gap-4 mb-10">
+                    <SocialLink href={siteConfig.social.twitter} icon="twitter" />
+                    <SocialLink href={siteConfig.social.instagram} icon="instagram" />
+                    <SocialLink href={siteConfig.social.youtube} icon="youtube" />
+                    <SocialLink href={siteConfig.social.discord} icon="discord" />
+                </div>
+
                 {/* Bottom Bar */}
-                <Separator className="my-8 bg-white/5" />
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-muted-foreground">
+                <Separator className="w-full max-w-xs bg-white/5 mb-8" />
+                <div className="flex flex-col sm:flex-row items-center gap-6 text-xs text-muted-foreground/60">
                     <p>{siteConfig.footer.copyright}</p>
-                    <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-4">
                         <Link href="/privacy" className="hover:text-primary transition-colors">Privacy</Link>
                         <Link href="/terms" className="hover:text-primary transition-colors">Terms</Link>
                         <Link href="/contact" className="hover:text-primary transition-colors">Contact</Link>
@@ -350,21 +343,26 @@ export default function HomePageClient({
                         {/* Filter Section - Aligned Full Width */}
                         <div className="mb-10 rounded-2xl overflow-hidden bg-white/[0.03] border border-white/5 p-4 md:p-6 backdrop-blur-md">
                             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6">
-                                {/* Filter Tabs */}
+                                {/* Filter Tabs - Premium Style */}
                                 <div className="flex items-center gap-2 overflow-x-auto no-scrollbar flex-1 w-full pb-1 sm:pb-0">
                                     <Button asChild variant={'ghost'} size="sm" className={cn(
-                                        "rounded-full px-4 h-9 transition-all text-sm font-medium",
-                                        !typeFilter && !lockStatus ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90' : 'bg-white/5 text-muted-foreground hover:text-white hover:bg-white/10'
+                                        "rounded-xl px-4 h-10 transition-all text-sm font-medium border",
+                                        !typeFilter && !lockStatus
+                                            ? 'bg-primary/20 text-primary border-primary/20 shadow-[0_0_15px_rgba(236,72,153,0.2)]'
+                                            : 'bg-white/5 text-muted-foreground border-white/5 hover:bg-white/10 hover:text-white'
                                     )}>
                                         <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
-                                            <Film className="w-4 h-4" />
+                                            <Globe className="w-4 h-4" />
                                             <span>All</span>
                                         </Link>
                                     </Button>
+
                                     {typeFilters.map(filter => (
                                         <Button key={filter.value} asChild variant={'ghost'} size="sm" className={cn(
-                                            "rounded-full px-4 h-9 transition-all text-sm font-medium",
-                                            typeFilter === filter.value && !lockStatus ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20 hover:bg-primary/90' : 'bg-white/5 text-muted-foreground hover:text-white hover:bg-white/10'
+                                            "rounded-xl px-4 h-10 transition-all text-sm font-medium border",
+                                            typeFilter === filter.value && !lockStatus
+                                                ? 'bg-blue-500/20 text-blue-400 border-blue-500/20 shadow-[0_0_15px_rgba(59,130,246,0.2)]'
+                                                : 'bg-white/5 text-muted-foreground border-white/5 hover:bg-white/10 hover:text-white'
                                         )}>
                                             <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: filter.value, lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
                                                 {filter.icon}
@@ -372,16 +370,29 @@ export default function HomePageClient({
                                             </Link>
                                         </Button>
                                     ))}
+
                                     <div className="w-px h-6 bg-white/10 mx-2" />
+
                                     <Button asChild variant={'ghost'} size="sm" className={cn(
-                                        "rounded-full px-4 h-9 transition-all text-sm font-medium",
-                                        lockStatus === 'locked' ? 'bg-red-500/20 text-red-400 border border-red-500/50' : 'bg-white/5 text-muted-foreground hover:text-red-400 hover:bg-red-500/10'
+                                        "rounded-xl px-4 h-10 transition-all text-sm font-medium border",
+                                        lockStatus === 'locked'
+                                            ? 'bg-red-500/20 text-red-400 border-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.2)]'
+                                            : 'bg-white/5 text-muted-foreground border-white/5 hover:text-red-400 hover:bg-red-500/10'
                                     )}>
                                         <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
                                             <Lock className="w-3.5 h-3.5" />
                                             <span>Locked</span>
                                         </Link>
                                     </Button>
+
+                                    {/* Reset Filter Button (Visible if filters active) */}
+                                    {(typeFilter || lockStatus || timeFilter !== 'all' || sortBy !== 'updatedAt-desc') && (
+                                        <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/10 hover:text-white text-muted-foreground transition-colors ml-auto md:ml-2" title="Reset Filters">
+                                            <Link href="/">
+                                                <RotateCcw className="w-4 h-4" />
+                                            </Link>
+                                        </Button>
+                                    )}
                                 </div>
 
                                 {/* Sort Dropdown */}
