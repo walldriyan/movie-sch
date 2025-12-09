@@ -1,23 +1,43 @@
+# Build artifacts
 .next/
 node_modules/
+
+# Git files
 .git/
 .github/
+
+# Test files
 coverage/
-tests/
+__tests__/
 *.test.ts
 *.test.tsx
+*.spec.ts
+*.spec.tsx
 jest.config.js
+jest.setup.ts
+tsconfig.jest.json
+
+# Cypress
 cypress/
 *.cy.ts
-.env
-.env.local
-.env.*
-prisma/migrations/
-scripts/
+
+# Documentation
 README.md
 LICENSE
-.eslintrc.json
-tsconfig.json
-postcss.config.js
-tailwind.config.ts
+docs/
+
+# Local env files (production uses Vercel env vars)
+.env.local
+.env*.local
+
+# Development files
+.vscode/
+.idx/
+
+# Mock data
 public/mock-images/
+
+# Scripts that aren't needed for build
+scripts/health-check.ts
+scripts/production-health.ts
+scripts/performance-test.ts
