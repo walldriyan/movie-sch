@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Slider } from '@/components/ui/slider';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { FileUp, Play, Pause, Download, RotateCcw, Type, Settings2, Maximize2 } from 'lucide-react';
+import { FileUp, Play, Pause, Download, RotateCcw, Type, Settings2, Maximize2, Pin, PinOff, Save } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -95,6 +95,7 @@ export default function SubtitleEditorClient() {
     const [isPlaying, setIsPlaying] = useState(false);
     const [playbackRate, setPlaybackRate] = useState(1);
     const [previewText, setPreviewText] = useState('');
+    const [isPinned, setIsPinned] = useState(false);
 
     const currentTimeRef = useRef(0);
     const durationRef = useRef(0);
@@ -267,6 +268,25 @@ export default function SubtitleEditorClient() {
         }
     }, [activeIndex, subtitles.length, handleSaveInput, jumpToSubtitle]);
 
+    const exportSRT = useCallback(() => {
+        const lines: string[] = [];
+        for (let i = 0; i < subtitles.length; i++) {
+            const s = subtitles[i];
+            lines.push(`${i + 1}`);
+            lines.push(`${formatTime(s.start)} --> ${formatTime(s.end)}`);
+            lines.push(s.translation || '');
+            lines.push('');
+        }
+        const content = lines.join('\n');
+        const blob = new Blob([content], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'subtitle_sinhala.srt';
+        a.click();
+        URL.revokeObjectURL(url);
+    }, [subtitles]);
+
     const togglePlayPause = useCallback(() => {
         if (videoRef.current) {
             videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause();
@@ -350,20 +370,42 @@ export default function SubtitleEditorClient() {
                                 </div>
                             )}
 
-                            {/* Top Details Overlay (Only on Hover) */}
-                            <div className="absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                            {/* Top Details Overlay (Only on Hover or Pinned) */}
+                            <div className={cn(
+                                "absolute top-0 left-0 right-0 p-6 bg-gradient-to-b from-black/80 to-transparent transition-opacity duration-300 z-30",
+                                isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                            )}>
                                 <div className="flex justify-between items-center text-xs font-mono text-white/70">
-                                    <div className="px-3 py-1 bg-white/10 rounded-full backdrop-blur-md border border-white/5">
-                                        {formatTimeShort(sliderValue)} <span className="opacity-50 mx-1">/</span> {formatTimeShort(durationRef.current)}
+                                    <div className="flex items-center gap-3">
+                                        <div className="px-3 py-1 bg-white/10 rounded-full backdrop-blur-md border border-white/5">
+                                            {formatTimeShort(sliderValue)} <span className="opacity-50 mx-1">/</span> {formatTimeShort(durationRef.current)}
+                                        </div>
+                                        {videoSrc && <div className="hidden sm:flex items-center gap-2"><Badge variant="secondary" className="bg-white/10 hover:bg-white/20 text-[10px] font-normal tracking-wider">HD</Badge></div>}
                                     </div>
-                                    {videoSrc && <div className="flex items-center gap-2">
-                                        <Badge variant="secondary" className="bg-white/10 hover:bg-white/20 text-[10px] font-normal tracking-wider">HD</Badge>
-                                    </div>}
+
+                                    <Button
+                                        size="icon"
+                                        variant="ghost"
+                                        className={cn(
+                                            "w-8 h-8 rounded-full hover:bg-white/20 transition-colors",
+                                            isPinned ? "bg-white/20 text-white" : "text-white/50"
+                                        )}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setIsPinned(!isPinned);
+                                        }}
+                                        title={isPinned ? "Unpin Controls" : "Pin Controls"}
+                                    >
+                                        {isPinned ? <Pin className="w-4 h-4 fill-current" /> : <PinOff className="w-4 h-4" />}
+                                    </Button>
                                 </div>
                             </div>
 
-                            {/* Bottom Controls Overlay (Only on Hover) */}
-                            <div className="absolute bottom-0 left-0 right-0 p-4 pt-12 bg-gradient-to-t from-black/90 via-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 z-20 flex flex-col gap-2">
+                            {/* Bottom Controls Overlay (Hover or Pinned) */}
+                            <div className={cn(
+                                "absolute bottom-0 left-0 right-0 p-4 pt-12 bg-gradient-to-t from-black/90 via-black/60 to-transparent transition-opacity duration-300 z-20 flex flex-col gap-2",
+                                isPinned ? "opacity-100" : "opacity-0 group-hover:opacity-100"
+                            )}>
                                 {/* Timeline */}
                                 <div className="w-full px-1 group/slider">
                                     <Slider
@@ -424,10 +466,20 @@ export default function SubtitleEditorClient() {
                             {activeIndex !== -1 ? (
                                 <div className="max-w-4xl mx-auto flex flex-col gap-3">
                                     {/* Original Card */}
-                                    <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-2xl border border-primary/10 px-5 py-3 shadow-inner">
+                                    <div className="bg-gradient-to-br from-primary/5 to-transparent rounded-2xl border border-primary/10 px-5 py-3 shadow-inner relative group/card">
                                         <div className="flex items-center justify-between mb-1">
                                             <div className="text-[10px] text-primary/70 font-bold uppercase tracking-widest">Original Audio</div>
-                                            <div className="text-[10px] font-mono opacity-40">{formatTimeShort(subtitles[activeIndex].start)}</div>
+                                            <div className="flex items-center gap-3">
+                                                <div className="text-[10px] font-mono opacity-40">{formatTimeShort(subtitles[activeIndex].start)}</div>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    className="h-6 gap-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                                                    onClick={exportSRT}
+                                                >
+                                                    <Save className="w-3 h-3" /> Save File
+                                                </Button>
+                                            </div>
                                         </div>
                                         <p className="text-lg font-medium leading-relaxed text-sky-200 drop-shadow-sm">
                                             {stripHtmlTags(subtitles[activeIndex].text)}
