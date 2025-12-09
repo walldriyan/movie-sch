@@ -133,7 +133,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
 
     if (examId) { // Update an existing exam
         try {
-            // Increase transaction timeout for slow remote database connections (Supabase)
+            // Optimized transaction to stay within Prisma Accelerate's 15s timeout
             await prisma.$transaction(async (tx) => {
                 console.log(`[SERVER] Updating exam ID: ${examId}`);
 
@@ -146,6 +146,7 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     relationData.post = { disconnect: true };
                 }
 
+                // Update exam metadata
                 await tx.exam.update({
                     where: { id: examId },
                     data: {
@@ -154,61 +155,131 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     },
                 });
 
-                const existingQuestionIds = (await tx.question.findMany({ where: { examId }, select: { id: true } })).map(q => q.id);
+                // Fetch all existing questions and their options in one go
+                const existingQuestions = await tx.question.findMany({
+                    where: { examId },
+                    select: { id: true },
+                });
+                const existingQuestionIds = existingQuestions.map(q => q.id);
                 const questionsToUpdateIds = questionsToUpdate.map(q => q.id).filter(Boolean) as number[];
                 const questionsToDeleteIds = existingQuestionIds.filter(id => !questionsToUpdateIds.includes(id));
 
-                console.log('[SERVER] Questions to Delete IDs:', questionsToDeleteIds);
+                // Batch delete questions that are no longer needed
                 if (questionsToDeleteIds.length > 0) {
+                    console.log('[SERVER] Deleting questions:', questionsToDeleteIds);
                     await tx.submissionAnswer.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
                     await tx.questionImage.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
                     await tx.questionOption.deleteMany({ where: { questionId: { in: questionsToDeleteIds } } });
                     await tx.question.deleteMany({ where: { id: { in: questionsToDeleteIds } } });
                 }
 
-                console.log('[SERVER] Questions to Update:', questionsToUpdate);
+                // Fetch all existing options for questions being updated (single query)
+                const existingOptions = questionsToUpdateIds.length > 0
+                    ? await tx.questionOption.findMany({
+                        where: { questionId: { in: questionsToUpdateIds } },
+                        select: { id: true, questionId: true }
+                    })
+                    : [];
+
+                // Group existing options by questionId for quick lookup
+                const optionsByQuestionId = new Map<number, number[]>();
+                existingOptions.forEach(opt => {
+                    if (!optionsByQuestionId.has(opt.questionId)) {
+                        optionsByQuestionId.set(opt.questionId, []);
+                    }
+                    optionsByQuestionId.get(opt.questionId)!.push(opt.id);
+                });
+
+                // Prepare batch operations
+                const optionsToDelete: number[] = [];
+                const optionsToCreate: Array<{ questionId: number, text: string, isCorrect: boolean }> = [];
+                const optionsToUpdatePromises: Promise<any>[] = [];
+                const imagesToDelete: number[] = [];
+                const imagesToCreate: Array<{ questionId: number, url: string }> = [];
+
+                // Update questions and prepare option/image operations
+                console.log('[SERVER] Processing questions to update:', questionsToUpdate.length);
                 for (const q of questionsToUpdate) {
                     if (!q.id) continue;
-                    console.log(`[SERVER] Updating question ID: ${q.id}`);
 
+                    // Update question
                     await tx.question.update({
                         where: { id: q.id },
                         data: { text: q.text, points: q.points, type: q.type, isMultipleChoice: q.isMultipleChoice }
                     });
 
                     if (q.type === 'MCQ') {
-                        console.log(`[SERVER] Processing MCQ options for question ${q.id}`);
-                        const existingOptionIds = (await tx.questionOption.findMany({ where: { questionId: q.id }, select: { id: true } })).map(o => o.id);
+                        const existingOptionIds = optionsByQuestionId.get(q.id) || [];
                         const optionsToUpdateIds = q.options.map(o => o.id).filter(Boolean) as number[];
-                        const optionsToDeleteIds = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
+                        const optionsToDeleteForQuestion = existingOptionIds.filter(id => !optionsToUpdateIds.includes(id));
 
-                        if (optionsToDeleteIds.length > 0) {
-                            await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDeleteIds } } });
-                            await tx.questionOption.deleteMany({ where: { id: { in: optionsToDeleteIds } } });
-                        }
+                        // Collect options to delete
+                        optionsToDelete.push(...optionsToDeleteForQuestion);
 
+                        // Process each option
                         for (const opt of q.options) {
                             if (opt.id) {
-                                await tx.questionOption.update({ where: { id: opt.id }, data: { text: opt.text, isCorrect: opt.isCorrect } });
+                                // Update existing option
+                                optionsToUpdatePromises.push(
+                                    tx.questionOption.update({
+                                        where: { id: opt.id },
+                                        data: { text: opt.text, isCorrect: opt.isCorrect }
+                                    })
+                                );
                             } else {
-                                await tx.questionOption.create({ data: { questionId: q.id, text: opt.text, isCorrect: opt.isCorrect } });
+                                // Collect new options to create
+                                optionsToCreate.push({
+                                    questionId: q.id,
+                                    text: opt.text,
+                                    isCorrect: opt.isCorrect
+                                });
                             }
                         }
                     } else if (q.type === 'IMAGE_BASED_ANSWER') {
-                        console.log(`[SERVER] Processing Image-Based Answer images for question ${q.id}`);
-                        await tx.questionImage.deleteMany({ where: { questionId: q.id } });
+                        // Mark all images for this question for deletion
+                        imagesToDelete.push(q.id);
+
+                        // Collect new images to create
                         if (q.images && q.images.length > 0) {
-                            await tx.questionImage.createMany({
-                                data: q.images.map(img => ({ questionId: q.id!, url: img.url }))
-                            });
+                            imagesToCreate.push(...q.images.map(img => ({
+                                questionId: q.id!,
+                                url: img.url
+                            })));
                         }
                     }
                 }
 
-                console.log('[SERVER] Questions to Create:', questionsToCreate);
+                // Execute batch operations
+                if (optionsToDelete.length > 0) {
+                    console.log('[SERVER] Deleting options:', optionsToDelete.length);
+                    await tx.submissionAnswer.deleteMany({ where: { selectedOptionId: { in: optionsToDelete } } });
+                    await tx.questionOption.deleteMany({ where: { id: { in: optionsToDelete } } });
+                }
+
+                if (optionsToUpdatePromises.length > 0) {
+                    console.log('[SERVER] Updating options:', optionsToUpdatePromises.length);
+                    await Promise.all(optionsToUpdatePromises);
+                }
+
+                if (optionsToCreate.length > 0) {
+                    console.log('[SERVER] Creating options:', optionsToCreate.length);
+                    await tx.questionOption.createMany({ data: optionsToCreate });
+                }
+
+                if (imagesToDelete.length > 0) {
+                    console.log('[SERVER] Deleting images for questions:', imagesToDelete.length);
+                    await tx.questionImage.deleteMany({ where: { questionId: { in: imagesToDelete } } });
+                }
+
+                if (imagesToCreate.length > 0) {
+                    console.log('[SERVER] Creating images:', imagesToCreate.length);
+                    await tx.questionImage.createMany({ data: imagesToCreate });
+                }
+
+                // Create new questions with their options/images
                 if (questionsToCreate.length > 0) {
+                    console.log('[SERVER] Creating new questions:', questionsToCreate.length);
                     for (const q of questionsToCreate) {
-                        console.log('[SERVER] Creating new question:', q.text);
                         await tx.question.create({
                             data: {
                                 examId: examId,
@@ -223,8 +294,8 @@ export async function createOrUpdateExam(data: ExamFormData, examId?: number | n
                     }
                 }
             }, {
-                maxWait: 10000, // Default: 2000
-                timeout: 60000, // Default: 5000
+                maxWait: 10000, // Maximum wait time to acquire a connection
+                timeout: 15000, // Maximum timeout allowed by Prisma Accelerate
             });
         } catch (e: any) {
             console.error("[SERVER ERROR] Transaction failed:", e);
