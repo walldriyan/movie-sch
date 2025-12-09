@@ -109,7 +109,7 @@ export default function ActivityHubClient({
 
                     <div className="flex gap-3">
                         <Button asChild className="gap-2 bg-gradient-to-r from-primary to-purple-600 hover:opacity-90 border-0 shadow-lg shadow-primary/20">
-                            <Link href="/create">
+                            <Link href="/manage">
                                 <Plus className="w-4 h-4" /> Create Post
                             </Link>
                         </Button>
@@ -249,7 +249,7 @@ export default function ActivityHubClient({
                                     <FileText className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
                                     <h3 className="text-lg font-medium">No posts created yet</h3>
                                     <Button asChild variant="link" className="mt-2 text-primary">
-                                        <Link href="/create">Create your first post</Link>
+                                        <Link href="/manage">Create your first post</Link>
                                     </Button>
                                 </div>
                             )}
