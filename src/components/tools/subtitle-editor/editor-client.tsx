@@ -473,11 +473,10 @@ export default function SubtitleEditorClient() {
                                                 <div className="text-[10px] font-mono opacity-40">{formatTimeShort(subtitles[activeIndex].start)}</div>
                                                 <Button
                                                     size="sm"
-                                                    variant="ghost"
-                                                    className="h-6 gap-1.5 text-[10px] font-medium text-muted-foreground hover:text-foreground hover:bg-white/5 transition-colors"
+                                                    className="h-7 px-3 gap-2 text-[11px] font-medium bg-white/10 text-white border border-white/10 hover:bg-white/20 transition-colors"
                                                     onClick={exportSRT}
                                                 >
-                                                    <Save className="w-3 h-3" /> Save File
+                                                    <Save className="w-3.5 h-3.5" /> Save File
                                                 </Button>
                                             </div>
                                         </div>
