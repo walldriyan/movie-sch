@@ -249,18 +249,42 @@ export default function UnifiedWatchPage({
                                 className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
                                 dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
                             />
-                            {/* Exam Link */}
-                            {post.exam && post.exam.length > 0 && (
-                                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-start gap-4">
-                                    <div className="p-3 bg-primary/10 rounded-full">
-                                        <CheckCircle2 className="w-6 h-6 text-primary" />
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg mb-1">Knowledge Check</h3>
-                                        <p className="text-muted-foreground mb-4">Complete the exam for this {type === 'MOVIE' ? 'movie' : 'episode'}.</p>
-                                        <Link href={`/exams/${post.exam[0].id}`}>
-                                            <Button>Start Exam</Button>
-                                        </Link>
+                            {/* Exam Card - Premium Visual Style */}
+                            {post.exam && !post.isContentLocked && session?.user && (
+                                <div className="mt-8 relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl group">
+                                    {/* Ambient Glow */}
+                                    <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
+
+                                    <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-6">
+                                        {/* Icon Box */}
+                                        <div className="shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-inner">
+                                            <FileText className="w-7 h-7 text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                                        </div>
+
+                                        {/* Text Content */}
+                                        <div className="flex-1 space-y-1.5">
+                                            <div className="flex items-center gap-3">
+                                                <h3 className="text-xl font-bold text-white tracking-tight">
+                                                    {post.exam.title || 'Knowledge Check'}
+                                                </h3>
+                                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 backdrop-blur-sm">
+                                                    Exam
+                                                </Badge>
+                                            </div>
+                                            <p className="text-white/60 text-sm leading-relaxed max-w-2xl">
+                                                {post.exam.description || `Test your understanding of ${type === 'MOVIE' ? 'this movie' : 'this episode'} and earn points.`}
+                                            </p>
+                                        </div>
+
+                                        {/* Action Button */}
+                                        <div className="shrink-0 w-full md:w-auto mt-2 md:mt-0">
+                                            <Link href={`/search?examId=${post.exam.id}`} className="block">
+                                                <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                                    Start Assessment
+                                                    <ChevronRight className="w-4 h-4 ml-2" />
+                                                </Button>
+                                            </Link>
+                                        </div>
                                     </div>
                                 </div>
                             )}

@@ -548,13 +548,39 @@ function ResultsView({ examResults }: { examResults: any }) {
 
                     // Calculate earned marks (Proportional)
                     let earnedMarks = 0;
+                    let statusText = "WRONG / වැරදියි";
+
                     if (q.type === 'MCQ') {
                         if (totalCorrectCount > 0) {
                             // Logic: Each correct selection gives (Points / TotalCorrect). 
                             // Any wrong selection could arguably deduct, but for now we follow the "partial for correct" rule.
-                            earnedMarks = Math.round(userCorrectSelections * (q.points / totalCorrectCount));
+                            const pointsPerCorrect = q.points / totalCorrectCount;
+                            earnedMarks = Math.round(userCorrectSelections * pointsPerCorrect);
+
+                            // Prevent negative or over-scoring (though math above shouldn't over-score unless logic changes)
+                            earnedMarks = Math.min(earnedMarks, q.points);
                         }
-                        else statusText = "Partial / අර්ධ ලකුණු";
+                    } else {
+                        // For non-MCQ
+                        if (userAnswers[0]?.marksAwarded !== null) {
+                            earnedMarks = userAnswers[0].marksAwarded;
+                        }
+                    }
+
+                    const isFullMarks = earnedMarks === q.points;
+                    const isZero = earnedMarks === 0;
+                    const isPartial = earnedMarks > 0 && earnedMarks < q.points;
+                    const lostMarks = q.points - earnedMarks;
+
+                    if (q.type === 'MCQ') {
+                        if (isFullMarks) statusText = "CORRECT / නිවැරදියි";
+                        else if (isPartial) statusText = "PARTIAL / අර්ධ ලකුණු";
+                        else statusText = "WRONG / වැරදියි";
+                    } else {
+                        if (userAnswers[0]?.marksAwarded === null) statusText = "PENDING / විමර්ශනය වෙමින්";
+                        else if (isFullMarks) statusText = "CORRECT / නිවැරදියි";
+                        else if (isPartial) statusText = "PARTIAL / අර්ධ ලකුණු";
+                        else statusText = "WRONG / වැරදියි";
                     }
 
                     return (
