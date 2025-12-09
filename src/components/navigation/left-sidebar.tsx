@@ -142,17 +142,17 @@ export default function LeftSidebar() {
                 href={href}
                 title={isCollapsed ? label : undefined}
                 className={cn(
-                    "group flex items-center gap-3 px-4 py-3 rounded-2xl transition-all duration-300",
+                    "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300",
                     "border border-transparent",
                     active
-                        ? "bg-white/10 text-white shadow-sm"  // Brighter active state for dark gray bg
-                        : "text-muted-foreground hover:bg-white/5 hover:text-white",
+                        ? "bg-primary/10 text-primary font-medium shadow-sm border border-primary/10"
+                        : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                     isCollapsed && "justify-center px-0 w-12 h-12 mx-auto"
                 )}
             >
                 <Icon className={cn(
                     "w-5 h-5 flex-shrink-0 transition-transform duration-300",
-                    active ? "scale-110 text-white" : "group-hover:scale-110"
+                    active ? "scale-110 text-primary" : "group-hover:scale-110"
                 )} />
 
                 {!isCollapsed && (
@@ -196,7 +196,7 @@ export default function LeftSidebar() {
 
             {/* Mobile menu button */}
             <button
-                className="fixed top-4 left-4 z-50 md:hidden p-2.5 bg-zinc-900/80 backdrop-blur-md border border-white/10 text-white rounded-xl shadow-lg"
+                className="fixed top-4 left-4 z-50 md:hidden p-2.5 bg-card/80 backdrop-blur-md border border-border/50 text-foreground rounded-xl shadow-lg"
                 onClick={() => setMobileOpen(!mobileOpen)}
             >
                 {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -206,8 +206,8 @@ export default function LeftSidebar() {
             <aside
                 className={cn(
                     "fixed left-4 top-4 z-40 transition-all duration-500 cubic-bezier(0.25, 1, 0.5, 1)", // Smooth spring-like transition
-                    "rounded-[2rem]", // High rounding
-                    "bg-[#111112] border border-white/[0.08]", // Dark Gray / Zinc-900ish
+                    "rounded-2xl",
+                    "bg-card/60 backdrop-blur-xl border border-border/40 shadow-xl",
                     "flex flex-col",
                     sidebarWidth,
                     sidebarHeight,
@@ -241,11 +241,11 @@ export default function LeftSidebar() {
                             isCollapsed ? "justify-center flex-col gap-4" : "justify-between px-2"
                         )}>
                             <Link href="/" className="flex items-center gap-2 group">
-                                <div className="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center text-white font-bold shadow-lg group-hover:bg-white/20 transition-all">
+                                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold shadow-sm border border-primary/20 group-hover:bg-primary/20 transition-all">
                                     {siteConfig.name.charAt(0)}
                                 </div>
                                 {!isCollapsed && (
-                                    <span className="text-xl font-bold tracking-tight text-white group-hover:text-white/80 transition-colors">
+                                    <span className="text-xl font-bold tracking-tight text-foreground group-hover:text-primary transition-colors">
                                         {siteConfig.name}
                                     </span>
                                 )}
@@ -299,9 +299,9 @@ export default function LeftSidebar() {
                             <div className="mb-6 px-1">
                                 <Link
                                     href={`/profile/${user.id}`}
-                                    className="relative flex items-center gap-3 p-1.5 rounded-full bg-white/5 border border-white/5 hover:bg-white/10 transition-colors group"
+                                    className="relative flex items-center gap-3 p-1.5 rounded-full bg-muted/30 border border-border/40 hover:bg-muted/50 transition-colors group"
                                 >
-                                    <div className="relative w-9 h-9 rounded-full overflow-hidden border border-white/10 group-hover:border-white/30 transition-colors">
+                                    <div className="relative w-9 h-9 rounded-full overflow-hidden border border-border/50 group-hover:border-primary/50 transition-colors">
                                         {user.image ? (
                                             <Image
                                                 src={user.image}
@@ -316,14 +316,14 @@ export default function LeftSidebar() {
                                         )}
                                     </div>
                                     <div className="flex flex-col">
-                                        <span className="text-xs font-medium text-white group-hover:text-white/80 transition-colors max-w-[120px] truncate">
+                                        <span className="text-xs font-medium text-foreground group-hover:text-primary transition-colors max-w-[120px] truncate">
                                             {user.name}
                                         </span>
-                                        <span className="text-[10px] text-white/40 uppercase tracking-wider">
+                                        <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                                             {user.role === 'SUPER_ADMIN' ? 'Admin' : 'Member'}
                                         </span>
                                     </div>
-                                    <ChevronRight className="ml-auto mr-2 w-3 h-3 text-white/30 group-hover:text-white/60 transition-colors" />
+                                    <ChevronRight className="ml-auto mr-2 w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
                                 </Link>
                             </div>
                         )}
@@ -361,7 +361,6 @@ export default function LeftSidebar() {
                                 <NavItem href="/movies" icon={Film} label="Movies" />
                                 <NavItem href="/series" icon={Tv} label="Series" />
                                 <NavItem href="/groups" icon={Radio} label="Groups" />
-                                <NavItem href="/favorites" icon={Heart} label="Favorites" />
                             </div>
                         </nav>
 
