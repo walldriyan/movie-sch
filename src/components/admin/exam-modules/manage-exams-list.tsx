@@ -127,7 +127,7 @@ export const ManageExamsList = ({ exams, onEdit, onDelete, onExport, isLoading, 
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuItem onClick={() => onEdit(exam.id)}><Edit className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
                                                     <DropdownMenuItem asChild>
-                                                        <Link href={`/admin/exams/${exam.id}/results`}><BarChart2 className="mr-2 h-4 w-4" />View Results</Link>
+                                                        <Link href={`/admin/exams/${exam.id}/grading`}><BarChart2 className="mr-2 h-4 w-4" />View Results</Link>
                                                     </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => onExport(exam.id)}><Download className="mr-2 h-4 w-4" />Export as JSON</DropdownMenuItem>

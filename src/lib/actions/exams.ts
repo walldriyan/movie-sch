@@ -740,7 +740,7 @@ export async function updateSubmissionAttempts(submissionId: number, userId: str
         }
     });
 
-    revalidatePath(`/admin/exams/${submission.examId}/results`);
+    revalidatePath(`/admin/exams/${submission.examId}/grading`);
 }
 
 
@@ -936,8 +936,10 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
         data: { score: newTotalScore },
     });
 
-    revalidatePath(`/admin/exams/${submission.examId}/results`);
+    revalidatePath(`/admin/exams/${submission.examId}/grading`);
     revalidatePath(`/profile/${submission.userId}`);
+    revalidatePath(`/activity`);
+    revalidatePath(`/activity/result/${submissionId}`);
 
     return { success: true, newTotalScore };
 }
