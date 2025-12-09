@@ -390,7 +390,7 @@ export default function UnifiedWatchPage({
 
                     {/* RIGHT SIDEBAR COLUMN */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-24 flex flex-col gap-4 max-h-[calc(100vh-6rem)]">
+                        <div className="sticky top-32 z-10 flex flex-col gap-4 max-h-[calc(100vh-8rem)] h-fit">
 
                             {/* Sidebar Header */}
                             <div className="rounded-2xl border bg-card/50 backdrop-blur-sm p-5 shadow-sm shrink-0">
@@ -416,7 +416,7 @@ export default function UnifiedWatchPage({
                             </div>
 
                             {/* Sidebar List (Episodes or Related Movies) */}
-                            <div className="rounded-2xl border bg-card shadow-sm overflow-hidden flex flex-col flex-1 min-h-0">
+                            <div className="rounded-2xl border bg-card shadow-sm overflow-hidden flex flex-col shrink-0">
                                 {type === 'SERIES' && (
                                     <div className="p-4 border-b bg-muted/30 font-semibold text-sm flex items-center justify-between">
                                         <span>Episode List</span>
@@ -473,7 +473,7 @@ export default function UnifiedWatchPage({
                                     {type === 'SERIES' ? 'Up Next' : 'More Like This'}
                                 </div>
 
-                                <ScrollArea className="flex-1 min-h-[300px]">
+                                <ScrollArea className="flex-1">
                                     <div className="p-2 space-y-1">
                                         {type === 'SERIES' ? (
                                             // SERIES EPISODE LIST
