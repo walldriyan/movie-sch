@@ -9,13 +9,18 @@ interface CaptchaProps {
 
 export default function Captcha({ onChange }: CaptchaProps) {
     const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+    const isConfigured = !!siteKey;
 
-    // If no site key configured, hide reCAPTCHA component (no error shown)
-    if (!siteKey) {
-        // Call onChange with a bypass token so form validation passes
-        React.useEffect(() => {
+    // Use effect unconditionally
+    React.useEffect(() => {
+        if (!isConfigured) {
+            // Call onChange with a bypass token so form validation passes if not configured
             onChange('__skip_captcha__');
-        }, [onChange]);
+        }
+    }, [isConfigured, onChange]);
+
+    // If no site key configured, hide reCAPTCHA component
+    if (!siteKey) {
         return null;
     }
 
