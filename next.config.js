@@ -131,7 +131,7 @@ const nextConfig = {
       { source: '/profile/:username', destination: '/search?profileId=:username', permanent: true },
       { source: '/admin/exams', destination: '/admin', permanent: true },
       { source: '/admin/exams/:id', destination: '/admin', permanent: true },
-      { source: '/admin/exams/:id/results', destination: '/admin', permanent: true },
+
 
     ];
   },
