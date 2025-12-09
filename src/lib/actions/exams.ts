@@ -895,10 +895,15 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
     }
 
     let newTotalScore = 0;
-    const processedMcqQuestions = new Set<number>();
+    const processedQuestionIds = new Set<number>();
 
     for (const answer of submission.answers) {
-        if (answer.question.type === 'MCQ' && !processedMcqQuestions.has(answer.questionId)) {
+        // Skip if we already calculated score for this question
+        if (processedQuestionIds.has(answer.questionId)) {
+            continue;
+        }
+
+        if (answer.question.type === 'MCQ') {
             const correctOptionIds = answer.question.options.filter(o => o.isCorrect).map(o => o.id);
             const userAnswersForQuestion = submission.answers
                 .filter(a => a.questionId === answer.questionId)
@@ -920,8 +925,10 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
                     newTotalScore += answer.question.points;
                 }
             }
-            processedMcqQuestions.add(answer.questionId);
         } else if (answer.question.type === 'IMAGE_BASED_ANSWER') {
+            // For Image/Text answers, duplicate rows are potential errors, so we perform this check inside the "unique question" block.
+            // Prior logic flaw was here: it iterated EVERY answer row. Now it runs once per questionID.
+
             // Use the newly awarded marks if this is the question being graded
             if (answer.questionId === questionId) {
                 newTotalScore += marksAwarded;
@@ -929,6 +936,9 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
                 newTotalScore += answer.marksAwarded;
             }
         }
+
+        // Mark question as processed
+        processedQuestionIds.add(answer.questionId);
     }
 
     await prisma.examSubmission.update({
