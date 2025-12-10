@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useTransition, useRef } from 'react';
+import React, { useState, useEffect, useTransition, useRef, useCallback, useMemo } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { z } from 'zod';
@@ -283,13 +283,22 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
   });
 
   const { control, watch, setValue, trigger } = form;
+
+  // Watch form values once at the top to avoid multiple watch() calls in render
   const posterUrlValue = watch('posterUrl');
   const visibility = watch('visibility');
   const customContentLabel = watch('customContentLabel');
+  const contentType = watch('type');
+  const seriesIdValue = watch('seriesId');
+
+  // Derived values for conditional rendering
+  const showRatingsAndCast = contentType === 'MOVIE' || contentType === 'TV_SERIES';
 
   const { fields, append, remove } = useFieldArray({ control, name: 'mediaLinks' });
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchData() {
       try {
         const [seriesData, groupData, statusData, customTypesData] = await Promise.all([
@@ -298,15 +307,27 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
           getPostCreationStatus(),
           getCustomContentTypes()
         ]);
-        setSeriesList(seriesData);
-        setGroups(groupData as Group[]);
-        setPostStatus(statusData);
-        setCustomContentTypes(customTypesData);
+
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setSeriesList(seriesData);
+          setGroups(groupData as Group[]);
+          setPostStatus(statusData);
+          setCustomContentTypes(customTypesData);
+        }
       } catch (error) {
-        console.error("Failed to fetch initial form data:", error);
+        if (isMounted) {
+          console.error("Failed to fetch initial form data:", error);
+        }
       }
     }
+
     fetchData();
+
+    // Cleanup: prevent state updates after unmount
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleCreateCustomType = (value: string) => {
@@ -323,18 +344,30 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
     });
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // Track mounted state for FileReader callback
+  const isMountedRef = useRef(true);
+  useEffect(() => {
+    isMountedRef.current = true;
+    return () => { isMountedRef.current = false; };
+  }, []);
+
+  const handleFileChange = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
-        alert('File size exceeds 5MB limit.');
+        toast({ variant: 'destructive', title: 'File Too Large', description: 'File size exceeds 5MB limit.' });
         return;
       }
       const reader = new FileReader();
-      reader.onloadend = () => setValue('posterUrl', reader.result as string);
+      reader.onloadend = () => {
+        // Only update state if component is still mounted
+        if (isMountedRef.current) {
+          setValue('posterUrl', reader.result as string);
+        }
+      };
       reader.readAsDataURL(file);
     }
-  };
+  }, [setValue, toast]);
 
   const handleSubmit = (values: PostFormValues) => {
     const metaData: { key: string; value: string }[] = [];
@@ -363,7 +396,12 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
     onFormSubmit(postData, editingPost?.id);
   };
 
-  const nextStep = async () => {
+  // Memoize poster click handler
+  const handlePosterClick = useCallback(() => {
+    posterFileInputRef.current?.click();
+  }, []);
+
+  const nextStep = useCallback(async () => {
     let valid = false;
     if (activeStep === 'details') valid = await trigger(['title', 'description']);
     else if (activeStep === 'description') valid = await trigger(['type']); // Validation for metadata step
@@ -372,12 +410,12 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
       if (activeStep === 'details') setActiveStep('description');
       else if (activeStep === 'description') setActiveStep('visibility');
     }
-  };
+  }, [activeStep, trigger]);
 
-  const prevStep = () => {
+  const prevStep = useCallback(() => {
     if (activeStep === 'description') setActiveStep('details');
     else if (activeStep === 'visibility') setActiveStep('description');
-  };
+  }, [activeStep]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-100px)] p-4 w-full h-full">
@@ -424,13 +462,13 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                               <span className="text-sm font-medium opacity-50">Upload Banner / Poster</span>
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer space-y-2" onClick={() => posterFileInputRef.current?.click()}>
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer space-y-2" onClick={handlePosterClick}>
                             <Upload className="w-8 h-8 text-white" />
                             <span className="text-white text-sm font-medium">Click to Upload</span>
                           </div>
                         </div>
                         <div className="flex gap-2 justify-center">
-                          <Button type="button" variant="outline" size="sm" className="rounded-full border-white/10 hover:bg-white/10 h-8 text-xs" onClick={() => posterFileInputRef.current?.click()}>
+                          <Button type="button" variant="outline" size="sm" className="rounded-full border-white/10 hover:bg-white/10 h-8 text-xs" onClick={handlePosterClick}>
                             Choose File
                           </Button>
                           <Input placeholder="Paste URL..." {...form.register('posterUrl')} className="bg-transparent border-white/10 rounded-full w-64 h-8 text-xs focus-visible:ring-0" />
@@ -518,7 +556,7 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                               </FormItem>
                             )}
                           />
-                          {watch('seriesId') && (
+                          {seriesIdValue && (
                             <FormField
                               control={control}
                               name="orderInSeries"
@@ -552,7 +590,7 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                       </div>
 
                       {/* Sections Conditional on Type (MOVIE or TV_SERIES) */}
-                      {(watch('type') === 'MOVIE' || watch('type') === 'TV_SERIES') && (
+                      {showRatingsAndCast && (
                         <>
                           {/* Ratings Grid */}
                           <div className="bg-white/5 p-6 rounded-2xl border border-white/5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
