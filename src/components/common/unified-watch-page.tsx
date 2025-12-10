@@ -25,6 +25,8 @@ import ReviewCard from '@/components/review-card';
 import DOMPurify from 'isomorphic-dompurify';
 import AdManager from '@/components/common/ad-manager';
 import type { AdUnit } from '@/lib/actions/ads';
+import { createReview, deleteReview } from '@/lib/actions/reviews';
+import { useToast } from '@/hooks/use-toast';
 
 interface UnifiedWatchPageProps {
     type: 'MOVIE' | 'SERIES';
@@ -49,6 +51,8 @@ export default function UnifiedWatchPage({
 }: UnifiedWatchPageProps) {
     const router = useRouter();
     const { startLoading, stopLoading } = useLoading();
+    const { toast } = useToast();
+    const [isSubmittingReview, setIsSubmittingReview] = useState(false);
 
     const isPremium = session?.user && (
         session.user.role === 'SUPER_ADMIN' ||
@@ -146,6 +150,53 @@ export default function UnifiedWatchPage({
             console.error("Failed to load more related posts", error);
         } finally {
             setIsLoadingMore(false);
+        }
+    };
+
+    const handleReviewSubmit = async (comment: string, rating: number, parentId?: number) => {
+        if (!session) {
+            toast({
+                title: "Authentication required",
+                description: "Please sign in to leave a review.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setIsSubmittingReview(true);
+        try {
+            await createReview(post.id, comment, rating, parentId);
+            toast({
+                title: "Success",
+                description: parentId ? "Reply posted successfully." : "Review posted successfully.",
+            });
+            router.refresh();
+        } catch (error) {
+            console.error(error);
+            toast({
+                title: "Error",
+                description: "Failed to post review. Please try again.",
+                variant: "destructive"
+            });
+        } finally {
+            setIsSubmittingReview(false);
+        }
+    };
+
+    const handleReviewDelete = async (reviewId: number) => {
+        try {
+            await deleteReview(reviewId);
+            toast({
+                title: "Success",
+                description: "Review deleted.",
+            });
+            router.refresh();
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to delete review.",
+                variant: "destructive"
+            });
         }
     };
 
@@ -405,8 +456,8 @@ export default function UnifiedWatchPage({
                                             <h3 className="text-lg font-semibold mb-4">Leave a comment</h3>
                                             <ReviewForm
                                                 postId={post.id}
-                                                isSubmitting={false}
-                                                onSubmitReview={async () => { }}
+                                                isSubmitting={isSubmittingReview}
+                                                onSubmitReview={handleReviewSubmit}
                                                 session={session}
                                             />
                                         </div>
@@ -417,8 +468,8 @@ export default function UnifiedWatchPage({
                                                         key={review.id}
                                                         review={review}
                                                         session={session}
-                                                        onReviewSubmit={async () => { }}
-                                                        onReviewDelete={async () => { }}
+                                                        onReviewSubmit={handleReviewSubmit}
+                                                        onReviewDelete={handleReviewDelete}
                                                     />
                                                 ))
                                             ) : (

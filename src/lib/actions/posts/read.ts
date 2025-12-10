@@ -146,8 +146,7 @@ export async function getPost(postId: number) {
             reviews: { where: { parentId: null }, include: { user: true, replies: { include: { user: true }, orderBy: { createdAt: 'asc' } } }, orderBy: { createdAt: 'desc' } },
             author: true, favoritePosts: userId ? { where: { userId } } : false, likedBy: true, dislikedBy: true, mediaLinks: true, series: true, group: true,
             exam: { where: { status: 'ACTIVE' }, select: { id: true, title: true, description: true } }, _count: true
-        },
-        cacheStrategy: { ttl: 60, swr: 60 }
+        }
     });
 
     if (!post) return null;
