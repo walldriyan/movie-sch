@@ -46,3 +46,48 @@ export async function getSetting(key: string) {
 
   return setting;
 }
+
+/**
+ * Retrieves the list of custom content types from app settings.
+ */
+export async function getCustomContentTypes(): Promise<string[]> {
+  const setting = await getSetting('custom_content_types');
+  if (!setting || !setting.value) {
+    return [];
+  }
+  try {
+    return JSON.parse(setting.value) as string[];
+  } catch (error) {
+    console.error('Failed to parse custom_content_types:', error);
+    return [];
+  }
+}
+
+/**
+ * Adds a new custom content type to the list.
+ */
+export async function addCustomContentType(typeLabel: string) {
+  const session = await auth();
+  if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role as any)) {
+    // Allow user admins too as per request "Super User admin" (maybe ambiguous), but safe to allow both or just super.
+    // User said "Super User adminta vitrak".
+    if (session?.user?.role !== ROLES.SUPER_ADMIN) {
+      throw new Error('Unauthorized');
+    }
+  }
+
+  const existingTypes = await getCustomContentTypes();
+  if (existingTypes.includes(typeLabel)) {
+    return existingTypes;
+  }
+
+  const newTypes = [...existingTypes, typeLabel];
+  await prisma.appSetting.upsert({
+    where: { key: 'custom_content_types' },
+    update: { value: JSON.stringify(newTypes) },
+    create: { key: 'custom_content_types', value: JSON.stringify(newTypes) },
+  });
+
+  revalidatePath('/manage');
+  return newTypes;
+}

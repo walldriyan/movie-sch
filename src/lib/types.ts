@@ -63,6 +63,7 @@ export type PostFormData = Omit<Post, 'id' | 'createdAt' | 'updatedAt' | 'review
   genres?: string[];
   seriesId?: number | null;
   groupId?: string | null;
+  metaData?: { key: string; value: string }[];
 };
 
 // Movie form data for create/edit forms

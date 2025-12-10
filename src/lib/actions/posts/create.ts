@@ -54,6 +54,16 @@ export async function createPost(formData: FormData) {
 
         console.log('[CreatePost] Final Data Verification - PosterUrl:', finalPosterUrl);
 
+        const metaDataRaw = formData.get('metaData');
+        let metaData: { key: string; value: string }[] = [];
+        if (metaDataRaw) {
+            try {
+                metaData = JSON.parse(metaDataRaw as string);
+            } catch (e) {
+                console.error('[CreatePost] Failed to parse metaData', e);
+            }
+        }
+
         const newPost = await prisma.post.create({
             data: {
                 title,
@@ -73,6 +83,7 @@ export async function createPost(formData: FormData) {
                 seriesId: seriesId || null,
                 isLockedByDefault: formData.get('isLockedByDefault') === 'true',
                 requiresExamToUnlock: formData.get('requiresExamToUnlock') === 'true',
+                metaData: metaData.length > 0 ? { create: metaData } : undefined,
             },
         });
 

@@ -63,10 +63,11 @@ export async function savePost(postData: PostFormData, id?: number) {
         if (finalPosterUrl && existing?.posterUrl && finalPosterUrl !== existing.posterUrl) await deleteUploadedFile(existing.posterUrl);
         await prisma.$transaction([
             prisma.mediaLink.deleteMany({ where: { postId: id } }),
-            prisma.post.update({ where: { id }, data: { ...data, status: MovieStatus.PENDING_APPROVAL, mediaLinks: { create: postData.mediaLinks } } })
+            prisma.metaData.deleteMany({ where: { postId: id } }),
+            prisma.post.update({ where: { id }, data: { ...data, status: MovieStatus.PENDING_APPROVAL, mediaLinks: { create: postData.mediaLinks }, metaData: { create: postData.metaData || [] } } })
         ]);
     } else {
-        await prisma.post.create({ data: { ...data, status: MovieStatus.PENDING_APPROVAL, authorId: userId, mediaLinks: { create: postData.mediaLinks } } });
+        await prisma.post.create({ data: { ...data, status: MovieStatus.PENDING_APPROVAL, authorId: userId, mediaLinks: { create: postData.mediaLinks }, metaData: { create: postData.metaData || [] } } });
     }
     revalidatePath('/'); revalidatePath('/manage');
 }
