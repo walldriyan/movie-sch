@@ -50,6 +50,13 @@ export default function UnifiedWatchPage({
     const router = useRouter();
     const { startLoading, stopLoading } = useLoading();
 
+    const isPremium = session?.user && (
+        session.user.role === 'SUPER_ADMIN' ||
+        session.user.role === 'USER_ADMIN' ||
+        (session.user as any).accountType === 'PREMIUM' ||
+        (session.user as any).accountType === 'HYBRID'
+    );
+
     // Stop loading when the post content changes (navigation complete)
     useEffect(() => {
         stopLoading();
@@ -297,13 +304,15 @@ export default function UnifiedWatchPage({
                         <div className="space-y-8 min-h-[100px] mb-12">
                             {post.isContentLocked ? (
                                 <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
-                                    {/* 1. Ad Card */}
-                                    <div className="w-full p-6 md:p-8 border border-dashed border-white/10 rounded-3xl bg-muted/10 flex flex-col items-center justify-center text-center group hover:bg-muted/20 transition-colors">
-                                        <span className="text-xs font-semibold text-muted-foreground/40 uppercase tracking-widest mb-4">Advertisement</span>
-                                        <div className="w-full max-w-[728px] h-[100px] bg-black/20 rounded-xl flex items-center justify-center border border-white/5">
-                                            <span className="text-muted-foreground/40 font-medium">Ad Space</span>
+                                    {/* 1. Ad Card (Non-Premium Only) */}
+                                    {!isPremium && (
+                                        <div className="w-full p-6 md:p-8 border border-dashed border-white/10 rounded-3xl bg-muted/10 flex flex-col items-center justify-center text-center group hover:bg-muted/20 transition-colors">
+                                            <span className="text-xs font-semibold text-muted-foreground/40 uppercase tracking-widest mb-4">Advertisement</span>
+                                            <div className="w-full max-w-[728px] h-[100px] bg-black/20 rounded-xl flex items-center justify-center border border-white/5">
+                                                <span className="text-muted-foreground/40 font-medium">Ad Space</span>
+                                            </div>
                                         </div>
-                                    </div>
+                                    )}
 
                                     {/* 2. Premium Lock Card */}
                                     <div className="relative overflow-hidden flex flex-col items-center justify-center py-16 px-6 border border-amber-500/20 rounded-3xl bg-black/40 backdrop-blur-md text-center shadow-2xl">
@@ -422,9 +431,11 @@ export default function UnifiedWatchPage({
                                     </div>
 
                                     {/* AD SIDEBAR (Stacked below reviews now) */}
-                                    <div className="w-full">
-                                        <AdManager initialConfig={legacyAdConfig} userRole={session?.user?.role} />
-                                    </div>
+                                    {!isPremium && (
+                                        <div className="w-full">
+                                            <AdManager initialConfig={legacyAdConfig} userRole={session?.user?.role} />
+                                        </div>
+                                    )}
                                 </div>
                             </TabsContent>
 
@@ -461,16 +472,20 @@ export default function UnifiedWatchPage({
                         </Tabs>
 
                         {/* Ad Space */}
-                        <div className="my-8 flex items-center gap-4 opacity-50">
-                            <Separator className="flex-1" />
-                            <span className="text-xs text-muted-foreground uppercase tracking-widest">Sponsored</span>
-                            <Separator className="flex-1" />
-                        </div>
-                        <div className="w-full p-8 border border-dashed rounded-2xl bg-muted/20 flex flex-col items-center justify-center text-center">
-                            <div className="w-full max-w-[728px] h-[90px] bg-muted/50 rounded flex items-center justify-center">
-                                <span className="text-muted-foreground/50 font-medium">Ad Space (728x90)</span>
-                            </div>
-                        </div>
+                        {!isPremium && (
+                            <>
+                                <div className="my-8 flex items-center gap-4 opacity-50">
+                                    <Separator className="flex-1" />
+                                    <span className="text-xs text-muted-foreground uppercase tracking-widest">Sponsored</span>
+                                    <Separator className="flex-1" />
+                                </div>
+                                <div className="w-full p-8 border border-dashed rounded-2xl bg-muted/20 flex flex-col items-center justify-center text-center">
+                                    <div className="w-full max-w-[728px] h-[90px] bg-muted/50 rounded flex items-center justify-center">
+                                        <span className="text-muted-foreground/50 font-medium">Ad Space (728x90)</span>
+                                    </div>
+                                </div>
+                            </>
+                        )}
 
                     </div>
 
