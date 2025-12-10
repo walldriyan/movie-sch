@@ -433,7 +433,7 @@ export default function UnifiedWatchPage({
 
                     {/* RIGHT SIDEBAR COLUMN */}
                     <div className="lg:col-span-1">
-                        <div className="sticky top-32 z-10 flex flex-col gap-4 max-h-[calc(100vh-8rem)] h-fit">
+                        <div className="sticky top-24 z-10 flex flex-col gap-4 h-[calc(100vh-6rem)]">
 
                             {/* Sidebar Header */}
                             <div className="rounded-2xl border bg-card/50 backdrop-blur-sm p-5 shadow-sm shrink-0">
@@ -526,7 +526,7 @@ export default function UnifiedWatchPage({
                                                     <button
                                                         key={episode.id}
                                                         id={`sidebar-post-${episode.id}`}
-                                                        onClick={() => router.push(`/search?seriesId=${series?.id}&post=${episode.id}`)}
+                                                        onClick={() => router.push(`/search?seriesId=${series?.id}&post=${episode.id}`, { scroll: false })}
                                                         className={cn(
                                                             "w-full flex gap-3 p-2 rounded-xl text-left transition-all border group",
                                                             isActive
