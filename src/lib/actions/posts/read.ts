@@ -105,9 +105,10 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
                 },
                 likedBy: { take: 5, select: { id: true, name: true, image: true } },
                 _count: { select: { likedBy: true, reviews: true } }
-            }
+            },
+            cacheStrategy: { ttl: 60, swr: 60 }
         }),
-        prisma.post.count({ where: whereClause })
+        prisma.post.count({ where: whereClause, cacheStrategy: { ttl: 60, swr: 60 } })
     ]);
 
     const totalPages = Math.ceil(totalPosts / limit);
@@ -139,11 +140,12 @@ export async function getPost(postId: number) {
             reviews: { where: { parentId: null }, include: { user: true, replies: { include: { user: true }, orderBy: { createdAt: 'asc' } } }, orderBy: { createdAt: 'desc' } },
             author: true, favoritePosts: userId ? { where: { userId } } : false, likedBy: true, dislikedBy: true, mediaLinks: true, series: true,
             exam: { where: { status: 'ACTIVE' }, select: { id: true, title: true, description: true } }, _count: true
-        }
+        },
+        cacheStrategy: { ttl: 60, swr: 60 }
     });
 
     if (!post) return null;
-    const subtitles = await prisma.subtitle.findMany({ where: { postId: postId } });
+    const subtitles = await prisma.subtitle.findMany({ where: { postId: postId }, cacheStrategy: { ttl: 60, swr: 60 } });
 
     return { ...post, genres: post.genres ? post.genres.split(',') : [], subtitles };
 }
@@ -159,8 +161,8 @@ export async function getPostsForAdmin(options: any = {}) {
     const orderBy = { [field]: dir };
 
     const [posts, totalPosts] = await prisma.$transaction([
-        prisma.post.findMany({ where: whereClause, skip, take: limit, orderBy, include: { author: true, group: true, _count: true, series: true } }),
-        prisma.post.count({ where: whereClause })
+        prisma.post.findMany({ where: whereClause, skip, take: limit, orderBy, include: { author: true, group: true, _count: true, series: true }, cacheStrategy: { ttl: 30, swr: 60 } }),
+        prisma.post.count({ where: whereClause, cacheStrategy: { ttl: 30, swr: 60 } })
     ]);
     const totalPages = Math.ceil(totalPosts / limit);
 
@@ -177,7 +179,7 @@ export async function getFavoritePosts() {
     const session = await auth();
     const userId = session?.user?.id;
     if (!userId) return [];
-    const favs = await prisma.favoritePost.findMany({ where: { userId, post: { status: 'PUBLISHED' } }, include: { post: { include: { author: true, series: true, likedBy: true, _count: true } } }, orderBy: { createdAt: 'desc' } }) as any[];
+    const favs = await prisma.favoritePost.findMany({ where: { userId, post: { status: 'PUBLISHED' } }, include: { post: { include: { author: true, series: true, likedBy: true, _count: true } } }, orderBy: { createdAt: 'desc' }, cacheStrategy: { ttl: 60, swr: 60 } }) as any[];
     return favs.map((f: any) => ({ ...f.post, genres: f.post.genres ? f.post.genres.split(',') : [] }));
 }
 
@@ -186,7 +188,8 @@ export async function getFavoritePostsByUserId(userId: string) {
     const favs = await prisma.favoritePost.findMany({
         where: { userId, post: { status: 'PUBLISHED' } },
         include: { post: { include: { author: true, series: true, likedBy: true, _count: true } } },
-        orderBy: { createdAt: 'desc' }
+        orderBy: { createdAt: 'desc' },
+        cacheStrategy: { ttl: 60, swr: 60 }
     }) as any[];
     return favs.map((f: any) => ({ ...f.post, genres: f.post.genres ? f.post.genres.split(',') : [] }));
 }
@@ -194,5 +197,5 @@ export async function getFavoritePostsByUserId(userId: string) {
 export async function searchPostsForExam(query: string) {
     const session = await auth();
     if (!session?.user) throw new Error('Not authenticated');
-    return await prisma.post.findMany({ where: { title: { contains: query }, status: 'PUBLISHED' }, take: 10, orderBy: { createdAt: 'desc' }, include: { group: true } });
+    return await prisma.post.findMany({ where: { title: { contains: query }, status: 'PUBLISHED' }, take: 10, orderBy: { createdAt: 'desc' }, include: { group: true }, cacheStrategy: { ttl: 60, swr: 60 } });
 }
