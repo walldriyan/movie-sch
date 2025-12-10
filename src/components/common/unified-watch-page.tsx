@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -97,16 +97,31 @@ export default function UnifiedWatchPage({
         (session.user as any).accountType === 'HYBRID'
     );
 
+    // Ref for scrolling active episode into view
+    const activeEpisodeRef = useRef<HTMLButtonElement>(null);
+
     // Stop loading when the post content changes (navigation complete)
     useEffect(() => {
         stopLoading();
-        // Increment view count (server logic ensures uniqueness)
-        incrementViewCount(post.id);
-    }, [post.id, stopLoading]);
 
-    // ... (existing helper logic) ...
+        // Increment view count with cleanup
+        let isMounted = true;
+        const incrementView = async () => {
+            try {
+                if (isMounted) {
+                    await incrementViewCount(post.id);
+                }
+            } catch (error) {
+                // Silently handle - view count is non-critical
+            }
+        };
+        incrementView();
 
-
+        return () => {
+            isMounted = false;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [post.id]); // Removed stopLoading to prevent re-runs when context changes
 
     // --- Helper Logic ---
     const videoLink = useMemo(() => {
@@ -123,15 +138,15 @@ export default function UnifiedWatchPage({
     };
 
     const videoId = videoLink ? getYouTubeVideoId(videoLink.url) : null;
-    const sanitizedDescription = DOMPurify.sanitize(post.description || '');
+    const sanitizedDescription = useMemo(() => DOMPurify.sanitize(post.description || ''), [post.description]);
 
-    // Scroll active post into view in sidebar on mount (for Series)
+    // Scroll active post into view in sidebar on mount (for Series) - using ref
     useEffect(() => {
-        if (type === 'SERIES' && post.id) {
-            const activeElement = document.getElementById(`sidebar-post-${post.id}`);
-            if (activeElement) {
-                activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            }
+        if (type === 'SERIES' && activeEpisodeRef.current) {
+            // Use requestAnimationFrame to ensure DOM is ready
+            requestAnimationFrame(() => {
+                activeEpisodeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
         }
     }, [type, post.id]);
 
@@ -762,7 +777,7 @@ export default function UnifiedWatchPage({
                                                 return (
                                                     <button
                                                         key={episode.id}
-                                                        id={`sidebar-post-${episode.id}`}
+                                                        ref={isActive ? activeEpisodeRef : null}
                                                         onClick={() => {
                                                             if (episode.id !== post.id) startLoading();
                                                             router.push(`/search?seriesId=${series?.id}&post=${episode.id}`, { scroll: false });
