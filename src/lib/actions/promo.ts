@@ -8,6 +8,11 @@ import { ROLES } from '@/lib/permissions';
 
 const PROMO_FILE_PATH = path.join(process.cwd(), 'src/config/featured-promo.json');
 
+export interface AudioTrack {
+    title: string;
+    url: string;
+}
+
 export interface PromoData {
     active: boolean;
     type: 'video' | 'image' | 'audio';
@@ -15,7 +20,7 @@ export interface PromoData {
     title: string;
     description: string;
     linkUrl?: string; // For 'post' or generic click
-    audioTracks?: { title: string; url: string; }[];
+    audioTracks?: AudioTrack[];
 }
 
 export async function getPromoData(): Promise<PromoData> {

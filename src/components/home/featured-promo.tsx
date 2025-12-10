@@ -204,7 +204,15 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
         return (match && match[2].length === 11) ? match[2] : null;
     };
 
-    const isGradientFallback = !data.active || (!data.mediaUrl && !data.title);
+    // Image Error State
+    const [imageError, setImageError] = useState(false);
+
+    // Reset error when url changes
+    useEffect(() => {
+        setImageError(false);
+    }, [data.mediaUrl]);
+
+    const isGradientFallback = !data.active || (!data.mediaUrl && !data.title) || (data.type !== 'video' && imageError);
     const activeTrack = data.audioTracks?.[currentTrackIndex];
 
     return (
@@ -281,7 +289,7 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                         ) : (
                             // Image or Audio Background
                             <div className="absolute inset-0 w-full h-full">
-                                {data.mediaUrl && (
+                                {data.mediaUrl && !imageError && (
                                     <Image
                                         src={data.mediaUrl}
                                         alt={data.title}
@@ -290,6 +298,7 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                                             "object-cover transition-all duration-700",
                                             isPlaying ? "scale-105 blur-sm brightness-50" : "scale-100 brightness-75"
                                         )}
+                                        onError={() => setImageError(true)}
                                     />
                                 )}
                                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
@@ -312,8 +321,14 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                                     "relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden shadow-2xl border border-white/10 shrink-0",
                                     isPlaying && "animate-pulse" // Could add a spin animation class here if defined
                                 )}>
-                                    {data.mediaUrl ? (
-                                        <Image src={data.mediaUrl} alt="Cover" fill className="object-cover" />
+                                    {data.mediaUrl && !imageError ? (
+                                        <Image
+                                            src={data.mediaUrl}
+                                            alt="Cover"
+                                            fill
+                                            className="object-cover"
+                                            onError={() => setImageError(true)}
+                                        />
                                     ) : (
                                         <div className="w-full h-full bg-pink-900 flex items-center justify-center"><Music className="w-10 h-10 text-white/50" /></div>
                                     )}
@@ -336,7 +351,6 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                                     height="0"
                                     onProgress={(state) => {
                                         setPlayed(state.played);
-                                        setDuration(state.loadProps ? 0 : state.playedSeconds / state.played); // rough calc or getDuration
                                     }}
                                     onDuration={setDuration}
                                     onEnded={handleNext}
