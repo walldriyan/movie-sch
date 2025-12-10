@@ -19,7 +19,10 @@ import {
     ChevronRight,
     Radio,
     LogOut,
-    Users
+    Users,
+    PanelLeftClose,
+    PanelLeftOpen,
+    Minimize2
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
@@ -34,6 +37,7 @@ import CreateButton from './create-button';
 import SearchBar from './search-bar';
 import Image from 'next/image';
 import { getUserJoinedGroups } from '@/lib/actions/groups';
+import { Separator } from '@/components/ui/separator';
 
 export default function LeftSidebar() {
     const { data: session, status } = useSession();
@@ -260,49 +264,7 @@ export default function LeftSidebar() {
                                     </span>
                                 )}
                             </Link>
-
-                            {/* CONTROLS: Close (Hide) & Collapse */}
-                            <div className="flex items-center gap-1">
-                                {!isCollapsed && (
-                                    <>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}
-                                            className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                                            title="Mini Sidebar"
-                                        >
-                                            <ChevronLeft className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); setIsHidden(true); }}
-                                            className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                                            title="Close to Logo"
-                                        >
-                                            <X className="w-4 h-4" />
-                                        </button>
-                                    </>
-                                )}
-                            </div>
                         </div>
-
-                        {/* Collapsed Mode Controls (since header is squashed) */}
-                        {isCollapsed && (
-                            <div className="flex flex-col items-center gap-2 mb-6">
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); toggleCollapse(); }}
-                                    className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-white hover:bg-white/10 transition-colors"
-                                    title="Expand Width"
-                                >
-                                    <ChevronRight className="w-4 h-4" />
-                                </button>
-                                <button
-                                    onClick={(e) => { e.stopPropagation(); setIsHidden(true); }}
-                                    className="w-8 h-8 flex items-center justify-center rounded-full text-white/40 hover:text-red-400 hover:bg-red-500/10 transition-colors"
-                                    title="Close to Logo"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-                        )}
 
                         {/* User Profile Area (Floating Bubble) */}
                         {user && !isCollapsed && (
@@ -386,6 +348,47 @@ export default function LeftSidebar() {
                             {canManage && (
                                 <NavItem href="/manage" icon={Shield} label="Dashboard" badge="Admin" />
                             )}
+
+                            {/* Separator and Sidebar Controls */}
+                            <Separator className="bg-white/5 my-2" />
+
+                            <button
+                                onClick={toggleCollapse}
+                                className={cn(
+                                    "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left",
+                                    "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                                    isCollapsed && "justify-center px-0 w-12 h-12 mx-auto"
+                                )}
+                                title={isCollapsed ? "Expand" : "Collapse"}
+                            >
+                                {isCollapsed ? (
+                                    <PanelLeftOpen className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                                ) : (
+                                    <PanelLeftClose className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                                )}
+                                {!isCollapsed && (
+                                    <span className="text-sm font-medium tracking-wide">
+                                        Collapse
+                                    </span>
+                                )}
+                            </button>
+
+                            <button
+                                onClick={() => setIsHidden(true)}
+                                className={cn(
+                                    "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left",
+                                    "text-muted-foreground hover:bg-red-500/10 hover:text-red-400",
+                                    isCollapsed && "justify-center px-0 w-12 h-12 mx-auto"
+                                )}
+                                title="Hide Sidebar"
+                            >
+                                <Minimize2 className="w-5 h-5 flex-shrink-0 group-hover:scale-110 transition-transform" />
+                                {!isCollapsed && (
+                                    <span className="text-sm font-medium tracking-wide">
+                                        Hide
+                                    </span>
+                                )}
+                            </button>
                         </div>
                     </>
                 )}
