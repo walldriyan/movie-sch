@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition, useRef } from 'react';
+import { useState, useTransition, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import ReactPlayer from 'react-player/lazy';
@@ -35,8 +35,12 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
     const [isOpen, setIsOpen] = useState(false);
     const isAdmin = currentUser?.role === 'SUPER_ADMIN';
 
-    // Video Player State
     const [videoMode, setVideoMode] = useState(false); // If true, video plays with sound/controls and overlay is hidden
+    const [hasMounted, setHasMounted] = useState(false);
+
+    useEffect(() => {
+        setHasMounted(true);
+    }, []);
 
     // Audio Player State
     const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -149,6 +153,12 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
     const isGradientFallback = !data.active || (!data.mediaUrl && !data.title);
     const activeTrack = data.audioTracks?.[currentTrackIndex];
 
+    const getYouTubeId = (url: string) => {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : null;
+    };
+
     return (
         <section className="container max-w-7xl mx-auto px-4 md:px-8 mb-24 relative group/promo">
             {/* Section Header */}
@@ -173,28 +183,38 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
                     <>
                         {data.type === 'video' ? (
                             <div className={cn("absolute inset-0 w-full h-full transition-all duration-500", videoMode ? "z-30" : "z-0")}>
-                                {/* Video Player */}
-                                <ReactPlayer
-                                    url={data.mediaUrl}
-                                    width="100%"
-                                    height="100%"
-                                    playing={videoMode ? true : true} // Always play (loop bg or active)
-                                    muted={videoMode ? false : true} // Mute if background, Unmute if watching
-                                    loop={true} // Loop in both modes usually, or just bg
-                                    controls={videoMode} // Functioning controls only when watching
-                                    style={{ pointerEvents: videoMode ? 'auto' : 'none' }}
-                                    config={{
-                                        youtube: {
-                                            playerVars: {
-                                                showinfo: 0,
-                                                controls: videoMode ? 1 : 0,
-                                                modestbranding: 1,
-                                                autoplay: 1,
-                                                rel: 0
+                                {/* Active Video Mode: Raw Iframe for maximum compatibility */}
+                                {videoMode && hasMounted && (
+                                    <iframe
+                                        width="100%"
+                                        height="100%"
+                                        src={`https://www.youtube.com/embed/${getYouTubeId(data.mediaUrl)}?autoplay=1&controls=1&rel=0&modestbranding=1&iv_load_policy=3`}
+                                        title="YouTube video player"
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                        allowFullScreen
+                                        className="w-full h-full border-0"
+                                    />
+                                )}
+
+                                {/* Background Video Mode: ReactPlayer for loop/mute */}
+                                {!videoMode && hasMounted && (
+                                    <ReactPlayer
+                                        url={data.mediaUrl}
+                                        width="100%"
+                                        height="100%"
+                                        playing={true}
+                                        muted={true}
+                                        loop={true}
+                                        controls={false}
+                                        style={{ pointerEvents: 'none' }}
+                                        config={{
+                                            youtube: {
+                                                playerVars: { showinfo: 0, controls: 0, modestbranding: 1, rel: 0 }
                                             }
-                                        }
-                                    }}
-                                />
+                                        }}
+                                    />
+                                )}
+
                                 {/* Background Overlay - Only visible when NOT in video mode */}
                                 {!videoMode && <div className="absolute inset-0 bg-black/40 pointer-events-none" />}
 
