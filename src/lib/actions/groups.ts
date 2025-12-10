@@ -535,3 +535,30 @@ export async function manageGroupJoinRequest(groupId: string, userId: string, ac
     revalidatePath('/admin/groups');
     revalidatePath(`/groups/${groupId}`);
 }
+
+export async function getUserJoinedGroups() {
+    const session = await auth();
+    const user = session?.user;
+    if (!user) return [];
+
+    const members = await prisma.groupMember.findMany({
+        where: {
+            userId: user.id,
+            status: 'ACTIVE'
+        },
+        include: {
+            group: {
+                select: {
+                    id: true,
+                    name: true,
+                    profilePhoto: true
+                }
+            }
+        },
+        orderBy: {
+            joinedAt: 'desc'
+        }
+    });
+
+    return members.map(m => m.group);
+}

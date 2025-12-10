@@ -18,7 +18,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Radio,
-    LogOut
+    LogOut,
+    Users
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
@@ -32,6 +33,7 @@ import UserButton from './user-button';
 import CreateButton from './create-button';
 import SearchBar from './search-bar';
 import Image from 'next/image';
+import { getUserJoinedGroups } from '@/lib/actions/groups';
 
 export default function LeftSidebar() {
     const { data: session, status } = useSession();
@@ -39,6 +41,13 @@ export default function LeftSidebar() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isHidden, setIsHidden] = useState(false); // Default open, logo-only mode off
+    const [userGroups, setUserGroups] = useState<{ id: string; name: string; profilePhoto: string | null }[]>([]);
+
+    useEffect(() => {
+        if (status === 'authenticated') {
+            getUserJoinedGroups().then(setUserGroups).catch(console.error);
+        }
+    }, [status]);
 
     const user = session?.user;
     const canManage = useMemo(() =>
@@ -354,6 +363,14 @@ export default function LeftSidebar() {
                         <nav className="flex-1 space-y-2">
                             <NavItem href="/" icon={Home} label="Home" />
                             <NavItem href="/search" icon={Search} label="Search" />
+
+                            <GroupLabel label="Social" />
+                            <NavItem
+                                href={userGroups.length > 0 ? `/groups/${userGroups[0].id}` : "/groups"}
+                                icon={Users}
+                                label="Groups"
+                            />
+
                             {user && (
                                 <NavItem
                                     href="/activity"
