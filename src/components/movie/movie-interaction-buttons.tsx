@@ -13,6 +13,7 @@ import {
     Edit,
     Trash2,
     Loader2,
+    Eye,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -147,6 +148,13 @@ export default function MovieInteractionButtons({ post, onPostUpdate, session }:
                     <Skeleton className="h-9 w-16" />
                 </>
             )}
+
+            {/* View Count */}
+            <div className="flex items-center text-muted-foreground mr-2">
+                <Eye className="w-5 h-5 mr-1.5" />
+                <span className="text-sm font-medium">{post.viewCount || 0}</span>
+            </div>
+            <Separator orientation="vertical" className="h-6 mx-2" />
 
             {showInteractiveButtons && (
                 <>

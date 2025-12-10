@@ -26,6 +26,7 @@ import DOMPurify from 'isomorphic-dompurify';
 import AdManager from '@/components/common/ad-manager';
 import type { AdUnit } from '@/lib/actions/ads';
 import { createReview, deleteReview } from '@/lib/actions/reviews';
+import { incrementViewCount } from '@/lib/actions/posts/view';
 import { useToast } from '@/hooks/use-toast';
 
 interface UnifiedWatchPageProps {
@@ -64,6 +65,8 @@ export default function UnifiedWatchPage({
     // Stop loading when the post content changes (navigation complete)
     useEffect(() => {
         stopLoading();
+        // Increment view count (server logic ensures uniqueness)
+        incrementViewCount(post.id);
     }, [post.id, stopLoading]);
 
     // ... (existing helper logic) ...
