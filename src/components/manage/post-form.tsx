@@ -365,8 +365,8 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
 
   const nextStep = async () => {
     let valid = false;
-    if (activeStep === 'details') valid = await trigger(['title', 'type', 'year', 'duration', 'imdbRating']);
-    else if (activeStep === 'description') valid = await trigger(['description']);
+    if (activeStep === 'details') valid = await trigger(['title', 'description']);
+    else if (activeStep === 'description') valid = await trigger(['type']); // Validation for metadata step
 
     if (valid) {
       if (activeStep === 'details') setActiveStep('description');
@@ -395,9 +395,9 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
 
           {/* Stepper Component */}
           <div className="flex items-center justify-center w-full px-4 md:px-12">
-            <StepIcon step="details" currentStep={activeStep} onClick={() => { }} label="Details" />
+            <StepIcon step="details" currentStep={activeStep} onClick={() => { }} label="Basics" />
             <StepperLine active={activeStep !== 'details'} />
-            <StepIcon step="description" currentStep={activeStep} onClick={() => { }} label="Description" />
+            <StepIcon step="description" currentStep={activeStep} onClick={() => { }} label="Details" />
             <StepperLine active={activeStep === 'visibility'} />
             <StepIcon step="visibility" currentStep={activeStep} onClick={() => { }} label="Finalize" />
           </div>
@@ -409,14 +409,12 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
             <form onSubmit={form.handleSubmit(handleSubmit)} className="h-full">
               <div className="p-8 max-w-6xl mx-auto space-y-8 h-full">
 
-                {/* STEP 1: Details (Title, Image, Type, Ratings, Cast - No Description) */}
+                {/* STEP 1: Content Basics (Poster, Title, Description) */}
                 {activeStep === 'details' && (
-                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col">
-                    {/* Vertical Layout: Poster Top (Banner), then Fields */}
-                    <div className="flex flex-col gap-8">
-
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col gap-8 h-full">
+                    <div className="flex flex-col gap-6 h-full">
                       {/* Top Image Banner Section */}
-                      <div className="w-full space-y-4">
+                      <div className="w-full shrink-0 space-y-4">
                         <div className="relative w-full h-48 md:h-64 bg-black/40 rounded-3xl border border-white/10 overflow-hidden group shadow-xl">
                           {posterUrlValue ? (
                             <Image src={posterUrlValue} alt="Poster" fill className="object-cover" />
@@ -440,8 +438,8 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                         <input type="file" ref={posterFileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                       </div>
 
-                      {/* Fields Section */}
-                      <div className="space-y-6">
+                      {/* Title & Description Stack */}
+                      <div className="flex-1 flex flex-col gap-6 min-h-0">
                         <FormField
                           control={control}
                           name="title"
@@ -460,136 +458,147 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                           )}
                         />
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <FormField
-                            control={control}
-                            name="type"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Type</FormLabel>
-                                <ContentTypeSelector
-                                  value={field.value}
-                                  onChange={field.onChange}
-                                  customTypes={customContentTypes}
-                                  onCustomCreate={handleCreateCustomType}
-                                  onCustomSelect={(label: string) => setValue('customContentLabel', label)}
-                                  customLabel={customContentLabel}
-                                  session={session}
-                                />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="seriesId"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Series (Optional)</FormLabel>
-                                <SeriesCombobox field={field} seriesList={seriesList} onSeriesCreated={(ns: any) => setSeriesList(prev => [...prev, ns])} />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        {/* Conditional Episode Input if Series Selected */}
-                        {watch('seriesId') && (
-                          <FormField
-                            control={control}
-                            name="orderInSeries"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="font-medium">Episode Number</FormLabel>
-                                <Input type="number" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-xl h-12" placeholder="e.g. 1" />
-                              </FormItem>
-                            )}
-                          />
-                        )}
-
-                        <div className="grid grid-cols-2 gap-6">
-                          <FormField
-                            control={control}
-                            name="year"
-                            render={({ field }) => (
-                              <FormItem><FormLabel>Year</FormLabel><Input type="number" placeholder="2024" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="duration"
-                            render={({ field }) => (
-                              <FormItem><FormLabel>Duration</FormLabel><Input placeholder="2h 15m" {...field} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
-                            )}
-                          />
-                        </div>
-
-                        {/* Ratings Grid */}
-                        <div className="bg-white/5 p-4 rounded-2xl border border-white/5 space-y-4">
-                          <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Ratings</h4>
-                          <div className="grid grid-cols-3 gap-4">
-                            <FormField
-                              control={control}
-                              name="imdbRating"
-                              render={({ field }) => <FormItem><FormLabel className="text-xs">IMDb</FormLabel><Input type="number" step="0.1" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-lg" /></FormItem>}
-                            />
-                            <FormField
-                              control={control}
-                              name="rottenTomatoesRating"
-                              render={({ field }) => <FormItem><FormLabel className="text-xs">Rotten T.</FormLabel><Input type="number" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-lg" /></FormItem>}
-                            />
-                            <FormField
-                              control={control}
-                              name="googleRating"
-                              render={({ field }) => <FormItem><FormLabel className="text-xs">Google</FormLabel><Input type="number" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-lg" /></FormItem>}
-                            />
-                          </div>
-                        </div>
-
-                        {/* Cast & Crew Moved Here */}
-                        <div className="space-y-4 pt-4 border-t border-white/5">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <FormField
-                              control={control}
-                              name="directors"
-                              render={({ field }) => (
-                                <FormItem><FormLabel>Directors</FormLabel><Input placeholder="e.g. Christopher Nolan" {...field} className="bg-black/20 border-white/10 rounded-xl h-11" /></FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={control}
-                              name="mainCast"
-                              render={({ field }) => (
-                                <FormItem><FormLabel>Main Cast</FormLabel><Input placeholder="e.g. Cillian Murphy, Emily Blunt" {...field} className="bg-black/20 border-white/10 rounded-xl h-11" /></FormItem>
-                              )}
-                            />
-                          </div>
-                        </div>
-
+                        <FormField
+                          control={control}
+                          name="description"
+                          render={({ field }) => (
+                            <FormItem className="flex-1 flex flex-col min-h-[300px]">
+                              <FormLabel className="text-lg font-semibold ml-1">Description</FormLabel>
+                              <FormControl>
+                                <div className="flex-1 rounded-2xl border border-white/20 bg-black/20 overflow-hidden focus-within:border-blue-500 transition-colors">
+                                  <QuillEditor {...field} />
+                                </div>
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       </div>
                     </div>
                   </div>
                 )}
 
-                {/* STEP 2: Description (Description ONLY) */}
+                {/* STEP 2: Metadata (Type, Series, Stats, Ratings) */}
                 {activeStep === 'description' && (
-                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col h-full gap-4">
-                    <div className="space-y-1">
-                      <h3 className="text-lg font-semibold">Description</h3>
-                      <p className="text-sm text-muted-foreground">Provide a detailed description of the content.</p>
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col gap-8">
+                    <div className="space-y-2">
+                      <h3 className="text-xl font-semibold">Content Details</h3>
+                      <p className="text-muted-foreground">Categorize your content and add specific metadata.</p>
                     </div>
-                    <FormField
-                      control={control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem className="flex-1 flex flex-col">
-                          <FormControl>
-                            <div className="flex-1 rounded-2xl border border-white/20 bg-black/20 overflow-hidden focus-within:border-blue-500 transition-colors min-h-[400px]">
-                              <QuillEditor {...field} />
+
+                    <div className="space-y-8">
+                      {/* Row 1: Type & Series */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={control}
+                          name="type"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Content Type</FormLabel>
+                              <ContentTypeSelector
+                                value={field.value}
+                                onChange={field.onChange}
+                                customTypes={customContentTypes}
+                                onCustomCreate={handleCreateCustomType}
+                                onCustomSelect={(label: string) => setValue('customContentLabel', label)}
+                                customLabel={customContentLabel}
+                                session={session}
+                              />
+                            </FormItem>
+                          )}
+                        />
+                        <div className="space-y-4">
+                          <FormField
+                            control={control}
+                            name="seriesId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Series / Playlist (Optional)</FormLabel>
+                                <SeriesCombobox field={field} seriesList={seriesList} onSeriesCreated={(ns: any) => setSeriesList(prev => [...prev, ns])} />
+                              </FormItem>
+                            )}
+                          />
+                          {watch('seriesId') && (
+                            <FormField
+                              control={control}
+                              name="orderInSeries"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel className="font-medium">Episode Number</FormLabel>
+                                  <Input type="number" {...field} value={field.value ?? ''} className="bg-transparent border-white/20 h-10 rounded-xl" placeholder="e.g. 1" />
+                                </FormItem>
+                              )}
+                            />
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Row 2: Year & Duration */}
+                      <div className="grid grid-cols-2 gap-6">
+                        <FormField
+                          control={control}
+                          name="year"
+                          render={({ field }) => (
+                            <FormItem><FormLabel>Year Released</FormLabel><Input type="number" placeholder="2024" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={control}
+                          name="duration"
+                          render={({ field }) => (
+                            <FormItem><FormLabel>Duration</FormLabel><Input placeholder="2h 15m" {...field} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
+                          )}
+                        />
+                      </div>
+
+                      {/* Sections Conditional on Type (MOVIE or TV_SERIES) */}
+                      {(watch('type') === 'MOVIE' || watch('type') === 'TV_SERIES') && (
+                        <>
+                          {/* Ratings Grid */}
+                          <div className="bg-white/5 p-6 rounded-2xl border border-white/5 space-y-4 animate-in fade-in zoom-in-95 duration-200">
+                            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Eye className="w-4 h-4" /> External Ratings</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                              <FormField
+                                control={control}
+                                name="imdbRating"
+                                render={({ field }) => <FormItem><FormLabel className="text-xs">IMDb Score (0-10)</FormLabel><Input type="number" step="0.1" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-lg" /></FormItem>}
+                              />
+                              <FormField
+                                control={control}
+                                name="rottenTomatoesRating"
+                                render={({ field }) => <FormItem><FormLabel className="text-xs">Rotten Tomatoes %</FormLabel><Input type="number" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-lg" /></FormItem>}
+                              />
+                              <FormField
+                                control={control}
+                                name="googleRating"
+                                render={({ field }) => <FormItem><FormLabel className="text-xs">Google Users %</FormLabel><Input type="number" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-lg" /></FormItem>}
+                              />
                             </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                          </div>
+
+                          {/* Cast & Crew */}
+                          <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-6 animate-in fade-in zoom-in-95 duration-200">
+                            <h4 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-2"><Users className="w-4 h-4" /> Cast & Crew</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <FormField
+                                control={control}
+                                name="directors"
+                                render={({ field }) => (
+                                  <FormItem><FormLabel>Directors</FormLabel><Input placeholder="e.g. Christopher Nolan" {...field} className="bg-black/20 border-white/10 rounded-xl h-11" /></FormItem>
+                                )}
+                              />
+                              <FormField
+                                control={control}
+                                name="mainCast"
+                                render={({ field }) => (
+                                  <FormItem><FormLabel>Main Cast</FormLabel><Input placeholder="e.g. Cillian Murphy, Emily Blunt" {...field} className="bg-black/20 border-white/10 rounded-xl h-11" /></FormItem>
+                                )}
+                              />
+                            </div>
+                          </div>
+                        </>
                       )}
-                    />
+                    </div>
                   </div>
                 )}
 
