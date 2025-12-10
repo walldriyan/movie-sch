@@ -15,22 +15,27 @@ export default function AdDisplay({ slotId, className = '' }: AdDisplayProps) {
     const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
+
         async function fetchAd() {
             try {
-                // In a real app, you might want to pass the initial config via props (SSR) 
-                // to avoid layout shift, but for this "manager" dynamic requirement, fetching is okay.
-                // Or better, use a global context. For now, fetching per unit.
                 const config = await getAdsConfig();
                 const found = config.find(u => u.id === slotId);
-                if (found && found.active && found.imageUrl) {
+                if (isMounted && found && found.active && found.imageUrl) {
                     setAd(found);
                     setIsVisible(true);
                 }
             } catch (error) {
-                console.error("Ads fetch error:", error);
+                if (isMounted) {
+                    console.error("Ads fetch error:", error);
+                }
             }
         }
         fetchAd();
+
+        return () => {
+            isMounted = false;
+        };
     }, [slotId]);
 
     if (!isVisible || !ad) return null;

@@ -20,18 +20,30 @@ export default function MicroPostComments({ postId, onCommentCountChange }: Micr
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchComments = async () => {
             try {
                 setIsLoading(true);
                 const fetchedComments = await getCommentsForMicroPost(postId);
-                setComments(fetchedComments);
+                if (isMounted) {
+                    setComments(fetchedComments);
+                }
             } catch (error) {
-                console.error("Failed to fetch comments", error);
+                if (isMounted) {
+                    console.error("Failed to fetch comments", error);
+                }
             } finally {
-                setIsLoading(false);
+                if (isMounted) {
+                    setIsLoading(false);
+                }
             }
         };
         fetchComments();
+
+        return () => {
+            isMounted = false;
+        };
     }, [postId]);
 
     useEffect(() => {

@@ -115,25 +115,36 @@ export default function HeaderApprovals() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchNotifications = React.useCallback(async () => {
+  const fetchNotifications = React.useCallback(async (isMounted: boolean = true) => {
+    if (!isMounted) return;
     setIsLoading(true);
     try {
       const data = await getDashboardNotifications() as NotificationsState;
-      setNotifications(data);
+      if (isMounted) {
+        setNotifications(data);
+      }
     } catch (error) {
-      console.error(error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Could not fetch notifications.",
-      });
+      if (isMounted) {
+        console.error(error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Could not fetch notifications.",
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }
   }, [toast]);
 
   useEffect(() => {
-    fetchNotifications();
+    let isMounted = true;
+    fetchNotifications(isMounted);
+    return () => {
+      isMounted = false;
+    };
   }, [fetchNotifications]);
 
   const handleRefresh = () => {

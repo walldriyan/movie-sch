@@ -116,7 +116,10 @@ const nextConfig = {
       { protocol: 'https', hostname: 'lh3.googleusercontent.com', port: '', pathname: '/**' },
       { protocol: 'https', hostname: 'avatars.githubusercontent.com', port: '', pathname: '/**' },
       { protocol: 'https', hostname: '**.supabase.co', port: '', pathname: '/**' },
-      { protocol: 'https', hostname: '**' },
+      { protocol: 'https', hostname: 'i.ytimg.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'img.youtube.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'm.media-amazon.com', port: '', pathname: '/**' },
+      { protocol: 'https', hostname: 'image.tmdb.org', port: '', pathname: '/**' },
     ],
   },
 
