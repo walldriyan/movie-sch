@@ -411,35 +411,37 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
 
                 {/* STEP 1: Details (Title, Image, Type, Ratings, Cast - No Description) */}
                 {activeStep === 'details' && (
-                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col gap-8">
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-300 flex flex-col">
+                    {/* Vertical Layout: Poster Top (Banner), then Fields */}
+                    <div className="flex flex-col gap-8">
 
-                    {/* Horizontal Poster & Title Section */}
-                    <div className="flex flex-col lg:flex-row gap-8">
-                      <div className="w-full lg:w-1/3 shrink-0">
-                        <div className="relative aspect-[2/3] w-full max-w-sm mx-auto bg-black/40 rounded-3xl border border-white/10 overflow-hidden group shadow-xl">
+                      {/* Top Image Banner Section */}
+                      <div className="w-full space-y-4">
+                        <div className="relative w-full h-48 md:h-64 bg-black/40 rounded-3xl border border-white/10 overflow-hidden group shadow-xl">
                           {posterUrlValue ? (
                             <Image src={posterUrlValue} alt="Poster" fill className="object-cover" />
                           ) : (
-                            <div className="flex flex-col items-center justify-center h-full w-full text-muted-foreground bg-white/5 space-y-4">
-                              <ImageIcon className="w-16 h-16 opacity-20" />
-                              <span className="text-sm">Upload Poster</span>
+                            <div className="flex flex-col items-center justify-center h-full w-full text-muted-foreground bg-white/5 space-y-2">
+                              <ImageIcon className="w-12 h-12 opacity-20" />
+                              <span className="text-sm font-medium opacity-50">Upload Banner / Poster</span>
                             </div>
                           )}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer space-y-4" onClick={() => posterFileInputRef.current?.click()}>
-                            <Upload className="w-10 h-10 text-white" />
-                            <span className="text-white font-medium">Click to Upload</span>
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer space-y-2" onClick={() => posterFileInputRef.current?.click()}>
+                            <Upload className="w-8 h-8 text-white" />
+                            <span className="text-white text-sm font-medium">Click to Upload</span>
                           </div>
                         </div>
-                        <div className="mt-4 flex gap-2 justify-center">
-                          <Button type="button" variant="outline" size="sm" className="rounded-full border-white/10 hover:bg-white/10" onClick={() => posterFileInputRef.current?.click()}>
+                        <div className="flex gap-2 justify-center">
+                          <Button type="button" variant="outline" size="sm" className="rounded-full border-white/10 hover:bg-white/10 h-8 text-xs" onClick={() => posterFileInputRef.current?.click()}>
                             Choose File
                           </Button>
-                          <Input placeholder="Paste URL..." {...form.register('posterUrl')} className="bg-transparent border-white/10 rounded-full w-40 h-9 text-xs" />
+                          <Input placeholder="Paste URL..." {...form.register('posterUrl')} className="bg-transparent border-white/10 rounded-full w-64 h-8 text-xs focus-visible:ring-0" />
                         </div>
                         <input type="file" ref={posterFileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                       </div>
 
-                      <div className="flex-1 space-y-6">
+                      {/* Fields Section */}
+                      <div className="space-y-6">
                         <FormField
                           control={control}
                           name="title"
@@ -450,7 +452,7 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                                 <Textarea
                                   placeholder="Enter the main title of the content..."
                                   {...field}
-                                  className="bg-black/20 border-white/10 text-xl font-bold rounded-2xl p-4 min-h-[100px] focus:border-blue-500/50 resize-y"
+                                  className="bg-black/20 border-white/10 text-xl font-bold rounded-2xl p-4 min-h-[80px] focus:border-blue-500/50 resize-y"
                                 />
                               </FormControl>
                               <FormMessage />
@@ -479,16 +481,6 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                           />
                           <FormField
                             control={control}
-                            name="orderInSeries"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="font-medium">Episode Number</FormLabel>
-                                <Input type="number" {...field} value={field.value ?? ''} className="bg-transparent border-white/20 h-12 rounded-xl" placeholder="e.g. 1" />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
                             name="seriesId"
                             render={({ field }) => (
                               <FormItem>
@@ -499,12 +491,26 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                           />
                         </div>
 
+                        {/* Conditional Episode Input if Series Selected */}
+                        {watch('seriesId') && (
+                          <FormField
+                            control={control}
+                            name="orderInSeries"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="font-medium">Episode Number</FormLabel>
+                                <Input type="number" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-xl h-12" placeholder="e.g. 1" />
+                              </FormItem>
+                            )}
+                          />
+                        )}
+
                         <div className="grid grid-cols-2 gap-6">
                           <FormField
                             control={control}
                             name="year"
                             render={({ field }) => (
-                              <FormItem><FormLabel className="font-medium">Year</FormLabel><Input type="number" placeholder="2024" {...field} value={field.value ?? ''} className="bg-transparent border-white/20 h-12 rounded-xl" /></FormItem>
+                              <FormItem><FormLabel>Year</FormLabel><Input type="number" placeholder="2024" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
                             )}
                           />
                           <FormField
