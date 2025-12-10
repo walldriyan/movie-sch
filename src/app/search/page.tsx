@@ -227,7 +227,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-16">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         <div className="lg:col-span-3">
-                            <div className="rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent border border-white/[0.04] p-6">
+                            <div key={profileFilter} className="rounded-2xl bg-gradient-to-br from-white/[0.02] to-transparent border border-white/[0.04] p-6 animate-in fade-in zoom-in-95 duration-300">
                                 {profileFilter === 'series' ? (
                                     <ProfileSeriesList series={displaySeries} isOwnProfile={isOwnProfile} profileUser={profileUser} totalSeries={totalSeriesCount} />
                                 ) : profileFilter === 'exams' ? (

@@ -136,13 +136,13 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
                 <EditProfileDialog
                   user={user}
                   triggerButton={
-                    <Button className="flex-1 md:flex-none h-11 rounded-full text-base font-semibold bg-white text-black hover:bg-white/90 shadow-xl transition-transform hover:scale-105 px-6">
+                    <Button className="flex-1 md:flex-none h-11 rounded-full text-base font-semibold bg-black/40 text-white hover:bg-black/60 backdrop-blur-md border border-white/10 shadow-xl transition-transform hover:scale-105 px-6">
                       Edit Profile
                     </Button>
                   }
                 />
               ) : (
-                <Button className="flex-1 md:flex-none h-11 rounded-full text-base font-semibold bg-white text-black hover:bg-white/90 shadow-xl transition-transform hover:scale-105 px-8">
+                <Button className="flex-1 md:flex-none h-11 rounded-full text-base font-semibold bg-black/40 text-white hover:bg-black/60 backdrop-blur-md border border-white/10 shadow-xl transition-transform hover:scale-105 px-8">
                   Follow
                 </Button>
               )}
@@ -156,7 +156,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
 
       {/* Centered Floating Tabs */}
       <div className="flex justify-center">
-        <div className="inline-flex items-center gap-1 bg-white/[0.03] backdrop-blur-md rounded-full p-1.5 border border-white/[0.06] shadow-2xl">
+        <div className="inline-flex items-center gap-1 bg-white/[0.05] border border-white/5 p-1 rounded-full backdrop-blur-md h-auto shadow-2xl">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentFilter === tab.id;
@@ -164,11 +164,12 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
               <Link
                 key={tab.id}
                 href={`/profile/${user.id}?filter=${tab.id}`}
+                scroll={false}
                 className={cn(
                   "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300",
                   isActive
-                    ? "bg-white text-black shadow-lg scale-105"
-                    : "text-white/60 hover:text-white hover:bg-white/5"
+                    ? "bg-black/50 text-white shadow-md backdrop-blur-md"
+                    : "text-muted-foreground hover:text-foreground hover:bg-white/5"
                 )}
               >
                 <Icon className="w-4 h-4" />
