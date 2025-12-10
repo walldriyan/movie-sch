@@ -62,7 +62,8 @@ export async function getPostsBySeriesId(seriesId: number) {
       orderInSeries: 'asc'
     },
     include: {
-      author: true
+      author: true,
+      group: { select: { isPremiumOnly: true } }
     }
   });
 

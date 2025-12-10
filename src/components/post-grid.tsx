@@ -28,14 +28,41 @@ function getAspectRatio(id: number): string {
   return ASPECT_RATIOS[index];
 }
 
+import { useSession } from 'next-auth/react';
+import { useToast } from '@/hooks/use-toast';
+import { Crown } from 'lucide-react';
+
 function MovieCard({ movie, index }: { movie: Movie; index: number }) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imgError, setImgError] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const { data: session } = useSession();
+  const { toast } = useToast();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const user = session?.user;
+  const isPremiumGroup = (movie as any).group?.isPremiumOnly;
+
+  // Check if user has access to premium content
+  const hasPremiumAccess = user &&
+    (user.role === 'SUPER_ADMIN' || user.role === 'USER_ADMIN' ||
+      user.accountType === 'PREMIUM' || user.accountType === 'HYBRID');
+
+  const isLocked = isPremiumGroup && !hasPremiumAccess;
+
+  const handleCardClick = (e: React.MouseEvent) => {
+    if (isLocked) {
+      e.preventDefault();
+      toast({
+        title: "Premium Content",
+        description: "This content is exclusive to Premium members. Please upgrade to access.",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Check if image exists and is valid
   const hasValidImage = movie.posterUrl && movie.posterUrl.trim() !== '' && !imgError;
@@ -55,7 +82,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
       }}
     >
       <Link
-        href={`/movies/${movie.id}`}
+        href={isLocked ? '#' : `/movies/${movie.id}`}
+        onClick={handleCardClick}
         className="block h-full w-full"
         aria-label={movie.title}
       >
@@ -68,7 +96,8 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
               fill
               className={cn(
                 'object-cover transition-all duration-500 group-hover:scale-105',
-                imageLoaded ? 'opacity-100' : 'opacity-0'
+                imageLoaded ? 'opacity-100' : 'opacity-0',
+                isLocked && 'blur-md brightness-50' // Blur effect for locked content
               )}
               onLoad={() => setImageLoaded(true)}
               onError={() => setImgError(true)}
@@ -86,23 +115,44 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
             </div>
           )}
 
-          {/* Hover Overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-gradient-to-t from-black/70 via-black/40 to-black/20">
-            <div className="flex flex-col items-center gap-3 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-              <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-xl shadow-black/30">
-                <Play className="w-6 h-6 text-black ml-0.5" fill="currentColor" />
+          {/* Locked Overlay for Premium */}
+          {isLocked && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center z-40">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/20 mb-2">
+                <Lock className="w-6 h-6 text-white" />
               </div>
-              <span className="text-white text-xs font-medium px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm">
-                View Details
-              </span>
+              <span className="text-amber-400 font-bold text-sm tracking-wider uppercase drop-shadow-md">Premium Only</span>
             </div>
-          </div>
+          )}
 
-          {/* Lock badge - top right */}
-          {movie.isLockedByDefault && (
+          {/* Hover Overlay - Only if NOT locked */}
+          {!isLocked && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-gradient-to-t from-black/70 via-black/40 to-black/20">
+              <div className="flex flex-col items-center gap-3 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+                <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-xl shadow-black/30">
+                  <Play className="w-6 h-6 text-black ml-0.5" fill="currentColor" />
+                </div>
+                <span className="text-white text-xs font-medium px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm">
+                  View Details
+                </span>
+              </div>
+            </div>
+          )}
+
+          {/* Lock badge - top right (Existing standard lock) */}
+          {movie.isLockedByDefault && !isLocked && (
             <div className="absolute top-3 right-3 z-30">
               <div className="flex items-center justify-center w-7 h-7 bg-amber-500/20 backdrop-blur-md rounded-full border border-amber-500/30">
                 <Lock className="h-3.5 w-3.5 text-amber-400" />
+              </div>
+            </div>
+          )}
+
+          {/* Premium Badge (Golden Crown) - if isPremiumGroup and User HAS access */}
+          {isPremiumGroup && !isLocked && (
+            <div className="absolute top-3 right-3 z-30">
+              <div className="flex items-center justify-center w-7 h-7 bg-gradient-to-br from-amber-300 to-amber-500 rounded-full shadow-lg shadow-amber-500/30">
+                <Crown className="h-4 w-4 text-black" strokeWidth={2.5} />
               </div>
             </div>
           )}
@@ -133,6 +183,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
               {movie.title}
             </h3>
             <div className="flex items-center gap-2 text-xs text-white/60">
+              {/* Hide details if locked maybe? Or keep them as teaser */}
               {movie.year && <span>{movie.year}</span>}
               {movie.duration && (
                 <>

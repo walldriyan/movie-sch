@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight, RotateCcw, Camera, Loader2 } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight, RotateCcw, Camera, Loader2, Crown } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -446,6 +446,18 @@ export default function HomePageClient({
                                         <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'locked' })} scroll={false} className="flex items-center gap-2">
                                             <Lock className="w-3.5 h-3.5" />
                                             <span>Locked</span>
+                                        </Link>
+                                    </Button>
+
+                                    <Button asChild variant={'ghost'} size="sm" className={cn(
+                                        "rounded-xl px-4 h-10 transition-all text-sm font-medium border",
+                                        lockStatus === 'premium'
+                                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/20 shadow-[0_0_15px_rgba(245,158,11,0.2)]'
+                                            : 'bg-white/5 text-muted-foreground border-white/5 hover:text-amber-400 hover:bg-amber-500/10'
+                                    )}>
+                                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: undefined, lockStatus: 'premium' })} scroll={false} className="flex items-center gap-2">
+                                            <Crown className="w-3.5 h-3.5 text-amber-500" />
+                                            <span>Premium</span>
                                         </Link>
                                     </Button>
 

@@ -84,20 +84,33 @@ export default async function SeriesDetailPage({ params, searchParams }: SeriesD
     const user = session?.user;
 
     // Check Lock Active Post
+    // Check Lock Active Post
     let isContentLocked = false;
+
+    // 1. Admin/Author Override
     if (user && (user.role === ROLES.SUPER_ADMIN || user.id === activePostData.authorId)) {
         isContentLocked = false;
-    } else if (activePostData.visibility === 'GROUP_ONLY') {
-        if (!user) {
-            isContentLocked = true;
-        } else {
-            const membership = await prisma.groupMember.findFirst({
-                where: { groupId: activePostData.groupId || undefined, userId: user.id, status: 'ACTIVE' }
-            });
-            if (!membership) isContentLocked = true;
+    } else {
+        // 2. Default Lock Check
+        if (activePostData.isLockedByDefault) isContentLocked = true;
+
+        // 3. Group Lock Check
+        if (activePostData.visibility === 'GROUP_ONLY') {
+            if (!user) isContentLocked = true;
+            else {
+                const membership = await prisma.groupMember.findFirst({
+                    where: { groupId: activePostData.groupId || undefined, userId: user.id, status: 'ACTIVE' }
+                });
+                if (!membership) isContentLocked = true;
+            }
         }
-    } else if (activePostData.isLockedByDefault) {
-        isContentLocked = true;
+
+        // 4. Premium Lock Check
+        const isPremiumGroup = (activePostData as any).group?.isPremiumOnly;
+        if (isPremiumGroup) {
+            const hasPremiumAccess = user && (user.accountType === 'PREMIUM' || user.accountType === 'HYBRID');
+            if (!hasPremiumAccess) isContentLocked = true;
+        }
     }
 
     // Sidebar Locks
@@ -113,10 +126,20 @@ export default async function SeriesDetailPage({ params, searchParams }: SeriesD
     const postsWithLockStatus = allPosts.map(post => {
         let isLocked = false;
         if (post.isLockedByDefault) isLocked = true;
+
+        // Group only check
         if (post.visibility === 'GROUP_ONLY') {
             if (!user) isLocked = true;
             else if (post.groupId && !userGroupIds.includes(post.groupId)) isLocked = true;
         }
+
+        // Premium check
+        const isPremiumGroup = (post as any).group?.isPremiumOnly;
+        if (isPremiumGroup) {
+            const hasPremiumAccess = user && (user.accountType === 'PREMIUM' || user.accountType === 'HYBRID');
+            if (!hasPremiumAccess) isLocked = true;
+        }
+
         if (user && (user.role === ROLES.SUPER_ADMIN || user.id === post.authorId)) {
             isLocked = false;
         }

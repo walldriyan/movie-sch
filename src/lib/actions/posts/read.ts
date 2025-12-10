@@ -97,6 +97,7 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
             where: whereClause, skip, take: limit, orderBy,
             include: {
                 author: true,
+                group: { select: { isPremiumOnly: true, name: true } },
                 series: {
                     include: {
                         posts: { select: { posterUrl: true }, orderBy: { orderInSeries: 'asc' } },
@@ -138,7 +139,7 @@ export async function getPost(postId: number) {
         where: { id: postId },
         include: {
             reviews: { where: { parentId: null }, include: { user: true, replies: { include: { user: true }, orderBy: { createdAt: 'asc' } } }, orderBy: { createdAt: 'desc' } },
-            author: true, favoritePosts: userId ? { where: { userId } } : false, likedBy: true, dislikedBy: true, mediaLinks: true, series: true,
+            author: true, favoritePosts: userId ? { where: { userId } } : false, likedBy: true, dislikedBy: true, mediaLinks: true, series: true, group: true,
             exam: { where: { status: 'ACTIVE' }, select: { id: true, title: true, description: true } }, _count: true
         },
         cacheStrategy: { ttl: 60, swr: 60 }
