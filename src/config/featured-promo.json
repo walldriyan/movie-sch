@@ -1,9 +1,14 @@
 {
-  "active": false,
-  "type": "video",
-  "mediaUrl": "https://www.youtube.com/watch?v=jU3zSJnRNDs&list=RDjU3zSJnRNDs&start_radio=1&t=1572s",
-  "title": "",
-  "description": "",
+  "active": true,
+  "type": "audio",
+  "mediaUrl": "/uploads/promo/1765372484095-739695400-2023-10-15-202725.jpg",
+  "title": "Asanka",
+  "description": "Next Step: මම Server එක Restart වෙන්න දැම්මා (Next config වෙනස් කළ හින්දා). තව පොඩි වෙලාවකින් Refresh කරලා MP3 Upload කරලා",
   "linkUrl": "https://www.youtube.com/watch?v=jU3zSJnRNDs&list=RDjU3zSJnRNDs&start_radio=1&t=1572s",
-  "audioTracks": []
+  "audioTracks": [
+    {
+      "title": "Rohana Priyamantha 1 with SUNFLOWER රෝහණ ප්_රියමන්ත පිරිස් 1 සන්ෆ්ලවර් සමඟ [JinfPJfYaGs](2).mp3",
+      "url": "/uploads/promo/1765372452733-44647361-RohanaPriyamantha1withSUNFLOWER1JinfPJfYaGs2.mp3"
+    }
+  ]
 }

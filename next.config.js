@@ -13,6 +13,9 @@ const nextConfig = {
 
   // Aggressive size reduction options
   experimental: {
+    serverActions: {
+      bodySizeLimit: '100mb',
+    },
     optimizePackageImports: [
       'lucide-react',
       '@radix-ui/react-accordion',
