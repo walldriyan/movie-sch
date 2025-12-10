@@ -1,11 +1,17 @@
 'use server';
 
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@supabase/supabase-js';
 import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
-import prisma from '@/lib/prisma'; // Assuming you have this
+import prisma from '@/lib/prisma';
+import { STORAGE_CONFIG } from '../storage-config';
+
+// Helper function to create Supabase client with appropriate key
+function getSupabaseClient() {
+    const accessKey = STORAGE_CONFIG.supabase.serviceKey || STORAGE_CONFIG.supabase.anonKey;
+    return createClient(STORAGE_CONFIG.supabase.url, accessKey);
+}
 
 export async function uploadGroupCover(groupId: string, formData: FormData) {
     try {
@@ -19,7 +25,7 @@ export async function uploadGroupCover(groupId: string, formData: FormData) {
 
         // Verify user is super admin or group creator
         if (user.role !== ROLES.SUPER_ADMIN) {
-            const group = await prisma.group.findUnique({ where: { id: groupId } }); // Helper check
+            const group = await prisma.group.findUnique({ where: { id: groupId } });
             if (!group || group.createdById !== user.id) {
                 throw new Error("Unauthorized");
             }
@@ -33,30 +39,42 @@ export async function uploadGroupCover(groupId: string, formData: FormData) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Define the path: public/uploads/groups/[groupId]/cover.jpg
-        // Or simpler: public/images/groups/[groupId]-cover.jpg to keep it clean
-        const publicDir = join(process.cwd(), 'public', 'images', 'groups');
+        // Define the file path in Supabase Storage
+        const fileName = `groups/${groupId}-cover.jpg`;
 
-        // Ensure directory exists
-        await mkdir(publicDir, { recursive: true });
+        // Upload to Supabase Storage
+        const supabase = getSupabaseClient();
 
-        const fileName = `${groupId}-cover.jpg`;
-        const filePath = join(publicDir, fileName);
+        // First, try to remove existing file (if any) - ignore errors
+        await supabase.storage
+            .from(STORAGE_CONFIG.supabase.bucket)
+            .remove([fileName]);
 
-        // Write the file (overwriting existing)
-        await writeFile(filePath, buffer);
+        // Upload the new file
+        const { error: uploadError } = await supabase.storage
+            .from(STORAGE_CONFIG.supabase.bucket)
+            .upload(fileName, buffer, {
+                contentType: 'image/jpeg',
+                upsert: true, // Overwrite if exists
+            });
 
-        // Update database record to point to this local file if it was previously an external URL
-        // (This ensures consistency, though we might just rely on the path convention in the client)
-        // Actually, let's store the path in DB to be safe if `group.coverPhoto` is used elsewhere.
+        if (uploadError) {
+            console.error('Supabase upload error:', uploadError);
+            throw new Error(`Upload failed: ${uploadError.message}`);
+        }
+
+        // Construct the public URL
+        const publicUrl = `${STORAGE_CONFIG.supabase.url}/storage/v1/object/public/${STORAGE_CONFIG.supabase.bucket}/${fileName}`;
+
+        // Update database record with the new URL
         await prisma.group.update({
             where: { id: groupId },
-            data: { coverPhoto: `/images/groups/${fileName}?v=${Date.now()}` }
+            data: { coverPhoto: `${publicUrl}?v=${Date.now()}` }
         });
-
 
         // Revalidate
         revalidatePath(`/groups/${groupId}`);
+        revalidatePath('/groups');
 
         return { success: true, timestamp: Date.now() };
     } catch (error) {

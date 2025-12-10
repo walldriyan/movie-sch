@@ -1,8 +1,14 @@
 'use server';
 
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
 import { revalidatePath } from 'next/cache';
+import { createClient } from '@supabase/supabase-js';
+import { STORAGE_CONFIG } from '../storage-config';
+
+// Helper function to create Supabase client with appropriate key
+function getSupabaseClient() {
+    const accessKey = STORAGE_CONFIG.supabase.serviceKey || STORAGE_CONFIG.supabase.anonKey;
+    return createClient(STORAGE_CONFIG.supabase.url, accessKey);
+}
 
 export async function uploadHeroImage(formData: FormData) {
     try {
@@ -14,16 +20,29 @@ export async function uploadHeroImage(formData: FormData) {
         const bytes = await file.arrayBuffer();
         const buffer = Buffer.from(bytes);
 
-        // Define the path: public/images/hero-cover.jpg
-        const publicDir = join(process.cwd(), 'public', 'images');
+        // Define the file path in Supabase Storage
+        const fileName = 'hero/hero-cover.jpg';
 
-        // Ensure directory exists
-        await mkdir(publicDir, { recursive: true });
+        // Upload to Supabase Storage
+        const supabase = getSupabaseClient();
 
-        const filePath = join(publicDir, 'hero-cover.jpg');
+        // First, try to remove existing file (if any) - ignore errors
+        await supabase.storage
+            .from(STORAGE_CONFIG.supabase.bucket)
+            .remove([fileName]);
 
-        // Write the file (overwriting existing)
-        await writeFile(filePath, buffer);
+        // Upload the new file
+        const { error: uploadError } = await supabase.storage
+            .from(STORAGE_CONFIG.supabase.bucket)
+            .upload(fileName, buffer, {
+                contentType: 'image/jpeg',
+                upsert: true, // Overwrite if exists
+            });
+
+        if (uploadError) {
+            console.error('Supabase upload error:', uploadError);
+            throw new Error(`Upload failed: ${uploadError.message}`);
+        }
 
         // Revalidate the home page to reflect changes
         revalidatePath('/');
