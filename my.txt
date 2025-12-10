@@ -18,6 +18,8 @@ npx prisma db push
 git push origin 60v:main --force
 
 
+ok
+
 Walldriyanschlumin
 
 
