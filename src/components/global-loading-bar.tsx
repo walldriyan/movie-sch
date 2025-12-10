@@ -6,14 +6,14 @@ import { useState } from 'react';
 
 export default function GlobalLoadingBar() {
   const { isLoading } = useLoading();
+  const [imgError, setImgError] = useState(false);
+
+  // Exact URL as provided
+  const logoUrl = 'https://nxxruoipaevhutvxnukg.supabase.co/storage/v1/object/public/Public/loading.png';
 
   if (!isLoading) {
     return null;
   }
-
-  // Exact URL as provided
-  const logoUrl = 'https://nxxruoipaevhutvxnukg.supabase.co/storage/v1/object/public/Public/loading.png';
-  const [imgError, setImgError] = useState(false);
 
   return (
     <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-background/5 backdrop-blur-[2px] animate-in fade-in duration-200 gap-4">

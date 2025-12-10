@@ -40,6 +40,40 @@ interface UnifiedWatchPageProps {
     adConfig: AdUnit[];
 }
 
+interface SidebarThumbnailProps {
+    src?: string | null;
+    alt: string;
+    className?: string;
+    isActive?: boolean;
+}
+
+const SidebarThumbnail = ({ src, alt, className, isActive }: SidebarThumbnailProps) => {
+    const [error, setError] = useState(false);
+    const hasImage = src && !src.includes('placeholder') && !error;
+
+    if (!hasImage) {
+        return (
+            <div className={cn(
+                "w-full h-full flex items-center justify-center transition-all duration-500",
+                "bg-gradient-to-br from-white/5 to-transparent", // Very subtle gradient
+                !isActive && "group-hover:scale-105" // Maintain scaling effect if desired, or remove
+            )}>
+                {/* Optional: Very subtle icon or just empty as requested "div ekk vitrak" */}
+            </div>
+        );
+    }
+
+    return (
+        <Image
+            src={src!}
+            alt={alt}
+            fill
+            className={className}
+            onError={() => setError(true)}
+        />
+    );
+};
+
 export default function UnifiedWatchPage({
     type,
     post,
@@ -54,6 +88,7 @@ export default function UnifiedWatchPage({
     const { startLoading, stopLoading } = useLoading();
     const { toast } = useToast();
     const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+    const [imgError, setImgError] = useState(false);
 
     const isPremium = session?.user && (
         session.user.role === 'SUPER_ADMIN' ||
@@ -225,7 +260,7 @@ export default function UnifiedWatchPage({
                         </>
                     ) : (
                         <Link href="/" className="hover:text-primary transition-colors">
-                            Movies
+                            {post.type === 'OTHER' ? 'Documentation' : 'Movies'}
                         </Link>
                     )}
                     <ChevronRight className="w-4 h-4" />
@@ -245,18 +280,26 @@ export default function UnifiedWatchPage({
                             {/* OVERLAY: Top Right (Metadata) */}
                             <div className="absolute top-4 right-4 z-20 flex flex-col items-end gap-2.5">
                                 <div className="flex items-center gap-3 text-xs font-medium text-white/90 bg-black/20 backdrop-blur-md px-4 py-1.5 rounded-full border border-white/5 hover:bg-black/30 transition-colors">
-                                    <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {post.year || 'N/A'}</span>
-                                    <span className="w-px h-3 bg-white/20" />
-                                    <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {post.duration || 'N/A'}</span>
-                                    {post.genres && post.genres.length > 0 && (
+                                    {post.type !== 'OTHER' ? (
                                         <>
-                                            <span className="w-px h-3 bg-white/20 hidden md:block" />
-                                            <div className="hidden md:flex gap-2">
-                                                {post.genres.slice(0, 2).map((g: string) => (
-                                                    <span key={g}>{g}</span>
-                                                ))}
-                                            </div>
+                                            <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {post.year || 'N/A'}</span>
+                                            <span className="w-px h-3 bg-white/20" />
+                                            <span className="flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" /> {post.duration || 'N/A'}</span>
+                                            {post.genres && post.genres.length > 0 && (
+                                                <>
+                                                    <span className="w-px h-3 bg-white/20 hidden md:block" />
+                                                    <div className="hidden md:flex gap-2">
+                                                        {post.genres.slice(0, 2).map((g: string) => (
+                                                            <span key={g}>{g}</span>
+                                                        ))}
+                                                    </div>
+                                                </>
+                                            )}
                                         </>
+                                    ) : (
+                                        <span className="flex items-center gap-1.5">
+                                            <FileText className="w-3.5 h-3.5" /> Documentation
+                                        </span>
                                     )}
                                 </div>
 
@@ -298,14 +341,33 @@ export default function UnifiedWatchPage({
                                 />
                             ) : (
                                 // POSTER ONLY
-                                <div className="relative w-full h-full">
-                                    <Image
-                                        src={post.posterUrl || '/placeholder-poster.jpg'}
-                                        alt={post.title}
-                                        fill
-                                        className="object-cover"
-                                        priority
-                                    />
+                                // POSTER OR GRADIENT
+                                // POSTER OR GRADIENT
+                                <div className={cn("relative w-full h-full",
+                                    (!post.posterUrl || post.posterUrl.includes('placeholder') || imgError) && (
+                                        post.type === 'OTHER'
+                                            ? "bg-gradient-to-br from-slate-900 to-blue-900"
+                                            : "bg-gradient-to-br from-neutral-900 via-zinc-900 to-black"
+                                    )
+                                )}>
+                                    {(!post.posterUrl || post.posterUrl.includes('placeholder') || imgError) ? (
+                                        <div className="w-full h-full flex items-center justify-center opacity-30">
+                                            {post.type === 'OTHER' ? (
+                                                <div className="w-96 h-96 bg-blue-500/20 blur-[100px] rounded-full" />
+                                            ) : (
+                                                <Film className="w-20 h-20 text-white/5" />
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <Image
+                                            src={post.posterUrl || '/placeholder-poster.jpg'}
+                                            alt={post.title}
+                                            fill
+                                            className="object-cover"
+                                            priority
+                                            onError={() => setImgError(true)}
+                                        />
+                                    )}
                                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
                                 </div>
                             )}
@@ -313,7 +375,7 @@ export default function UnifiedWatchPage({
                             {/* Title Overlay (Bottom Left) if no video or locked */}
                             {(!videoId || post.isContentLocked) && (
                                 <div className="absolute bottom-6 left-8 max-w-[60%] pointer-events-none">
-                                    {type === 'SERIES' && allPosts.length > 0 && (
+                                    {type === 'SERIES' && allPosts.length > 0 && post.type !== 'OTHER' && (
                                         <Badge variant="secondary" className="mb-3 bg-white/20 text-white backdrop-blur-md border-0">
                                             Ep {getAllPostsIndex(allPosts, post.id)}
                                         </Badge>
@@ -438,6 +500,69 @@ export default function UnifiedWatchPage({
                                 </>
                             )}
                         </div>
+
+                        {/* SERIES NAVIGATION BUTTONS */}
+                        {type === 'SERIES' && allPosts.length > 0 && (
+                            <div className="flex items-center justify-between gap-4 mb-10">
+                                {/* PREVIOUS BUTTON */}
+                                {(() => {
+                                    const currentIndex = allPosts.findIndex(p => p.id === post.id);
+                                    const prevPost = currentIndex > 0 ? allPosts[currentIndex - 1] : null;
+
+                                    if (!prevPost) return <div className="flex-1" />; // Spacer
+
+                                    return (
+                                        <Button
+                                            variant="outline"
+                                            className="h-12 rounded-xl border-white/10 bg-black/20 hover:bg-white/5 justify-start pl-4 gap-3 group max-w-[48%]"
+                                            onClick={() => {
+                                                startLoading();
+                                                router.push(`/search?seriesId=${series?.id}&post=${prevPost.id}`);
+                                            }}
+                                        >
+                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                <ChevronLeft className="w-4 h-4" />
+                                            </div>
+                                            <div className="flex flex-col items-start truncate text-left overflow-hidden">
+                                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Previous</span>
+                                                <span className="text-xs font-semibold truncate w-full">
+                                                    {prevPost.title}
+                                                </span>
+                                            </div>
+                                        </Button>
+                                    );
+                                })()}
+
+                                {/* NEXT BUTTON */}
+                                {(() => {
+                                    const currentIndex = allPosts.findIndex(p => p.id === post.id);
+                                    const nextPost = currentIndex < allPosts.length - 1 ? allPosts[currentIndex + 1] : null;
+
+                                    if (!nextPost) return <div className="flex-1" />; // Spacer
+
+                                    return (
+                                        <Button
+                                            variant="outline"
+                                            className="h-12 rounded-xl border-white/10 bg-black/20 hover:bg-white/5 justify-end pr-4 gap-3 group max-w-[48%]"
+                                            onClick={() => {
+                                                startLoading();
+                                                router.push(`/search?seriesId=${series?.id}&post=${nextPost.id}`);
+                                            }}
+                                        >
+                                            <div className="flex flex-col items-end truncate text-right overflow-hidden">
+                                                <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Next</span>
+                                                <span className="text-xs font-semibold truncate w-full">
+                                                    {nextPost.title}
+                                                </span>
+                                            </div>
+                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                                                <ChevronRight className="w-4 h-4" />
+                                            </div>
+                                        </Button>
+                                    );
+                                })()}
+                            </div>
+                        )}
 
                         {/* TABS: Reviews & Subtitles */}
                         <Tabs defaultValue="reviews" className="w-full">
@@ -574,13 +699,13 @@ export default function UnifiedWatchPage({
                             <div className="rounded-2xl border bg-card shadow-sm overflow-hidden flex flex-col shrink-0">
                                 {type === 'SERIES' && (
                                     <div className="p-4 border-b bg-muted/30 font-semibold text-sm flex items-center justify-between">
-                                        <span>Episode List</span>
-                                        <span className="text-xs text-muted-foreground">{allPosts.length} Eps</span>
+                                        <span>{post.type === 'OTHER' ? 'Articles' : 'Episode List'}</span>
+                                        <span className="text-xs text-muted-foreground">{allPosts.length} {post.type === 'OTHER' ? 'Arts' : 'Eps'}</span>
                                     </div>
                                 )}
 
                                 {/* MOVIE INFO CARD (IMDB Style) */}
-                                {type === 'MOVIE' && (
+                                {type === 'MOVIE' && post.type !== 'OTHER' && (
                                     <div className="p-5 border-b space-y-4 bg-gradient-to-b from-card to-muted/20">
                                         <div className="flex items-center justify-between mb-2">
                                             <h2 className="font-bold text-lg">Movie Info</h2>
@@ -651,11 +776,11 @@ export default function UnifiedWatchPage({
                                                         )}
                                                     >
                                                         <div className="relative w-24 aspect-video bg-muted rounded-lg overflow-hidden shrink-0 border border-border/50 shadow-sm">
-                                                            <Image
-                                                                src={episode.posterUrl || '/placeholder-poster.jpg'}
+                                                            <SidebarThumbnail
+                                                                src={episode.posterUrl}
                                                                 alt={episode.title}
-                                                                fill
                                                                 className={cn("object-cover transition-transform duration-500", !isActive && "group-hover:scale-105")}
+                                                                isActive={isActive}
                                                             />
                                                             {episode.isLocked && (
                                                                 <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
@@ -667,9 +792,11 @@ export default function UnifiedWatchPage({
                                                                     <div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse shadow-[0_0_8px_white]" />
                                                                 </div>
                                                             )}
-                                                            <div className="absolute bottom-0.5 right-0.5 px-1 py-px bg-black/80 text-[8px] text-white font-medium rounded-sm backdrop-blur-sm">
-                                                                Ep {index + 1}
-                                                            </div>
+                                                            {post.type !== 'OTHER' && (
+                                                                <div className="absolute bottom-0.5 right-0.5 px-1 py-px bg-black/80 text-[8px] text-white font-medium rounded-sm backdrop-blur-sm">
+                                                                    Ep {index + 1}
+                                                                </div>
+                                                            )}
                                                         </div>
                                                         <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
                                                             <h4 className={cn(
@@ -678,12 +805,14 @@ export default function UnifiedWatchPage({
                                                             )}>
                                                                 {episode.title}
                                                             </h4>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                                    <Clock className="w-2.5 h-2.5" />
-                                                                    {episode.duration || '--'}
-                                                                </span>
-                                                            </div>
+                                                            {post.type !== 'OTHER' && (
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                                        <Clock className="w-2.5 h-2.5" />
+                                                                        {episode.duration || '--'}
+                                                                    </span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     </button>
                                                 );
@@ -705,11 +834,11 @@ export default function UnifiedWatchPage({
                                                             )}
                                                         >
                                                             <div className="relative w-24 aspect-video bg-muted rounded-lg overflow-hidden shrink-0 border border-border/50 shadow-sm">
-                                                                <Image
-                                                                    src={rPost.posterUrl || '/placeholder-poster.jpg'}
+                                                                <SidebarThumbnail
+                                                                    src={rPost.posterUrl}
                                                                     alt={rPost.title}
-                                                                    fill
                                                                     className={cn("object-cover transition-transform duration-500", !isActive && "group-hover:scale-105")}
+                                                                    isActive={isActive}
                                                                 />
                                                                 <div className="absolute bottom-0.5 right-0.5 px-1 py-px bg-black/80 text-[8px] text-white font-medium rounded-sm backdrop-blur-sm">
                                                                     Movie

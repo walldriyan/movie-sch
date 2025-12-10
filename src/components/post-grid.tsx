@@ -89,7 +89,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
       >
         {/* Image Container with dynamic aspect ratio */}
         <div className={cn("relative w-full overflow-hidden", aspectRatio)}>
-          {hasValidImage ? (
+          {(hasValidImage) ? (
             <Image
               src={movie.posterUrl!}
               alt={movie.title}
@@ -105,12 +105,22 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
               quality={75}
             />
           ) : (
-            /* Very subtle dark gradient for missing images - barely visible */
-            <div className="absolute inset-0 bg-gradient-to-br from-[#1f1f1f] via-[#181818] to-[#141414]">
+            /* Gradient for missing images */
+            <div className={cn(
+              "absolute inset-0",
+              movie.type === 'OTHER'
+                ? "bg-gradient-to-br from-slate-900 to-blue-900" // Help Docs: Dark Navy Blue
+                : "bg-gradient-to-br from-[#1f1f1f] via-[#181818] to-[#141414]"
+            )}>
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-              {/* Centered icon - very subtle */}
               <div className="absolute inset-0 flex items-center justify-center">
-                <Clapperboard className="w-10 h-10 text-white/[0.06]" />
+                {movie.type === 'OTHER' ? (
+                  <div className="w-full h-full flex items-center justify-center opacity-30">
+                    <div className="w-24 h-24 bg-blue-500/20 blur-[40px] rounded-full" />
+                  </div>
+                ) : (
+                  <Clapperboard className="w-10 h-10 text-white/[0.06]" />
+                )}
               </div>
             </div>
           )}
@@ -157,12 +167,30 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
             </div>
           )}
 
+          {/* PINNED (Simulated for First Help Item) - If Type OTHER and Index 0 (or manually set in future) */}
+          {movie.type === 'OTHER' && index === 0 && (
+            <div className="absolute top-3 right-3 z-30">
+              <div className="flex items-center justify-center w-8 h-8 bg-black/60 backdrop-blur-md text-white rounded-full shadow-lg border border-white/10">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-pin"><line x1="12" x2="12" y1="17" y2="22" /><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z" /></svg>
+              </div>
+            </div>
+          )}
+
+
           {/* Type badge - top left */}
           {mounted && (
             <div className="absolute top-3 left-3 z-30">
-              <div className="flex items-center gap-1.5 bg-black/50 backdrop-blur-md px-2.5 py-1 text-xs font-medium text-white/90 rounded-full border border-white/10">
-                {movie.type === 'MOVIE' ? <Clapperboard className="w-3 h-3" /> : movie.type === 'TV_SERIES' ? <Tv className="w-3 h-3" /> : <Folder className="w-3 h-3" />}
-                <span className="hidden sm:inline">{movie.type === 'MOVIE' ? 'Movie' : movie.type === 'TV_SERIES' ? 'Series' : 'Other'}</span>
+              <div className={cn(
+                "flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 text-xs font-medium text-white/90 rounded-full border border-white/10 bg-black/60"
+              )}>
+                {movie.type === 'MOVIE' ? <Clapperboard className="w-3 h-3" /> :
+                  movie.type === 'TV_SERIES' ? <Tv className="w-3 h-3" /> :
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z" /><polyline points="14 2 14 8 20 8" /><path d="M12 18v-6" /><path d="M8 15h8" /></svg>}
+
+                <span className="hidden sm:inline">
+                  {movie.type === 'MOVIE' ? 'Movie' :
+                    movie.type === 'TV_SERIES' ? 'Series' : 'Other'}
+                </span>
               </div>
             </div>
           )}
@@ -184,18 +212,19 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
             </h3>
             <div className="flex items-center gap-2 text-xs text-white/60">
               {/* Hide details if locked maybe? Or keep them as teaser */}
-              {movie.year && <span>{movie.year}</span>}
-              {movie.duration && (
+              {movie.year && movie.type !== 'OTHER' && <span>{movie.year}</span>}
+              {movie.duration && movie.type !== 'OTHER' && (
                 <>
                   <span className="w-1 h-1 rounded-full bg-white/40" />
                   <span>{movie.duration}</span>
                 </>
               )}
+              {movie.type === 'OTHER' && <span>Documentation</span>}
             </div>
             {series && series._count && series._count.posts > 0 && (
               <div className="flex items-center gap-1.5 text-xs text-purple-400 mt-2">
                 <List className="h-3 w-3" />
-                <span>{series._count.posts} Episodes</span>
+                <span>{series._count.posts} {movie.type === 'OTHER' ? 'Articles' : 'Episodes'}</span>
               </div>
             )}
           </div>
