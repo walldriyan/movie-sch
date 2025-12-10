@@ -7,34 +7,60 @@ import ReactPlayer from 'react-player/lazy';
 import {
     Edit2, Save, Trash2, Video, Image as ImageIcon, Link as LinkIcon,
     AlertCircle, X, Loader2, Music, Upload, Plus, Play, Pause,
-    SkipBack, SkipForward, Volume2, Mic2
+    SkipBack, SkipForward, Volume2, Mic2, Copy, RefreshCw
 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { Slider } from '@/components/ui/slider';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
-import { updatePromoData, PromoData } from '@/lib/actions/promo';
-import { uploadPromoFile } from '@/lib/actions/upload-promo';
-import { cn } from '@/lib/utils';
-import type { User } from '@prisma/client';
+
+import { Button } from "@/components/ui/button";
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { cn } from "@/lib/utils";
+import { updatePromoData } from '@/lib/actions/promo';
+import { uploadPromoFile, getPromoFiles, deletePromoFile } from '@/lib/actions/upload-promo';
+import { User } from '@prisma/client';
+import { Slider } from "@/components/ui/slider";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { AudioTrack } from '@/lib/actions/promo';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface FeaturedPromoProps {
-    data: PromoData;
-    currentUser: User | null;
+    data: {
+        active: boolean;
+        type: 'video' | 'image' | 'audio';
+        mediaUrl: string;
+        title: string;
+        description: string;
+        linkUrl: string;
+        audioTracks?: AudioTrack[];
+    };
+    currentUser?: User | null;
 }
 
-export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
+export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isOpen, setIsOpen] = useState(false);
     const isAdmin = currentUser?.role === 'SUPER_ADMIN';
 
+    // Video Player State
     const [videoMode, setVideoMode] = useState(false); // If true, video plays with sound/controls and overlay is hidden
     const [hasMounted, setHasMounted] = useState(false);
 
@@ -45,30 +71,71 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
     // Audio Player State
     const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [volume, setVolume] = useState(0.5);
-    const audioRef = useRef<HTMLAudioElement | null>(null);
+    const [volume, setVolume] = useState(0.8);
+    const [played, setPlayed] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const audioPlayerRef = useRef<ReactPlayer>(null);
+    const [isHoveringPlayer, setIsHoveringPlayer] = useState(false);
 
-    // Form state
-    const [formData, setFormData] = useState<PromoData>(data);
+    // Form State
+    const [formData, setFormData] = useState(data);
     const [uploading, setUploading] = useState(false);
 
-    // Update form when data prop changes
+    // Library State
+    const [libraryFiles, setLibraryFiles] = useState<{ name: string, url: string, type: string }[]>([]);
+    const [loadingFiles, setLoadingFiles] = useState(false);
+
+    const loadLibrary = async () => {
+        setLoadingFiles(true);
+        const res = await getPromoFiles();
+        if (res.success && res.files) {
+            setLibraryFiles(res.files);
+        }
+        setLoadingFiles(false);
+    };
+
+    const handleDeleteFile = async (filename: string) => {
+        if (!confirm("Permanently delete this file? This cannot be undone.")) return;
+
+        const res = await deletePromoFile(filename);
+        if (res.success) {
+            toast.success("File deleted");
+            loadLibrary(); // refresh
+        } else {
+            toast.error("Failed to delete");
+        }
+    };
+
+    const handleCopyUrl = (url: string) => {
+        navigator.clipboard.writeText(window.location.origin + url);
+        toast.success("URL copied to clipboard!");
+    };
+
+    // Auto-load library when dialog opens
+    useEffect(() => {
+        if (isOpen) {
+            setFormData(data); // Reset form to current data
+            loadLibrary();
+        }
+    }, [isOpen, data]);
+
+
     const handleSubmit = async () => {
         startTransition(async () => {
             const res = await updatePromoData(formData);
             if (res.success) {
-                toast.success("Promo section updated successfully");
+                toast.success("Promo section updated");
                 setIsOpen(false);
                 router.refresh();
             } else {
-                toast.error("Failed to update promo section");
+                toast.error(res.error || "Failed to update");
             }
         });
     };
 
     const handleDelete = async () => {
-        if (!confirm("Are you sure you want to clear/reset this section?")) return;
-        const emptyData: PromoData = {
+        if (!confirm("Are you sure you want to reset deeply?")) return;
+        setFormData({
             active: false,
             type: 'image',
             mediaUrl: '',
@@ -76,88 +143,69 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
             description: '',
             linkUrl: '',
             audioTracks: []
-        };
-        startTransition(async () => {
-            const res = await updatePromoData(emptyData);
-            if (res.success) {
-                toast.success("Promo section cleared");
-                setFormData(emptyData);
-                router.refresh();
-            }
         });
     };
 
-    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'media' | 'audioTrack') => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
+    const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: 'media' | 'audioTrack') => {
+        const file = e.target.files?.[0];
+        if (!file) return;
 
         setUploading(true);
-        const file = files[0];
-        const uploadFormData = new FormData();
-        uploadFormData.append('file', file);
+        const data = new FormData();
+        data.append('file', file);
 
-        try {
-            const res = await uploadPromoFile(uploadFormData);
-            if (res.success && res.url) {
-                if (type === 'media') {
-                    setFormData(prev => ({ ...prev, mediaUrl: res.url! }));
-                    toast.success("Image uploaded!");
-                } else if (type === 'audioTrack') {
-                    setFormData(prev => ({
-                        ...prev,
-                        audioTracks: [...(prev.audioTracks || []), { title: res.name || 'Unknown Track', url: res.url! }]
-                    }));
-                    toast.success("Track added!");
-                }
+        const res = await uploadPromoFile(data);
+        setUploading(false);
+
+        if (res.success && res.url) {
+            toast.success("File uploaded");
+            setTimeout(loadLibrary, 500); // refresh lib
+
+            if (target === 'media') {
+                setFormData(prev => ({ ...prev, mediaUrl: res.url }));
             } else {
-                toast.error(res.error || "Upload failed");
+                // Add as new audio track
+                setFormData(prev => ({
+                    ...prev,
+                    audioTracks: [...(prev.audioTracks || []), { title: res.name || 'New Track', url: res.url }]
+                }));
             }
-        } catch (error) {
-            toast.error("Error uploading file");
-        } finally {
-            setUploading(false);
+        } else {
+            toast.error(res.error || "Upload failed");
         }
     };
 
     const removeTrack = (index: number) => {
         setFormData(prev => ({
             ...prev,
-            audioTracks: prev.audioTracks?.filter((_, i) => i !== index) || []
+            audioTracks: prev.audioTracks?.filter((_, i) => i !== index)
         }));
     };
 
-    // Audio Player Controls
-    const togglePlay = () => {
-        if (audioRef.current) {
-            if (isPlaying) audioRef.current.pause();
-            else audioRef.current.play();
-            setIsPlaying(!isPlaying);
+    // Audio Controls
+    const togglePlay = () => setIsPlaying(!isPlaying);
+    const handleNext = () => {
+        if (data.audioTracks && currentTrackIndex < data.audioTracks.length - 1) {
+            setCurrentTrackIndex(prev => prev + 1);
+        } else {
+            setCurrentTrackIndex(0); // loop back
+        }
+    };
+    const handlePrev = () => {
+        if (currentTrackIndex > 0) {
+            setCurrentTrackIndex(prev => prev - 1);
         }
     };
 
-    const playTrack = (index: number) => {
-        setCurrentTrackIndex(index);
-        setIsPlaying(true);
-    };
-
-    const nextTrack = () => {
-        if (!data.audioTracks) return;
-        setCurrentTrackIndex((prev) => (prev + 1) % data.audioTracks!.length);
-    };
-
-    const prevTrack = () => {
-        if (!data.audioTracks) return;
-        setCurrentTrackIndex((prev) => (prev - 1 + data.audioTracks!.length) % data.audioTracks!.length);
-    };
-
-    const isGradientFallback = !data.active || (!data.mediaUrl && !data.title);
-    const activeTrack = data.audioTracks?.[currentTrackIndex];
-
+    // Helper for YouTube ID
     const getYouTubeId = (url: string) => {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
         const match = url.match(regExp);
         return (match && match[2].length === 11) ? match[2] : null;
     };
+
+    const isGradientFallback = !data.active || (!data.mediaUrl && !data.title);
+    const activeTrack = data.audioTracks?.[currentTrackIndex];
 
     return (
         <section className="container max-w-7xl mx-auto px-4 md:px-8 mb-24 relative group/promo">
@@ -231,169 +279,189 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
                                 )}
                             </div>
                         ) : (
-                            <div className="relative w-full h-full">
+                            // Image or Audio Background
+                            <div className="absolute inset-0 w-full h-full">
                                 {data.mediaUrl && (
                                     <Image
                                         src={data.mediaUrl}
                                         alt={data.title}
                                         fill
                                         className={cn(
-                                            "object-cover transition-transform duration-700",
-                                            data.type === 'audio' ? "scale-105 blur-sm opacity-50" : "scale-100"
+                                            "object-cover transition-all duration-700",
+                                            isPlaying ? "scale-105 blur-sm brightness-50" : "scale-100 brightness-75"
                                         )}
                                     />
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/50 to-transparent" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
                             </div>
                         )}
                     </>
                 )}
 
-                {/* Content Overlay - Hidden when Video Mode is active */}
+                {/* Content Overlay - Hidden in Active Video Mode */}
                 <div className={cn(
-                    "absolute inset-0 flex flex-col md:flex-row items-center md:justify-between px-8 md:px-12 py-8 z-20 transition-opacity duration-300",
+                    "absolute inset-0 flex flex-col justify-end p-6 md:p-12 transition-opacity duration-300",
                     videoMode ? "opacity-0 pointer-events-none" : "opacity-100"
                 )}>
+                    {data.type === 'audio' && activeTrack ? (
+                        // Spotify-Style Audio Player UI
+                        <div className="w-full md:w-[450px] self-end md:self-auto space-y-4">
+                            <div className="flex gap-4 items-end">
+                                {/* Cover Art (Spinning) */}
+                                <div className={cn(
+                                    "relative w-24 h-24 md:w-32 md:h-32 rounded-lg overflow-hidden shadow-2xl border border-white/10 shrink-0",
+                                    isPlaying && "animate-pulse" // Could add a spin animation class here if defined
+                                )}>
+                                    {data.mediaUrl ? (
+                                        <Image src={data.mediaUrl} alt="Cover" fill className="object-cover" />
+                                    ) : (
+                                        <div className="w-full h-full bg-pink-900 flex items-center justify-center"><Music className="w-10 h-10 text-white/50" /></div>
+                                    )}
+                                </div>
 
-                    {/* Left Side: Text Info */}
-                    <div className="flex-1 space-y-4 max-w-2xl text-center md:text-left pt-8 md:pt-0 pointer-events-none">
-                        <div className="pointer-events-auto">
-                            {data.title ? (
-                                <h2 className="text-3xl md:text-5xl font-bold text-white drop-shadow-xl leading-tight">
-                                    {data.title[0].toUpperCase() + data.title.slice(1)}
-                                </h2>
-                            ) : (
-                                isGradientFallback && <h2 className="text-3xl md:text-4xl font-bold text-white/50">Featured</h2>
-                            )}
-
-                            {data.description && (
-                                <p className="text-lg md:text-xl text-white/80 drop-shadow-md max-w-xl leading-relaxed mt-4 line-clamp-3">
-                                    {data.description}
-                                </p>
-                            )}
-
-                            {/* CTAs */}
-                            <div className="pt-6 flex gap-4 justify-center md:justify-start">
-                                {/* If Video: Watch Button */}
-                                {data.type === 'video' && (
-                                    <Button
-                                        className="rounded-full bg-white text-black hover:bg-white/90 font-semibold px-8 h-12 shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-all hover:scale-105 gap-2"
-                                        onClick={() => setVideoMode(true)}
-                                    >
-                                        <Play className="w-4 h-4 fill-current" />
-                                        Watch Video
-                                    </Button>
-                                )}
-
-                                {/* External Link */}
-                                {data.linkUrl && (
-                                    <Button
-                                        variant={data.type === 'video' ? "outline" : "default"}
-                                        className={cn(
-                                            "rounded-full font-semibold px-8 h-12 transition-all hover:scale-105",
-                                            data.type === 'video' ? "border-white text-white hover:bg-white/10" : "bg-white text-black hover:bg-white/90 shadow-[0_0_20px_rgba(255,255,255,0.3)]"
-                                        )}
-                                        onClick={() => window.open(data.linkUrl, '_blank')}
-                                    >
-                                        {data.type === 'video' ? 'Details' : 'Learn More'}
-                                    </Button>
-                                )}
+                                <div className="flex-1 pb-2 min-w-0">
+                                    <h3 className="text-2xl font-bold text-white truncate leading-tight drop-shadow-md">{activeTrack.title}</h3>
+                                    <p className="text-white/70 text-sm truncate">{data.title}</p>
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    {/* Right Side: Spotify-Style Audio Player */}
-                    {data.type === 'audio' && data.audioTracks && data.audioTracks.length > 0 && activeTrack && (
-                        <div className="w-full md:w-[380px] mt-8 md:mt-0 bg-black/80 backdrop-blur-md border border-white/10 rounded-xl p-0 shadow-2xl relative overflow-hidden animate-in fade-in slide-in-from-right-4 duration-700 flex flex-col h-[350px]">
+                            {/* Player Controls */}
+                            <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-4 border border-white/10 shadow-2xl">
+                                <ReactPlayer
+                                    ref={audioPlayerRef}
+                                    url={activeTrack.url}
+                                    playing={isPlaying}
+                                    volume={volume}
+                                    width="0"
+                                    height="0"
+                                    onProgress={(state) => {
+                                        setPlayed(state.played);
+                                        setDuration(state.loadProps ? 0 : state.playedSeconds / state.played); // rough calc or getDuration
+                                    }}
+                                    onDuration={setDuration}
+                                    onEnded={handleNext}
+                                    style={{ display: 'none' }}
+                                />
 
-                            {/* Current Track Info & Controls */}
-                            <div className="p-6 pb-4 bg-gradient-to-b from-white/10 to-transparent">
-                                <div className="flex items-end gap-4 mb-4">
-                                    {/* Album Art Placeholder or from MediaUrl */}
-                                    <div className="w-24 h-24 rounded shadow-lg bg-neutral-800 flex items-center justify-center shrink-0 overflow-hidden relative group">
-                                        {data.mediaUrl ? (
-                                            <Image src={data.mediaUrl} alt="Cover" fill className={cn("object-cover", isPlaying && "animate-[spin_10s_linear_infinite]")} />
-                                        ) : (
-                                            <Music className="w-10 h-10 text-white/50" />
-                                        )}
-                                    </div>
-                                    <div className="overflow-hidden pb-1 min-w-0">
-                                        <p className="text-xs text-green-400 font-bold tracking-wider mb-1">PLAYLIST</p>
-                                        <h4 className="text-white font-bold text-lg truncate leading-tight">{activeTrack.title}</h4>
-                                        <p className="text-white/60 text-sm truncate">{data.title || 'Featured Audio'}</p>
+                                {/* Progress Bar */}
+                                <div
+                                    className="w-full bg-white/10 h-1.5 rounded-full mb-4 cursor-pointer group"
+                                    onClick={(e) => {
+                                        const rect = e.currentTarget.getBoundingClientRect();
+                                        const x = e.clientX - rect.left;
+                                        const newPlayed = x / rect.width;
+                                        setPlayed(newPlayed);
+                                        audioPlayerRef.current?.seekTo(newPlayed);
+                                    }}
+                                >
+                                    <div
+                                        className="bg-green-500 h-full rounded-full relative group-hover:bg-green-400 transition-colors"
+                                        style={{ width: `${played * 100}%` }}
+                                    >
+                                        <div className="absolute -right-1.5 -top-1 w-3.5 h-3.5 bg-white rounded-full opacity-0 group-hover:opacity-100 shadow-md transition-opacity" />
                                     </div>
                                 </div>
 
-                                {/* Progress Bar (Fake for now or could link to currentTime if exposed) */}
-                                <div className="w-full h-1 bg-white/20 rounded-full mb-4 overflow-hidden">
-                                    <div className={cn("h-full bg-green-500 rounded-full w-1/3", isPlaying && "animate-pulse")} />
-                                </div>
-
-                                {/* Main Controls */}
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-4">
-                                        <button onClick={prevTrack} className="text-white/70 hover:text-white transition-colors"><SkipBack className="w-6 h-6" /></button>
-                                        <button
+                                        <Button variant="ghost" size="icon" onClick={handlePrev} className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-10 w-10">
+                                            <SkipBack className="w-5 h-5 fill-current" />
+                                        </Button>
+
+                                        <Button
+                                            size="icon"
+                                            className="h-12 w-12 rounded-full bg-white text-black hover:bg-gray-200 hover:scale-105 transition-all shadow-lg"
                                             onClick={togglePlay}
-                                            className="w-12 h-12 rounded-full bg-green-500 text-black flex items-center justify-center hover:scale-105 transition-transform"
                                         >
-                                            {isPlaying ? <Pause className="w-6 h-6 fill-current" /> : <Play className="w-6 h-6 fill-current ml-1" />}
-                                        </button>
-                                        <button onClick={nextTrack} className="text-white/70 hover:text-white transition-colors"><SkipForward className="w-6 h-6" /></button>
+                                            {isPlaying ? <Pause className="w-5 h-5 fill-black" /> : <Play className="w-5 h-5 fill-black ml-1" />}
+                                        </Button>
+
+                                        <Button variant="ghost" size="icon" onClick={handleNext} className="text-white/70 hover:text-white hover:bg-white/10 rounded-full h-10 w-10">
+                                            <SkipForward className="w-5 h-5 fill-current" />
+                                        </Button>
                                     </div>
+
                                     {/* Volume */}
-                                    <div className="flex text-white/50 hover:text-white gap-2 items-center group/vol">
-                                        <Volume2 className="w-5 h-5" />
-                                        <div className="w-20 opacity-0 group-hover/vol:opacity-100 transition-opacity">
-                                            <Slider defaultValue={[0.5]} max={1} step={0.01} onValueChange={(val) => {
-                                                setVolume(val[0]);
-                                                if (audioRef.current) audioRef.current.volume = val[0];
-                                            }} />
-                                        </div>
+                                    <div className="flex items-center gap-2 group/vol w-24 md:w-32">
+                                        <Volume2 className="w-4 h-4 text-white/50" />
+                                        <Slider
+                                            value={[volume * 100]}
+                                            onValueChange={(val) => setVolume(val[0] / 100)}
+                                            max={100}
+                                            step={1}
+                                            className="cursor-pointer"
+                                        />
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Playlist Scroll Area */}
-                            <div className="flex-1 bg-neutral-900/50">
-                                <ScrollArea className="h-full">
-                                    <div className="p-2 space-y-0.5">
-                                        {data.audioTracks.map((track, i) => (
-                                            <button
-                                                key={i}
-                                                onClick={() => playTrack(i)}
-                                                className={cn(
-                                                    "w-full flex items-center gap-3 p-3 rounded-md text-left transition-colors group",
-                                                    currentTrackIndex === i ? "bg-white/10" : "hover:bg-white/5"
-                                                )}
-                                            >
+                            {/* Playlist (Scrollable) */}
+                            {data.audioTracks && data.audioTracks.length > 1 && (
+                                <ScrollArea className="h-[120px] w-full rounded-xl bg-black/40 backdrop-blur-md border border-white/5 p-2">
+                                    {data.audioTracks.map((track, i) => (
+                                        <div
+                                            key={i}
+                                            onClick={() => { setCurrentTrackIndex(i); setIsPlaying(true); }}
+                                            className={cn(
+                                                "flex items-center gap-3 p-2 rounded-lg cursor-pointer transition-colors group",
+                                                currentTrackIndex === i ? "bg-white/10" : "hover:bg-white/5"
+                                            )}
+                                        >
+                                            <div className="w-4 flex justify-center">
                                                 {currentTrackIndex === i && isPlaying ? (
-                                                    <div className="w-4 flex h-3 items-end gap-0.5"><span className="w-0.5 h-full bg-green-500 animate-pulse" /><span className="w-0.5 h-1/2 bg-green-500 animate-pulse" /><span className="w-0.5 h-3/4 bg-green-500 animate-pulse" /></div>
+                                                    <div className="flex gap-0.5 items-end h-3">
+                                                        <div className="w-0.5 bg-green-500 h-full animate-[bounce_1s_infinite]" />
+                                                        <div className="w-0.5 bg-green-500 h-2/3 animate-[bounce_1.2s_infinite]" />
+                                                        <div className="w-0.5 bg-green-500 h-full animate-[bounce_0.8s_infinite]" />
+                                                    </div>
                                                 ) : (
-                                                    <span className="text-xs font-mono text-white/40 w-4 group-hover:hidden">{i + 1}</span>
+                                                    <span className="text-xs text-white/50 group-hover:text-white">{i + 1}</span>
                                                 )}
-                                                {currentTrackIndex !== i && (
-                                                    <Play className="w-3 h-3 text-white hidden group-hover:block" />
-                                                )}
-
-                                                <div className="flex-1 min-w-0">
-                                                    <p className={cn("text-sm truncate", currentTrackIndex === i ? "text-green-400 font-medium" : "text-white/90")}>{track.title}</p>
-                                                </div>
-                                            </button>
-                                        ))}
-                                    </div>
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className={cn("text-sm truncate", currentTrackIndex === i ? "text-green-500 font-medium" : "text-white/90")}>
+                                                    {track.title}
+                                                </p>
+                                            </div>
+                                        </div>
+                                    ))}
                                 </ScrollArea>
+                            )}
+                        </div>
+                    ) : (
+                        // Default Text Content (Video/Image)
+                        <div className="max-w-2xl space-y-4 md:space-y-6">
+                            <div className="space-y-2">
+                                <h2 className="text-3xl md:text-5xl font-black text-white leading-tight drop-shadow-lg tracking-tight capitalize">
+                                    {data.title || "Featured Promo"}
+                                </h2>
+                                <p className="text-lg md:text-xl text-gray-200 font-medium drop-shadow-md line-clamp-3 md:line-clamp-none max-w-xl">
+                                    {data.description || "Exciting content coming soon."}
+                                </p>
                             </div>
 
-                            <audio
-                                ref={audioRef}
-                                src={activeTrack.url}
-                                autoPlay={isPlaying}
-                                onEnded={nextTrack}
-                                onPlay={() => setIsPlaying(true)}
-                                onPause={() => setIsPlaying(false)}
-                                className="hidden"
-                            />
+                            <div className="flex flex-wrap gap-4 pt-2">
+                                {data.type === 'video' ? (
+                                    <Button
+                                        size="lg"
+                                        className="bg-white text-black hover:bg-gray-200 rounded-full px-8 text-base font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-transform hover:scale-105"
+                                        onClick={() => setVideoMode(true)}
+                                    >
+                                        <Play className="w-5 h-5 mr-2 fill-black" />
+                                        Watch Video
+                                    </Button>
+                                ) : data.linkUrl ? (
+                                    <Button
+                                        asChild
+                                        size="lg"
+                                        className="bg-white text-black hover:bg-gray-200 rounded-full px-8 text-base font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-transform hover:scale-105"
+                                    >
+                                        <a href={data.linkUrl} target="_blank" rel="noopener noreferrer">
+                                            Visit Link <LinkIcon className="w-4 h-4 ml-2" />
+                                        </a>
+                                    </Button>
+                                ) : null}
+                            </div>
                         </div>
                     )}
                 </div>
@@ -416,154 +484,222 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
                                     </DialogDescription>
                                 </DialogHeader>
 
-                                {/* Settings Form */}
-                                <div className="grid gap-6 py-4">
-                                    <div className="flex items-center space-x-2">
-                                        <Switch
-                                            id="active"
-                                            checked={formData.active}
-                                            onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-                                        />
-                                        <Label htmlFor="active">Show Content</Label>
-                                    </div>
+                                <Tabs defaultValue="edit" className="w-full">
+                                    <TabsList className="grid w-full grid-cols-2 bg-white/5">
+                                        <TabsTrigger value="edit">Edit Content</TabsTrigger>
+                                        <TabsTrigger value="library">Media Library</TabsTrigger>
+                                    </TabsList>
 
-                                    <div className="grid grid-cols-2 gap-4">
-                                        <div className="grid gap-2">
-                                            <Label>Type</Label>
-                                            <Select
-                                                value={formData.type || 'image'}
-                                                onValueChange={(val: any) => setFormData({ ...formData, type: val })}
-                                            >
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select type" />
-                                                </SelectTrigger>
-                                                <SelectContent className="z-[99999] bg-[#1a1a1a] border-white/10">
-                                                    <SelectItem value="video">Video (YouTube)</SelectItem>
-                                                    <SelectItem value="image">Image</SelectItem>
-                                                    <SelectItem value="audio">Audio / Music</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                    </div>
-
-                                    {/* Media URL Input + Upload */}
-                                    <div className="grid gap-2">
-                                        <Label>
-                                            {formData.type === 'audio' ? 'Cover Image URL' : 'Media URL (Image or YouTube)'}
-                                        </Label>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                value={formData.mediaUrl}
-                                                onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
-                                                placeholder={formData.type === 'video' ? 'https://youtube.com/...' : 'https://...'}
-                                            />
-                                            <div className="relative">
-                                                <input
-                                                    type="file"
-                                                    className="absolute inset-0 opacity-0 cursor-pointer w-full"
-                                                    accept="image/*"
-                                                    onChange={(e) => handleFileUpload(e, 'media')}
-                                                    disabled={uploading}
+                                    <TabsContent value="edit" className="space-y-4 mt-4">
+                                        {/* Existing Form Content */}
+                                        <div className="grid gap-6 py-4">
+                                            <div className="flex items-center space-x-2">
+                                                <Switch
+                                                    id="active"
+                                                    checked={formData.active}
+                                                    onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
                                                 />
-                                                <Button variant="outline" size="icon" disabled={uploading}>
-                                                    {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                                                </Button>
+                                                <Label htmlFor="active">Show Content</Label>
                                             </div>
-                                        </div>
-                                    </div>
 
-                                    {/* Audio Track Manager */}
-                                    {formData.type === 'audio' && (
-                                        <div className="border border-white/10 rounded-lg p-4 space-y-4 bg-white/5">
-                                            <Label className="text-pink-400">Audio Playlist</Label>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="grid gap-2">
+                                                    <Label>Type</Label>
+                                                    <Select
+                                                        value={formData.type || 'image'}
+                                                        onValueChange={(val: any) => setFormData({ ...formData, type: val })}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Select type" />
+                                                        </SelectTrigger>
+                                                        <SelectContent className="z-[99999] bg-[#1a1a1a] border-white/10">
+                                                            <SelectItem value="video">Video (YouTube)</SelectItem>
+                                                            <SelectItem value="image">Image</SelectItem>
+                                                            <SelectItem value="audio">Audio / Music</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
 
-                                            {/* Upload New Track */}
-                                            <div className="flex gap-2 items-center">
-                                                <div className="relative flex-1">
-                                                    <Button variant="secondary" className="w-full relative overflow-hidden" disabled={uploading}>
-                                                        {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                                                        Upload MP3 / Audio
+                                            {/* Media URL Input + Upload */}
+                                            <div className="grid gap-2">
+                                                <Label>
+                                                    {formData.type === 'audio' ? 'Cover Image URL' : 'Media URL (Image or YouTube)'}
+                                                </Label>
+                                                <div className="flex gap-2">
+                                                    <Input
+                                                        value={formData.mediaUrl}
+                                                        onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })}
+                                                        placeholder={formData.type === 'video' ? 'https://youtube.com/...' : 'https://...'}
+                                                    />
+                                                    <div className="relative">
                                                         <input
                                                             type="file"
-                                                            className="absolute inset-0 opacity-0 cursor-pointer"
-                                                            accept="audio/*"
-                                                            onChange={(e) => handleFileUpload(e, 'audioTrack')}
+                                                            className="absolute inset-0 opacity-0 cursor-pointer w-full"
+                                                            accept="image/*"
+                                                            onChange={(e) => {
+                                                                handleFileUpload(e, 'media');
+                                                                setTimeout(loadLibrary, 1000); // refresh lib after upload
+                                                            }}
+                                                            disabled={uploading}
                                                         />
-                                                    </Button>
-                                                </div>
-                                                <span className="text-xs text-muted-foreground">or add URL manually below</span>
-                                            </div>
-
-                                            {/* Track List */}
-                                            <div className="space-y-2 mt-2">
-                                                {formData.audioTracks?.map((track, i) => (
-                                                    <div key={i} className="flex items-center gap-2 bg-black/20 p-2 rounded border border-white/5">
-                                                        <Music className="w-4 h-4 text-white/50" />
-                                                        <div className="flex-1 grid grid-cols-2 gap-2">
-                                                            <Input
-                                                                value={track.title}
-                                                                onChange={(e) => {
-                                                                    const newTracks = [...(formData.audioTracks || [])];
-                                                                    newTracks[i].title = e.target.value;
-                                                                    setFormData({ ...formData, audioTracks: newTracks });
-                                                                }}
-                                                                placeholder="Title"
-                                                                className="h-8 text-xs bg-transparent"
-                                                            />
-                                                            <Input
-                                                                value={track.url}
-                                                                onChange={(e) => {
-                                                                    const newTracks = [...(formData.audioTracks || [])];
-                                                                    newTracks[i].url = e.target.value;
-                                                                    setFormData({ ...formData, audioTracks: newTracks });
-                                                                }}
-                                                                placeholder="URL"
-                                                                className="h-8 text-xs bg-transparent"
-                                                            />
-                                                        </div>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-red-400 hover:text-red-300"
-                                                            onClick={() => removeTrack(i)}
-                                                        >
-                                                            <X className="w-3 h-3" />
+                                                        <Button variant="outline" size="icon" disabled={uploading}>
+                                                            {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
                                                         </Button>
                                                     </div>
-                                                ))}
+                                                </div>
                                             </div>
+
+                                            {/* Audio Track Manager */}
+                                            {formData.type === 'audio' && (
+                                                <div className="border border-white/10 rounded-lg p-4 space-y-4 bg-white/5">
+                                                    <Label className="text-pink-400">Audio Playlist</Label>
+
+                                                    {/* Upload New Track */}
+                                                    <div className="flex gap-2 items-center">
+                                                        <div className="relative flex-1">
+                                                            <Button variant="secondary" className="w-full relative overflow-hidden" disabled={uploading}>
+                                                                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+                                                                Upload MP3 / Audio
+                                                                <input
+                                                                    type="file"
+                                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                                    accept="audio/*"
+                                                                    onChange={(e) => {
+                                                                        handleFileUpload(e, 'audioTrack');
+                                                                        setTimeout(loadLibrary, 1000); // refresh lib
+                                                                    }}
+                                                                />
+                                                            </Button>
+                                                        </div>
+                                                        <span className="text-xs text-muted-foreground">or add URL manually below</span>
+                                                    </div>
+
+                                                    {/* Track List */}
+                                                    <div className="space-y-2 mt-2">
+                                                        {formData.audioTracks?.map((track, i) => (
+                                                            <div key={i} className="flex items-center gap-2 bg-black/20 p-2 rounded border border-white/5">
+                                                                <Music className="w-4 h-4 text-white/50" />
+                                                                <div className="flex-1 grid grid-cols-2 gap-2">
+                                                                    <Input
+                                                                        value={track.title}
+                                                                        onChange={(e) => {
+                                                                            const newTracks = [...(formData.audioTracks || [])];
+                                                                            newTracks[i].title = e.target.value;
+                                                                            setFormData({ ...formData, audioTracks: newTracks });
+                                                                        }}
+                                                                        placeholder="Title"
+                                                                        className="h-8 text-xs bg-transparent"
+                                                                    />
+                                                                    <Input
+                                                                        value={track.url}
+                                                                        onChange={(e) => {
+                                                                            const newTracks = [...(formData.audioTracks || [])];
+                                                                            newTracks[i].url = e.target.value;
+                                                                            setFormData({ ...formData, audioTracks: newTracks });
+                                                                        }}
+                                                                        placeholder="URL"
+                                                                        className="h-8 text-xs bg-transparent"
+                                                                    />
+                                                                </div>
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon"
+                                                                    className="h-8 w-8 text-red-400 hover:text-red-300"
+                                                                    onClick={() => removeTrack(i)}
+                                                                >
+                                                                    <X className="w-3 h-3" />
+                                                                </Button>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <div className="grid gap-2">
+                                                <Label>Title</Label>
+                                                <Input
+                                                    value={formData.title}
+                                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                                />
+                                            </div>
+
+                                            <div className="grid gap-2">
+                                                <Label>Description</Label>
+                                                <Textarea
+                                                    value={formData.description}
+                                                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                                    rows={3}
+                                                />
+                                            </div>
+
+                                            {formData.type !== 'audio' && (
+                                                <div className="grid gap-2">
+                                                    <Label>Link URL</Label>
+                                                    <Input
+                                                        value={formData.linkUrl || ''}
+                                                        onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
+                                                    />
+                                                </div>
+                                            )}
                                         </div>
-                                    )}
+                                    </TabsContent>
 
-                                    <div className="grid gap-2">
-                                        <Label>Title</Label>
-                                        <Input
-                                            value={formData.title}
-                                            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                        />
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <Label>Description</Label>
-                                        <Textarea
-                                            value={formData.description}
-                                            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                            rows={3}
-                                        />
-                                    </div>
-
-                                    {formData.type !== 'audio' && (
-                                        <div className="grid gap-2">
-                                            <Label>Link URL</Label>
-                                            <Input
-                                                value={formData.linkUrl || ''}
-                                                onChange={(e) => setFormData({ ...formData, linkUrl: e.target.value })}
-                                            />
+                                    <TabsContent value="library" className="mt-4">
+                                        <div className="flex justify-between items-center mb-4">
+                                            <h3 className="font-semibold text-sm text-white/70">Server Files (public/uploads/promo)</h3>
+                                            <Button size="sm" variant="ghost" onClick={loadLibrary} disabled={loadingFiles}>
+                                                <RefreshCw className={cn("w-4 h-4", loadingFiles && "animate-spin")} />
+                                            </Button>
                                         </div>
-                                    )}
-                                </div>
 
-                                <DialogFooter className="flex justify-between sm:justify-between items-center w-full">
+                                        <ScrollArea className="h-[400px] pr-4">
+                                            {libraryFiles.length === 0 ? (
+                                                <p className="text-center text-white/30 py-10 text-sm">No files found.</p>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    {libraryFiles.map((file, i) => (
+                                                        <div key={i} className="flex items-center gap-3 p-2 bg-white/5 rounded-lg border border-white/5 group hover:bg-white/10 transition-colors">
+                                                            <div className="w-10 h-10 shrink-0 rounded bg-black/50 overflow-hidden flex items-center justify-center">
+                                                                {file.type === 'image' ? (
+                                                                    <Image src={file.url} alt={file.name} width={40} height={40} className="w-full h-full object-cover" />
+                                                                ) : (
+                                                                    <Music className="w-5 h-5 text-pink-400" />
+                                                                )}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="text-sm font-medium truncate text-white/90" title={file.name}>
+                                                                    {file.name}
+                                                                </p>
+                                                                <p className="text-xs text-white/40 uppercase font-mono">{file.type}</p>
+                                                            </div>
+                                                            <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                                <Button
+                                                                    variant="ghost" size="icon"
+                                                                    className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"
+                                                                    onClick={() => handleCopyUrl(file.url)}
+                                                                    title="Copy URL"
+                                                                >
+                                                                    <Copy className="w-3 h-3" />
+                                                                </Button>
+                                                                <Button
+                                                                    variant="ghost" size="icon"
+                                                                    className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                                                                    onClick={() => handleDeleteFile(file.name)}
+                                                                    title="Delete Permanently"
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                </Button>
+                                                            </div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </ScrollArea>
+                                    </TabsContent>
+                                </Tabs>
+
+                                <div className="mt-4 flex justify-between sm:justify-between items-center w-full pt-4 border-t border-white/10">
                                     <Button variant="ghost" onClick={handleDelete} className="text-red-400 hover:text-red-300 hover:bg-red-900/20">
                                         <Trash2 className="w-4 h-4 mr-2" />
                                         Reset to Default
@@ -575,12 +711,14 @@ export default function FeaturedPromo({ data, currentUser }: FeaturedPromoProps)
                                             Save Changes
                                         </Button>
                                     </div>
-                                </DialogFooter>
+                                </div>
                             </DialogContent>
                         </Dialog>
                     </div>
                 )}
             </div>
+
+            <div className="w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent mt-12" />
         </section>
     );
 }

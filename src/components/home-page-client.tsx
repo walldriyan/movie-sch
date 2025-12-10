@@ -30,7 +30,7 @@ import { Skeleton } from './ui/skeleton';
 import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
 import { siteConfig } from '@/config/site.config';
-import FeaturedPromo from '@/components/home/featured-promo';
+import { FeaturedPromo } from '@/components/home/featured-promo';
 import { PromoData } from '@/lib/actions/promo';
 
 // ========================================
@@ -264,7 +264,7 @@ const Footer = () => {
 
                 {/* Navigation Links - Centered Row */}
                 <div className="flex flex-wrap justify-center gap-6 mb-8">
-                    {(siteConfig.footer.columns as any[]).flatMap(col => col.links).map((link: any, i: number) => (
+                    {(siteConfig.footer.columns as unknown as any[]).flatMap(col => col.links).map((link: any, i: number) => (
                         <Link key={i} href={link.href} className="text-sm font-medium text-white/60 hover:text-primary transition-colors">
                             {link.label}
                         </Link>
@@ -621,7 +621,7 @@ export default function HomePageClient({
                 </section>
 
                 {/* Featured Promo (Above Footer) */}
-                <FeaturedPromo data={promoData} currentUser={session?.user as any} />
+                <FeaturedPromo data={promoData as any} currentUser={session?.user as any} />
 
                 {/* Footer */}
                 <Footer />
