@@ -23,24 +23,29 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     if (userRole === ROLES.SUPER_ADMIN || userRole === ROLES.USER_ADMIN) {
         whereClause.status = { not: MovieStatus.PENDING_DELETION };
         if (lockStatus === 'locked') whereClause.isLockedByDefault = true;
+        else if (lockStatus === 'premium') whereClause.group = { isPremiumOnly: true };
         else if (lockStatus === 'unlocked') whereClause.isLockedByDefault = false;
     } else {
         whereClause.status = MovieStatus.PUBLISHED;
         const publicCriteria: Prisma.PostWhereInput = { visibility: 'PUBLIC' };
+
         if (lockStatus === 'locked') publicCriteria.isLockedByDefault = true;
+        else if (lockStatus === 'premium') publicCriteria.group = { isPremiumOnly: true };
         else publicCriteria.isLockedByDefault = false;
 
         if (user) {
             const userGroupIds = await getUserGroupIds(user.id);
             const groupCriteria: Prisma.PostWhereInput = { visibility: 'GROUP_ONLY', groupId: { in: userGroupIds } };
+
             if (lockStatus === 'locked') groupCriteria.isLockedByDefault = true;
+            else if (lockStatus === 'premium') groupCriteria.group = { isPremiumOnly: true };
             else groupCriteria.isLockedByDefault = false;
+
             whereClause.OR = [publicCriteria, groupCriteria];
         } else {
             whereClause = { ...whereClause, ...publicCriteria };
         }
     }
-
     // Common filters
     if (authorId) {
         whereClause.authorId = authorId;

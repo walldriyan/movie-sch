@@ -193,23 +193,40 @@ export default function MovieWatchPage({
 
                         {/* STATIC OVERVIEW / DESCRIPTION */}
                         <div className="space-y-8 min-h-[100px] mb-12">
-                            <div
-                                className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
-                            />
-                            {post.exam && post.exam.length > 0 && (
-                                <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-start gap-4">
-                                    <div className="p-3 bg-primary/10 rounded-full">
-                                        <CheckCircle2 className="w-6 h-6 text-primary" />
+                            {post.isContentLocked ? (
+                                <div className="flex flex-col items-center justify-center py-16 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
+                                    <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mb-6">
+                                        <Lock className="w-8 h-8 text-muted-foreground" />
                                     </div>
-                                    <div>
-                                        <h3 className="font-semibold text-lg mb-1">Knowledge Check</h3>
-                                        <p className="text-muted-foreground mb-4">Complete the exam for this movie.</p>
-                                        <Link href={`/exams/${post.exam[0].id}`}>
-                                            <Button>Start Exam</Button>
-                                        </Link>
-                                    </div>
+                                    <h3 className="text-xl font-bold text-white mb-2">Description Locked</h3>
+                                    <p className="text-muted-foreground text-center max-w-sm mb-6">
+                                        Detailed information is exclusive to members. Please unlock the content to read more.
+                                    </p>
+                                    <Button variant="outline" className="rounded-full">
+                                        Unlock Content
+                                    </Button>
                                 </div>
+                            ) : (
+                                <>
+                                    <div
+                                        className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
+                                        dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+                                    />
+                                    {post.exam && post.exam.length > 0 && (
+                                        <div className="p-6 rounded-2xl bg-primary/5 border border-primary/20 flex items-start gap-4">
+                                            <div className="p-3 bg-primary/10 rounded-full">
+                                                <CheckCircle2 className="w-6 h-6 text-primary" />
+                                            </div>
+                                            <div>
+                                                <h3 className="font-semibold text-lg mb-1">Knowledge Check</h3>
+                                                <p className="text-muted-foreground mb-4">Complete the exam for this movie.</p>
+                                                <Link href={`/exams/${post.exam[0].id}`}>
+                                                    <Button>Start Exam</Button>
+                                                </Link>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
 

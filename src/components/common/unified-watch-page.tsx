@@ -295,48 +295,84 @@ export default function UnifiedWatchPage({
 
                         {/* DESCRIPTION CONTENT */}
                         <div className="space-y-8 min-h-[100px] mb-12">
-                            <div
-                                className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
-                                dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
-                            />
-                            {/* Exam Card - Premium Visual Style */}
-                            {post.exam && !post.isContentLocked && session?.user && (
-                                <div className="mt-8 relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl group">
-                                    {/* Ambient Glow */}
-                                    <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
-
-                                    <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-6">
-                                        {/* Icon Box */}
-                                        <div className="shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-inner">
-                                            <FileText className="w-7 h-7 text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                            {post.isContentLocked ? (
+                                <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+                                    {/* 1. Ad Card */}
+                                    <div className="w-full p-6 md:p-8 border border-dashed border-white/10 rounded-3xl bg-muted/10 flex flex-col items-center justify-center text-center group hover:bg-muted/20 transition-colors">
+                                        <span className="text-xs font-semibold text-muted-foreground/40 uppercase tracking-widest mb-4">Advertisement</span>
+                                        <div className="w-full max-w-[728px] h-[100px] bg-black/20 rounded-xl flex items-center justify-center border border-white/5">
+                                            <span className="text-muted-foreground/40 font-medium">Ad Space</span>
                                         </div>
+                                    </div>
 
-                                        {/* Text Content */}
-                                        <div className="flex-1 space-y-1.5">
-                                            <div className="flex items-center gap-3">
-                                                <h3 className="text-xl font-bold text-white tracking-tight">
-                                                    {post.exam.title || 'Knowledge Check'}
-                                                </h3>
-                                                <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 backdrop-blur-sm">
-                                                    Exam
-                                                </Badge>
+                                    {/* 2. Premium Lock Card */}
+                                    <div className="relative overflow-hidden flex flex-col items-center justify-center py-16 px-6 border border-amber-500/20 rounded-3xl bg-black/40 backdrop-blur-md text-center shadow-2xl">
+                                        {/* Background Effects */}
+                                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[100px] rounded-full pointer-events-none" />
+                                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-amber-600/10 blur-[100px] rounded-full pointer-events-none" />
+
+                                        <div className="relative z-10 flex flex-col items-center">
+                                            <div className="w-20 h-20 bg-gradient-to-br from-amber-500/20 to-amber-900/20 rounded-2xl flex items-center justify-center mb-6 border border-amber-500/30 shadow-[0_0_30px_rgba(245,158,11,0.15)] group">
+                                                <Lock className="w-10 h-10 text-amber-500 drop-shadow-[0_2px_10px_rgba(245,158,11,0.5)]" />
                                             </div>
-                                            <p className="text-white/60 text-sm leading-relaxed max-w-2xl">
-                                                {post.exam.description || `Test your understanding of ${type === 'MOVIE' ? 'this movie' : 'this episode'} and earn points.`}
+                                            <h3 className="text-3xl md:text-4xl font-bold text-white mb-3 tracking-tight">
+                                                {type === 'SERIES' ? 'Episode Locked' : 'Story Locked'}
+                                            </h3>
+                                            <p className="text-lg text-muted-foreground max-w-lg mb-8 leading-relaxed">
+                                                To read the full story and access exclusive details, please join our Premium Group.
                                             </p>
-                                        </div>
-
-                                        {/* Action Button */}
-                                        <div className="shrink-0 w-full md:w-auto mt-2 md:mt-0">
-                                            <Link href={`/search?examId=${post.exam.id}`} className="block">
-                                                <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
-                                                    Start Assessment
-                                                    <ChevronRight className="w-4 h-4 ml-2" />
-                                                </Button>
-                                            </Link>
+                                            <Button size="lg" className="h-12 px-8 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold shadow-[0_0_20px_rgba(245,158,11,0.3)] hover:shadow-[0_0_30px_rgba(245,158,11,0.5)] transition-all transform hover:scale-105">
+                                                Join Premium Group
+                                            </Button>
                                         </div>
                                     </div>
                                 </div>
+                            ) : (
+                                <>
+                                    <div
+                                        className="prose prose-lg dark:prose-invert max-w-none text-foreground/90 leading-relaxed"
+                                        dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+                                    />
+                                    {/* Exam Card - Premium Visual Style */}
+                                    {post.exam && session?.user && (
+                                        <div className="mt-8 relative overflow-hidden rounded-2xl border border-white/10 bg-black/40 backdrop-blur-md shadow-2xl group">
+                                            {/* Ambient Glow */}
+                                            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-40 h-40 bg-primary/20 blur-[80px] rounded-full pointer-events-none" />
+
+                                            <div className="relative p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center gap-6">
+                                                {/* Icon Box */}
+                                                <div className="shrink-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/20 flex items-center justify-center shadow-inner">
+                                                    <FileText className="w-7 h-7 text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                                                </div>
+
+                                                {/* Text Content */}
+                                                <div className="flex-1 space-y-1.5">
+                                                    <div className="flex items-center gap-3">
+                                                        <h3 className="text-xl font-bold text-white tracking-tight">
+                                                            {post.exam.title || 'Knowledge Check'}
+                                                        </h3>
+                                                        <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 backdrop-blur-sm">
+                                                            Exam
+                                                        </Badge>
+                                                    </div>
+                                                    <p className="text-white/60 text-sm leading-relaxed max-w-2xl">
+                                                        {post.exam.description || `Test your understanding of ${type === 'MOVIE' ? 'this movie' : 'this episode'} and earn points.`}
+                                                    </p>
+                                                </div>
+
+                                                {/* Action Button */}
+                                                <div className="shrink-0 w-full md:w-auto mt-2 md:mt-0">
+                                                    <Link href={`/search?examId=${post.exam.id}`} className="block">
+                                                        <Button size="lg" className="w-full md:w-auto bg-primary hover:bg-primary/90 text-primary-foreground font-semibold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95">
+                                                            Start Assessment
+                                                            <ChevronRight className="w-4 h-4 ml-2" />
+                                                        </Button>
+                                                    </Link>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </>
                             )}
                         </div>
 
