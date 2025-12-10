@@ -30,6 +30,7 @@ export async function getUsers(options: { page?: number; limit?: number } = {}):
     createdAt: user.createdAt.toISOString(),
     updatedAt: user.updatedAt.toISOString(),
     emailVerified: user.emailVerified ? user.emailVerified.toISOString() : null,
+    subscriptionEndDate: user.subscriptionEndDate ? user.subscriptionEndDate.toISOString() : null,
   })) as unknown as User[];
 }
 
@@ -209,6 +210,29 @@ export async function updateUserRole(
   revalidatePath('/admin/users');
   revalidatePath(`/profile/${userId}`);
 }
+
+export async function updateUserSubscription(
+  userId: string,
+  accountType: 'FREE' | 'PREMIUM' | 'HYBRID',
+  subscriptionEndDate: string | null
+) {
+  const session = await auth();
+  if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    throw new Error('Not authorized');
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: {
+      accountType: accountType,
+      subscriptionEndDate: subscriptionEndDate ? new Date(subscriptionEndDate) : null,
+    },
+  });
+
+  revalidatePath('/admin/users');
+  revalidatePath(`/profile/${userId}`);
+}
+
 
 export async function getDashboardNotifications() {
   const session = await auth();

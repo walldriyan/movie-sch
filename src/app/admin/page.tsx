@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useCallback, useMemo } from 'react';
 import type { User, Role, Group, Post } from '@prisma/client';
-import { getUsers, updateUserRole, getGroups, getGroupsForForm, getSetting, updateSetting, getPostsForAdmin, getExamsForAdmin } from '@/lib/actions';
+import { getUsers, updateUserRole, updateUserSubscription, getGroups, getGroupsForForm, getSetting, updateSetting, getPostsForAdmin, getExamsForAdmin } from '@/lib/actions';
 import { Button } from '../../components/ui/button';
 import {
     Card,
@@ -49,6 +49,9 @@ import {
     DropdownMenuRadioItem,
     DropdownMenuPortal
 } from '../../components/ui/dropdown-menu';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { useToast } from '../../hooks/use-toast';
 import { ROLES } from '../../lib/permissions';
@@ -66,6 +69,10 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Calendar } from '@/components/ui/calendar';
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
+
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
@@ -159,12 +166,99 @@ function MultiSelectGroups({
     );
 }
 
+function ManageSubscriptionDialog({ user, isOpen, onClose, onUpdate }: { user: User, isOpen: boolean, onClose: () => void, onUpdate: () => void }) {
+    const [accountType, setAccountType] = useState<'FREE' | 'PREMIUM' | 'HYBRID'>(user.accountType || 'FREE');
+    const [date, setDate] = useState<Date | undefined>(user.subscriptionEndDate ? new Date(user.subscriptionEndDate) : undefined);
+    const [isSaving, startSaving] = useTransition();
+    const { toast } = useToast();
+
+    const handleSave = () => {
+        startSaving(async () => {
+            try {
+                await updateUserSubscription(user.id, accountType, date ? date.toISOString() : null);
+                toast({ title: 'Subscription Updated', description: `Subscription for ${user.name} has been updated.` });
+                onUpdate();
+                onClose();
+            } catch (error: any) {
+                toast({ variant: 'destructive', title: 'Error', description: error.message || 'Failed to update subscription.' });
+            }
+        });
+    };
+
+    return (
+        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+            <DialogContent className="sm:max-w-[425px] bg-[#111112] border-white/10 text-white">
+                <DialogHeader>
+                    <DialogTitle>Manage Subscription</DialogTitle>
+                    <DialogDescription>
+                        Update subscription status and validity for {user.name}.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="account-type" className="text-right">
+                            Type
+                        </Label>
+                        <Select value={accountType} onValueChange={(val: any) => setAccountType(val)}>
+                            <SelectTrigger className="w-[280px] bg-white/5 border-white/10">
+                                <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent className="bg-[#111112] border-white/10 text-white z-[100]">
+                                <SelectItem value="FREE">Free</SelectItem>
+                                <SelectItem value="PREMIUM">Premium</SelectItem>
+                                <SelectItem value="HYBRID">Hybrid</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="expiry" className="text-right">
+                            Expiry
+                        </Label>
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant={"outline"}
+                                    className={cn(
+                                        "w-[280px] justify-start text-left font-normal bg-white/5 border-white/10 hover:bg-white/10 hover:text-white",
+                                        !date && "text-muted-foreground"
+                                    )}
+                                >
+                                    <CalendarIcon className="mr-2 h-4 w-4" />
+                                    {date ? format(date, "PPP") : <span>Pick a date</span>}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0 bg-[#111112] border-white/10 z-[100]" align="start">
+                                <Calendar
+                                    mode="single"
+                                    selected={date}
+                                    onSelect={setDate}
+                                    initialFocus
+                                    className="bg-[#111112] text-white"
+                                />
+                            </PopoverContent>
+                        </Popover>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button type="submit" onClick={handleSave} disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save changes
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+
 // Users Tab Component
 function UsersTab() {
     const [users, setUsers] = useState<User[]>([]);
     const { toast } = useToast();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [isChangingStatus, startStatusChangeTransition] = useTransition();
+    const [selectedUserForSub, setSelectedUserForSub] = useState<User | null>(null);
+
 
     const fetchUsers = useCallback(async () => {
         setIsRefreshing(true);
@@ -240,8 +334,9 @@ function UsersTab() {
                                 <TableHead className="pl-6 h-12 text-white/50 font-medium">User</TableHead>
                                 <TableHead className="h-12 text-white/50 font-medium">Email</TableHead>
                                 <TableHead className="h-12 text-white/50 font-medium">Role</TableHead>
-                                <TableHead className="h-12 text-white/50 font-medium">Post Limit</TableHead>
+                                <TableHead className="h-12 text-white/50 font-medium">Subscription</TableHead>
                                 <TableHead className="h-12 text-white/50 font-medium text-right pr-6">Actions</TableHead>
+
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -292,9 +387,23 @@ function UsersTab() {
                                             </Badge>
                                         </TableCell>
                                         <TableCell>
-                                            <Badge variant="outline" className="border-white/10 text-muted-foreground font-mono">
-                                                {user.dailyPostLimit === null ? 'Default' : user.dailyPostLimit}
-                                            </Badge>
+                                            <div className="flex flex-col gap-1">
+                                                <Badge
+                                                    variant={user.accountType === 'PREMIUM' ? 'default' : user.accountType === 'HYBRID' ? 'secondary' : 'outline'}
+                                                    className={cn(
+                                                        "w-fit",
+                                                        user.accountType === 'PREMIUM' && "bg-gradient-to-r from-amber-500 to-orange-600 border-none text-white",
+                                                        user.accountType === 'FREE' && "border-white/10 text-muted-foreground",
+                                                    )}
+                                                >
+                                                    {user.accountType}
+                                                </Badge>
+                                                {user.subscriptionEndDate && (
+                                                    <span className="text-[10px] text-muted-foreground">
+                                                        Exp: {format(new Date(user.subscriptionEndDate), 'MMM d, yyyy')}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </TableCell>
                                         <TableCell className="text-right pr-6">
                                             <DropdownMenu>
@@ -309,7 +418,7 @@ function UsersTab() {
                                                         <span className="sr-only">Toggle menu</span>
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="bg-[#111112] border-white/10">
+                                                <DropdownMenuContent align="end" className="bg-[#111112] border-white/10 z-50">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuSub>
                                                         <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
@@ -343,6 +452,10 @@ function UsersTab() {
                                                         </DropdownMenuPortal>
                                                     </DropdownMenuSub>
                                                     <DropdownMenuSeparator className="bg-white/10" />
+                                                    <DropdownMenuItem onClick={() => setSelectedUserForSub(user)}>
+                                                        Manage Subscription
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator className="bg-white/10" />
                                                     <DropdownMenuItem className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                                         Delete User
                                                     </DropdownMenuItem>
@@ -352,6 +465,7 @@ function UsersTab() {
                                     </TableRow>
                                 ))
                             ) : (
+
                                 <TableRow>
                                     <TableCell colSpan={5} className="h-32 text-center text-muted-foreground border-white/5">
                                         {isRefreshing ? <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" /> : 'No users found.'}
@@ -362,7 +476,17 @@ function UsersTab() {
                     </Table>
                 </CardContent>
             </Card>
-        </div>
+            {
+                selectedUserForSub && (
+                    <ManageSubscriptionDialog
+                        user={selectedUserForSub}
+                        isOpen={!!selectedUserForSub}
+                        onClose={() => setSelectedUserForSub(null)}
+                        onUpdate={fetchUsers}
+                    />
+                )
+            }
+        </div >
     );
 }
 

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { getToken } from 'next-auth/jwt';
 
 // Security headers
 const securityHeaders = {
@@ -11,10 +12,14 @@ const securityHeaders = {
 
 // Protected routes that require authentication
 const protectedRoutes = [
-  '/admin',
   '/manage',
   '/profile/edit',
   '/favorites',
+];
+
+// Admin routes - SUPER_ADMIN only
+const superAdminRoutes = [
+  '/admin',
 ];
 
 // Get client IP address
@@ -55,20 +60,49 @@ export async function middleware(request: NextRequest) {
   });
 
   // Simple rate limiting using headers (Edge-compatible)
-  // For full rate limiting, configure in Vercel or use edge-compatible Redis
   const ip = getClientIp(request);
   response.headers.set('X-Client-IP', ip);
 
-  // Check for auth cookie for protected routes
+  // Check for session cookie
+  const sessionCookie = request.cookies.get('authjs.session-token') ||
+    request.cookies.get('__Secure-authjs.session-token');
+
+  // Check if route requires SUPER_ADMIN
+  const isSuperAdminRoute = superAdminRoutes.some(route =>
+    pathname.startsWith(route)
+  );
+
+  if (isSuperAdminRoute) {
+    if (!sessionCookie) {
+      // Not logged in - redirect to auth
+      const loginUrl = new URL('/auth', request.url);
+      loginUrl.searchParams.set('callbackUrl', pathname);
+      return NextResponse.redirect(loginUrl);
+    }
+
+    // Get token and check role
+    try {
+      const token = await getToken({
+        req: request,
+        secret: process.env.AUTH_SECRET
+      });
+
+      if (!token || token.role !== 'SUPER_ADMIN') {
+        // Not authorized - redirect to home
+        return NextResponse.redirect(new URL('/', request.url));
+      }
+    } catch {
+      // Token error - redirect to home
+      return NextResponse.redirect(new URL('/', request.url));
+    }
+  }
+
+  // Check for auth cookie for other protected routes
   const isProtectedRoute = protectedRoutes.some(route =>
     pathname.startsWith(route)
   );
 
   if (isProtectedRoute) {
-    // Check for session cookie
-    const sessionCookie = request.cookies.get('authjs.session-token') ||
-      request.cookies.get('__Secure-authjs.session-token');
-
     if (!sessionCookie) {
       // Redirect to login
       const loginUrl = new URL('/auth', request.url);

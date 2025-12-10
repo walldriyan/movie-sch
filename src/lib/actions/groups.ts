@@ -94,7 +94,7 @@ export async function getGroupsForForm(): Promise<Pick<Group, 'id' | 'name'>[]> 
     return groups;
 }
 
-export async function createGroup(name: string, description: string | null): Promise<Group> {
+export async function createGroup(name: string, description: string | null, isPremiumOnly: boolean = false): Promise<Group> {
     const session = await auth();
     if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
         throw new Error('Not authorized');
@@ -104,6 +104,7 @@ export async function createGroup(name: string, description: string | null): Pro
         data: {
             name,
             description,
+            isPremiumOnly,
             createdBy: { connect: { id: session.user.id } },
             visibility: 'PUBLIC', // Default visibility
         },
@@ -141,6 +142,7 @@ export async function updateGroup(
         description?: string | null;
         profilePhoto?: string | null;
         coverPhoto?: string | null;
+        isPremiumOnly?: boolean;
     }
 ) {
     const session = await auth();
@@ -188,6 +190,7 @@ export async function updateGroup(
         description: data.description,
         profilePhoto: finalProfilePhoto,
         coverPhoto: finalCoverPhoto,
+        isPremiumOnly: data.isPremiumOnly,
     };
 
     await prisma.group.update({
@@ -414,6 +417,21 @@ export async function requestToJoinGroup(groupId: string) {
     if (!group) {
         throw new Error("Group not found.");
     }
+
+    // Check for Premium Only Restriction
+    if (group.isPremiumOnly) {
+        const fullUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { accountType: true, subscriptionEndDate: true }
+        });
+
+        const isPremium = fullUser?.accountType === 'PREMIUM' || (fullUser?.subscriptionEndDate && new Date(fullUser.subscriptionEndDate) > new Date());
+
+        if (!isPremium) {
+            throw new Error("This group is exclusive to Premium members. Please upgrade your account to join.");
+        }
+    }
+
 
     const existingMembership = await prisma.groupMember.findUnique({
         where: { userId_groupId: { userId: user.id, groupId: groupId } }

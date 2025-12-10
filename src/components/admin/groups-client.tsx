@@ -44,6 +44,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { PlusCircle, RefreshCw, Users, MoreHorizontal, Loader2, AlertCircle, ChevronsUpDown, Check, Trash2, Mail, CheckCircle2, XCircle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useForm } from 'react-hook-form';
+import { Checkbox } from '@/components/ui/checkbox';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { createGroup, getGroups, getGroupDetails, updateGroupMembers, getPendingGroupRequests, manageGroupJoinRequest } from '@/lib/actions';
@@ -62,7 +64,9 @@ import EditGroupDialog from './edit-group-dialog';
 const groupFormSchema = z.object({
   name: z.string().min(2, 'Group name must be at least 2 characters.'),
   description: z.string().optional(),
+  isPremiumOnly: z.boolean().default(false),
 });
+
 
 type GroupFormValues = z.infer<typeof groupFormSchema>;
 
@@ -347,7 +351,9 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
     defaultValues: {
       name: '',
       description: '',
+      isPremiumOnly: false,
     },
+
   });
 
   const fetchGroups = async () => {
@@ -371,8 +377,9 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
     setIsFormSubmitting(true);
     setFormError(null);
     try {
-      await createGroup(values.name, values.description || null);
+      await createGroup(values.name, values.description || null, values.isPremiumOnly);
       toast({
+
         title: 'Group Created',
         description: `Group "${values.name}" has been created.`,
       });
@@ -432,7 +439,30 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="isPremiumOnly"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Premium Only
+                        </FormLabel>
+                        <FormDescription>
+                          Only users with an active Premium subscription can join this group.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
                 {formError && (
+
                   <Alert variant="destructive">
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>Error</AlertTitle>
@@ -473,8 +503,10 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
               <TableRow>
                 <TableHead>Name</TableHead>
                 <TableHead>Description</TableHead>
+                <TableHead>Type</TableHead>
                 <TableHead>Members</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
+
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -488,6 +520,14 @@ export default function GroupsClient({ initialGroups, allUsers }: { initialGroup
                     </TableCell>
                     <TableCell className="text-muted-foreground max-w-xs truncate">{group.description}</TableCell>
                     <TableCell>
+                      {group.isPremiumOnly && (
+                        <Badge variant="secondary" className="bg-amber-500/10 text-amber-500 border-amber-500/20">
+                          Premium
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell>
+
                       <div className="flex items-center">
                         <Users className="h-4 w-4 mr-2 text-muted-foreground" />
                         {group._count.members}

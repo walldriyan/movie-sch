@@ -4,6 +4,8 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { Checkbox } from '@/components/ui/checkbox';
+
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -43,7 +45,9 @@ const groupFormSchema = z.object({
   description: z.string().max(500, 'Description must not be longer than 500 characters.').optional(),
   profilePhoto: z.string().optional(),
   coverPhoto: z.string().optional(),
+  isPremiumOnly: z.boolean().default(false),
 });
+
 
 type GroupFormValues = z.infer<typeof groupFormSchema>;
 
@@ -56,7 +60,7 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
   const { toast } = useToast();
   const router = useRouter();
   const [isOpen, setIsOpen] = React.useState(false);
-  
+
   const [previewAvatar, setPreviewAvatar] = React.useState<string | null>(group.profilePhoto);
   const [previewCover, setPreviewCover] = React.useState<string | null>(group.coverPhoto);
 
@@ -67,7 +71,9 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
       description: group.description || '',
       profilePhoto: group.profilePhoto || '',
       coverPhoto: group.coverPhoto || '',
+      isPremiumOnly: group.isPremiumOnly || false,
     },
+
     mode: 'onChange',
   });
 
@@ -78,10 +84,12 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
         description: data.description,
         profilePhoto: previewAvatar,
         coverPhoto: previewCover,
+        isPremiumOnly: data.isPremiumOnly,
       };
 
+
       await updateGroup(group.id, updateData);
-      
+
       toast({
         title: 'Group updated',
         description: 'Your changes have been saved successfully.',
@@ -106,7 +114,7 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
         toast({ variant: 'destructive', title: 'File too large', description: `File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB.` });
         return;
       }
-      
+
       const reader = new FileReader();
       reader.onloadend = () => {
         if (type === 'avatar') {
@@ -120,7 +128,7 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
       reader.readAsDataURL(file);
     }
   };
-  
+
   // When dialog opens, reset the previews to the initial group data
   React.useEffect(() => {
     if (isOpen) {
@@ -131,7 +139,9 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
         description: group.description || '',
         profilePhoto: group.profilePhoto || '',
         coverPhoto: group.coverPhoto || '',
+        isPremiumOnly: group.isPremiumOnly || false,
       });
+
     }
   }, [isOpen, group, form]);
 
@@ -160,45 +170,45 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
                 {/* Cover Photo */}
                 <FormItem>
                   <FormLabel>Cover Photo</FormLabel>
-                   <div className="relative group aspect-[3/1] w-full bg-muted rounded-md overflow-hidden">
-                      {previewCover ? (
-                          <Image src={previewCover} alt="Cover preview"  fill
-                          style={{ objectFit: 'cover' }} />
-                      ) : (
-                          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                              <p>No cover photo</p>
-                          </div>
-                      )}
-                      <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <Button asChild variant="outline" className="bg-background/80">
-                             <label htmlFor="cover-photo-file" className="cursor-pointer">
-                                  <Camera className="mr-2 h-4 w-4" />
-                                  Change Cover
-                              </label>
-                          </Button>
-                          <input
-                            id="cover-photo-file"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageChange(e, 'cover')}
-                        />
+                  <div className="relative group aspect-[3/1] w-full bg-muted rounded-md overflow-hidden">
+                    {previewCover ? (
+                      <Image src={previewCover} alt="Cover preview" fill
+                        style={{ objectFit: 'cover' }} />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+                        <p>No cover photo</p>
                       </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                      <Button asChild variant="outline" className="bg-background/80">
+                        <label htmlFor="cover-photo-file" className="cursor-pointer">
+                          <Camera className="mr-2 h-4 w-4" />
+                          Change Cover
+                        </label>
+                      </Button>
+                      <input
+                        id="cover-photo-file"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e, 'cover')}
+                      />
+                    </div>
                   </div>
                   <FormControl>
-                     <Input 
-                        placeholder='Or paste image URL'
-                        className="mt-2"
-                        defaultValue={group.coverPhoto || ''}
-                        onChange={(e) => {
-                            setPreviewCover(e.target.value);
-                            form.setValue('coverPhoto', e.target.value);
-                        }}
-                      />
+                    <Input
+                      placeholder='Or paste image URL'
+                      className="mt-2"
+                      defaultValue={group.coverPhoto || ''}
+                      onChange={(e) => {
+                        setPreviewCover(e.target.value);
+                        form.setValue('coverPhoto', e.target.value);
+                      }}
+                    />
                   </FormControl>
                   <FormMessage>{form.formState.errors.coverPhoto?.message}</FormMessage>
                 </FormItem>
-                
+
                 {/* Profile Photo */}
                 <FormItem>
                   <FormLabel>Profile Photo</FormLabel>
@@ -211,33 +221,33 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
                         {group.name?.charAt(0).toUpperCase() || 'G'}
                       </AvatarFallback>
                     </Avatar>
-                    
+
                     <div className="flex-grow">
-                       <FormControl>
+                      <FormControl>
                         <Input
-                            id="profile-photo-url"
-                            placeholder='Paste image URL'
-                            defaultValue={group.profilePhoto || ''}
-                            onChange={(e) => {
-                                setPreviewAvatar(e.target.value);
-                                form.setValue('profilePhoto', e.target.value);
-                            }}
-                          />
-                        </FormControl>
-                        <p className="text-xs text-muted-foreground text-center my-2">OR</p>
-                        <Button asChild variant="outline" className='w-full'>
-                            <label htmlFor="profile-photo-file" className="cursor-pointer">
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload Image
-                            </label>
-                        </Button>
-                        <input
-                            id="profile-photo-file"
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={(e) => handleImageChange(e, 'avatar')}
+                          id="profile-photo-url"
+                          placeholder='Paste image URL'
+                          defaultValue={group.profilePhoto || ''}
+                          onChange={(e) => {
+                            setPreviewAvatar(e.target.value);
+                            form.setValue('profilePhoto', e.target.value);
+                          }}
                         />
+                      </FormControl>
+                      <p className="text-xs text-muted-foreground text-center my-2">OR</p>
+                      <Button asChild variant="outline" className='w-full'>
+                        <label htmlFor="profile-photo-file" className="cursor-pointer">
+                          <Upload className="mr-2 h-4 w-4" />
+                          Upload Image
+                        </label>
+                      </Button>
+                      <input
+                        id="profile-photo-file"
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => handleImageChange(e, 'avatar')}
+                      />
                     </div>
                   </div>
                   <FormMessage>{form.formState.errors.profilePhoto?.message}</FormMessage>
@@ -276,6 +286,30 @@ export default function EditGroupDialog({ group, triggerButton }: EditGroupDialo
                     </FormItem>
                   )}
                 />
+
+                <FormField
+                  control={form.control}
+                  name="isPremiumOnly"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>
+                          Premium Only
+                        </FormLabel>
+                        <FormDescription>
+                          Only users with an active Premium subscription can join this group.
+                        </FormDescription>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+
               </div>
             </ScrollArea>
             <DialogFooter className="pt-4 mt-auto border-t">
