@@ -33,11 +33,11 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
   ];
 
   return (
-    <div className="pt-[70px]">
-      {/* Hero Banner Section */}
-      <div className="relative mx-4 rounded-3xl overflow-hidden">
+    <div className="pt-24 md:pt-32 px-4 md:px-8 max-w-[1600px] mx-auto mb-8">
+      {/* Hero Section */}
+      <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-[#0a0a0a] group/hero mb-12">
         {/* Cover Image */}
-        <div className="relative h-[280px] md:h-[320px]">
+        <div className="relative h-[350px] md:h-[450px] w-full">
           <Image
             src={coverImage}
             alt="Cover"
@@ -45,19 +45,17 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
             className="object-cover"
             priority
           />
-          {/* Gradient Overlays */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20" />
-          <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
 
           {/* Edit Cover Button */}
           {isOwnProfile && (
-            <div className="absolute top-4 right-4 z-20">
+            <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-300">
               <EditProfileDialog
                 user={user}
                 triggerButton={
-                  <Button size="sm" className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white rounded-full">
-                    <Camera className="mr-2 h-4 w-4" />
-                    Edit Cover
+                  <Button size="sm" variant="secondary" className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-md border border-white/10 gap-2">
+                    <Camera className="w-4 h-4" />
+                    Change Cover
                   </Button>
                 }
               />
@@ -65,70 +63,90 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
           )}
         </div>
 
-        {/* Profile Info - Overlapping the cover */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-8">
-          <div className="flex flex-col md:flex-row md:items-end gap-5">
-            {/* Avatar */}
-            <div className="relative">
-              <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-background shadow-2xl">
-                {userAvatar && (
-                  <AvatarImage src={userAvatar} alt={user.name || 'User'} className="object-cover" />
-                )}
-                <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                  {user.name?.charAt(0).toUpperCase() || 'U'}
-                </AvatarFallback>
-              </Avatar>
-              {/* Online indicator */}
-              <div className="absolute bottom-2 right-2 w-5 h-5 bg-green-500 rounded-full border-4 border-background" />
+        {/* Content Overlay */}
+        <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 z-20">
+          <div className="flex flex-col md:flex-row items-end gap-6 md:gap-8">
+            {/* Avatar - Elevated */}
+            <div className="relative shrink-0">
+              <div className="w-24 h-24 md:w-36 md:h-36 rounded-3xl border-4 border-white/5 overflow-hidden bg-muted shadow-2xl relative z-10">
+                <Avatar className="w-full h-full rounded-none">
+                  {userAvatar && (
+                    <AvatarImage src={userAvatar} alt={user.name || 'User'} className="object-cover" />
+                  )}
+                  <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-purple-500 to-pink-500 text-white rounded-none">
+                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                  </AvatarFallback>
+                </Avatar>
+              </div>
+              {/* Online Status */}
+              <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a0a0a] z-20 shadow-lg" />
             </div>
 
             {/* User Info */}
-            <div className="flex-1 space-y-2">
-              <div className="flex items-center gap-3 flex-wrap">
-                <h1 className="text-3xl md:text-4xl font-bold text-white">{user.name}</h1>
-                {user.role !== 'USER' && (
-                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30 text-purple-300 text-xs font-medium">
-                    <Sparkles className="w-3 h-3" />
-                    {user.role === 'SUPER_ADMIN' ? 'Admin' : 'Creator'}
+            <div className="flex-1 space-y-3 w-full mb-2">
+              <div>
+                <div className="flex flex-wrap items-center gap-3 mb-2">
+                  {user.role !== 'USER' && (
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-white border border-white/10 backdrop-blur-md text-xs font-medium">
+                      <Sparkles className="w-3.5 h-3.5" />
+                      {user.role === 'SUPER_ADMIN' ? 'Administrator' : 'Creator'}
+                    </span>
+                  )}
+                  <span className="text-white/60 text-sm flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5" />
+                    Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                   </span>
-                )}
+                </div>
+                <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white drop-shadow-lg">
+                  {user.name}
+                </h1>
               </div>
 
-              <p className="text-white/60 text-sm md:text-base max-w-xl line-clamp-2">
-                {user.bio || 'No bio yet. Tell the world about yourself!'}
+              <p className="text-white/70 max-w-2xl text-base md:text-lg leading-relaxed line-clamp-2 drop-shadow-md">
+                {user.bio || 'This user has not added a bio yet.'}
               </p>
 
-              <div className="flex items-center gap-4 text-white/50 text-sm">
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="w-4 h-4" />
-                  Joined {new Date(user.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                </span>
-                {user.website && (
-                  <Link href={user.website} target="_blank" className="flex items-center gap-1.5 hover:text-purple-400 transition-colors">
-                    <ExternalLink className="w-4 h-4" />
-                    Website
-                  </Link>
-                )}
+              <div className="flex items-center gap-4 text-white/80 text-sm font-medium pt-1">
+                <div className="flex items-center gap-1.5 transition-colors cursor-pointer hover:text-white">
+                  <Users className="w-4 h-4 text-purple-400" />
+                  <span className="font-bold text-white">{stats.followersCount}</span> Followers
+                </div>
+                <div className="flex items-center gap-1.5 transition-colors cursor-pointer hover:text-white">
+                  <span className="font-bold text-white">{stats.followingCount}</span> Following
+                </div>
+                <div className="w-1 h-1 bg-white/30 rounded-full" />
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-white">{stats.postsCount}</span> Posts
+                </div>
               </div>
+
+              {user.website && (
+                <div className="pt-1">
+                  <Link href={user.website} target="_blank" className="inline-flex items-center gap-2 text-white/80 hover:text-white transition-colors text-sm font-medium hover:underline">
+                    <ExternalLink className="w-4 h-4" />
+                    {user.website.replace(/^https?:\/\//, '')}
+                  </Link>
+                </div>
+              )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center gap-3">
+            {/* Actions */}
+            <div className="flex items-center gap-3 w-full md:w-auto pb-1">
               {isOwnProfile ? (
                 <EditProfileDialog
                   user={user}
                   triggerButton={
-                    <Button className="bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white rounded-full px-6">
+                    <Button className="flex-1 md:flex-none h-11 rounded-full text-base font-semibold bg-white text-black hover:bg-white/90 shadow-xl transition-transform hover:scale-105 px-6">
                       Edit Profile
                     </Button>
                   }
                 />
               ) : (
-                <Button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-full px-6 shadow-lg shadow-purple-500/25">
+                <Button className="flex-1 md:flex-none h-11 rounded-full text-base font-semibold bg-white text-black hover:bg-white/90 shadow-xl transition-transform hover:scale-105 px-8">
                   Follow
                 </Button>
               )}
-              <Button variant="ghost" size="icon" className="text-white/70 hover:text-white hover:bg-white/10 rounded-full">
+              <Button size="icon" variant="outline" className="rounded-full w-11 h-11 bg-white/10 border-white/10 text-white hover:bg-white/20 backdrop-blur-md">
                 <MoreHorizontal className="w-5 h-5" />
               </Button>
             </div>
@@ -136,47 +154,30 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
         </div>
       </div>
 
-      {/* Stats Bar */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-        <div className="flex items-center justify-between">
-          {/* Stats */}
-          <div className="flex items-center gap-8">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{stats.postsCount}</p>
-              <p className="text-xs text-white/50">Posts</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{stats.followersCount}</p>
-              <p className="text-xs text-white/50">Followers</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-white">{stats.followingCount}</p>
-              <p className="text-xs text-white/50">Following</p>
-            </div>
-          </div>
-
-          {/* Tabs */}
-          <div className="flex items-center gap-1 bg-white/[0.03] backdrop-blur-sm rounded-full p-1 border border-white/[0.06]">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = currentFilter === tab.id;
-              return (
-                <Link
-                  key={tab.id}
-                  href={`/profile/${user.id}?filter=${tab.id}`}
-                  className={cn(
-                    "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all",
-                    isActive
-                      ? "bg-white/10 text-white"
-                      : "text-white/50 hover:text-white hover:bg-white/5"
-                  )}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span className="hidden sm:inline">{tab.label}</span>
-                </Link>
-              );
-            })}
-          </div>
+      {/* Centered Floating Tabs */}
+      <div className="flex justify-center">
+        <div className="inline-flex items-center gap-1 bg-white/[0.03] backdrop-blur-md rounded-full p-1.5 border border-white/[0.06] shadow-2xl">
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const isActive = currentFilter === tab.id;
+            return (
+              <Link
+                key={tab.id}
+                href={`/profile/${user.id}?filter=${tab.id}`}
+                className={cn(
+                  "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300",
+                  isActive
+                    ? "bg-white text-black shadow-lg scale-105"
+                    : "text-white/60 hover:text-white hover:bg-white/5"
+                )}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{tab.label}</span>
+                {tab.id === 'posts' && stats.postsCount > 0 && <span className="text-[10px] ml-1 opacity-60">({stats.postsCount})</span>}
+                {tab.id === 'favorites' && stats.favoritesCount > 0 && <span className="text-[10px] ml-1 opacity-60">({stats.favoritesCount})</span>}
+              </Link>
+            );
+          })}
         </div>
       </div>
     </div>
