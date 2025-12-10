@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight, RotateCcw, Camera, Loader2, Crown } from 'lucide-react';
 import Link from 'next/link';
@@ -341,12 +341,9 @@ export default function HomePageClient({
     promoData,
 }: HomePageClientProps) {
 
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        const timer = setTimeout(() => setLoading(false), 500);
-        return () => clearTimeout(timer);
-    }, []);
+    // Remove artificial loading delay - data comes from server
+    // Use loading state only for client-side transitions if needed
+    const [loading] = useState(false);
 
     const posts = initialPosts;
     const users = initialUsers;
@@ -356,11 +353,13 @@ export default function HomePageClient({
     const typeFilter = searchParams?.type;
     const lockStatus = searchParams?.lockStatus;
 
-    const userAvatarPlaceholder = PlaceHolderImages.find(
-        (img) => img.id === 'avatar-4'
-    );
+    // Memoize placeholder lookup
+    const userAvatarPlaceholder = useMemo(() =>
+        PlaceHolderImages.find((img) => img.id === 'avatar-4'),
+        []);
 
-    const buildQueryString = (params: Record<string, string | number | undefined | null>) => {
+    // Memoize query string builder
+    const buildQueryString = useCallback((params: Record<string, string | number | undefined | null>) => {
         const searchParams = new URLSearchParams();
         for (const [key, value] of Object.entries(params)) {
             if (value) {
@@ -369,7 +368,7 @@ export default function HomePageClient({
         }
         const queryString = searchParams.toString();
         return queryString ? `?${queryString}` : '/';
-    }
+    }, []);
 
     const typeFilters = [
         { label: 'Movies', value: 'MOVIE', icon: <Clapperboard className="w-4 h-4" /> },
