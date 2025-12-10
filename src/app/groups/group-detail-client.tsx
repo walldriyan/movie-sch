@@ -9,14 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useRef } from 'react';
 import {
     Users, LayoutGrid, Settings, ShieldCheck, UserPlus, LogOut,
-    Share2, Calendar, Lock, Globe, Check, Info, Film
+    Share2, Calendar, Lock, Globe, Check, Info, Film, Camera, Loader2
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
 import PostGrid from '@/components/post-grid';
 import { requestToJoinGroup, leaveGroup, manageGroupJoinRequest } from '@/lib/actions/groups';
+import { uploadGroupCover } from '@/lib/actions/upload-group-cover';
 import type { User } from '@prisma/client';
 import { toast } from 'sonner';
 
@@ -30,6 +32,8 @@ export default function GroupDetailClient({ group, currentUser, initialRequests 
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [requests, setRequests] = useState(initialRequests);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Derived state
     const isAdmin = currentUser && (currentUser.role === 'SUPER_ADMIN' || group.createdById === currentUser.id);
@@ -37,7 +41,34 @@ export default function GroupDetailClient({ group, currentUser, initialRequests 
     const membershipStatus = group.membershipStatus;
     const isPrivate = group.visibility === 'PRIVATE';
 
-    const posterUrl = group.coverPhoto || "https://images.unsplash.com/photo-1533174072545-e8d4aa97edf9?q=80&w=1920&auto=format&fit=crop";
+    // Image Source Logic: Use DB value or fallback.
+    // If DB value is null, we show a gradient.
+    const hasCoverImage = !!group.coverPhoto;
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+        setIsUploading(true);
+
+        startTransition(async () => {
+            try {
+                const res = await uploadGroupCover(group.id, formData);
+                if (res.success) {
+                    toast.success("Cover updated successfully!");
+                    router.refresh();
+                } else {
+                    toast.error("Failed to upload cover.");
+                }
+            } catch (error: any) {
+                toast.error(error.message);
+            } finally {
+                setIsUploading(false);
+            }
+        });
+    };
 
     const handleJoin = () => {
         if (!currentUser) return router.push('/login');
@@ -80,95 +111,128 @@ export default function GroupDetailClient({ group, currentUser, initialRequests 
 
     return (
         <div className="min-h-screen bg-background pb-20">
-            {/* HERO SECTION - Similar to Series Detail Style */}
-            <div className="relative h-[60vh] min-h-[400px] w-full">
-                <Image
-                    src={posterUrl}
-                    alt={group.name}
-                    fill
-                    className="object-cover"
-                    priority
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+            {/* HERO SECTION - Rounded Container Style with "Top Managed" */}
+            <div className="pt-24 md:pt-32 px-4 md:px-8 max-w-[1600px] mx-auto mb-12">
+                <div className="relative w-full rounded-3xl overflow-hidden shadow-2xl bg-[#0a0a0a] group/hero">
 
-                {/* Content Overlay */}
-                <div className="absolute bottom-0 left-0 right-0 p-8 z-20">
-                    <div className="container max-w-7xl mx-auto flex flex-col md:flex-row items-end gap-8">
-                        {/* Profile Image - Elevated */}
-                        <div className="relative -mb-16 md:mb-0 shrink-0">
-                            <div className="w-32 h-32 md:w-48 md:h-48 rounded-3xl border-4 border-background overflow-hidden bg-muted shadow-2xl relative z-10 transition-transform duration-500 hover:scale-105">
-                                <Image
-                                    src={group.profilePhoto || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=500&auto=format&fit=crop"}
-                                    alt={group.name}
-                                    fill
-                                    className="object-cover"
-                                />
-                            </div>
-                            {isAdmin && (
-                                <Link href={`/groups/${group.id}/settings`} className="absolute top-2 right-2 z-20 bg-black/60 hover:bg-black/80 text-white p-2.5 rounded-full backdrop-blur-md border border-white/20 transition-all shadow-lg hover:scale-110">
-                                    <Settings className="w-5 h-5" />
-                                </Link>
-                            )}
-                        </div>
+                    {/* Cover Image or Gradient */}
+                    <div className="relative h-[350px] md:h-[450px] w-full">
+                        {hasCoverImage ? (
+                            <Image
+                                src={group.coverPhoto}
+                                alt={group.name}
+                                fill
+                                className="object-cover"
+                                priority
+                            />
+                        ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 opacity-80" />
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+                    </div>
 
-                        {/* Title and Info */}
-                        <div className="flex-1 space-y-4 mb-2 w-full">
-                            <div>
-                                <div className="flex flex-wrap items-center gap-3 mb-2">
-                                    {group.visibility === 'PRIVATE' ? (
-                                        <Badge variant="secondary" className="px-3 py-1 rounded-full gap-1.5 bg-white/10 text-white border-white/10 backdrop-blur-md font-medium"><Lock className="w-3.5 h-3.5" /> Private Group</Badge>
-                                    ) : (
-                                        <Badge variant="secondary" className="px-3 py-1 rounded-full gap-1.5 bg-green-500/20 text-green-400 border-green-500/20 font-medium"><Globe className="w-3.5 h-3.5" /> Public Group</Badge>
-                                    )}
-                                    <Badge variant="outline" className="px-3 py-1 rounded-full border-white/20 text-white/80 bg-black/20 backdrop-blur-md">
-                                        Established {format(new Date(group.createdAt), 'yyyy')}
-                                    </Badge>
-                                </div>
-                                <h1 className="text-4xl md:text-6xl font-bold tracking-tight text-white drop-shadow-lg mb-2">{group.name}</h1>
-                            </div>
-
-                            <p className="text-white/80 max-w-2xl text-lg leading-relaxed line-clamp-2 md:line-clamp-none drop-shadow-md">
-                                {group.description || "No description provided."}
-                            </p>
-
-                            <div className="flex items-center gap-6 text-sm text-white/70 font-medium pt-1">
-                                <div className="flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-primary" />
-                                    <span><span className="text-white font-bold">{group._count.members}</span> Members</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <Film className="w-5 h-5 text-blue-400" />
-                                    <span><span className="text-white font-bold">{group.posts.length}</span> Posts</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Action Buttons */}
-                        <div className="flex items-center gap-3 w-full md:w-auto pb-2">
-                            {!isMember && !membershipStatus ? (
-                                <Button size="lg" className="w-full md:w-auto rounded-full text-base font-semibold bg-white text-black hover:bg-white/90 shadow-xl transition-transform hover:scale-105" onClick={handleJoin} disabled={isPending}>
-                                    <UserPlus className="w-5 h-5 mr-2" />
-                                    Join Group
-                                </Button>
-                            ) : membershipStatus === 'PENDING' ? (
-                                <Button size="lg" variant="secondary" className="w-full md:w-auto rounded-full bg-white/20 text-white border border-white/10 backdrop-blur-md" disabled>
-                                    Request Pending
-                                </Button>
-                            ) : (
-                                <div className="flex gap-3 w-full md:w-auto">
-                                    <Button size="lg" variant="outline" className="flex-1 md:flex-none rounded-full border-white/20 bg-black/40 text-white hover:bg-black/60 backdrop-blur-md" disabled>
-                                        <Check className="w-5 h-5 mr-2 text-green-500" />
-                                        Joined
-                                    </Button>
-                                    <Button size="icon" variant="destructive" className="h-11 w-11 rounded-full shrink-0 border border-white/10 shadow-lg" onClick={handleLeave} disabled={isPending} title="Leave Group">
-                                        <LogOut className="w-5 h-5" />
-                                    </Button>
-                                </div>
-                            )}
-
-                            <Button size="icon" variant="ghost" className="h-11 w-11 rounded-full border border-white/10 bg-black/20 text-white hover:bg-white/20 backdrop-blur-md" onClick={() => toast.info("Share feature coming soon!")}>
-                                <Share2 className="w-5 h-5" />
+                    {/* Admin Image Upload Button */}
+                    {isAdmin && (
+                        <div className="absolute top-4 right-4 z-30 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-300">
+                            <input
+                                type="file"
+                                ref={fileInputRef}
+                                className="hidden"
+                                accept="image/*"
+                                onChange={handleImageUpload}
+                            />
+                            <Button
+                                size="sm"
+                                variant="secondary"
+                                className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-md border border-white/10 gap-2"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                            >
+                                {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                                {isUploading ? 'Uploading...' : 'Change Cover'}
                             </Button>
+                        </div>
+                    )}
+
+                    {/* Content Overlay */}
+                    <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 z-20">
+                        <div className="flex flex-col md:flex-row items-end gap-6 md:gap-8">
+                            {/* Profile Image - Elevated */}
+                            <div className="relative shrink-0">
+                                <div className="w-24 h-24 md:w-36 md:h-36 rounded-2xl border-4 border-white/5 overflow-hidden bg-muted shadow-2xl relative z-10">
+                                    <Image
+                                        src={group.profilePhoto || "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=500&auto=format&fit=crop"}
+                                        alt={group.name}
+                                        fill
+                                        className="object-cover"
+                                    />
+                                </div>
+                                {isAdmin && (
+                                    <Link href={`/groups/${group.id}/settings`} className="absolute -top-2 -right-2 z-20 bg-black/60 hover:bg-black/80 text-white p-2 rounded-full backdrop-blur-md border border-white/20 transition-all shadow-lg hover:scale-110">
+                                        <Settings className="w-4 h-4" />
+                                    </Link>
+                                )}
+                            </div>
+
+                            {/* Title and Info */}
+                            <div className="flex-1 space-y-3 w-full mb-2">
+                                <div>
+                                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                                        {group.visibility === 'PRIVATE' ? (
+                                            <Badge variant="secondary" className="px-3 py-1 rounded-full gap-1.5 bg-white/10 text-white border-white/10 backdrop-blur-md font-medium"><Lock className="w-3.5 h-3.5" /> Private Group</Badge>
+                                        ) : (
+                                            <Badge variant="secondary" className="px-3 py-1 rounded-full gap-1.5 bg-green-500/20 text-green-400 border-green-500/20 font-medium"><Globe className="w-3.5 h-3.5" /> Public Group</Badge>
+                                        )}
+                                        <Badge variant="outline" className="px-3 py-1 rounded-full border-white/20 text-white/80 bg-black/20 backdrop-blur-md">
+                                            Est. {format(new Date(group.createdAt), 'yyyy')}
+                                        </Badge>
+                                    </div>
+                                    <h1 className="text-3xl md:text-5xl font-bold tracking-tight text-white drop-shadow-lg">{group.name}</h1>
+                                </div>
+
+                                <p className="text-white/80 max-w-2xl text-base md:text-lg leading-relaxed line-clamp-2 drop-shadow-md">
+                                    {group.description || "No description provided."}
+                                </p>
+
+                                <div className="flex items-center gap-6 text-sm text-white/70 font-medium pt-1">
+                                    <div className="flex items-center gap-2">
+                                        <Users className="w-4 h-4 text-primary" />
+                                        <span><span className="text-white font-bold">{group._count.members}</span> Members</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <Film className="w-4 h-4 text-blue-400" />
+                                        <span><span className="text-white font-bold">{group.posts.length}</span> Posts</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-3 w-full md:w-auto pb-1">
+                                {!isMember && !membershipStatus ? (
+                                    <Button size="lg" className="flex-1 md:flex-none h-11 rounded-full text-base font-semibold bg-white text-black hover:bg-white/90 shadow-xl transition-transform hover:scale-105" onClick={handleJoin} disabled={isPending}>
+                                        <UserPlus className="w-5 h-5 mr-2" />
+                                        Join Group
+                                    </Button>
+                                ) : membershipStatus === 'PENDING' ? (
+                                    <Button size="lg" variant="secondary" className="flex-1 md:flex-none h-11 rounded-full bg-white/20 text-white border border-white/10 backdrop-blur-md" disabled>
+                                        Request Pending
+                                    </Button>
+                                ) : (
+                                    <div className="flex gap-3 w-full md:w-auto">
+                                        <Button size="lg" variant="outline" className="flex-1 md:flex-none h-11 rounded-full border-white/20 bg-black/40 text-green-400 hover:bg-black/60 backdrop-blur-md" disabled>
+                                            <Check className="w-5 h-5 mr-2" />
+                                            Joined
+                                        </Button>
+                                        <Button size="icon" variant="destructive" className="h-11 w-11 rounded-full shrink-0 border border-white/10 shadow-lg" onClick={handleLeave} disabled={isPending} title="Leave Group">
+                                            <LogOut className="w-5 h-5" />
+                                        </Button>
+                                    </div>
+                                )}
+
+                                <Button size="icon" variant="ghost" className="h-11 w-11 rounded-full border border-white/10 bg-black/20 text-white hover:bg-white/20 backdrop-blur-md" onClick={() => toast.info("Share feature coming soon!")}>
+                                    <Share2 className="w-5 h-5" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
                 </div>
