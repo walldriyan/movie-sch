@@ -76,7 +76,7 @@ export default function SearchBar() {
         <div ref={containerRef} className="relative">
             {/* Search Input */}
             <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground/70" />
                 <input
                     ref={inputRef}
                     type="text"
@@ -84,7 +84,7 @@ export default function SearchBar() {
                     value={query}
                     onChange={handleInputChange}
                     onFocus={() => query.length >= 2 && setIsOpen(true)}
-                    className="flex h-10 w-[280px] rounded-full bg-[#111112] border border-white/[0.08] px-4 py-2 pl-10 pr-9 text-sm text-white placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-colors shadow-sm"
+                    className="flex h-12 w-[320px] rounded-full bg-[#111112] border-none px-4 py-2 pl-12 pr-10 text-sm text-white placeholder:text-muted-foreground/60 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50 disabled:cursor-not-allowed disabled:opacity-50 transition-all shadow-sm"
                 />
                 {query && (
                     <button
