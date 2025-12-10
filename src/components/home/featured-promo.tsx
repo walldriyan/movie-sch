@@ -342,20 +342,22 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
 
                             {/* Player Controls */}
                             <div className="bg-black/60 backdrop-blur-xl rounded-2xl p-4 border border-white/10 shadow-2xl">
-                                <ReactPlayer
-                                    ref={audioPlayerRef}
-                                    url={activeTrack.url}
-                                    playing={isPlaying}
-                                    volume={volume}
-                                    width="0"
-                                    height="0"
-                                    onProgress={(state) => {
-                                        setPlayed(state.played);
-                                    }}
-                                    onDuration={setDuration}
-                                    onEnded={handleNext}
-                                    style={{ display: 'none' }}
-                                />
+                                {hasMounted && (
+                                    <ReactPlayer
+                                        ref={audioPlayerRef}
+                                        url={activeTrack.url}
+                                        playing={isPlaying}
+                                        volume={volume}
+                                        width="0"
+                                        height="0"
+                                        onProgress={(state) => {
+                                            setPlayed(state.played);
+                                        }}
+                                        onDuration={setDuration}
+                                        onEnded={handleNext}
+                                        style={{ display: 'none' }}
+                                    />
+                                )}
 
                                 {/* Progress Bar */}
                                 <div
