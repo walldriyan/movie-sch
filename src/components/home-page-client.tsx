@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight, RotateCcw } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight, RotateCcw, Camera, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -13,6 +13,8 @@ import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
 import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { uploadHeroImage } from '@/lib/actions/upload-hero';
+import { useTransition } from 'react';
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -90,26 +92,84 @@ const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex =
 // HERO SECTION - Suno.com Style with Rounded Banner
 // ========================================
 const HeroSection = ({ user }: { user?: any }) => {
+    const [imgSrc, setImgSrc] = useState('/images/hero-cover.jpg');
+    const [isUploading, startTransition] = useTransition();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [imageVersion, setImageVersion] = useState(Date.now());
+    const [hasCustomImage, setHasCustomImage] = useState(true);
+
+    const isPrivileged = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
+
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        startTransition(async () => {
+            const res = await uploadHeroImage(formData);
+            if (res.success) {
+                // Update version to force reload
+                const newVersion = Date.now();
+                setImageVersion(newVersion);
+                setImgSrc(`/images/hero-cover.jpg?v=${newVersion}`);
+                setHasCustomImage(true);
+            }
+        });
+    };
+
     return (
         <section className="relative pt-24 md:pt-32 pb-8">
             {/* Suno-style Hero Banner - compact height */}
-            <div className="relative mx-4 md:mx-6 rounded-3xl overflow-hidden h-[400px] shadow-2xl border border-white/5">
+            <div className="relative mx-4 md:mx-6 rounded-3xl overflow-hidden h-[400px] shadow-2xl border border-white/5 group/hero">
                 {/* Background Image - music studio style */}
                 <Image
-                    src="https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&q=80"
+                    key={imageVersion}
+                    src={imgSrc}
                     alt="Hero Background"
                     fill
-                    className="object-cover"
+                    className="object-cover transition-opacity duration-500"
                     priority
+                    onError={() => {
+                        // Fallback to default if local image doesn't exist
+                        if (hasCustomImage) {
+                            setHasCustomImage(false);
+                            setImgSrc("https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&q=80");
+                        }
+                    }}
                 />
 
+                {/* Edit Button for Admins */}
+                {isPrivileged && (
+                    <div className="absolute top-4 right-16 z-30 opacity-0 group-hover/hero:opacity-100 transition-opacity duration-300">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                        />
+                        <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-black/50 hover:bg-black/70 text-white backdrop-blur-md border border-white/10 gap-2"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={isUploading}
+                        >
+                            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                            {isUploading ? 'Updating...' : 'Change Cover'}
+                        </Button>
+                    </div>
+                )}
+
                 {/* Dark overlay for text readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent pointer-events-none" />
 
                 {/* Content overlay */}
-                <div className="absolute inset-0 z-10 p-8 md:p-12 flex flex-col justify-center">
+                <div className="absolute inset-0 z-10 p-8 md:p-12 flex flex-col justify-center pointer-events-none">
                     {/* Badge */}
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-pink-500 text-white text-xs font-semibold w-fit mb-5">
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-pink-500 text-white text-xs font-semibold w-fit mb-5 pointer-events-auto">
                         <Sparkles className="w-3.5 h-3.5" />
                         <span>NEW PRODUCT</span>
                     </div>
@@ -125,7 +185,7 @@ const HeroSection = ({ user }: { user?: any }) => {
                     </p>
 
                     {/* CTA Buttons - like Suno */}
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 pointer-events-auto">
                         <Button
                             size="default"
                             className="bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white font-semibold h-10 px-5 text-sm rounded-full border-0"
@@ -171,7 +231,7 @@ const HeroSection = ({ user }: { user?: any }) => {
                 )}
 
                 {/* Scroll up indicator */}
-                <button className="absolute top-4 right-4 w-8 h-8 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors">
+                <button className="absolute top-4 right-4 w-8 h-8 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors pointer-events-auto">
                     <span className="text-sm">^</span>
                 </button>
             </div>

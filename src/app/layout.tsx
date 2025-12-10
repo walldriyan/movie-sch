@@ -1,5 +1,6 @@
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as SonnerToaster } from 'sonner';
 import { Inter, Space_Grotesk, Noto_Sans_Sinhala } from 'next/font/google';
 import { cn } from '@/lib/utils';
 import React from 'react';
@@ -75,6 +76,7 @@ export default function RootLayout({
                 </main>
 
                 <Toaster />
+                <SonnerToaster richColors position="top-center" />
               </SidebarProvider>
             </ConnectivityProvider>
           </LoadingProvider>

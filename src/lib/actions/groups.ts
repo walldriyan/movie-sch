@@ -475,7 +475,11 @@ export async function leaveGroup(groupId: string) {
 
 export async function getPendingGroupRequests(groupId: string) {
     const session = await auth();
-    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+    const group = await prisma.group.findUnique({ where: { id: groupId }, select: { createdById: true } });
+    if (!group) throw new Error("Group not found");
+
+    const canView = session?.user && (session.user.role === ROLES.SUPER_ADMIN || session.user.id === group.createdById);
+    if (!canView) {
         throw new Error("Not authorized");
     }
     return prisma.groupMember.findMany({
