@@ -95,12 +95,27 @@ export default function AuthPage() {
     const [loginCaptcha, setLoginCaptcha] = useState<string | null>(null);
     const [registerCaptcha, setRegisterCaptcha] = useState<string | null>(null);
 
+    const [registrationSuccess, setRegistrationSuccess] = useState(false);
+
     const error = searchParams.get('error');
     const errorMessage = error === 'OAuthAccountNotLinked'
         ? 'This email is already registered with a different sign-in method.'
         : error
             ? 'An error occurred during sign-in. Please try again.'
             : undefined;
+
+    // Handle registration success - switch to login tab
+    useEffect(() => {
+        const registered = searchParams.get('registered');
+        if (registered === 'true') {
+            setActiveTab('login');
+            setRegistrationSuccess(true);
+            // Clean URL
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete('registered');
+            window.history.replaceState({}, '', newUrl.toString());
+        }
+    }, [searchParams]);
 
     useEffect(() => {
         if (loginState.success) {
@@ -225,6 +240,15 @@ export default function AuthPage() {
                                         </button>
                                     </div>
                                 </div>
+
+                                {registrationSuccess && (
+                                    <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20">
+                                        <CheckCircle className="h-5 w-5 text-green-400 flex-shrink-0" />
+                                        <p className="text-sm text-green-400">
+                                            Registration successful! Please sign in with your credentials.
+                                        </p>
+                                    </div>
+                                )}
 
                                 {(loginState.error || errorMessage) && (
                                     <div className="flex items-center gap-2 p-3 rounded-xl bg-red-500/10 border border-red-500/20">

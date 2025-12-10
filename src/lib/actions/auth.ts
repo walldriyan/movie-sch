@@ -114,7 +114,7 @@ export async function registerUser(
     return { message: 'An unexpected error occurred during registration.', input: formInput };
   }
 
-  redirect('/login');
+  redirect('/auth?registered=true');
 }
 
 

@@ -46,6 +46,7 @@ export default function SeriesPostCard({
   return (
     <Link
       href={`/series/${seriesId}?post=${post.id}`}
+      scroll={false}
       className={cn(
         'flex items-center gap-3 p-2 rounded-xl transition-all duration-200 group',
         isActive

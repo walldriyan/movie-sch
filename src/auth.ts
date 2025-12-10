@@ -284,8 +284,8 @@ export const authConfig: NextAuthConfig = {
   },
 
   pages: {
-    signIn: '/login',
-    error: '/login', // Error page
+    signIn: '/auth',
+    error: '/auth', // Error page
     newUser: '/', // New users will be redirected here
   },
 

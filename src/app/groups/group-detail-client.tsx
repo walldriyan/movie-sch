@@ -71,7 +71,7 @@ export default function GroupDetailClient({ group, currentUser, initialRequests 
     };
 
     const handleJoin = () => {
-        if (!currentUser) return router.push('/login');
+        if (!currentUser) return router.push('/auth');
         startTransition(async () => {
             try {
                 const res = await requestToJoinGroup(group.id);
