@@ -10,11 +10,12 @@ const PROMO_FILE_PATH = path.join(process.cwd(), 'src/config/featured-promo.json
 
 export interface PromoData {
     active: boolean;
-    type: 'video' | 'image' | 'post';
-    mediaUrl: string; // YouTube ID/URL or Image URL
+    type: 'video' | 'image' | 'audio';
+    mediaUrl: string; // YouTube ID/URL, Image URL, or Audio Cover Image
     title: string;
     description: string;
     linkUrl?: string; // For 'post' or generic click
+    audioTracks?: { title: string; url: string; }[];
 }
 
 export async function getPromoData(): Promise<PromoData> {
