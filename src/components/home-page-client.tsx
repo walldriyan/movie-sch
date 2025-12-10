@@ -30,6 +30,8 @@ import { Skeleton } from './ui/skeleton';
 import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
 import { siteConfig } from '@/config/site.config';
+import FeaturedPromo from '@/components/home/featured-promo';
+import { PromoData } from '@/lib/actions/promo';
 
 // ========================================
 // 3D FLOATING CARD COMPONENT
@@ -262,7 +264,7 @@ const Footer = () => {
 
                 {/* Navigation Links - Centered Row */}
                 <div className="flex flex-wrap justify-center gap-6 mb-8">
-                    {siteConfig.footer.columns.flatMap(col => col.links).map((link, i) => (
+                    {(siteConfig.footer.columns as any[]).flatMap(col => col.links).map((link: any, i: number) => (
                         <Link key={i} href={link.href} className="text-sm font-medium text-white/60 hover:text-primary transition-colors">
                             {link.label}
                         </Link>
@@ -325,6 +327,7 @@ interface HomePageClientProps {
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
     session: Session | null;
+    promoData: PromoData;
 }
 
 export default function HomePageClient({
@@ -335,6 +338,7 @@ export default function HomePageClient({
     currentPage,
     searchParams,
     session,
+    promoData,
 }: HomePageClientProps) {
 
     const [loading, setLoading] = useState(true);
@@ -615,6 +619,9 @@ export default function HomePageClient({
                         )}
                     </div>
                 </section>
+
+                {/* Featured Promo (Above Footer) */}
+                <FeaturedPromo data={promoData} currentUser={session?.user as any} />
 
                 {/* Footer */}
                 <Footer />
