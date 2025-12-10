@@ -12,8 +12,9 @@ import { Badge } from '@/components/ui/badge';
 import {
     Play, Clock, Calendar, ChevronRight, Home, Lock,
     List, MessageCircle, CheckCircle2,
-    Download, AlertCircle, FileText, Film, Tv
+    Download, AlertCircle, FileText, Film, Tv, Loader2
 } from 'lucide-react';
+import { getPosts } from '@/lib/actions/posts/read';
 import type { Session } from 'next-auth';
 import type { Series } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
@@ -91,6 +92,48 @@ export default function UnifiedWatchPage({
         linkUrl: activeAd?.linkUrl || '',
         enabled: !!activeAd
     }), [activeAd]);
+
+    // --- Pagination State for Related Movies ---
+    const [displayRelatedPosts, setDisplayRelatedPosts] = useState<any[]>(relatedPosts);
+    const [page, setPage] = useState(2);
+    const [hasMore, setHasMore] = useState(true);
+    const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+    // Reset pagination when post changes
+    useEffect(() => {
+        setDisplayRelatedPosts(relatedPosts);
+        setPage(2);
+        setHasMore(relatedPosts.length >= 10);
+    }, [post.id]);
+
+    const loadMoreRelated = async () => {
+        if (isLoadingMore) return;
+        setIsLoadingMore(true);
+        try {
+            const { posts: newPostsRaw, totalPages } = await getPosts({
+                page: page,
+                limit: 10,
+                filters: { type: post.type || 'MOVIE', sortBy: 'viewCount-desc' }
+            });
+
+            // Filter out current post if it appears in results
+            const newPosts = newPostsRaw ? newPostsRaw.filter((p: any) => p.id !== post.id) : [];
+
+            if (newPosts.length > 0) {
+                setDisplayRelatedPosts(prev => [...prev, ...newPosts]);
+                setPage(prev => prev + 1);
+            }
+
+            // If we received fewer items than limit, or reached total pages, stop.
+            if (!newPostsRaw || newPostsRaw.length < 10 || page >= totalPages) {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error("Failed to load more related posts", error);
+        } finally {
+            setIsLoadingMore(false);
+        }
+    };
 
     return (
         <div className="min-h-screen bg-background pt-24 pb-12">
@@ -532,51 +575,68 @@ export default function UnifiedWatchPage({
                                             })
                                         ) : (
                                             // RELATED MOVIES LIST
-                                            relatedPosts.map((rPost) => {
-                                                const isActive = rPost.id === post.id;
-                                                return (
-                                                    <button
-                                                        key={rPost.id}
-                                                        onClick={() => router.push(`/search?movieId=${rPost.id}`)}
-                                                        className={cn(
-                                                            "w-full flex gap-3 p-2 rounded-xl text-left transition-all border group",
-                                                            isActive
-                                                                ? "bg-primary/10 border-primary/20 shadow-sm"
-                                                                : "bg-transparent border-transparent hover:bg-muted/50"
-                                                        )}
-                                                    >
-                                                        <div className="relative w-24 aspect-video bg-muted rounded-lg overflow-hidden shrink-0 border border-border/50 shadow-sm">
-                                                            <Image
-                                                                src={rPost.posterUrl || '/placeholder-poster.jpg'}
-                                                                alt={rPost.title}
-                                                                fill
-                                                                className={cn("object-cover transition-transform duration-500", !isActive && "group-hover:scale-105")}
-                                                            />
-                                                            <div className="absolute bottom-0.5 right-0.5 px-1 py-px bg-black/80 text-[8px] text-white font-medium rounded-sm backdrop-blur-sm">
-                                                                Movie
+                                            <>
+                                                {displayRelatedPosts.map((rPost) => {
+                                                    const isActive = rPost.id === post.id;
+                                                    return (
+                                                        <button
+                                                            key={rPost.id}
+                                                            onClick={() => router.push(`/search?movieId=${rPost.id}`)}
+                                                            className={cn(
+                                                                "w-full flex gap-3 p-2 rounded-xl text-left transition-all border group",
+                                                                isActive
+                                                                    ? "bg-primary/10 border-primary/20 shadow-sm"
+                                                                    : "bg-transparent border-transparent hover:bg-muted/50"
+                                                            )}
+                                                        >
+                                                            <div className="relative w-24 aspect-video bg-muted rounded-lg overflow-hidden shrink-0 border border-border/50 shadow-sm">
+                                                                <Image
+                                                                    src={rPost.posterUrl || '/placeholder-poster.jpg'}
+                                                                    alt={rPost.title}
+                                                                    fill
+                                                                    className={cn("object-cover transition-transform duration-500", !isActive && "group-hover:scale-105")}
+                                                                />
+                                                                <div className="absolute bottom-0.5 right-0.5 px-1 py-px bg-black/80 text-[8px] text-white font-medium rounded-sm backdrop-blur-sm">
+                                                                    Movie
+                                                                </div>
                                                             </div>
-                                                        </div>
 
-                                                        <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-                                                            <h4 className={cn(
-                                                                "text-xs font-semibold leading-tight line-clamp-2 mb-1",
-                                                                isActive ? "text-primary" : "text-foreground group-hover:text-primary transition-colors"
-                                                            )}>
-                                                                {rPost.title}
-                                                            </h4>
-                                                            <div className="flex items-center gap-2">
-                                                                <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                                                                    <Clock className="w-2.5 h-2.5" />
-                                                                    {rPost.duration || '--'}
-                                                                </span>
+                                                            <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                                                                <h4 className={cn(
+                                                                    "text-xs font-semibold leading-tight line-clamp-2 mb-1",
+                                                                    isActive ? "text-primary" : "text-foreground group-hover:text-primary transition-colors"
+                                                                )}>
+                                                                    {rPost.title}
+                                                                </h4>
+                                                                <div className="flex items-center gap-2">
+                                                                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                                                        <Clock className="w-2.5 h-2.5" />
+                                                                        {rPost.duration || '--'}
+                                                                    </span>
+                                                                </div>
                                                             </div>
-                                                        </div>
-                                                    </button>
-                                                )
-                                            })
+                                                        </button>
+                                                    )
+                                                })}
+
+                                                {hasMore && (
+                                                    <div className="pt-2 pb-4 flex justify-center">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            onClick={loadMoreRelated}
+                                                            disabled={isLoadingMore}
+                                                            className="text-xs text-muted-foreground hover:text-primary w-full"
+                                                        >
+                                                            {isLoadingMore ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : null}
+                                                            {isLoadingMore ? 'Loading...' : 'Load More Movies'}
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </>
                                         )}
 
-                                        {type === 'MOVIE' && relatedPosts.length === 0 && (
+                                        {type === 'MOVIE' && displayRelatedPosts.length === 0 && (
                                             <div className="p-4 text-center text-muted-foreground text-sm">
                                                 No related movies found.
                                             </div>

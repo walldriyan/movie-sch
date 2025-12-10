@@ -89,7 +89,7 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     let orderBy: any = { updatedAt: 'desc' };
     if (sortBy) {
         const [field, dir] = sortBy.split('-');
-        if (['updatedAt', 'imdbRating', 'createdAt'].includes(field)) orderBy = { [field]: dir };
+        if (['updatedAt', 'imdbRating', 'createdAt', 'viewCount'].includes(field)) orderBy = { [field]: dir };
     }
 
     const [posts, totalPosts] = await prisma.$transaction([
