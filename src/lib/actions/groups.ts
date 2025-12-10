@@ -546,7 +546,7 @@ export async function getUserJoinedGroups() {
             userId: user.id,
             status: 'ACTIVE'
         },
-        include: {
+        select: {
             group: {
                 select: {
                     id: true,
@@ -560,5 +560,5 @@ export async function getUserJoinedGroups() {
         }
     });
 
-    return members.map(m => m.group);
+    return (members as any[]).map(m => m.group);
 }

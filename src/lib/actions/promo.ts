@@ -1,12 +1,9 @@
 'use server';
 
-import fs from 'fs/promises';
-import path from 'path';
 import { revalidatePath } from 'next/cache';
 import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
-
-const PROMO_FILE_PATH = path.join(process.cwd(), 'src/config/featured-promo.json');
+import prisma from '@/lib/prisma';
 
 export interface AudioTrack {
     title: string;
@@ -23,20 +20,30 @@ export interface PromoData {
     audioTracks?: AudioTrack[];
 }
 
+const SETTING_KEY = 'featured_promo';
+
+const DEFAULT_DATA: PromoData = {
+    active: false,
+    type: 'image',
+    mediaUrl: '',
+    title: '',
+    description: ''
+};
+
 export async function getPromoData(): Promise<PromoData> {
     try {
-        const data = await fs.readFile(PROMO_FILE_PATH, 'utf-8');
-        return JSON.parse(data);
+        const setting = await prisma.appSetting.findUnique({
+            where: { key: SETTING_KEY }
+        });
+
+        if (setting?.value) {
+            return JSON.parse(setting.value);
+        }
+
+        return DEFAULT_DATA;
     } catch (error) {
-        console.error("Error reading promo file:", error);
-        // Fallback default
-        return {
-            active: false,
-            type: 'image',
-            mediaUrl: '',
-            title: '',
-            description: ''
-        };
+        console.error("Error reading promo data from DB:", error);
+        return DEFAULT_DATA;
     }
 }
 
@@ -47,11 +54,16 @@ export async function updatePromoData(data: PromoData) {
     }
 
     try {
-        await fs.writeFile(PROMO_FILE_PATH, JSON.stringify(data, null, 2), 'utf-8');
+        await prisma.appSetting.upsert({
+            where: { key: SETTING_KEY },
+            update: { value: JSON.stringify(data) },
+            create: { key: SETTING_KEY, value: JSON.stringify(data) }
+        });
+
         revalidatePath('/'); // Revalidate home page
         return { success: true };
     } catch (error) {
-        console.error("Error writing promo file:", error);
+        console.error("Error writing promo data to DB:", error);
         return { success: false, error: "Failed to save changes" };
     }
 }
