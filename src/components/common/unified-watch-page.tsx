@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useLoading } from '@/context/loading-context';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -47,6 +48,12 @@ export default function UnifiedWatchPage({
     adConfig
 }: UnifiedWatchPageProps) {
     const router = useRouter();
+    const { startLoading, stopLoading } = useLoading();
+
+    // Stop loading when the post content changes (navigation complete)
+    useEffect(() => {
+        stopLoading();
+    }, [post.id, stopLoading]);
 
     // ... (existing helper logic) ...
 
@@ -526,7 +533,10 @@ export default function UnifiedWatchPage({
                                                     <button
                                                         key={episode.id}
                                                         id={`sidebar-post-${episode.id}`}
-                                                        onClick={() => router.push(`/search?seriesId=${series?.id}&post=${episode.id}`, { scroll: false })}
+                                                        onClick={() => {
+                                                            if (episode.id !== post.id) startLoading();
+                                                            router.push(`/search?seriesId=${series?.id}&post=${episode.id}`, { scroll: false });
+                                                        }}
                                                         className={cn(
                                                             "w-full flex gap-3 p-2 rounded-xl text-left transition-all border group",
                                                             isActive
