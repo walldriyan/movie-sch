@@ -805,6 +805,7 @@ model SponsoredPost {
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  endDate     DateTime? // When the ad campaign expires
 
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)

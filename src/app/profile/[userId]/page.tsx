@@ -5,6 +5,7 @@ import ProfileHeader from '@/components/profile/profile-header';
 import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
 import PublicAdList from '@/components/profile/public-ad-list';
+import PaymentManager from '@/components/profile/profile-payment-manager';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -48,7 +49,7 @@ export default async function ProfilePage({
         const adsRaw = await prisma.sponsoredPost.findMany({
             where: { userId: user.id },
             orderBy: { createdAt: 'desc' },
-            include: { payment: true }
+            include: { paymentRecord: true }
         });
         const ads = JSON.parse(JSON.stringify(adsRaw));
         content = (
@@ -87,9 +88,45 @@ export default async function ProfilePage({
         const activeAds = JSON.parse(JSON.stringify(allAds));
         content = <PublicAdList ads={activeAds} highlightId={adId} />;
     }
-    // Simplified: Only implementing Posts and Ads for now to ensure this works. 
     // Expand for Series/Exams if needed or if components are verified compatible.
-    else {
+    else if (filter === 'payments' && isOwnProfile) {
+        // Fetch Payment Data directly here (Server Side) to pass to Client Component
+        const plans = await prisma.subscriptionPlan.findMany({
+            where: { isArchived: false },
+            orderBy: { price: 'asc' }
+        });
+
+        const historyRaw = await prisma.paymentRecord.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                subscription: { include: { plan: true } },
+                accessKey: true
+            }
+        });
+
+        const currentSubRaw = await prisma.userSubscription.findFirst({
+            where: {
+                userId: user.id,
+                status: 'ACTIVE',
+                endDate: { gt: new Date() }
+            },
+            include: { plan: true },
+            orderBy: { endDate: 'desc' }
+        });
+
+        const history = JSON.parse(JSON.stringify(historyRaw));
+        const currentSubscription = JSON.parse(JSON.stringify(currentSubRaw));
+
+        content = (
+            <PaymentManager
+                plans={plans}
+                history={history}
+                currentSubscription={currentSubscription}
+            />
+        );
+
+    } else {
         // Fetch posts
         const posts = await prisma.post.findMany({
             where: { authorId: user.id, status: 'PUBLISHED' },

@@ -34,6 +34,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
 
   if (isOwnProfile) {
     tabs.push({ id: 'ads', label: 'My Ads', icon: Megaphone });
+    tabs.push({ id: 'payments', label: 'Payments', icon: Bookmark }); // Using Bookmark or CreditCard from lucide if imported
   }
 
   // Dynamic Tab for Ad View

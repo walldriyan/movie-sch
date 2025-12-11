@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { SponsoredPost, AdPayment } from '@prisma/client';
+import { SponsoredPost, PaymentRecord } from '@prisma/client';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CreateAdWizard from './create-ad-wizard';
 
-type AdWithPayment = SponsoredPost & { payment: AdPayment | null };
+type AdWithPayment = SponsoredPost & { paymentRecord: PaymentRecord | null, endDate: Date | null };
 
 export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayment[], isOwnProfile: boolean }) {
     const searchParams = useSearchParams();
@@ -165,15 +165,22 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
-                                    {ads.filter(a => a.payment).length === 0 ? (
+                                    {ads.filter(a => a.paymentRecord).length === 0 ? (
                                         <tr>
                                             <td colSpan={6} className="px-4 py-8 text-center text-white/30">No payment history available.</td>
                                         </tr>
                                     ) : (
-                                        ads.filter(a => a.payment).map(ad => {
-                                            const payment = ad.payment!;
-                                            const dailyCost = payment.amount / payment.durationDays;
-                                            const expiryDate = new Date(new Date(ad.createdAt).getTime() + payment.durationDays * 24 * 60 * 60 * 1000);
+                                        ads.filter(a => a.paymentRecord).map(ad => {
+                                            const payment = ad.paymentRecord!;
+                                            const startDate = new Date(ad.createdAt);
+                                            const expiryDate = ad.endDate ? new Date(ad.endDate) : new Date(startDate.getTime() + 30 * 24 * 60 * 60 * 1000); // Default 30 days if missing
+
+                                            // Calculate Duration Days
+                                            const durationMs = expiryDate.getTime() - startDate.getTime();
+                                            const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+
+                                            const dailyCost = durationDays > 0 ? payment.amount / durationDays : 0;
+
                                             const now = new Date();
                                             const isExpired = now > expiryDate;
                                             const daysRemaining = isExpired ? 0 : Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
@@ -191,7 +198,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                                                     </td>
                                                     <td className="px-4 py-3 text-white/70">
                                                         <div className="flex flex-col">
-                                                            <span>{payment.durationDays} Days</span>
+                                                            <span>{durationDays} Days</span>
                                                             <span className="text-[10px] text-white/50">{daysRemaining} days left</span>
                                                         </div>
                                                     </td>
@@ -231,8 +238,10 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
     const [isActive, setIsActive] = useState(ad.isActive);
 
     const expiryDate = useMemo(() => {
-        return ad.payment ? new Date(new Date(ad.createdAt).getTime() + ad.payment.durationDays * 24 * 60 * 60 * 1000) : null;
-    }, [ad.createdAt, ad.payment]);
+        // If endDate exists, use it. Else fallback to 30 days if payment exists.
+        if (ad.endDate) return new Date(ad.endDate);
+        return ad.paymentRecord ? new Date(new Date(ad.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000) : null;
+    }, [ad.createdAt, ad.paymentRecord, ad.endDate]);
 
     // Client-side state for time-dependent values
     const [progress, setProgress] = useState(0);
