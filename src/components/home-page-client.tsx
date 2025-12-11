@@ -614,89 +614,105 @@ export default function HomePageClient({
 
 
                     {/* SECTION 2: Creators */}
-                    <div className="relative">
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20">
-                                    <Users className="w-6 h-6 text-blue-400" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold tracking-tight">{siteConfig.sections.creators.title}</h2>
-                                    <p className="text-muted-foreground">{siteConfig.sections.creators.subtitle}</p>
-                                </div>
-                            </div>
-                            <Button variant="ghost" className="rounded-full hover:bg-white/10" asChild>
-                                <Link href="/search?view=creators">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
-                            </Button>
-                        </div>
+                    <div className="relative rounded-[3px] bg-blue-500/[0.03] border border-blue-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 right-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-blue-500/[0.03] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
-                        {loading ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                                {[...Array(6)].map((_, i) => (
-                                    <div key={i} className="flex flex-col items-center">
-                                        <Skeleton className="w-28 h-28 rounded-full" />
-                                        <Skeleton className="h-4 w-24 mt-4" />
+                        <div className="relative z-10">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3.5 rounded-2xl bg-blue-500/[0.05] border border-blue-500/[0.08] shadow-[0_0_20px_rgba(59,130,246,0.1)]">
+                                        <Users className="w-6 h-6 text-blue-400" />
                                     </div>
-                                ))}
+                                    <div>
+                                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{siteConfig.sections.creators.title}</h2>
+                                        <p className="text-muted-foreground mt-1 text-sm md:text-base">{siteConfig.sections.creators.subtitle}</p>
+                                    </div>
+                                </div>
+                                <Button variant="outline" className="rounded-full border-blue-500/20 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors" asChild>
+                                    <Link href="/search?view=creators">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
+                                </Button>
                             </div>
-                        ) : users.length > 0 ? (
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                                {users.map(user => {
-                                    const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
-                                    return (
-                                        <Link href={`/profile/${user.id}`} key={user.id} className="group flex flex-col items-center p-4 rounded-3xl hover:bg-white/5 transition-all duration-300 border border-transparent hover:border-white/5">
-                                            <div className="relative mb-4">
-                                                <Avatar className="w-24 h-24 border-2 border-white/10 group-hover:border-primary/50 group-hover:scale-105 transition-all shadow-xl">
-                                                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} className="object-cover" />}
-                                                    <AvatarFallback className="text-2xl bg-[#1a1a1a]">{user.name?.charAt(0) || 'U'}</AvatarFallback>
-                                                </Avatar>
-                                                {user.role !== 'USER' && (
-                                                    <div className="absolute -bottom-1 -right-1 bg-primary text-black text-[10px] font-bold px-2 py-0.5 rounded-full border-2 border-[#111112]">
-                                                        PRO
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <h3 className="font-semibold text-center truncate w-full group-hover:text-primary transition-colors">{user.name}</h3>
-                                            <p className="text-xs text-muted-foreground">{user.role === 'USER' ? 'Member' : 'Creator'}</p>
-                                        </Link>
-                                    )
-                                })}
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 text-muted-foreground">No creators available.</div>
-                        )}
+
+                            {loading ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+                                    {[...Array(6)].map((_, i) => (
+                                        <div key={i} className="flex flex-col items-center">
+                                            <Skeleton className="w-28 h-28 rounded-full" />
+                                            <Skeleton className="h-4 w-24 mt-4" />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : users.length > 0 ? (
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
+                                    {users.map(user => {
+                                        const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
+                                        return (
+                                            <Link href={`/profile/${user.id}`} key={user.id} className="group flex flex-col items-center p-4 rounded-3xl hover:bg-blue-500/[0.08] transition-all duration-300 border border-transparent hover:border-blue-500/10">
+                                                <div className="relative mb-5 transform group-hover:-translate-y-1 transition-transform duration-300">
+                                                    <Avatar className="w-24 h-24 md:w-28 md:h-28 border-4 border-white/[0.03] group-hover:border-blue-500/30 group-hover:shadow-[0_0_25px_rgba(59,130,246,0.3)] transition-all duration-300 shadow-xl">
+                                                        {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} className="object-cover" />}
+                                                        <AvatarFallback className="text-3xl bg-[#1a1a1a]">{user.name?.charAt(0) || 'U'}</AvatarFallback>
+                                                    </Avatar>
+                                                    {user.role !== 'USER' && (
+                                                        <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full border-4 border-[#0F0F10] shadow-lg">
+                                                            PRO
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <h3 className="font-bold text-lg text-center truncate w-full group-hover:text-blue-400 transition-colors">{user.name}</h3>
+                                                <p className="text-xs font-medium text-white/40 group-hover:text-white/60 transition-colors mt-1">{user.role === 'USER' ? 'Member' : 'Creator'}</p>
+                                            </Link>
+                                        )
+                                    })}
+                                </div>
+                            ) : (
+                                <div className="text-center py-20 bg-blue-500/[0.02] rounded-3xl border border-dashed border-blue-500/10">
+                                    <div className="text-blue-500/40 text-sm font-medium">No creators available right now.</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* SECTION 3: Collections */}
-                    <div>
-                        <div className="flex items-center justify-between mb-8">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
-                                    <Folder className="w-6 h-6 text-purple-400" />
-                                </div>
-                                <div>
-                                    <h2 className="text-2xl font-bold tracking-tight">{siteConfig.sections.collections.title}</h2>
-                                    <p className="text-muted-foreground">{siteConfig.sections.collections.subtitle}</p>
-                                </div>
-                            </div>
-                            <Button variant="ghost" className="rounded-full hover:bg-white/10" asChild>
-                                <Link href="/groups">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
-                            </Button>
-                        </div>
+                    <div className="relative rounded-[3px] bg-purple-500/[0.03] border border-purple-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
+                        {/* Decorative background element */}
+                        <div className="absolute top-0 left-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-500/[0.03] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
-                        {loading ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 rounded-3xl" />)}
+                        <div className="relative z-10">
+                            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
+                                <div className="flex items-center gap-4">
+                                    <div className="p-3.5 rounded-2xl bg-purple-500/[0.05] border border-purple-500/[0.08] shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                                        <Folder className="w-6 h-6 text-purple-400" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{siteConfig.sections.collections.title}</h2>
+                                        <p className="text-muted-foreground mt-1 text-sm md:text-base">{siteConfig.sections.collections.subtitle}</p>
+                                    </div>
+                                </div>
+                                <Button variant="outline" className="rounded-full border-purple-500/20 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 transition-colors" asChild>
+                                    <Link href="/groups">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
+                                </Button>
                             </div>
-                        ) : groups.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                {groups.map((group) => (
-                                    <GroupCard key={group.id} group={group} />
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="text-center py-12 text-muted-foreground">No collections available.</div>
-                        )}
+
+                            {loading ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 rounded-3xl" />)}
+                                </div>
+                            ) : groups.length > 0 ? (
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {groups.map((group) => (
+                                        <div key={group.id} className="transform hover:scale-[1.02] transition-transform duration-300">
+                                            <GroupCard group={group} />
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-20 bg-purple-500/[0.02] rounded-3xl border border-dashed border-purple-500/10">
+                                    <div className="text-purple-500/40 text-sm font-medium">No collections available right now.</div>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </section>
 
