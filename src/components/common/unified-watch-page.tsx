@@ -113,7 +113,6 @@ export default function UnifiedWatchPage({
 
     const isPremium = session?.user && (
         session.user.role === 'SUPER_ADMIN' ||
-        session.user.role === 'USER_ADMIN' ||
         (session.user as any).accountType === 'PREMIUM'
     );
 
@@ -625,7 +624,21 @@ export default function UnifiedWatchPage({
                                         {/* AD ABOVE COMMENTS - Visible to Free & Hybrid */}
                                         {!isPremium && (
                                             <div className="mb-8 w-full">
-                                                <AdManager initialConfig={legacyAdConfig} userRole={session?.user?.role} />
+                                                {legacyAdConfig.enabled ? (
+                                                    <AdManager initialConfig={legacyAdConfig} userRole={session?.user?.role} />
+                                                ) : (
+                                                    <Link href={`/profile/${session?.user?.id}?filter=ads`} className="block group">
+                                                        <div className="p-6 bg-muted/30 rounded-2xl border border-dashed border-white/5 hover:bg-muted/40 hover:border-primary/20 transition-all flex flex-col items-center justify-center text-center space-y-3 min-h-[160px]">
+                                                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:scale-110 transition-transform">
+                                                                <Film className="w-6 h-6 text-primary" />
+                                                            </div>
+                                                            <div>
+                                                                <h3 className="text-lg font-semibold text-foreground/90">Create Your Ad</h3>
+                                                                <p className="text-sm text-muted-foreground">Promote your content here</p>
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+                                                )}
                                             </div>
                                         )}
 
