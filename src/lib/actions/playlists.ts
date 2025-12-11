@@ -1,7 +1,7 @@
 'use server';
+// Cache cleaned and Prisma Client regenerated
 
 import { auth } from '@/auth';
-import type { Playlist, PlaylistItem } from '@prisma/client';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { ROLES } from '@/lib/permissions';

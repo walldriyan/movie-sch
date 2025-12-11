@@ -78,8 +78,8 @@ model User {
   assignedKeys      AccessKey[]     @relation("KeyAssignedTo")
 
   // Legacy Ad Payment Relations (Can be removed if we fully migrate, or kept if we kept the model)
-  // usedAdPayments    AdPayment[]     @relation("UsedBy")
-  // assignedAdPayments AdPayment[]    @relation("AssignedTo")
+  usedAdPayments    AdPayment[]     @relation("UsedBy")
+  assignedAdPayments AdPayment[]    @relation("AssignedTo")
   followers         User[]          @relation("UserFollows")
   following         User[]          @relation("UserFollows")
 
@@ -814,9 +814,9 @@ model SponsoredPost {
   paymentRecordId String? @unique
   paymentRecord   PaymentRecord? @relation(fields: [paymentRecordId], references: [id])
 
-  // Legacy support (optional, can be deprecated)
-  // paymentId   String?  @unique
-  // payment     AdPayment? @relation(fields: [paymentId], references: [id])
+  // Legacy support (restored for compatibility)
+  paymentId   String?  @unique
+  payment     AdPayment? @relation(fields: [paymentId], references: [id])
   
   // Quick Stats
   views       Int      @default(0)
@@ -1042,4 +1042,27 @@ model PlaylistItem {
   
   @@index([playlistId])
   @@map("playlist_items")
+}
+
+model AdPayment {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  amount           Float
+  currency         String   @default("LKR")
+  durationDays     Int      @default(30)
+  
+  assignedToUserId String?
+  assignedToUser   User?    @relation("AssignedTo", fields: [assignedToUserId], references: [id])
+  
+  isUsed           Boolean  @default(false)
+  usedAt           DateTime?
+  usedByUserId     String?
+  usedByUser       User?    @relation("UsedBy", fields: [usedByUserId], references: [id])
+  
+  sponsoredPost    SponsoredPost?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("ad_payments")
 }
