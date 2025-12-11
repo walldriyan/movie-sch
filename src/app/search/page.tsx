@@ -19,6 +19,7 @@ import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
+import PublicAdList from '@/components/profile/public-ad-list';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -119,14 +120,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const examView = params.view;
     const submissionIdParam = params.submissionId;
 
-    // ===== REDIRECT: ad_view filter to correct profile page =====
-    if (profileFilter === 'ad_view' && profileId) {
-        const adId = params.adId;
-        const redirectUrl = adId
-            ? `/profile/${profileId}?filter=ad_view&adId=${adId}`
-            : `/profile/${profileId}?filter=ad_view`;
-        redirect(redirectUrl);
-    }
+    // NOTE: ad_view filter is now handled in PROFILE VIEW section below
+    // Removed redirect as it was causing issues
 
     // Fetch Global Ad Config
     const ads = await getAdsConfig();
@@ -216,7 +211,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         let displaySeries: any[] = [];
         let displayExams: any[] = [];
         let displayAds: any[] = [];
+        let publicAds: any[] = [];
         let totalSeriesCount = 0;
+        const adIdParam = params.adId;
 
         if (profileFilter === 'posts') {
             const { posts } = await getPosts({ filters: { authorId: profileUser.id, includePrivate: isOwnProfile } });
@@ -239,6 +236,28 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                     include: { payment: true }
                 });
             }
+        } else if (profileFilter === 'ad_view') {
+            // Public view of active sponsored ads
+            let specificAd = null;
+            if (adIdParam) {
+                specificAd = await prisma.sponsoredPost.findUnique({
+                    where: { id: adIdParam }
+                });
+            }
+            const activeAdsRaw = await prisma.sponsoredPost.findMany({
+                where: {
+                    userId: profileUser.id,
+                    status: 'APPROVED',
+                    isActive: true,
+                    ...(specificAd ? { id: { not: specificAd.id } } : {})
+                },
+                orderBy: { createdAt: 'desc' }
+            });
+            if (specificAd && specificAd.userId === profileUser.id) {
+                publicAds = [specificAd, ...activeAdsRaw];
+            } else {
+                publicAds = activeAdsRaw;
+            }
         }
 
         return (
@@ -254,6 +273,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     <ProfileExamList exams={displayExams} isOwnProfile={isOwnProfile} />
                                 ) : profileFilter === 'ads' ? (
                                     <ProfileAdsList ads={displayAds} isOwnProfile={isOwnProfile} />
+                                ) : profileFilter === 'ad_view' ? (
+                                    <PublicAdList ads={publicAds} highlightId={adIdParam} />
                                 ) : (
                                     <ProfilePostList posts={displayPosts} isOwnProfile={isOwnProfile} currentFilter={profileFilter} profileUser={profileUser} />
                                 )}

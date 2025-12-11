@@ -316,11 +316,14 @@ export default function HomePageClient({
     const [page, setPage] = useState(2); // Start from page 2 since page 1 is initialPosts
 
     // Reset state when filters/initial data change
+    // Use primitive values from searchParams instead of the object itself to prevent infinite loops
+    const searchParamsKey = `${searchParams?.timeFilter}-${searchParams?.sortBy}-${searchParams?.type}-${searchParams?.lockStatus}`;
+
     useEffect(() => {
         setVisiblePosts(dedupePosts(initialPosts));
         setHasMore(totalPages > 1);
         setPage(2);
-    }, [initialPosts, totalPages, searchParams]); // searchParams dependency ensures reset on filter change
+    }, [initialPosts, totalPages, searchParamsKey]); // Use primitive key instead of object reference
 
     const users = initialUsers;
     const groups = initialGroups;

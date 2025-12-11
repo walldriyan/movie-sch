@@ -25,13 +25,17 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
     const initialTab = searchParams.get('action') === 'create' ? 'create' : 'overview';
     const [activeTab, setActiveTab] = useState(initialTab);
 
-    // Sync state with URL param changes
+    // Sync state with URL param changes - ONLY depend on searchParams, not activeTab
     useEffect(() => {
         const action = searchParams.get('action');
-        if (action === 'create') setActiveTab('create');
-        else if (action === 'payments') setActiveTab('payments');
-        else if (activeTab === 'create' && !action) setActiveTab('overview');
-    }, [searchParams, activeTab]);
+        if (action === 'create') {
+            setActiveTab('create');
+        } else if (action === 'payments') {
+            setActiveTab('payments');
+        } else if (!action) {
+            setActiveTab('overview');
+        }
+    }, [searchParams]); // Removed activeTab to prevent infinite loop
 
     const handleTabChange = (val: string) => {
         setActiveTab(val);
