@@ -7,7 +7,7 @@ import ReactPlayer from 'react-player/lazy';
 import {
     Edit2, Save, Trash2, Video, Image as ImageIcon, Link as LinkIcon,
     AlertCircle, X, Loader2, Music, Upload, Plus, Play, Pause,
-    SkipBack, SkipForward, Volume2, Mic2, Copy, RefreshCw
+    SkipBack, SkipForward, Volume2, Mic2, Copy, RefreshCw, ListMusic
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -33,12 +33,13 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { updatePromoData } from '@/lib/actions/promo';
+import { updatePromoData, AudioTrack } from '@/lib/actions/promo';
 import { uploadPromoFile, getPromoFiles, deletePromoFile } from '@/lib/actions/upload-promo';
 import { User } from '@prisma/client';
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { AudioTrack } from '@/lib/actions/promo';
+import { MediaManager } from '@/components/media/media-manager';
+import { getPlaylist } from '@/lib/actions/playlists';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface FeaturedPromoProps {
@@ -50,6 +51,7 @@ interface FeaturedPromoProps {
         description: string;
         linkUrl: string;
         audioTracks?: AudioTrack[];
+        playlistId?: string; // New: Link to DB playlist
     };
     currentUser?: User | null;
 }
@@ -64,9 +66,29 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
     const [videoMode, setVideoMode] = useState(false); // If true, video plays with sound/controls and overlay is hidden
     const [hasMounted, setHasMounted] = useState(false);
 
+    // New Media Manager State
+    const [mediaManagerOpen, setMediaManagerOpen] = useState(false);
+
+    // Playlist Data State
+    const [dbPlaylist, setDbPlaylist] = useState<any>(null);
+
+    // Initial Load of DB Playlist if exists
     useEffect(() => {
         setHasMounted(true);
-    }, []);
+        if (data.playlistId) {
+            loadDbPlaylist(data.playlistId);
+        } else {
+            // Fallback for legacy data: set tracks from data.audioTracks if playlistId not present? 
+            // Actually, we'll just prioritize dbPlaylist if present.
+        }
+    }, [data.playlistId]);
+
+    const loadDbPlaylist = async (id: string) => {
+        const p = await getPlaylist(id);
+        if (p) {
+            setDbPlaylist(p);
+        }
+    };
 
     // Audio Player State
     const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -142,7 +164,8 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
             title: '',
             description: '',
             linkUrl: '',
-            audioTracks: []
+            audioTracks: [],
+            playlistId: undefined
         });
     };
 
@@ -175,17 +198,17 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
         }
     };
 
-    const removeTrack = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            audioTracks: prev.audioTracks?.filter((_, i) => i !== index)
-        }));
-    };
+    // Removed legacy removeTrack function as we use DB playlist now
+
 
     // Audio Controls
     const togglePlay = () => setIsPlaying(!isPlaying);
     const handleNext = () => {
-        if (data.audioTracks && currentTrackIndex < data.audioTracks.length - 1) {
+        // Use dbPlaylist if available, else legacy audioTracks
+        const tracks = dbPlaylist?.items || data.audioTracks || [];
+        if (tracks.length === 0) return;
+
+        if (currentTrackIndex < tracks.length - 1) {
             setCurrentTrackIndex(prev => prev + 1);
         } else {
             setCurrentTrackIndex(0); // loop back
@@ -213,7 +236,9 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
     }, [data.mediaUrl]);
 
     const isGradientFallback = !data.active || (!data.mediaUrl && !data.title) || (data.type !== 'video' && imageError);
-    const activeTrack = data.audioTracks?.[currentTrackIndex];
+    // Determine active track from DB or Legacy
+    const currentTracks = dbPlaylist?.items || data.audioTracks || [];
+    const activeTrack = currentTracks[currentTrackIndex];
 
     return (
         <section className="container max-w-7xl mx-auto px-4 md:px-8 mb-24 relative group/promo">
@@ -412,9 +437,9 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                             </div>
 
                             {/* Playlist (Scrollable) */}
-                            {data.audioTracks && data.audioTracks.length > 1 && (
+                            {currentTracks.length > 1 && (
                                 <ScrollArea className="h-[120px] w-full rounded-xl bg-black/40 backdrop-blur-md border border-white/5 p-2">
-                                    {data.audioTracks.map((track, i) => (
+                                    {currentTracks.map((track: any, i: number) => (
                                         <div
                                             key={i}
                                             onClick={() => { setCurrentTrackIndex(i); setIsPlaying(true); }}
@@ -435,7 +460,7 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                                                 )}
                                             </div>
                                             <div className="flex-1 min-w-0">
-                                                <p className={cn("text-sm truncate", currentTrackIndex === i ? "text-green-500 font-medium" : "text-white/90")}>
+                                                <p className="text-sm truncate text-white/90">
                                                     {track.title}
                                                 </p>
                                             </div>
@@ -566,68 +591,37 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                                                 </div>
                                             </div>
 
-                                            {/* Audio Track Manager */}
+                                            {/* Audio Track Manager (DB Based) */}
                                             {formData.type === 'audio' && (
                                                 <div className="border border-white/10 rounded-lg p-4 space-y-4 bg-white/5">
-                                                    <Label className="text-pink-400">Audio Playlist</Label>
+                                                    <Label className="text-pink-400">Audio Source</Label>
+                                                    <div className="flex flex-col gap-3">
+                                                        <p className="text-sm text-white/60">
+                                                            Currently Selected: <span className="text-white font-bold">{dbPlaylist?.name || (formData.playlistId ? "Loading..." : "None")}</span>
+                                                        </p>
 
-                                                    {/* Upload New Track */}
-                                                    <div className="flex gap-2 items-center">
-                                                        <div className="relative flex-1">
-                                                            <Button variant="secondary" className="w-full relative overflow-hidden" disabled={uploading}>
-                                                                {uploading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                                                                Upload MP3 / Audio
-                                                                <input
-                                                                    type="file"
-                                                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                                                    accept="audio/*"
-                                                                    onChange={(e) => {
-                                                                        handleFileUpload(e, 'audioTrack');
-                                                                        setTimeout(loadLibrary, 1000); // refresh lib
-                                                                    }}
-                                                                />
+                                                        {/* Open Media Manager */}
+                                                        <div className="flex gap-2">
+                                                            <Button
+                                                                variant="default"
+                                                                className="w-full bg-pink-600 hover:bg-pink-700 text-white"
+                                                                onClick={() => setMediaManagerOpen(true)}
+                                                            >
+                                                                <ListMusic className="w-4 h-4 mr-2" />
+                                                                Select / Manage Playlist
                                                             </Button>
                                                         </div>
-                                                        <span className="text-xs text-muted-foreground">or add URL manually below</span>
-                                                    </div>
 
-                                                    {/* Track List */}
-                                                    <div className="space-y-2 mt-2">
-                                                        {formData.audioTracks?.map((track, i) => (
-                                                            <div key={i} className="flex items-center gap-2 bg-black/20 p-2 rounded border border-white/5">
-                                                                <Music className="w-4 h-4 text-white/50" />
-                                                                <div className="flex-1 grid grid-cols-2 gap-2">
-                                                                    <Input
-                                                                        value={track.title}
-                                                                        onChange={(e) => {
-                                                                            const newTracks = [...(formData.audioTracks || [])];
-                                                                            newTracks[i].title = e.target.value;
-                                                                            setFormData({ ...formData, audioTracks: newTracks });
-                                                                        }}
-                                                                        placeholder="Title"
-                                                                        className="h-8 text-xs bg-transparent"
-                                                                    />
-                                                                    <Input
-                                                                        value={track.url}
-                                                                        onChange={(e) => {
-                                                                            const newTracks = [...(formData.audioTracks || [])];
-                                                                            newTracks[i].url = e.target.value;
-                                                                            setFormData({ ...formData, audioTracks: newTracks });
-                                                                        }}
-                                                                        placeholder="URL"
-                                                                        className="h-8 text-xs bg-transparent"
-                                                                    />
-                                                                </div>
-                                                                <Button
-                                                                    variant="ghost"
-                                                                    size="icon"
-                                                                    className="h-8 w-8 text-red-400 hover:text-red-300"
-                                                                    onClick={() => removeTrack(i)}
-                                                                >
-                                                                    <X className="w-3 h-3" />
-                                                                </Button>
-                                                            </div>
-                                                        ))}
+                                                        {/* Media Manager Dialog */}
+                                                        <MediaManager
+                                                            isOpen={mediaManagerOpen}
+                                                            onOpenChange={setMediaManagerOpen}
+                                                            defaultPlaylistId={formData.playlistId}
+                                                            onSelectPlaylist={(id) => {
+                                                                setFormData(prev => ({ ...prev, playlistId: id }));
+                                                                loadDbPlaylist(id); // Reload locally
+                                                            }}
+                                                        />
                                                     </div>
                                                 </div>
                                             )}
@@ -690,6 +684,23 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
                                                                 <p className="text-xs text-white/40 uppercase font-mono">{file.type}</p>
                                                             </div>
                                                             <div className="flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                                                {/* Add To Playlist (Only for Audio) */}
+                                                                {file.type !== 'image' && (
+                                                                    <Button
+                                                                        variant="ghost" size="icon"
+                                                                        className="h-8 w-8 text-green-400 hover:text-green-300 hover:bg-green-900/20"
+                                                                        onClick={() => {
+                                                                            setFormData(prev => ({
+                                                                                ...prev,
+                                                                                audioTracks: [...(prev.audioTracks || []), { title: file.name.replace(/\.[^/.]+$/, ""), url: file.url }]
+                                                                            }));
+                                                                            toast.success("Added to playlist");
+                                                                        }}
+                                                                        title="Add to Playlist"
+                                                                    >
+                                                                        <Plus className="w-3 h-3" />
+                                                                    </Button>
+                                                                )}
                                                                 <Button
                                                                     variant="ghost" size="icon"
                                                                     className="h-8 w-8 text-blue-400 hover:text-blue-300 hover:bg-blue-900/20"

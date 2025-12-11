@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from 'next/image';
+import { MediaManager } from './media-manager';
 
 // Server Actions
 import {
@@ -28,6 +29,8 @@ import {
     deletePlaylistItem
 } from '@/lib/actions/playlists';
 import { toast } from 'sonner';
+import { uploadMedia } from '@/lib/actions/upload-media';
+import { Upload, FileAudio } from 'lucide-react'; // Added icons
 
 interface AdvancedAudioPlayerProps {
     className?: string;
@@ -141,18 +144,14 @@ export function AdvancedAudioPlayer({ className, canEdit = false }: AdvancedAudi
         if (canEdit) {
             return (
                 <div className={cn("inline-flex", className)}>
-                    <Button variant="outline" size="sm" onClick={() => { setIsEditOpen(true); loadAllPlaylists(); }} className="bg-black/50 backdrop-blur-md text-white border-white/10">
+                    <Button variant="outline" size="sm" onClick={() => { setIsEditOpen(true); }} className="bg-black/50 backdrop-blur-md text-white border-white/10">
                         <Plus className="w-4 h-4 mr-2" />
                         Setup Music Player
                     </Button>
-                    <PlaylistManager
+                    <MediaManager
                         isOpen={isEditOpen}
                         onOpenChange={setIsEditOpen}
-                        playlists={playlists}
-                        onCreate={handleCreatePlaylist}
-                        onSetActive={handleSetActive}
-                        newPlaylistName={newPlaylistName}
-                        setNewPlaylistName={setNewPlaylistName}
+                        enableActiveToggle={true} // Allow setting active for hero
                     />
                 </div>
             );
@@ -318,100 +317,11 @@ export function AdvancedAudioPlayer({ className, canEdit = false }: AdvancedAudi
             )}
 
             {/* Admin Dialog */}
-            <PlaylistManager
+            <MediaManager
                 isOpen={isEditOpen}
                 onOpenChange={setIsEditOpen}
-                playlists={playlists}
-                onCreate={handleCreatePlaylist}
-                onSetActive={handleSetActive}
-                newPlaylistName={newPlaylistName}
-                setNewPlaylistName={setNewPlaylistName}
-                playlist={playlist}
-                onAddItem={handleAddItem}
-                onDeleteItem={handleDeleteItem}
-                newItemTitle={newItemTitle}
-                setNewItemTitle={setNewItemTitle}
-                newItemUrl={newItemUrl}
-                setNewItemUrl={setNewItemUrl}
+                enableActiveToggle={true}
             />
         </div>
     );
-}
-
-function PlaylistManager({ isOpen, onOpenChange, playlists, onCreate, onSetActive, newPlaylistName, setNewPlaylistName, playlist, onAddItem, onDeleteItem, newItemTitle, setNewItemTitle, newItemUrl, setNewItemUrl }: any) {
-    return (
-        <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-2xl bg-[#0a0a0a] border-white/10 text-white">
-                <DialogHeader>
-                    <DialogTitle>Media Manager</DialogTitle>
-                </DialogHeader>
-                <Tabs defaultValue="current">
-                    <TabsList className="bg-white/5">
-                        <TabsTrigger value="current">Current Playlist</TabsTrigger>
-                        <TabsTrigger value="manage">All Playlists</TabsTrigger>
-                    </TabsList>
-
-                    <TabsContent value="current" className="space-y-4">
-                        {playlist ? (
-                            <>
-                                <div className="flex gap-2 items-end border-b border-white/10 pb-4">
-                                    <div className="space-y-2 flex-1">
-                                        <Label>Add Track (Detailed)</Label>
-                                        <div className="flex gap-2">
-                                            <Input placeholder="Title" value={newItemTitle} onChange={e => setNewItemTitle(e.target.value)} className="bg-white/5 border-white/10" />
-                                            <Input placeholder="URL (YouTube or MP3)" value={newItemUrl} onChange={e => setNewItemUrl(e.target.value)} className="bg-white/5 border-white/10" />
-                                        </div>
-                                    </div>
-                                    <Button onClick={onAddItem}>Add</Button>
-                                </div>
-                                <ScrollArea className="h-[300px]">
-                                    <div className="space-y-2">
-                                        {playlist.items.map((item: any, i: number) => (
-                                            <div key={item.id} className="flex items-center justify-between p-2 bg-white/5 rounded border border-white/5">
-                                                <div className="flex items-center gap-3">
-                                                    <span className="text-xs text-white/50">{i + 1}</span>
-                                                    <div>
-                                                        <p className="font-medium text-sm">{item.title}</p>
-                                                        <p className="text-xs text-white/40 truncate max-w-[200px]">{item.url}</p>
-                                                    </div>
-                                                </div>
-                                                <Button variant="ghost" size="icon" onClick={() => onDeleteItem(item.id)} className="text-red-400 hover:text-red-300">
-                                                    <Trash2 className="w-4 h-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </ScrollArea>
-                            </>
-                        ) : (
-                            <p className="text-center text-muted-foreground py-10">No active playlist selected.</p>
-                        )}
-                    </TabsContent>
-
-                    <TabsContent value="manage" className="space-y-4">
-                        <div className="flex gap-2">
-                            <Input placeholder="New Playlist Name" value={newPlaylistName} onChange={e => setNewPlaylistName(e.target.value)} className="bg-white/5 border-white/10" />
-                            <Button onClick={onCreate}>Create</Button>
-                        </div>
-                        <ScrollArea className="h-[300px]">
-                            <div className="space-y-2">
-                                {playlists.map((p: any) => (
-                                    <div key={p.id} className="flex items-center justify-between p-3 bg-white/5 rounded border border-white/5">
-                                        <div className="flex items-center gap-3">
-                                            <div className={cn("w-2 h-2 rounded-full", p.isActive ? "bg-green-500" : "bg-white/20")} />
-                                            <span className="font-medium">{p.name}</span>
-                                            <span className="text-xs text-white/40">({p._count?.items || 0} tracks)</span>
-                                        </div>
-                                        <div className="flex gap-2">
-                                            {!p.isActive && <Button size="sm" variant="ghost" onClick={() => onSetActive(p.id)}>Set Active</Button>}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </ScrollArea>
-                    </TabsContent>
-                </Tabs>
-            </DialogContent>
-        </Dialog>
-    )
 }

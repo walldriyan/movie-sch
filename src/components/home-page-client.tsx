@@ -31,6 +31,7 @@ import { Skeleton } from './ui/skeleton';
 import { ROLES } from '@/lib/permissions';
 import { siteConfig } from '@/config/site.config';
 import { PromoData } from '@/lib/actions/promo';
+import { FeaturedPromo } from './home/featured-promo';
 
 // Lazy load heavy components
 const GroupCard = dynamic(() => import('./group-card'), {
@@ -729,6 +730,11 @@ export default function HomePageClient({
                         </div>
                     </div>
                 </section>
+
+                {/* Featured Promo Section */}
+                {(promoData.active || isPrivilegedUser) && (
+                    <FeaturedPromo data={promoData} currentUser={session?.user} />
+                )}
 
                 {/* Footer */}
                 <Footer />
