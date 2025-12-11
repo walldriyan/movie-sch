@@ -675,14 +675,14 @@ export default function HomePageClient({
                     </div>
 
                     {/* SECTION 3: Collections */}
-                    <div className="relative rounded-[3px] bg-gray-900/[0.01] border border-purple-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
+                    <div className="relative rounded-[3px] bg-gray-900/2 border border-gray-900/2 p-6 md:p-12 backdrop-blur-sm overflow-hidden">
                         {/* Decorative background element */}
-                        <div className="absolute top-0 left-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-500/[0.02] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+                        <div className="absolute top-0 left-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-gray-500/[0.02] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
                         <div className="relative z-10">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                                 <div className="flex items-center gap-4">
-                                    <div className="p-3.5 rounded-2xl bg-purple-500/[0.05] border border-purple-500/[0.08] shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                                    <div className="p-3.5 rounded-2xl bg-gray-900/1 border border-red-300/7 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
                                         <Folder className="w-6 h-6 text-purple-400" />
                                     </div>
                                     <div>
