@@ -74,43 +74,65 @@ export async function updateAdsConfig(ads: AdUnit[]) {
 // -----------------------------------------------------------------------------
 
 
-export async function getAdminSponsoredPosts(status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
+export async function getAdminSponsoredPosts(status?: 'PENDING' | 'APPROVED' | 'REJECTED', page: number = 1, limit: number = 10) {
     const session = await auth();
     if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
-        return [];
+        return { data: [], totalPages: 0, currentPage: 1, total: 0 };
     }
 
     try {
         const where = status ? { status } : {};
-        const ads = await prisma.sponsoredPost.findMany({
-            where,
-            orderBy: { createdAt: 'desc' },
-            include: { user: true, payment: true }
-        });
+        const [ads, total] = await prisma.$transaction([
+            prisma.sponsoredPost.findMany({
+                where,
+                orderBy: { createdAt: 'desc' },
+                include: { user: true, payment: true },
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+            prisma.sponsoredPost.count({ where })
+        ]);
+
         // Serialize to avoid Date issues in client components
-        return JSON.parse(JSON.stringify(ads));
+        return {
+            data: JSON.parse(JSON.stringify(ads)),
+            totalPages: Math.ceil(total / limit),
+            currentPage: page,
+            total
+        };
     } catch (error) {
-        return [];
+        return { data: [], totalPages: 0, currentPage: 1, total: 0 };
     }
 }
 
-export async function getAdminPayments() {
+export async function getAdminPayments(page: number = 1, limit: number = 10) {
     const session = await auth();
     if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
-        return [];
+        return { data: [], totalPages: 0, currentPage: 1, total: 0 };
     }
 
     try {
-        const payments = await prisma.adPayment.findMany({
-            orderBy: { createdAt: 'desc' },
-            include: {
-                usedByUser: true,
-                assignedToUser: true
-            }
-        });
-        return JSON.parse(JSON.stringify(payments));
+        const [payments, total] = await prisma.$transaction([
+            prisma.adPayment.findMany({
+                orderBy: { createdAt: 'desc' },
+                include: {
+                    usedByUser: true,
+                    assignedToUser: true
+                } as any,
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+            prisma.adPayment.count()
+        ]);
+
+        return {
+            data: JSON.parse(JSON.stringify(payments)),
+            totalPages: Math.ceil(total / limit),
+            currentPage: page,
+            total
+        };
     } catch (error) {
-        return [];
+        return { data: [], totalPages: 0, currentPage: 1, total: 0 };
     }
 }
 
@@ -162,7 +184,7 @@ export async function verifyPaymentCode(code: string) {
             return { success: false, error: 'Code already used' };
         }
 
-        if (payment.assignedToUserId && payment.assignedToUserId !== session?.user?.id) {
+        if ((payment as any).assignedToUserId && (payment as any).assignedToUserId !== session?.user?.id) {
             return { success: false, error: 'Code is not assigned to you' };
         }
 
@@ -181,11 +203,15 @@ export async function submitAd(data: { title: string; imageUrl: string; link: st
     const { paymentCode, ...adData } = data;
 
     // Check Permissions
+    // Check Permissions
     const isPrivileged = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
-    // Is Premium? (Check role or subscription - simplified check)
-    // Assuming role 'PREMIUM' exists or checking other flags. If not sure, use isPrivileged for now or strict check.
-    // User requested: "premium member kenek wenna one nattan oya pay kranna one"
-    const isPremium = session.user.role === 'PREMIUM' || session.user.role === 'PREMIUM_USER'; // Adjust role as needed
+
+    // Check Premium Status
+    const dbUser = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { accountType: true }
+    });
+    const isPremium = String(dbUser?.accountType) === 'PREMIUM';
 
     let paymentId: string | undefined;
 
@@ -413,7 +439,7 @@ export async function generatePaymentCode(amount: number, durationDays: number, 
                 durationDays,
                 currency: 'LKR',
                 assignedToUserId
-            }
+            } as any
         });
         return { success: true, payment };
     } catch (e) {
