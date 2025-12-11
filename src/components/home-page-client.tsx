@@ -46,12 +46,12 @@ const FeaturedPromo = dynamic(() => import('@/components/home/featured-promo').t
 // ========================================
 // HERO SECTION - Suno.com Style with Rounded Banner
 // ========================================
-const HeroSection = ({ user }: { user?: any }) => {
-    const [imgSrc, setImgSrc] = useState('/images/hero-cover.jpg');
+const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCoverUrl?: string | null }) => {
+    const DEFAULT_FALLBACK = "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&q=80";
+    const [imgSrc, setImgSrc] = useState(initialHeroCoverUrl || DEFAULT_FALLBACK);
     const [isUploading, startTransition] = useTransition();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [imageVersion, setImageVersion] = useState(Date.now());
-    const [hasCustomImage, setHasCustomImage] = useState(true);
 
     const isPrivileged = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
@@ -64,12 +64,10 @@ const HeroSection = ({ user }: { user?: any }) => {
 
         startTransition(async () => {
             const res = await uploadHeroImage(formData);
-            if (res.success) {
-                // Update version to force reload
-                const newVersion = Date.now();
-                setImageVersion(newVersion);
-                setImgSrc(`/images/hero-cover.jpg?v=${newVersion}`);
-                setHasCustomImage(true);
+            if (res.success && res.imageUrl) {
+                // Update to new Supabase URL
+                setImageVersion(Date.now());
+                setImgSrc(`${res.imageUrl}?v=${Date.now()}`);
             }
         });
     };
@@ -87,11 +85,8 @@ const HeroSection = ({ user }: { user?: any }) => {
                     className="object-cover transition-opacity duration-500"
                     priority
                     onError={() => {
-                        // Fallback to default if local image doesn't exist
-                        if (hasCustomImage) {
-                            setHasCustomImage(false);
-                            setImgSrc("https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=1920&q=80");
-                        }
+                        // Fallback to default if Supabase image fails
+                        setImgSrc(DEFAULT_FALLBACK);
                     }}
                 />
 
@@ -283,6 +278,7 @@ interface HomePageClientProps {
 
     promoData: PromoData;
     initialAds?: any[];
+    heroCoverUrl?: string | null;
 }
 
 export default function HomePageClient({
@@ -295,6 +291,7 @@ export default function HomePageClient({
     session,
     promoData,
     initialAds = [],
+    heroCoverUrl,
 }: HomePageClientProps) {
 
     // Remove artificial loading delay - data comes from server
@@ -401,7 +398,7 @@ export default function HomePageClient({
         <TooltipProvider>
             <div className="w-full bg-background text-foreground">
                 {/* Hero Section */}
-                <HeroSection user={session?.user} />
+                <HeroSection user={session?.user} initialHeroCoverUrl={heroCoverUrl} />
 
                 {/* Main Content Area - Aligned with Hero */}
                 <section className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-12 relative z-10 space-y-16">

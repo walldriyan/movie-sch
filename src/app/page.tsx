@@ -4,9 +4,10 @@ import { getUsers } from '@/lib/actions/users';
 import { getPublicGroups } from '@/lib/actions/groups';
 import HomePageClient from '@/components/home-page-client';
 import { auth } from '@/auth';
-import FeaturedPromo from '@/components/home/featured-promo';
+import { FeaturedPromo } from '@/components/home/featured-promo';
 import { getPromoData } from '@/lib/actions/promo';
 import { getSponsoredPosts, getRecentApprovedAds } from '@/lib/actions/ads';
+import { getHeroCoverUrl } from '@/lib/actions/upload-hero';
 
 export default async function HomePage({
     searchParams,
@@ -34,13 +35,15 @@ export default async function HomePage({
     const groupsPromise = getPublicGroups();
     const promoDataPromise = getPromoData();
     const adsPromise = getSponsoredPosts();
+    const heroCoverPromise = getHeroCoverUrl();
 
-    const [{ posts, totalPages }, users, groups, promoData, ads] = await Promise.all([
+    const [{ posts, totalPages }, users, groups, promoData, ads, heroCoverUrl] = await Promise.all([
         postDataPromise,
         usersPromise,
         groupsPromise,
         promoDataPromise,
-        adsPromise
+        adsPromise,
+        heroCoverPromise
     ]);
 
     return (
@@ -55,6 +58,7 @@ export default async function HomePage({
                 searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter, lockStatus }}
                 session={session}
                 promoData={promoData}
+                heroCoverUrl={heroCoverUrl}
             />
         </main>
     );
