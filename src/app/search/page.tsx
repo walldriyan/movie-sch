@@ -277,7 +277,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     <div className="space-y-12">
                                         {highlightedAd && (
                                             <div className="animate-in slide-in-from-top-4 duration-500">
-                                                <PublicAdView ad={highlightedAd} />
+                                                <PublicAdView
+                                                    ad={highlightedAd}
+                                                    canViewStats={isOwnProfile || session?.user?.role === ROLES.SUPER_ADMIN}
+                                                />
                                                 <div className="my-8 border-b border-white/5" />
                                                 <h3 className="text-xl font-bold text-white mb-6 px-4">More from this Creator</h3>
                                             </div>

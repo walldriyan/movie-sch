@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { clickAd } from '@/lib/actions/ads';
 import { useToast } from '@/hooks/use-toast';
 
-export default function PublicAdView({ ad }: { ad: SponsoredPost }) {
+export default function PublicAdView({ ad, canViewStats = false }: { ad: SponsoredPost, canViewStats?: boolean }) {
     const { toast } = useToast();
 
     const handleVisit = () => {
@@ -71,27 +71,29 @@ export default function PublicAdView({ ad }: { ad: SponsoredPost }) {
                         <p className="text-white/70 leading-relaxed text-lg whitespace-pre-line">{ad.description || "No description available."}</p>
                     </div>
 
-                    {/* Public Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-white/5 rounded-xl p-4 flex items-center gap-4 border border-white/5">
-                            <div className="p-3 bg-blue-500/20 text-blue-400 rounded-full">
-                                <Eye className="w-6 h-6" />
+                    {/* Public Stats - Only visible to Owner or Super Admin */}
+                    {canViewStats && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="bg-white/5 rounded-xl p-4 flex items-center gap-4 border border-white/5">
+                                <div className="p-3 bg-blue-500/20 text-blue-400 rounded-full">
+                                    <Eye className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-white/40 text-xs font-bold uppercase tracking-wider">Total Views</p>
+                                    <p className="text-2xl font-bold text-white">{ad.views.toLocaleString()}</p>
+                                </div>
                             </div>
-                            <div>
-                                <p className="text-white/40 text-xs font-bold uppercase tracking-wider">Total Views</p>
-                                <p className="text-2xl font-bold text-white">{ad.views.toLocaleString()}</p>
+                            <div className="bg-white/5 rounded-xl p-4 flex items-center gap-4 border border-white/5">
+                                <div className="p-3 bg-green-500/20 text-green-400 rounded-full">
+                                    <MousePointer2 className="w-6 h-6" />
+                                </div>
+                                <div>
+                                    <p className="text-white/40 text-xs font-bold uppercase tracking-wider">Interactions</p>
+                                    <p className="text-2xl font-bold text-white">{ad.clicks.toLocaleString()}</p>
+                                </div>
                             </div>
                         </div>
-                        <div className="bg-white/5 rounded-xl p-4 flex items-center gap-4 border border-white/5">
-                            <div className="p-3 bg-green-500/20 text-green-400 rounded-full">
-                                <MousePointer2 className="w-6 h-6" />
-                            </div>
-                            <div>
-                                <p className="text-white/40 text-xs font-bold uppercase tracking-wider">Interactions</p>
-                                <p className="text-2xl font-bold text-white">{ad.clicks.toLocaleString()}</p>
-                            </div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             </div>
         </div>
