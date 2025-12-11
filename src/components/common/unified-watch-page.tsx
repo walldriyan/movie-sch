@@ -11,7 +11,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import {
-    Play, Clock, Calendar, ChevronRight, Home, Lock,
+    Play, Clock, Calendar, ChevronRight, ChevronLeft, Home, Lock,
     List, MessageCircle, CheckCircle2,
     Download, AlertCircle, FileText, Film, Tv, Loader2
 } from 'lucide-react';

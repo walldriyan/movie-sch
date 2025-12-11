@@ -304,20 +304,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             isContentLocked = true;
         }
 
-        // Serialize subtitles
-        const subtitlesWithPermissions = await Promise.all(
-            (postData.subtitles || []).map(async (subtitle: any) => ({
-                id: subtitle.id,
-                language: subtitle.language,
-                url: subtitle.url,
-                uploaderName: subtitle.uploaderName,
-                postId: subtitle.postId,
-                userId: subtitle.userId,
-                createdAt: serializeDate(subtitle.createdAt),
-                updatedAt: serializeDate(subtitle.updatedAt),
-                canDownload: await canUserDownloadSubtitle(subtitle.id),
-            }))
-        );
+        // Serialize subtitles - check permission once instead of N times
+        const canDownloadSubtitles = !!session?.user; // Simple auth check - no need for N queries
+        const subtitlesWithPermissions = (postData.subtitles || []).map((subtitle: any) => ({
+            id: subtitle.id,
+            language: subtitle.language,
+            url: subtitle.url,
+            uploaderName: subtitle.uploaderName,
+            postId: subtitle.postId,
+            userId: subtitle.userId,
+            createdAt: serializeDate(subtitle.createdAt),
+            updatedAt: serializeDate(subtitle.updatedAt),
+            canDownload: canDownloadSubtitles, // Apply once to all
+        }));
 
         // Serialize Series
         const serializedSeries = {
@@ -413,20 +412,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             isContentLocked = true;
         }
 
-        // Serialize subtitles with permissions
-        const subtitlesWithPermissions = await Promise.all(
-            (postData.subtitles || []).map(async (subtitle: any) => ({
-                id: subtitle.id,
-                language: subtitle.language,
-                url: subtitle.url,
-                uploaderName: subtitle.uploaderName,
-                postId: subtitle.postId,
-                userId: subtitle.userId,
-                createdAt: serializeDate(subtitle.createdAt),
-                updatedAt: serializeDate(subtitle.updatedAt),
-                canDownload: await canUserDownloadSubtitle(subtitle.id),
-            }))
-        );
+        // Serialize subtitles - check permission once instead of N times
+        const movieCanDownload = !!session?.user; // Simple auth check - no need for N queries
+        const subtitlesWithPermissions = (postData.subtitles || []).map((subtitle: any) => ({
+            id: subtitle.id,
+            language: subtitle.language,
+            url: subtitle.url,
+            uploaderName: subtitle.uploaderName,
+            postId: subtitle.postId,
+            userId: subtitle.userId,
+            createdAt: serializeDate(subtitle.createdAt),
+            updatedAt: serializeDate(subtitle.updatedAt),
+            canDownload: movieCanDownload, // Apply once to all
+        }));
 
         // Serialize post for client
         const serializablePostForClient = {

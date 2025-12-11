@@ -140,19 +140,37 @@ export async function getPosts(options: { page?: number; limit?: number, filters
 export async function getPost(postId: number) {
     const session = await auth();
     const userId = session?.user?.id;
+
+    // Single optimized query with subtitles included
     const post = await prisma.post.findUnique({
         where: { id: postId },
         include: {
-            reviews: { where: { parentId: null }, include: { user: true, replies: { include: { user: true }, orderBy: { createdAt: 'asc' } } }, orderBy: { createdAt: 'desc' } },
-            author: true, favoritePosts: userId ? { where: { userId } } : false, likedBy: true, dislikedBy: true, mediaLinks: true, series: true, group: true,
-            exam: { where: { status: 'ACTIVE' }, select: { id: true, title: true, description: true } }, _count: true, metaData: true
-        }
+            reviews: {
+                where: { parentId: null },
+                include: {
+                    user: true,
+                    replies: { include: { user: true }, orderBy: { createdAt: 'asc' }, take: 20 } // Limit replies
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 50 // Limit top-level reviews for performance
+            },
+            author: true,
+            favoritePosts: userId ? { where: { userId } } : false,
+            likedBy: { take: 20, select: { id: true, name: true, image: true } }, // Limit and select only needed fields
+            dislikedBy: { take: 20, select: { id: true, name: true, image: true } }, // Limit and select only needed fields
+            mediaLinks: true,
+            series: true,
+            group: true,
+            subtitles: true, // Include subtitles in main query instead of separate call
+            exam: { where: { status: 'ACTIVE' }, select: { id: true, title: true, description: true } },
+            _count: { select: { likedBy: true, dislikedBy: true, reviews: true } },
+            metaData: true
+        },
+        cacheStrategy: { ttl: 30, swr: 60 } // Add caching
     });
 
     if (!post) return null;
-    const subtitles = await prisma.subtitle.findMany({ where: { postId: postId }, cacheStrategy: { ttl: 60, swr: 60 } });
-
-    return { ...post, genres: post.genres ? post.genres.split(',') : [], subtitles };
+    return { ...post, genres: post.genres ? post.genres.split(',') : [] };
 }
 
 export async function getPostsForAdmin(options: any = {}) {

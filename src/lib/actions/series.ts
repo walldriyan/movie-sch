@@ -46,6 +46,7 @@ export async function createSeries(title: string): Promise<Series> {
 export async function getSeriesById(id: number): Promise<Series | null> {
   const series = await prisma.series.findUnique({
     where: { id },
+    cacheStrategy: { ttl: 60, swr: 120 } // Cache for 60 seconds
   });
   return series;
 }
@@ -62,9 +63,10 @@ export async function getPostsBySeriesId(seriesId: number) {
       orderInSeries: 'asc'
     },
     include: {
-      author: true,
+      author: { select: { id: true, name: true, image: true } }, // Only needed fields
       group: { select: { isPremiumOnly: true } }
-    }
+    },
+    cacheStrategy: { ttl: 60, swr: 120 } // Cache for 60 seconds
   });
 
   return posts.map((post) => ({
