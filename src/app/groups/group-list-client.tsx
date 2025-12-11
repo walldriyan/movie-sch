@@ -3,13 +3,13 @@
 import { useState, useTransition } from 'react';
 import { Input } from '@/components/ui/input';
 import GroupCard from '@/components/group-card';
-import { Search, LayoutGrid, Users, Compass, LogOut, Settings, Plus, Loader2 } from 'lucide-react';
+import { Search, LayoutGrid, Users, Compass, LogOut, Settings, Plus, Loader2, UserPlus, ShieldAlert } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import PostGrid from '@/components/post-grid';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { leaveGroup } from '@/lib/actions/groups';
+import { leaveGroup, requestToJoinGroup } from '@/lib/actions/groups';
 import { toast } from 'sonner';
 import { useRouter } from 'next/navigation';
 import { format } from 'date-fns';
@@ -31,13 +31,21 @@ export default function GroupListClient({ groups, userGroups = { joined: [], cre
         (g.description && g.description.toLowerCase().includes(search.toLowerCase()))
     );
 
-    // Combine joined and created for "My Groups" list, removing duplicates if creator is also member
+    // Combine joined and created for "My Groups" list
     const myGroups = [...userGroups.joined];
+    const joinedIds = new Set(myGroups.map(g => g.id));
 
-    // Add created groups if not already in joined list (though creators are usually members)
+    // Add created groups if not already in joined list
     userGroups.created.forEach(cg => {
-        if (!myGroups.find(mg => mg.id === cg.id)) {
+        if (!joinedIds.has(cg.id)) {
             myGroups.push({ ...cg, role: 'ADMIN', joinedAt: cg.createdAt });
+            joinedIds.add(cg.id);
+        } else {
+            // If already in list (e.g. joined), make sure we merge Pending Count if valid
+            const index = myGroups.findIndex(g => g.id === cg.id);
+            if (index !== -1 && cg._count?.pendingRequests) {
+                myGroups[index] = { ...myGroups[index], _count: { ...myGroups[index]._count, pendingRequests: cg._count.pendingRequests } };
+            }
         }
     });
 
@@ -54,7 +62,46 @@ export default function GroupListClient({ groups, userGroups = { joined: [], cre
         });
     };
 
+    const handleJoin = (groupId: string, groupName: string) => {
+        if (!currentUser) return router.push('/auth');
+        startTransition(async () => {
+            try {
+                const res = await requestToJoinGroup(groupId);
+                toast.success(res.status === 'ACTIVE' ? `Joined ${groupName}!` : `Request sent to ${groupName}`);
+                router.refresh();
+            } catch (error: any) {
+                toast.error(error.message);
+            }
+        });
+    };
+
     const hasGroups = myGroups.length > 0;
+    const isMember = (groupId: string) => joinedIds.has(groupId);
+
+    // Special Group Card with Join Button Overlay
+    const NavigableGroupCard = ({ group }: { group: any }) => (
+        <div className="relative group/card h-full">
+            <GroupCard group={group} />
+            {/* Join Button Independent of Hover */}
+            {!isMember(group.id) && (
+                <div className="absolute top-3 right-3 z-20">
+                    <Button
+                        size="sm"
+                        onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleJoin(group.id, group.name);
+                        }}
+                        disabled={isPending}
+                        className="rounded-full shadow-lg bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-8 px-4"
+                    >
+                        {isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UserPlus className="w-3.5 h-3.5 mr-1.5" />}
+                        Join
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
 
     return (
         <div className="min-h-screen bg-background">
@@ -173,7 +220,19 @@ export default function GroupListClient({ groups, userGroups = { joined: [], cre
                                             <Link href={`/groups/${group.id}`}>View Group</Link>
                                         </Button>
 
-                                        {/* Admin Action */}
+                                        {/* Pending Requests Badge/Link */}
+                                        {group._count?.pendingRequests > 0 && (
+                                            <Button asChild size="icon" variant="ghost" className="relative rounded-full h-10 w-10 border border-yellow-500/30 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20" title={`${group._count.pendingRequests} Pending Requests`}>
+                                                <Link href={`/groups/${group.id}?tab=requests`}>
+                                                    <ShieldAlert className="w-4 h-4" />
+                                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white font-bold animate-pulse">
+                                                        {group._count.pendingRequests}
+                                                    </span>
+                                                </Link>
+                                            </Button>
+                                        )}
+
+                                        {/* Admin Settings */}
                                         {(group.role === 'ADMIN' || group.role === 'SUPER_ADMIN' || currentUser?.role === 'SUPER_ADMIN') && (
                                             <Button asChild size="icon" variant="ghost" className="rounded-full h-10 w-10 border border-white/10 hover:bg-white/10" title="Settings">
                                                 <Link href={`/groups/${group.id}/settings`}><Settings className="w-4 h-4" /></Link>
@@ -211,7 +270,7 @@ export default function GroupListClient({ groups, userGroups = { joined: [], cre
                         {filteredGroups.length > 0 ? (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                                 {filteredGroups.map((group) => (
-                                    <GroupCard key={group.id} group={group} />
+                                    <NavigableGroupCard key={group.id} group={group} />
                                 ))}
                             </div>
                         ) : (

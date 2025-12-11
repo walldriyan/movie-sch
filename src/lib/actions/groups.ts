@@ -612,15 +612,29 @@ export async function getUserGroupsExtended() {
         },
         include: {
             _count: {
-                select: { members: { where: { status: 'ACTIVE' } } }
+                select: {
+                    members: { where: { status: 'ACTIVE' } },
+                    // We can't easily get pending count here with just _count unless we relate it differently or filter logic allows
+                    // Actually Prisma _count allows filtering in select? YES.
+                }
+            },
+            members: {
+                where: { status: 'PENDING' },
+                select: { id: true } // Just to get count
             }
         },
         orderBy: { name: 'asc' }
     });
 
     return {
-        joined: joinedMemberships.map(m => ({ ...m.group, joinedAt: m.joinedAt.toISOString(), role: m.role })),
-        created: createdGroups
+        joined: (joinedMemberships as any[]).map(m => ({ ...m.group, joinedAt: m.joinedAt.toISOString(), role: m.role })),
+        created: (createdGroups as any[]).map(g => ({
+            ...g,
+            _count: {
+                ...g._count,
+                pendingRequests: g.members.length // Using the related fetch for count
+            }
+        }))
     };
 }
 
