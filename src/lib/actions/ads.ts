@@ -271,11 +271,21 @@ export async function toggleSponsoredPostStatus(id: string, isActive: boolean) {
 
 export async function deleteSponsoredPost(id: string) {
     const session = await auth();
-    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+    if (!session?.user) {
         return { success: false, error: 'Unauthorized' };
     }
 
     try {
+        const ad = await prisma.sponsoredPost.findUnique({ where: { id } });
+        if (!ad) return { success: false, error: 'Not found' };
+
+        const isOwner = ad.userId === session.user.id;
+        const isAdmin = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
+
+        if (!isOwner && !isAdmin) {
+            return { success: false, error: 'Unauthorized' };
+        }
+
         await prisma.sponsoredPost.delete({ where: { id } });
         revalidatePath('/');
         return { success: true };

@@ -237,7 +237,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
 import { SponsoredPost } from '@prisma/client';
 import { ExternalLink } from 'lucide-react';
 import { PlaceAdCard } from './home/place-ad-card';
-import { clickAd } from '@/lib/actions/ads';
+import { clickAd, incrementAdView } from '@/lib/actions/ads';
 
 // Ad Card Component - Mimics MovieCard
 function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
@@ -252,7 +252,8 @@ function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    incrementAdView(ad.id);
+  }, [ad.id]);
 
   const handleAdClick = async () => {
     // Fire and forget - don't block navigation
