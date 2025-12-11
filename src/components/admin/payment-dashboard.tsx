@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,18 @@ import { toast } from 'sonner';
 import { upsertSubscriptionPlan, deleteSubscriptionPlan, upsertManualSubscription, cancelUserSubscription } from '@/lib/actions/admin/payments';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { searchUsers } from "@/lib/actions/admin/payments";
 
 interface PaymentDashboardProps {
     stats: any;
@@ -371,34 +383,135 @@ function PlanDialog({ plan, trigger }: { plan?: any, trigger?: any }) {
 
 function ManualSubDialog({ plans }: { plans: any[] }) {
     const [open, setOpen] = useState(false);
+
+    // User Search State
+    const [userOpen, setUserOpen] = useState(false);
+    const [selectedUser, setSelectedUser] = useState<any>(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [users, setUsers] = useState<any[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    // Debounced search effect
+    useEffect(() => {
+        const timer = setTimeout(async () => {
+            if (searchQuery.length > 0) {
+                setLoading(true);
+                try {
+                    const results = await searchUsers(searchQuery);
+                    setUsers(results);
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setUsers([]); // Clear if query too short
+            }
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button variant="outline"><Plus className="w-4 h-4 mr-2" /> Add Manual Sub</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="overflow-visible sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Grant Subscription</DialogTitle>
                     <DialogDescription>Manually give a user a subscription (bypassing payment).</DialogDescription>
                 </DialogHeader>
                 <form action={async (formData) => {
-                    const userId = formData.get('userId') as string;
+                    const userId = selectedUser?.id;
                     const planId = formData.get('planId') as string;
+
+                    if (!userId) {
+                        toast.error("Please select a user");
+                        return;
+                    }
+
                     await upsertManualSubscription(userId, planId);
                     toast.success("Subscription Granted");
                     setOpen(false);
-                }} className="space-y-4">
-                    <div className="space-y-2">
-                        <Label>User ID</Label>
-                        <Input name="userId" placeholder="User ID (from User Management)" required />
+                    setSelectedUser(null);
+                }} className="space-y-6 pt-4">
+
+                    <div className="flex flex-col space-y-2">
+                        <Label>Select User</Label>
+                        <Popover open={userOpen} onOpenChange={setUserOpen}>
+                            <PopoverTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    role="combobox"
+                                    aria-expanded={userOpen}
+                                    className="w-full justify-between"
+                                >
+                                    {selectedUser ? (
+                                        <div className="flex items-center gap-2">
+                                            <Avatar className="w-6 h-6">
+                                                <AvatarImage src={selectedUser.image} />
+                                                <AvatarFallback>{selectedUser.name?.[0]}</AvatarFallback>
+                                            </Avatar>
+                                            <span>{selectedUser.name}</span>
+                                            <span className="text-muted-foreground text-xs">({selectedUser.email})</span>
+                                        </div>
+                                    ) : (
+                                        "Search user by name or email..."
+                                    )}
+                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0 z-[9999]" align="start">
+                                <Command shouldFilter={false}>
+                                    <CommandInput
+                                        placeholder="Type to search..."
+                                        value={searchQuery}
+                                        onValueChange={setSearchQuery}
+                                    />
+                                    <CommandList>
+                                        {loading && <div className="p-4 text-center text-sm text-muted-foreground flex justify-center items-center"><Loader2 className="w-4 h-4 animate-spin mr-2" />Searching...</div>}
+                                        {!loading && users.length === 0 && searchQuery.length > 0 && (
+                                            <CommandEmpty>No users found.</CommandEmpty>
+                                        )}
+                                        {users.map((user) => (
+                                            <CommandItem
+                                                key={user.id}
+                                                value={user.id}
+                                                onSelect={() => {
+                                                    setSelectedUser(user);
+                                                    setUserOpen(false);
+                                                }}
+                                                className="flex items-center gap-2 cursor-pointer"
+                                            >
+                                                <div className="flex items-center gap-2 w-full">
+                                                    <Avatar className="w-8 h-8">
+                                                        <AvatarImage src={user.image} />
+                                                        <AvatarFallback>{user.name?.[0]}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div className="flex flex-col text-left">
+                                                        <span className="font-medium">{user.name}</span>
+                                                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                                                    </div>
+                                                </div>
+                                                <Check
+                                                    className={cn(
+                                                        "mr-2 h-4 w-4",
+                                                        selectedUser?.id === user.id ? "opacity-100" : "opacity-0"
+                                                    )}
+                                                />
+                                            </CommandItem>
+                                        ))}
+                                    </CommandList>
+                                </Command>
+                            </PopoverContent>
+                        </Popover>
                     </div>
+
                     <div className="space-y-2">
                         <Label>Select Plan</Label>
                         <Select name="planId" required>
                             <SelectTrigger>
                                 <SelectValue placeholder="Select a plan" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent className="z-[9999]">
                                 {plans.map(p => (
                                     <SelectItem key={p.id} value={p.id}>{p.name} ({p.durationDays} days)</SelectItem>
                                 ))}

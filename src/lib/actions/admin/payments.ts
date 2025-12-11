@@ -1,16 +1,23 @@
 'use server';
 
 import { auth } from '@/auth';
+import type { User } from '@prisma/client';
+import { ROLES } from '@/lib/permissions';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { ROLES } from '@/lib/permissions';
+
+// Re-using admin auth check
+async function checkSuperAdmin() {
+    const session = await auth();
+    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    return session;
+}
 
 // ==========================================
 // 1. DASHBOARD OVERVIEW STATS
 // ==========================================
 export async function getAdminPaymentStats() {
-    const session = await auth();
-    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    await checkSuperAdmin();
 
     const totalRevenue = await prisma.paymentRecord.aggregate({
         _sum: { amount: true },
@@ -43,8 +50,7 @@ export async function getAdminPaymentStats() {
 // 2. TRANSACTION HISTORY (With Filters)
 // ==========================================
 export async function getAllTransactions(page = 1, limit = 20, query = '') {
-    const session = await auth();
-    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    await checkSuperAdmin();
 
     const skip = (page - 1) * limit;
 
@@ -80,8 +86,7 @@ export async function getAllTransactions(page = 1, limit = 20, query = '') {
 // 3. SUBSCRIPTION MANAGEMENT
 // ==========================================
 export async function getAllSubscriptions(page = 1, limit = 20, query = '') {
-    const session = await auth();
-    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    await checkSuperAdmin();
 
     const skip = (page - 1) * limit;
     const where: any = {
@@ -115,10 +120,27 @@ export async function getAllSubscriptions(page = 1, limit = 20, query = '') {
     return { subscriptions, totalPages: Math.ceil(total / limit) };
 }
 
+// Search users for autocomplete
+export async function searchUsers(query: string, limit = 10) {
+    await checkSuperAdmin();
+
+    if (!query) return [];
+
+    return await prisma.user.findMany({
+        where: {
+            OR: [
+                { email: { contains: query } },
+                { name: { contains: query } }
+            ]
+        },
+        take: limit,
+        select: { id: true, name: true, email: true, image: true }
+    });
+}
+
 // Manually Add/Edit Subscription for User
 export async function upsertManualSubscription(userId: string, planId: string, customEndDate?: Date) {
-    const session = await auth();
-    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    await checkSuperAdmin();
 
     const plan = await prisma.subscriptionPlan.findUnique({ where: { id: planId } });
     if (!plan) throw new Error('Plan not found');
@@ -132,7 +154,7 @@ export async function upsertManualSubscription(userId: string, planId: string, c
             userId,
             amount: 0,
             currency: 'MANUAL',
-            method: 'MANUAL_KEY', // Using existing enum or adding ADMIN_OVERRIDE if enum allows
+            method: 'MANUAL_KEY',
             type: 'SUBSCRIPTION',
             status: 'COMPLETED'
         }
@@ -148,7 +170,7 @@ export async function upsertManualSubscription(userId: string, planId: string, c
         await prisma.userSubscription.update({
             where: { id: existing.id },
             data: {
-                status: 'CANCELLED', // Mark old as cancelled or replace
+                status: 'CANCELLED',
                 endDate: new Date()
             }
         });
@@ -170,8 +192,7 @@ export async function upsertManualSubscription(userId: string, planId: string, c
 }
 
 export async function cancelUserSubscription(subId: string) {
-    const session = await auth();
-    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    await checkSuperAdmin();
 
     await prisma.userSubscription.update({
         where: { id: subId },
@@ -192,8 +213,7 @@ export async function getSubscriptionPlans() {
 }
 
 export async function upsertSubscriptionPlan(data: { id?: string, name: string, price: number, durationDays: number, features: string[], interval: string }) {
-    const session = await auth();
-    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    await checkSuperAdmin();
 
     if (data.id) {
         await prisma.subscriptionPlan.update({
@@ -224,8 +244,7 @@ export async function upsertSubscriptionPlan(data: { id?: string, name: string, 
 }
 
 export async function deleteSubscriptionPlan(id: string) {
-    const session = await auth();
-    if (session?.user?.role !== ROLES.SUPER_ADMIN) throw new Error('Unauthorized');
+    await checkSuperAdmin();
 
     // Soft delete usually better, but schema has isArchived
     await prisma.subscriptionPlan.update({
