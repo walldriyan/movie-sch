@@ -18,7 +18,7 @@ interface ProfileStats {
   followingCount: number;
 }
 
-export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats }: { user: User, currentFilter: string, isOwnProfile: boolean, stats: ProfileStats }) {
+export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats, adId }: { user: User, currentFilter: string, isOwnProfile: boolean, stats: ProfileStats, adId?: string }) {
   const coverImage = user.coverImage || 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=1920&q=80';
 
   const userAvatar =
@@ -34,6 +34,11 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
 
   if (isOwnProfile) {
     tabs.push({ id: 'ads', label: 'My Ads', icon: Megaphone });
+  }
+
+  // Dynamic Tab for Ad View
+  if (currentFilter === 'ad_view') {
+    tabs.push({ id: 'ad_view', label: 'Sponsored Ads', icon: Megaphone });
   }
 
   return (
@@ -164,10 +169,14 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = currentFilter === tab.id;
+            const href = tab.id === 'ad_view' && adId
+              ? `/profile/${user.id}?filter=ad_view&adId=${adId}`
+              : `/profile/${user.id}?filter=${tab.id}`;
+
             return (
               <Link
                 key={tab.id}
-                href={`/profile/${user.id}?filter=${tab.id}`}
+                href={href}
                 scroll={false}
                 className={cn(
                   "flex items-center gap-2 px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300",

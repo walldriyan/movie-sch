@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma';
 import ProfileHeader from '@/components/profile/profile-header';
 import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
-import PublicAdView from '@/components/profile/public-ad-view';
+import PublicAdList from '@/components/profile/public-ad-list';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +18,11 @@ export default async function ProfilePage({
 }) {
     const session = await auth();
     const { userId } = await params;
-    const { filter: filterParam, adId } = await searchParams;
+    const { filter: filterRaw, adId: adIdRaw } = await searchParams;
+
+    // Ensure params are strings (handle array case)
+    const filterParam = Array.isArray(filterRaw) ? filterRaw[0] : filterRaw;
+    const adId = Array.isArray(adIdRaw) ? adIdRaw[0] : adIdRaw;
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -52,21 +56,18 @@ export default async function ProfilePage({
                 <ProfileAdsList ads={ads} isOwnProfile={isOwnProfile} />
             </Suspense>
         );
-    } else if (filter === 'ad_view' && adId) {
-        const adRaw = await prisma.sponsoredPost.findUnique({ where: { id: adId } });
+    } else if (filter === 'ad_view') {
+        const activeAdsRaw = await prisma.sponsoredPost.findMany({
+            where: {
+                userId: user.id,
+                status: 'APPROVED',
+                isActive: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
 
-        const canView = adRaw && (
-            adRaw.status === 'APPROVED' ||
-            (session?.user?.id && adRaw.userId === session.user.id) ||
-            session?.user?.role === 'SUPER_ADMIN'
-        );
-
-        if (canView) {
-            const ad = JSON.parse(JSON.stringify(adRaw));
-            content = <PublicAdView ad={ad} />;
-        } else {
-            content = <div className="text-center py-20 text-white/50">Ad content unavailable.</div>;
-        }
+        const activeAds = JSON.parse(JSON.stringify(activeAdsRaw));
+        content = <PublicAdList ads={activeAds} highlightId={adId} />;
     }
     // Simplified: Only implementing Posts and Ads for now to ensure this works. 
     // Expand for Series/Exams if needed or if components are verified compatible.
@@ -98,6 +99,7 @@ export default async function ProfilePage({
                 currentFilter={filter}
                 isOwnProfile={isOwnProfile}
                 stats={stats}
+                adId={adId}
             />
 
             <div className="px-4 md:px-8 max-w-[1600px] mx-auto animate-in fade-in slide-in-from-bottom-8 duration-500">
