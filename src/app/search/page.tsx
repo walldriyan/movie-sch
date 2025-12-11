@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { getAdsConfig } from '@/lib/actions/ads';
 import { getPosts, getPost, getFavoritePostsByUserId } from '@/lib/actions/posts/read';
 import Link from 'next/link';
@@ -40,6 +40,7 @@ interface SearchPageProps {
         filter?: string;
         view?: string;
         submissionId?: string;
+        adId?: string; // For sponsored ad redirect
     }>;
 }
 
@@ -117,6 +118,15 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     const profileFilter = params.filter || 'posts';
     const examView = params.view;
     const submissionIdParam = params.submissionId;
+
+    // ===== REDIRECT: ad_view filter to correct profile page =====
+    if (profileFilter === 'ad_view' && profileId) {
+        const adId = params.adId;
+        const redirectUrl = adId
+            ? `/profile/${profileId}?filter=ad_view&adId=${adId}`
+            : `/profile/${profileId}?filter=ad_view`;
+        redirect(redirectUrl);
+    }
 
     // Fetch Global Ad Config
     const ads = await getAdsConfig();

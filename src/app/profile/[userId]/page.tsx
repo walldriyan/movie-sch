@@ -57,31 +57,31 @@ export default async function ProfilePage({
             </Suspense>
         );
     } else if (filter === 'ad_view') {
-        // Fetch all active/approved ads for this user
+        // If specific adId requested, fetch it first
+        let specificAd = null;
+        if (adId) {
+            specificAd = await prisma.sponsoredPost.findUnique({
+                where: { id: adId }
+            });
+        }
+
+        // Fetch all active/approved ads for this user (excluding the specific one if fetched)
         const activeAdsRaw = await prisma.sponsoredPost.findMany({
             where: {
                 userId: user.id,
                 status: 'APPROVED',
-                isActive: true
+                isActive: true,
+                ...(specificAd ? { id: { not: specificAd.id } } : {})
             },
             orderBy: { createdAt: 'desc' }
         });
 
-        // If specific adId requested, check if in list; if not, fetch it separately
-        let specificAd = null;
-        if (adId) {
-            const foundInList = activeAdsRaw.find(a => a.id === adId);
-            if (!foundInList) {
-                specificAd = await prisma.sponsoredPost.findUnique({
-                    where: { id: adId }
-                });
-            }
-        }
-
         // Combine: specific ad first (if belongs to this user), then active ads
-        let allAds = [...activeAdsRaw];
+        let allAds = [];
         if (specificAd && specificAd.userId === user.id) {
-            allAds = [specificAd, ...allAds];
+            allAds = [specificAd, ...activeAdsRaw];
+        } else {
+            allAds = [...activeAdsRaw];
         }
 
         const activeAds = JSON.parse(JSON.stringify(allAds));
