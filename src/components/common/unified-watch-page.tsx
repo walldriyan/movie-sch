@@ -32,6 +32,7 @@ const ReviewCard = dynamic(() => import('@/components/review-card'), {
     ssr: false
 });
 const AdManager = dynamic(() => import('@/components/common/ad-manager'), { ssr: false });
+const AdminPostControls = dynamic(() => import('@/components/admin/admin-post-controls'), { ssr: false });
 
 import type { AdUnit } from '@/lib/actions/ads';
 import { createReview, deleteReview } from '@/lib/actions/reviews';
@@ -706,6 +707,13 @@ export default function UnifiedWatchPage({
                                 </div>
                             </>
                         )}
+
+                        {/* Admin Controls */}
+                        <AdminPostControls
+                            postId={post.id}
+                            currentStatus={post.status || 'DRAFT'}
+                            currentUserRole={session?.user?.role}
+                        />
 
                     </div>
 
