@@ -938,6 +938,9 @@ model AccessKey {
   
   expiresAt     DateTime?     // When the key itself expires (not the sub)
   
+  // Value for Ad Credits
+  creditAmount  Float?        // If type is AD_CAMPAIGN, this is the value
+  
   // Usage State
   isUsed        Boolean       @default(false)
   usedAt        DateTime?

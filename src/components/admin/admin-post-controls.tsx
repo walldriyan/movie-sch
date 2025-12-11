@@ -24,11 +24,11 @@ const STATUS_OPTIONS = [
 ];
 
 export default function AdminPostControls({ postId, currentStatus, currentUserRole, className }: AdminPostControlsProps) {
-    if (currentUserRole !== 'SUPER_ADMIN') return null;
-
     const [status, setStatus] = useState(currentStatus);
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
+
+    if (currentUserRole !== 'SUPER_ADMIN') return null;
 
     const handleStatusUpdate = (newStatus: string) => {
         const prevStatus = status;
