@@ -141,7 +141,7 @@ export async function getSponsoredPosts() {
         // Fetch active ads sorted by priority (higher first)
         const ads = await prisma.sponsoredPost.findMany({
             where: { isActive: true, status: 'APPROVED' },
-            orderBy: { priority: 'desc' }
+            orderBy: { createdAt: 'desc' } // Newest ad first
         });
         return ads;
     } catch (error) {

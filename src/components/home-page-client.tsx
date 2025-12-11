@@ -551,20 +551,25 @@ export default function HomePageClient({
                                     const mixed: any[] = [];
                                     let adIndex = 0;
 
+                                    // Put newest ad first in the grid
+                                    if (activeAds.length > 0) {
+                                        mixed.push(activeAds[0]);
+                                        adIndex = 1;
+                                    }
+
                                     visiblePosts.forEach((post, i) => {
                                         mixed.push(post);
 
-                                        // Pattern: 5 Posts + 2 Ad Cards (Total 7 items per cycle)
+                                        // Pattern: Every 5 Posts, insert an ad
                                         if ((i + 1) % 5 === 0) {
-                                            // Slot 1: Sponsored Ad (or Place Ad if no active ads)
-                                            if (activeAds.length > 0) {
-                                                const ad = activeAds[adIndex % activeAds.length];
-                                                if (ad) {
-                                                    mixed.push(ad);
-                                                    adIndex++;
-                                                } else {
-                                                    mixed.push({ isPlaceAdPlaceholder: true });
-                                                }
+                                            // Slot 1: Sponsored Ad (or Place Ad if no more ads)
+                                            if (activeAds.length > adIndex) {
+                                                mixed.push(activeAds[adIndex]);
+                                                adIndex++;
+                                            } else if (activeAds.length > 0) {
+                                                // Cycle through ads again
+                                                mixed.push(activeAds[adIndex % activeAds.length]);
+                                                adIndex++;
                                             } else {
                                                 mixed.push({ isPlaceAdPlaceholder: true });
                                             }
@@ -574,7 +579,7 @@ export default function HomePageClient({
                                         }
                                     });
                                     return mixed;
-                                }, [visiblePosts, initialAds])} />
+                                }, [visiblePosts, initialAds, typeFilter])} />
 
                                 {/* Load More Button */}
                                 {hasMore && (

@@ -341,8 +341,8 @@ export default function PostGrid({ posts }: { posts: (Movie | any)[] }) {
           {/* Check if it's the Place Ad Placeholder */}
           {item.isPlaceAdPlaceholder ? (
             <PlaceAdCard />
-          ) : ('link' in item && 'priority' in item) ? (
-            /* Check if it's an Ad */
+          ) : ('imageUrl' in item && 'status' in item && !('posterUrl' in item)) ? (
+            /* Check if it's a SponsoredPost Ad (has imageUrl & status, but no posterUrl) */
             <AdCard ad={item as SponsoredPost} index={index} />
           ) : (
             /* Normal Movie Card */
