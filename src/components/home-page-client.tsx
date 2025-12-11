@@ -533,23 +533,30 @@ export default function HomePageClient({
 
                                 {/* Mix Ads into Posts */}
                                 <PostGrid posts={useMemo(() => {
-                                    // Prepare ad pool: Active Ads + Placeholder
-                                    const adPool = [...(initialAds || [])];
-                                    // Add "Place Ad Here" card to the rotation
-                                    adPool.push({ isPlaceAdPlaceholder: true });
-
+                                    const activeAds = initialAds || [];
                                     const mixed: any[] = [];
                                     let adIndex = 0;
 
                                     visiblePosts.forEach((post, i) => {
                                         mixed.push(post);
-                                        // Insert ad after every 10 posts (10th, 20th, etc.)
-                                        if ((i + 1) % 10 === 0) {
-                                            const ad = adPool[adIndex % adPool.length];
-                                            if (ad) {
-                                                mixed.push(ad);
-                                                adIndex++;
+
+                                        // Pattern: 8 Posts + 2 Ad Cards (Total 10 items per cycle)
+                                        if ((i + 1) % 8 === 0) {
+                                            // Slot 1: Sponsored Ad (or Place Ad if no active ads)
+                                            if (activeAds.length > 0) {
+                                                const ad = activeAds[adIndex % activeAds.length];
+                                                if (ad) {
+                                                    mixed.push(ad);
+                                                    adIndex++;
+                                                } else {
+                                                    mixed.push({ isPlaceAdPlaceholder: true });
+                                                }
+                                            } else {
+                                                mixed.push({ isPlaceAdPlaceholder: true });
                                             }
+
+                                            // Slot 2: Always "Create Your Ad" Card
+                                            mixed.push({ isPlaceAdPlaceholder: true });
                                         }
                                     });
                                     return mixed;
