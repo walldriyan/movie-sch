@@ -38,22 +38,14 @@ import { createReview, deleteReview } from '@/lib/actions/reviews';
 import { incrementViewCount } from '@/lib/actions/posts/view';
 import { useToast } from '@/hooks/use-toast';
 
-// Lazy load DOMPurify - it's a heavy library
-let DOMPurify: any = null;
+import DOMPurify from 'isomorphic-dompurify';
+
+// Sanitize HTML using DOMPurify
 const sanitizeHTML = (html: string) => {
-    if (typeof window !== 'undefined') {
-        if (!DOMPurify) {
-            const dompurifyModule = require('isomorphic-dompurify');
-            // Handle both default and named exports
-            DOMPurify = dompurifyModule.default || dompurifyModule;
-        }
-        if (DOMPurify && typeof DOMPurify.sanitize === 'function') {
-            return DOMPurify.sanitize(html);
-        }
-        // Fallback: strip HTML tags if DOMPurify fails to load
-        return html.replace(/<[^>]*>?/gm, '');
+    if (typeof window !== 'undefined' && DOMPurify) {
+        return DOMPurify.sanitize(html);
     }
-    return html; // On server, return as-is (server component handles sanitization)
+    return html; // On server, return as-is
 };
 
 interface UnifiedWatchPageProps {
@@ -279,6 +271,12 @@ export default function UnifiedWatchPage({
                 variant: "destructive"
             });
         }
+    };
+
+    // Helper to strip HTML tags
+    const stripHtml = (html: string) => {
+        if (!html) return '';
+        return html.replace(/<[^>]*>?/gm, '');
     };
 
     return (
@@ -721,7 +719,7 @@ export default function UnifiedWatchPage({
                                     <>
                                         <h2 className="font-bold text-lg leading-tight mb-2">{series.title}</h2>
                                         <p className="text-sm text-muted-foreground mb-4">
-                                            {post.description ? (post.description.slice(0, 60) + '...') : 'Series overview'}
+                                            {post.description ? (stripHtml(post.description).slice(0, 60) + '...') : 'Series overview'}
                                         </p>
                                         <div className="flex items-center justify-between text-xs font-medium text-muted-foreground bg-muted p-2 rounded-lg">
                                             <span>{allPosts.length} Episodes</span>
@@ -785,7 +783,7 @@ export default function UnifiedWatchPage({
                                         {post.description && (
                                             <div className="pt-2 border-t border-dashed border-white/10 mt-2">
                                                 <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 italic">
-                                                    "{post.description.replace(/<[^>]*>?/gm, '')}"
+                                                    "{stripHtml(post.description)}"
                                                 </p>
                                             </div>
                                         )}
