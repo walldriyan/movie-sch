@@ -393,6 +393,44 @@ export default function HomePageClient({
 
     const isPrivilegedUser = session?.user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
 
+    // Memoize mixed posts with ads - MUST be at top level, not inside conditional JSX
+    const mixedPostsWithAds = useMemo(() => {
+        if (typeFilter === 'sponsored') return visiblePosts; // Don't mix if already viewing ads
+
+        const activeAds = initialAds || [];
+        const mixed: any[] = [];
+        let adIndex = 0;
+
+        // Put newest ad first in the grid
+        if (activeAds.length > 0) {
+            mixed.push(activeAds[0]);
+            adIndex = 1;
+        }
+
+        visiblePosts.forEach((post, i) => {
+            mixed.push(post);
+
+            // Pattern: Every 5 Posts, insert an ad
+            if ((i + 1) % 5 === 0) {
+                // Slot 1: Sponsored Ad (or Place Ad if no more ads)
+                if (activeAds.length > adIndex) {
+                    mixed.push(activeAds[adIndex]);
+                    adIndex++;
+                } else if (activeAds.length > 0) {
+                    // Cycle through ads again
+                    mixed.push(activeAds[adIndex % activeAds.length]);
+                    adIndex++;
+                } else {
+                    mixed.push({ isPlaceAdPlaceholder: true });
+                }
+
+                // Slot 2: Always "Create Your Ad" Card
+                mixed.push({ isPlaceAdPlaceholder: true });
+            }
+        });
+        return mixed;
+    }, [visiblePosts, initialAds, typeFilter]);
+
 
     return (
         <TooltipProvider>
@@ -541,42 +579,7 @@ export default function HomePageClient({
                             <>
 
                                 {/* Mix Ads into Posts */}
-                                <PostGrid posts={useMemo(() => {
-                                    if (typeFilter === 'sponsored') return visiblePosts; // Don't mix if already viewing ads
-
-                                    const activeAds = initialAds || [];
-                                    const mixed: any[] = [];
-                                    let adIndex = 0;
-
-                                    // Put newest ad first in the grid
-                                    if (activeAds.length > 0) {
-                                        mixed.push(activeAds[0]);
-                                        adIndex = 1;
-                                    }
-
-                                    visiblePosts.forEach((post, i) => {
-                                        mixed.push(post);
-
-                                        // Pattern: Every 5 Posts, insert an ad
-                                        if ((i + 1) % 5 === 0) {
-                                            // Slot 1: Sponsored Ad (or Place Ad if no more ads)
-                                            if (activeAds.length > adIndex) {
-                                                mixed.push(activeAds[adIndex]);
-                                                adIndex++;
-                                            } else if (activeAds.length > 0) {
-                                                // Cycle through ads again
-                                                mixed.push(activeAds[adIndex % activeAds.length]);
-                                                adIndex++;
-                                            } else {
-                                                mixed.push({ isPlaceAdPlaceholder: true });
-                                            }
-
-                                            // Slot 2: Always "Create Your Ad" Card
-                                            mixed.push({ isPlaceAdPlaceholder: true });
-                                        }
-                                    });
-                                    return mixed;
-                                }, [visiblePosts, initialAds, typeFilter])} />
+                                <PostGrid posts={mixedPostsWithAds} />
 
                                 {/* Load More Button */}
                                 {hasMore && (
