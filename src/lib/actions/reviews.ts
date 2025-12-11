@@ -21,6 +21,26 @@ export async function createReview(
   }
   const userId = session.user.id;
 
+  // Verify user exists in database
+  const userExists = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { id: true }
+  });
+
+  if (!userExists) {
+    throw new Error('User not found in database. Please try logging out and logging back in.');
+  }
+
+  // Verify post exists
+  const postExists = await prisma.post.findUnique({
+    where: { id: postId },
+    select: { id: true }
+  });
+
+  if (!postExists) {
+    throw new Error('Post not found.');
+  }
+
   const reviewData: Prisma.ReviewCreateInput = {
     comment,
     rating: parentId ? 0 : rating, // Replies don't have ratings
@@ -29,6 +49,16 @@ export async function createReview(
   };
 
   if (parentId) {
+    // Verify parent review exists
+    const parentExists = await prisma.review.findUnique({
+      where: { id: parentId },
+      select: { id: true }
+    });
+
+    if (!parentExists) {
+      throw new Error('Parent review not found.');
+    }
+
     reviewData.parent = { connect: { id: parentId } };
   }
 
@@ -49,40 +79,41 @@ export async function createReview(
   return newReview as ReviewWithParent & { user: User, replies: (ReviewWithParent & { user: User })[] };
 }
 
+
 export async function deleteReview(reviewId: number) {
-    const session = await auth();
-    const user = session?.user;
+  const session = await auth();
+  const user = session?.user;
 
-    if (!user) {
-        throw new Error('Not authenticated.');
-    }
+  if (!user) {
+    throw new Error('Not authenticated.');
+  }
 
-    const review = await prisma.review.findUnique({
-        where: { id: reviewId },
-    });
+  const review = await prisma.review.findUnique({
+    where: { id: reviewId },
+  });
 
-    if (!review) {
-        throw new Error('Review not found.');
-    }
+  if (!review) {
+    throw new Error('Review not found.');
+  }
 
-    const canDelete = user.id === review.userId || user.role === ROLES.SUPER_ADMIN;
+  const canDelete = user.id === review.userId || user.role === ROLES.SUPER_ADMIN;
 
-    if (!canDelete) {
-        throw new Error('You are not authorized to delete this review.');
-    }
+  if (!canDelete) {
+    throw new Error('You are not authorized to delete this review.');
+  }
 
-    // Recursively delete all replies before deleting the parent review
-    const replies = await prisma.review.findMany({
-        where: { parentId: reviewId }
-    });
+  // Recursively delete all replies before deleting the parent review
+  const replies = await prisma.review.findMany({
+    where: { parentId: reviewId }
+  });
 
-    for (const reply of replies) {
-        await deleteReview(reply.id);
-    }
-    
-    await prisma.review.delete({
-        where: { id: reviewId },
-    });
+  for (const reply of replies) {
+    await deleteReview(reply.id);
+  }
 
-    await invalidatePostsCache(review.postId);
+  await prisma.review.delete({
+    where: { id: reviewId },
+  });
+
+  await invalidatePostsCache(review.postId);
 }

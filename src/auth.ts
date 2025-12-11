@@ -92,21 +92,26 @@ export const authConfig: NextAuthConfig = {
                 data: {
                   email: superuserEmail,
                   name: 'Super Admin',
-                  username: 'superadmin', // Set a default username
+                  username: 'superadmin',
                   password: hashedPassword,
                   role: 'SUPER_ADMIN',
                   status: 'ACTIVE',
-                  emailVerified: new Date(), // Mark email as verified
-                  dailyPostLimit: 1000,      // Give high limits
+                  emailVerified: new Date(),
+                  dailyPostLimit: 1000,
+                  bio: 'System Administrator',
                 },
               });
+              console.log(`[Auth] Superuser created in database with ID: ${dbSuperuser.id}`);
             } else if (dbSuperuser.role !== 'SUPER_ADMIN') {
               // Update existing user to SUPER_ADMIN role
               dbSuperuser = await prisma.user.update({
                 where: { email: superuserEmail },
                 data: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
               });
+              console.log(`[Auth] User upgraded to SUPER_ADMIN: ${dbSuperuser.id}`);
             }
+
+            console.log(`[Auth] Superuser authenticated with ID: ${dbSuperuser.id}`);
 
             // Return superuser with database ID and SUPER_ADMIN role
             return {
