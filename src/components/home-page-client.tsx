@@ -533,7 +533,11 @@ export default function HomePageClient({
 
                                 {/* Mix Ads into Posts */}
                                 <PostGrid posts={useMemo(() => {
-                                    if (!initialAds || initialAds.length === 0) return visiblePosts;
+                                    // Prepare ad pool: Active Ads + Placeholder
+                                    const adPool = [...(initialAds || [])];
+                                    // Add "Place Ad Here" card to the rotation
+                                    adPool.push({ isPlaceAdPlaceholder: true });
+
                                     const mixed: any[] = [];
                                     let adIndex = 0;
 
@@ -541,7 +545,7 @@ export default function HomePageClient({
                                         mixed.push(post);
                                         // Insert ad after every 10 posts (10th, 20th, etc.)
                                         if ((i + 1) % 10 === 0) {
-                                            const ad = initialAds[adIndex % initialAds.length];
+                                            const ad = adPool[adIndex % adPool.length];
                                             if (ad) {
                                                 mixed.push(ad);
                                                 adIndex++;

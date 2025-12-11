@@ -70,6 +70,7 @@ model User {
   microPostLikes    MicroPostLike[]
   microPostComments MicroPostComment[]
   views             PostView[]
+  sponsoredPosts    SponsoredPost[]
 
   @@index([email])
   @@index([username])
@@ -774,6 +775,12 @@ model MicroPostComment {
   @@map("micro_post_comments")
 }
 
+enum AdStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model SponsoredPost {
   id          String   @id @default(cuid())
   title       String
@@ -781,9 +788,17 @@ model SponsoredPost {
   imageUrl    String
   link        String
   priority    Int      @default(0)
-  isActive    Boolean  @default(true)
+  
+  status      AdStatus @default(PENDING)
+  isActive    Boolean  @default(false) // Can be used to pause approved ads
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([status])
   @@map("sponsored_posts")
 }

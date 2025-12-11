@@ -88,8 +88,11 @@ export async function getSponsoredPosts() {
     }
 }
 
-export async function createSponsoredPost(data: { title: string; imageUrl: string; link: string; description?: string; priority?: number }) {
+export async function createSponsoredPost(data: { title: string; imageUrl: string; link: string; description?: string; priority?: number; status?: 'PENDING' | 'APPROVED' | 'REJECTED'; isActive?: boolean; userId?: string }) {
     const session = await auth();
+    // Allow users to create via this internal function if we want, but usually this is admin. 
+    // If strict admin check acts here, submitAd should check perms itself and bypass this if needed or we relax this.
+    // Actually, createSponsoredPost was admin only.
     if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
         return { success: false, error: 'Unauthorized' };
     }
@@ -102,6 +105,32 @@ export async function createSponsoredPost(data: { title: string; imageUrl: strin
         return { success: true, ad };
     } catch (error) {
         return { success: false, error };
+    }
+}
+
+export async function submitAd(data: { title: string; imageUrl: string; link: string; description?: string }) {
+    const session = await auth();
+    if (!session?.user) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        const ad = await prisma.sponsoredPost.create({
+            data: {
+                ...data,
+                priority: 0,
+                status: 'PENDING', // Default to PENDING
+                isActive: false,   // Default to inactive
+                userId: session.user.id
+            }
+        });
+
+        // Notify admins? (Optional)
+
+        return { success: true, ad };
+    } catch (error) {
+        console.error("Failed to submit ad", error);
+        return { success: false, error: 'Failed to submit ad' };
     }
 }
 

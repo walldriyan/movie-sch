@@ -236,6 +236,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
 
 import { SponsoredPost } from '@prisma/client';
 import { ExternalLink } from 'lucide-react';
+import { PlaceAdCard } from './home/place-ad-card';
 
 // Ad Card Component - Mimics MovieCard
 function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
@@ -328,11 +329,15 @@ export default function PostGrid({ posts }: { posts: (Movie | any)[] }) {
   return (
     <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-4">
       {posts.map((item, index) => (
-        <div key={item.id + '-' + index} className="break-inside-avoid mb-4">
-          {/* Check if it's an Ad (has 'link' and no 'authorId' usually, or check strict type if available) */}
-          {('link' in item && 'priority' in item) ? (
+        <div key={item.id ? (item.id + '-' + index) : `placeholder-${index}`} className="break-inside-avoid mb-4">
+          {/* Check if it's the Place Ad Placeholder */}
+          {item.isPlaceAdPlaceholder ? (
+            <PlaceAdCard />
+          ) : ('link' in item && 'priority' in item) ? (
+            /* Check if it's an Ad */
             <AdCard ad={item as SponsoredPost} index={index} />
           ) : (
+            /* Normal Movie Card */
             <MovieCard
               movie={item as Movie}
               index={index}
