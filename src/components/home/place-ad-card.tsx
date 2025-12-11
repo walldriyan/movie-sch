@@ -2,14 +2,16 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Megaphone, Plus, Sparkles } from 'lucide-react';
+import { Loader2, Megaphone, Plus, Sparkles, UploadCloud } from 'lucide-react';
 import { submitAd } from '@/lib/actions/ads';
-import { cn } from '@/lib/utils'; // Assuming utils exists
+import { uploadAdImage } from '@/lib/actions/upload-ad-image';
+import { cn } from '@/lib/utils';
+import Image from 'next/image';
 
 export function PlaceAdCard({ className }: { className?: string }) {
     const [isOpen, setIsOpen] = useState(false);
@@ -51,6 +53,30 @@ function AdSubmissionDialog({ open, onOpenChange }: { open: boolean; onOpenChang
         imageUrl: ''
     });
 
+    const [uploadingImage, setUploadingImage] = useState(false);
+
+    const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        const uploadFormData = new FormData();
+        uploadFormData.append('file', file);
+
+        try {
+            const res = await uploadAdImage(uploadFormData);
+            if (res.success && res.url) {
+                setFormData(prev => ({ ...prev, imageUrl: res.url }));
+                toast({ title: "Image Uploaded", description: "Image attached successfully." });
+            } else {
+                toast({ title: "Upload Failed", description: res.error as string, variant: "destructive" });
+            }
+        } catch (error) {
+            toast({ title: "Upload Failed", description: "Network error occurred", variant: "destructive" });
+        }
+        setUploadingImage(false);
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
@@ -67,7 +93,7 @@ function AdSubmissionDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             } else {
                 toast({
                     title: "Submission Failed",
-                    description: res.error || "Something went wrong.",
+                    description: res.error as string || "Something went wrong.",
                     variant: "destructive"
                 });
             }
@@ -129,18 +155,56 @@ function AdSubmissionDialog({ open, onOpenChange }: { open: boolean; onOpenChang
                             required
                         />
                     </div>
+
                     <div className="grid gap-2">
-                        <Label htmlFor="image">Image URL</Label>
+                        <Label>Advertisement Image</Label>
+
+                        {formData.imageUrl ? (
+                            <div className="relative w-full h-40 rounded-lg overflow-hidden border border-white/10 group">
+                                <Image
+                                    src={formData.imageUrl}
+                                    alt="Ad Preview"
+                                    fill
+                                    className="object-cover"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setFormData(prev => ({ ...prev, imageUrl: '' }))}
+                                    className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-white font-medium"
+                                >
+                                    Change Image
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center justify-center w-full">
+                                <label htmlFor="image-upload" className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer bg-white/5 border-white/10 hover:bg-white/10 hover:border-primary/50 transition-all">
+                                    <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                                        {uploadingImage ? (
+                                            <Loader2 className="w-8 h-8 mb-3 text-white/50 animate-spin" />
+                                        ) : (
+                                            <UploadCloud className="w-8 h-8 mb-3 text-white/50" />
+                                        )}
+                                        <p className="mb-2 text-sm text-white/70"><span className="font-semibold">Click to upload</span> or drag and drop</p>
+                                        <p className="text-xs text-white/50">SVG, PNG, JPG (MAX. 2MB)</p>
+                                    </div>
+                                    <input
+                                        id="image-upload"
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageChange}
+                                        disabled={uploadingImage}
+                                    />
+                                </label>
+                            </div>
+                        )}
                         <Input
-                            id="image"
-                            type="url"
                             value={formData.imageUrl}
-                            onChange={(e) => setFormData(prev => ({ ...prev, imageUrl: e.target.value }))}
-                            placeholder="https://example.com/image.jpg"
-                            className="bg-white/5 border-white/10"
+                            type="hidden"
                             required
                         />
                     </div>
+
                     <DialogFooter>
                         <Button type="submit" disabled={isLoading} className="w-full">
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
