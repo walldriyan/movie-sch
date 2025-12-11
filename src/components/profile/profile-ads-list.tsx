@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { SponsoredPost, AdPayment } from '@prisma/client';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
@@ -230,7 +230,9 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
     const [isDeleting, setIsDeleting] = useState(false);
     const [isActive, setIsActive] = useState(ad.isActive);
 
-    const expiryDate = ad.payment ? new Date(new Date(ad.createdAt).getTime() + ad.payment.durationDays * 24 * 60 * 60 * 1000) : null;
+    const expiryDate = useMemo(() => {
+        return ad.payment ? new Date(new Date(ad.createdAt).getTime() + ad.payment.durationDays * 24 * 60 * 60 * 1000) : null;
+    }, [ad.createdAt, ad.payment]);
 
     // Client-side state for time-dependent values
     const [progress, setProgress] = useState(0);

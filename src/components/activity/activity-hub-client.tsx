@@ -79,6 +79,13 @@ export default function ActivityHubClient({
         </div>
     );
 
+    const getPostLink = (post: any) => {
+        if (post.seriesId) {
+            return `/series/${post.seriesId}?post=${post.id}`;
+        }
+        return `/movies/${post.id}`;
+    };
+
     return (
         <div className="min-h-screen bg-background pb-20">
             {/* HERO SECTION - Rounded Container Style with "Top Managed" */}
@@ -277,7 +284,7 @@ export default function ActivityHubClient({
                     <TabsContent value="posts" className="animate-in fade-in zoom-in-95 duration-300">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {posts.map(post => (
-                                <Link key={post.id} href={`/posts/${post.id}`} className="group block h-full">
+                                <Link key={post.id} href={getPostLink(post)} className="group block h-full">
                                     <Card className="h-full bg-white/[0.02] border-white/10 hover:bg-white/[0.04] hover:border-primary/20 transition-all overflow-hidden group-hover:-translate-y-1 rounded-2xl">
                                         <div className="relative aspect-video bg-black/50">
                                             {post.posterUrl ? (
@@ -319,7 +326,7 @@ export default function ActivityHubClient({
                     <TabsContent value="favorites" className="animate-in fade-in zoom-in-95 duration-300">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {favorites.map(fav => (
-                                <Link key={fav.id} href={`/posts/${fav.post.id}`} className="group block">
+                                <Link key={fav.id} href={getPostLink(fav.post)} className="group block">
                                     <Card className="bg-white/[0.02] border-white/10 hover:bg-white/[0.04] transition-all overflow-hidden rounded-2xl group-hover:-translate-y-1">
                                         <div className="relative aspect-[2/3]">
                                             {fav.post.posterUrl ? (
