@@ -231,10 +231,25 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
     const [isActive, setIsActive] = useState(ad.isActive);
 
     const expiryDate = ad.payment ? new Date(new Date(ad.createdAt).getTime() + ad.payment.durationDays * 24 * 60 * 60 * 1000) : null;
-    const isExpired = expiryDate ? new Date() > expiryDate : false;
 
-    // Calculate progress based on duration
-    const progress = expiryDate ? Math.min(100, Math.max(0, ((Date.now() - new Date(ad.createdAt).getTime()) / (expiryDate.getTime() - new Date(ad.createdAt).getTime())) * 100)) : 100;
+    // Client-side state for time-dependent values
+    const [progress, setProgress] = useState(0);
+    const [isExpired, setIsExpired] = useState(false);
+
+    useEffect(() => {
+        if (expiryDate) {
+            const now = Date.now();
+            const created = new Date(ad.createdAt).getTime();
+            const expiry = expiryDate.getTime();
+
+            const p = Math.min(100, Math.max(0, ((now - created) / (expiry - created)) * 100));
+            setProgress(p);
+            setIsExpired(now > expiry);
+        } else {
+            setProgress(100);
+            setIsExpired(false);
+        }
+    }, [ad.createdAt, expiryDate]);
 
     const handleToggle = async (checked: boolean) => {
         if (!isOwnProfile) return;
