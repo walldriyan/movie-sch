@@ -25,6 +25,8 @@ import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import ProfilePaymentManager from '@/components/profile/profile-payment-manager';
+import { getSubscriptionPlans, getUserPaymentHistory, getUserActiveSubscription } from '@/lib/actions/payment-actions';
 import type { User as PrismaUser } from '@prisma/client';
 
 interface SearchPageProps {
@@ -235,7 +237,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 displayAds = await prisma.sponsoredPost.findMany({
                     where: { userId: profileUser.id },
                     orderBy: { createdAt: 'desc' },
-                    include: { payment: true }
+                    include: { paymentRecord: true }
                 });
             }
         } else if (profileFilter === 'ad_view') {
@@ -258,6 +260,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
             highlightedAd = specificAd;
             publicAds = activeAdsRaw;
+        } else if (profileFilter === 'payments' && isOwnProfile) {
+            // Fetch Payment Data
+            const [plans, paymentHistory, activeSub] = await Promise.all([
+                getSubscriptionPlans(),
+                getUserPaymentHistory(),
+                getUserActiveSubscription()
+            ]);
+
+            // We can reuse a variable or create a new one to hold this data to pass to the client
+            // Since the rendered component below is inside a conditional, we will handle the render there.
+            // Just assigning to a scope variable or passing directly.
+            // Let's attach to a variable `paymentData`
+            (global as any).paymentData = { plans, paymentHistory, activeSub };
         }
 
         return (
@@ -287,6 +302,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                         )}
                                         <PublicAdList ads={publicAds} highlightId={adIdParam} />
                                     </div>
+                                ) : profileFilter === 'payments' && isOwnProfile ? (
+                                    <ProfilePaymentManager
+                                        plans={(global as any).paymentData?.plans || []}
+                                        history={(global as any).paymentData?.paymentHistory || []}
+                                        currentSubscription={(global as any).paymentData?.activeSub}
+                                    />
                                 ) : (
                                     <ProfilePostList posts={displayPosts} isOwnProfile={isOwnProfile} currentFilter={profileFilter} profileUser={profileUser} />
                                 )}
