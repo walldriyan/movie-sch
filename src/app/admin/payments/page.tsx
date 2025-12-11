@@ -1,53 +1,38 @@
+import { auth } from "@/auth";
+import { ROLES } from "@/lib/permissions";
+import { redirect } from "next/navigation";
+import { getAdminPaymentStats, getAllTransactions, getAllSubscriptions, getSubscriptionPlans } from "@/lib/actions/admin/payments";
+import PaymentDashboard from "@/components/admin/payment-dashboard";
 
-import { Suspense } from 'react';
-import { prisma } from '@/lib/prisma';
-import { auth } from '@/auth';
-import { redirect } from 'next/navigation';
-import AdminPaymentDashboard from '@/components/admin/payments/admin-payment-dashboard';
-
-export const dynamic = 'force-dynamic';
+export const metadata = {
+    title: "Admin Payment Manager | CineVerse",
+    description: "Advanced payment and subscription management for Super Admins",
+};
 
 export default async function AdminPaymentsPage() {
     const session = await auth();
 
-    if (session?.user?.role !== 'SUPER_ADMIN' && session?.user?.role !== 'USER_ADMIN') {
-        redirect('/');
+    // Strict Role Check
+    if (!session || session.user.role !== ROLES.SUPER_ADMIN) {
+        redirect("/admin"); // Redirect to basic admin or home
     }
 
-    // Fetch Data
-    const plans = await prisma.subscriptionPlan.findMany({ orderBy: { price: 'asc' } });
-
-    // Recent 50 payments
-    const recentPaymentsRaw = await prisma.paymentRecord.findMany({
-        take: 50,
-        orderBy: { createdAt: 'desc' },
-        include: { user: true, accessKey: true }
-    });
-
-    // Recent 50 subscriptions
-    const recentSubsRaw = await prisma.userSubscription.findMany({
-        take: 50,
-        orderBy: { createdAt: 'desc' },
-        include: { user: true, plan: true }
-    });
-
-    // Key Stats
-    const activeKeysCount = await prisma.accessKey.count({ where: { isUsed: false } });
-    const totalRevenueRaw = await prisma.paymentRecord.findMany({ select: { amount: true } });
-    const totalRevenue = totalRevenueRaw.reduce((acc, curr) => acc + curr.amount, 0);
+    // Parallel Data Fetching
+    const [stats, transactions, subscriptions, plans] = await Promise.all([
+        getAdminPaymentStats(),
+        getAllTransactions(1, 20), // Default page 1, 20 items
+        getAllSubscriptions(1, 20),
+        getSubscriptionPlans()
+    ]);
 
     return (
-        <div className="p-6 max-w-[1600px] mx-auto min-h-screen bg-background">
-            <h1 className="text-3xl font-bold mb-8">Payment Center</h1>
-
-            <Suspense fallback={<div>Loading Dashboard...</div>}>
-                <AdminPaymentDashboard
-                    plans={JSON.parse(JSON.stringify(plans))}
-                    recentPayments={JSON.parse(JSON.stringify(recentPaymentsRaw))}
-                    recentSubs={JSON.parse(JSON.stringify(recentSubsRaw))}
-                    stats={{ activeKeysCount, totalRevenue }}
-                />
-            </Suspense>
+        <div className="flex-1 space-y-4 p-8 pt-6">
+            <PaymentDashboard
+                stats={stats}
+                initialTransactions={transactions}
+                initialSubscriptions={subscriptions}
+                plans={plans}
+            />
         </div>
     );
 }

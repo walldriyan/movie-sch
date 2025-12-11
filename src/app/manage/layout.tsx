@@ -17,6 +17,7 @@ import {
   Home,
   Sparkles,
   Plus,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -179,6 +180,12 @@ export default function ManageLayout({
                 icon={Shield}
                 label="Admin Config"
                 isActive={pathname === '/admin'}
+              />
+              <NavItem
+                href="/admin/payments"
+                icon={CreditCard}
+                label="Payment Manager"
+                isActive={isActive('/admin/payments')}
               />
             </NavSection>
           )}

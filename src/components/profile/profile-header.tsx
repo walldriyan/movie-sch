@@ -96,12 +96,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
               {/* === PLAN BADGE === */}
               {planLabel && (
                 <div className="absolute top-1/2 -right-3 md:-right-4 transform translate-x-1/2 -translate-y-1/2 z-30 hidden md:block">
-                  <div className={cn(
-                    "px-3 py-1 rounded-full border text-xs font-bold tracking-widest uppercase shadow-2xl animate-in fade-in zoom-in duration-500 whitespace-nowrap backdrop-blur-md",
-                    planLabel === 'FREE'
-                      ? "bg-black/60 border-white/10 text-white/70"
-                      : "bg-gradient-to-r from-indigo-500/80 to-purple-500/80 border-white/20 text-white"
-                  )}>
+                  <div className="px-3 py-1 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-white text-xs font-bold tracking-widest uppercase shadow-2xl animate-in fade-in zoom-in duration-500 whitespace-nowrap">
                     {planLabel}
                   </div>
                 </div>
@@ -109,12 +104,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
               {/* Mobile Badge Position */}
               {planLabel && (
                 <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 md:hidden">
-                  <div className={cn(
-                    "px-3 py-0.5 rounded-full border text-[10px] font-bold tracking-wider uppercase shadow-xl whitespace-nowrap backdrop-blur-md",
-                    planLabel === 'FREE'
-                      ? "bg-black/80 border-white/10 text-white/70"
-                      : "bg-gradient-to-r from-indigo-600/90 to-purple-600/90 border-white/20 text-white"
-                  )}>
+                  <div className="px-3 py-0.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-white text-[10px] font-bold tracking-wider uppercase shadow-xl whitespace-nowrap">
                     {planLabel}
                   </div>
                 </div>
