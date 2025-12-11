@@ -43,9 +43,15 @@ let DOMPurify: any = null;
 const sanitizeHTML = (html: string) => {
     if (typeof window !== 'undefined') {
         if (!DOMPurify) {
-            DOMPurify = require('isomorphic-dompurify').default;
+            const dompurifyModule = require('isomorphic-dompurify');
+            // Handle both default and named exports
+            DOMPurify = dompurifyModule.default || dompurifyModule;
         }
-        return DOMPurify.sanitize(html);
+        if (DOMPurify && typeof DOMPurify.sanitize === 'function') {
+            return DOMPurify.sanitize(html);
+        }
+        // Fallback: strip HTML tags if DOMPurify fails to load
+        return html.replace(/<[^>]*>?/gm, '');
     }
     return html; // On server, return as-is (server component handles sanitization)
 };
