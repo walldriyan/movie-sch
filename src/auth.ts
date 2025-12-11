@@ -16,12 +16,18 @@ declare module "next-auth" {
       id: string;
       role: string;
       permissions: string[];
+      isPro: boolean;
+      subscription?: {
+        planName?: string;
+        endDate?: Date | null;
+      };
     } & PrismaUser;
   }
 
   interface User {
     role: string;
     permissions: string[];
+    isPro: boolean;
   }
 }
 
@@ -30,6 +36,11 @@ declare module "next-auth/jwt" {
     id: string;
     role: string;
     permissions: string[];
+    isPro: boolean;
+    subscription?: {
+      planName?: string;
+      endDate?: Date | null;
+    };
   }
 }
 
@@ -69,7 +80,6 @@ export const authConfig: NextAuthConfig = {
           // =============================================
           // SUPERUSER AUTHENTICATION FROM ENV FILE
           // =============================================
-          // Check if credentials match superuser from .env file
           const superuserEmail = process.env.SUPERUSER_EMAIL;
           const superuserPassword = process.env.SUPERUSER_PASSWORD;
 
@@ -79,15 +89,12 @@ export const authConfig: NextAuthConfig = {
             email === superuserEmail &&
             password === superuserPassword
           ) {
-            // Find or create superuser in database to prevent "user not found" errors
             let dbSuperuser = await prisma.user.findUnique({
               where: { email: superuserEmail },
             });
 
             if (!dbSuperuser) {
-              // Create superuser in database with hashed password (cost 10 for performance)
               const hashedPassword = await bcrypt.hash(superuserPassword, 10);
-
               dbSuperuser = await prisma.user.create({
                 data: {
                   email: superuserEmail,
@@ -101,19 +108,13 @@ export const authConfig: NextAuthConfig = {
                   bio: 'System Administrator',
                 },
               });
-              console.log(`[Auth] Superuser created in database with ID: ${dbSuperuser.id}`);
             } else if (dbSuperuser.role !== 'SUPER_ADMIN') {
-              // Update existing user to SUPER_ADMIN role
               dbSuperuser = await prisma.user.update({
                 where: { email: superuserEmail },
                 data: { role: 'SUPER_ADMIN', status: 'ACTIVE' },
               });
-              console.log(`[Auth] User upgraded to SUPER_ADMIN: ${dbSuperuser.id}`);
             }
 
-            console.log(`[Auth] Superuser authenticated with ID: ${dbSuperuser.id}`);
-
-            // Return superuser with database ID and SUPER_ADMIN role
             return {
               id: dbSuperuser.id,
               name: dbSuperuser.name || 'Super Admin',
@@ -121,6 +122,7 @@ export const authConfig: NextAuthConfig = {
               image: dbSuperuser.image,
               role: ROLES.SUPER_ADMIN,
               permissions: permissions[ROLES.SUPER_ADMIN] || [],
+              isPro: true
             } as User;
           }
 
@@ -136,7 +138,6 @@ export const authConfig: NextAuthConfig = {
             return null;
           }
 
-          // Check user status
           if (user.status === 'DISABLED' || user.status === 'DELETED') {
             console.error('[Auth] User account is disabled or deleted');
             return null;
@@ -149,9 +150,7 @@ export const authConfig: NextAuthConfig = {
             return null;
           }
 
-          console.log(`[Auth] User ${email} authenticated successfully from database`);
-
-          // Add permissions to the user object
+          // We fetch subscription later in JWT callback, but can verify basic 'isPro' logic if needed here
           return {
             id: user.id,
             name: user.name,
@@ -159,6 +158,7 @@ export const authConfig: NextAuthConfig = {
             image: user.image,
             role: user.role,
             permissions: permissions[user.role] || [],
+            isPro: false // Will be updated in jwt callback
           } as User;
         } catch (error) {
           console.error('[Auth] Authorize error:', error);
@@ -188,6 +188,7 @@ export const authConfig: NextAuthConfig = {
               image: profile.picture,
               role: 'USER',
               permissions: permissions['USER'] || [],
+              isPro: false,
             };
           },
         }),
@@ -198,7 +199,7 @@ export const authConfig: NextAuthConfig = {
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours - refresh session every day
+    updateAge: 24 * 60 * 60, // 24 hours
   },
 
   jwt: {
@@ -210,24 +211,18 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     async signIn({ user, account, profile }) {
       try {
-        // For OAuth providers, check/create user with proper role
         if (account?.provider === 'google' && user.email) {
           const existingUser = await prisma.user.findUnique({
             where: { email: user.email },
           });
 
           if (existingUser) {
-            // Check if user is disabled
             if (existingUser.status === 'DISABLED' || existingUser.status === 'DELETED') {
-              console.error('[Auth] OAuth user is disabled or deleted');
               return false;
             }
-
-            // Update user's role and permissions
             user.role = existingUser.role;
             user.permissions = permissions[existingUser.role] || [];
           } else {
-            // New user - check if should be super admin
             let role = 'USER';
             if (
               process.env.SUPER_ADMIN_EMAIL &&
@@ -244,23 +239,42 @@ export const authConfig: NextAuthConfig = {
             user.permissions = permissions[role] || [];
           }
         }
-
         return true;
       } catch (error) {
         console.error('[Auth] SignIn callback error:', error);
-        return true; // Allow sign-in but log the error
+        return true;
       }
     },
 
     async jwt({ token, user, account, trigger, session }) {
-      // Initial sign in
       if (user) {
         token.id = user.id!;
         token.role = user.role || 'USER';
         token.permissions = user.permissions || [];
+
+        try {
+          const sub = await prisma.userSubscription.findFirst({
+            where: {
+              userId: user.id!,
+              status: 'ACTIVE',
+              endDate: { gt: new Date() }
+            },
+            include: { plan: true },
+            orderBy: { endDate: 'desc' }
+          });
+
+          token.isPro = !!sub;
+          if (sub) {
+            token.subscription = {
+              planName: (sub as any).plan?.name,
+              endDate: sub.endDate
+            };
+          }
+        } catch (e) {
+          token.isPro = false;
+        }
       }
 
-      // Handle session update
       if (trigger === "update" && session) {
         token.role = session.user?.role || token.role;
         token.permissions = session.user?.permissions || token.permissions;
@@ -272,17 +286,16 @@ export const authConfig: NextAuthConfig = {
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id;
-        // Cast role to any to handle string vs Enum type mismatch
         session.user.role = token.role as any;
         session.user.permissions = token.permissions;
+        session.user.isPro = token.isPro;
+        session.user.subscription = token.subscription;
       }
       return session;
     },
 
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
       if (url.startsWith("/")) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
     },
@@ -290,62 +303,29 @@ export const authConfig: NextAuthConfig = {
 
   pages: {
     signIn: '/auth',
-    error: '/auth', // Error page
-    newUser: '/', // New users will be redirected here
+    error: '/auth',
+    newUser: '/',
   },
 
   events: {
     async signIn({ user, account }) {
-      console.log(`[Auth] User signed in: ${user.email} via ${account?.provider}`);
-
-      // CACHE USER IN REDIS
-      try {
-        const { redis } = await import('@/lib/redis');
-        if (redis && user.email) {
-          // Store user details for 24 hours (86400 seconds)
-          // This allows fetching user data quickly without DB calls later
-          await redis.set(`user:${user.email}`, JSON.stringify(user), { ex: 86400 });
-          console.log(`[Redis] Cached user session for: ${user.email}`);
-        }
-      } catch (error) {
-        console.error('[Redis] Failed to cache user:', error);
-      }
+      console.log(`[Auth] User signed in: ${user.email}`);
     },
     async signOut(message) {
-      // Safely access token from message (NextAuth types vary)
-      const token = 'token' in message ? (message as any).token : null;
-
-      console.log(`[Auth] User signed out: ${token?.email || 'Unknown'}`);
-
-      // REMOVE USER FROM REDIS
-      try {
-        const { redis } = await import('@/lib/redis');
-        if (redis && token?.email) {
-          await redis.del(`user:${token.email}`);
-          console.log(`[Redis] Removed user session for: ${token.email}`);
-        }
-      } catch (error) {
-        console.error('[Redis] Failed to remove user cache:', error);
-      }
+      console.log(`[Auth] User signed out`);
     },
     async createUser({ user }) {
-      console.log(`[Auth] New user created: ${user.email}`);
-
-      // Set user status to ACTIVE for OAuth users
       if (user.id) {
         await prisma.user.update({
           where: { id: user.id },
           data: { status: 'ACTIVE' },
-        }).catch(err => console.error('[Auth] Failed to update new user status:', err));
+        }).catch(console.error);
       }
     },
   },
 
-
-
   debug: process.env.NODE_ENV === 'development',
-
-  trustHost: true, // Important for Vercel deployment
+  trustHost: true,
 };
 
 export const { handlers, auth, signIn, signOut } = NextAuth(authConfig);

@@ -298,6 +298,11 @@ export default function LeftSidebar() {
                                         </span>
                                     </div>
                                     <ChevronRight className="ml-auto mr-2 w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
+                                    {user.isPro && (
+                                        <div className="absolute -top-1 -right-1 bg-gradient-to-r from-yellow-400 to-orange-500 text-black text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow-lg shadow-orange-500/20 animate-pulse">
+                                            PRO
+                                        </div>
+                                    )}
                                 </Link>
                             </div>
                         )}
