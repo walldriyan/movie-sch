@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Clapperboard, Folder, Lock, Sparkles, TrendingUp, ArrowRight, RotateCcw, Camera, Loader2, Crown } from 'lucide-react';
@@ -12,7 +12,8 @@ import type { User, Post, GroupWithCount, SerializedGroupWithCount } from '@/lib
 
 import { Separator } from '@/components/ui/separator';
 import { cn } from '@/lib/utils';
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination';
+// import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from '@/components/ui/pagination'; // Removed pagination
+import { getPosts } from '@/lib/actions/posts/read';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { uploadHeroImage } from '@/lib/actions/upload-hero';
 import { useTransition } from 'react';
@@ -297,13 +298,75 @@ export default function HomePageClient({
     // Use loading state only for client-side transitions if needed
     const [loading] = useState(false);
 
-    const posts = initialPosts;
+    // Helper to dedupe posts based on ID
+    const dedupePosts = (posts: any[]) => {
+        const uniqueIds = new Set();
+        return posts.filter(post => {
+            if (!post.id) return true; // Keep posts without ID just in case, or filter them out
+            if (uniqueIds.has(post.id)) return false;
+            uniqueIds.add(post.id);
+            return true;
+        });
+    };
+
+    // State for Infinite Scroll - initialize with deduped posts
+    const [visiblePosts, setVisiblePosts] = useState(() => dedupePosts(initialPosts));
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [hasMore, setHasMore] = useState(totalPages > 1);
+    const [page, setPage] = useState(2); // Start from page 2 since page 1 is initialPosts
+
+    // Reset state when filters/initial data change
+    useEffect(() => {
+        setVisiblePosts(dedupePosts(initialPosts));
+        setHasMore(totalPages > 1);
+        setPage(2);
+    }, [initialPosts, totalPages, searchParams]); // searchParams dependency ensures reset on filter change
+
     const users = initialUsers;
     const groups = initialGroups;
     const timeFilter = searchParams?.timeFilter;
     const sortBy = searchParams?.sortBy;
     const typeFilter = searchParams?.type;
     const lockStatus = searchParams?.lockStatus;
+
+    const handleLoadMore = async () => {
+        if (loadingMore || !hasMore) return;
+        setLoadingMore(true);
+
+        try {
+            // Fetch next page with limit 10 as requested
+            const { posts: newPosts, totalPages: newTotalPages } = await getPosts({
+                page: page,
+                limit: 10,
+                filters: {
+                    timeFilter: searchParams?.timeFilter,
+                    sortBy: searchParams?.sortBy,
+                    type: searchParams?.type,
+                    lockStatus: searchParams?.lockStatus
+                }
+            });
+
+            if (newPosts && newPosts.length > 0) {
+                setVisiblePosts(prev => {
+                    // Combine and dedupe
+                    const combined = [...prev, ...newPosts];
+                    return dedupePosts(combined);
+                });
+
+                setPage(prev => prev + 1);
+
+                if (page >= newTotalPages) {
+                    setHasMore(false);
+                }
+            } else {
+                setHasMore(false);
+            }
+        } catch (error) {
+            console.error("Failed to load more posts", error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
 
     // Memoize placeholder lookup
     const userAvatarPlaceholder = useMemo(() =>
@@ -451,7 +514,7 @@ export default function HomePageClient({
                         </div>
 
                         {/* Posts Grid */}
-                        {posts.length === 0 && !loading ? (
+                        {visiblePosts.length === 0 && !loading ? (
                             <div className="text-center py-20 border border-dashed border-white/10 rounded-3xl bg-white/[0.02]">
                                 <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-white/5 flex items-center justify-center">
                                     <Clapperboard className="w-10 h-10 text-muted-foreground" />
@@ -464,36 +527,35 @@ export default function HomePageClient({
                             </div>
                         ) : (
                             <>
-                                <PostGrid posts={posts} />
+                                <PostGrid posts={visiblePosts} />
 
-                                {totalPages > 1 && (
-                                    <div className="mt-12 flex justify-center">
-                                        <Pagination>
-                                            <PaginationContent className="bg-black/20 backdrop-blur-md rounded-full border border-white/5 p-1">
-                                                <PaginationItem>
-                                                    <PaginationPrevious
-                                                        href={buildQueryString({ sortBy, timeFilter, page: currentPage - 1, type: typeFilter, lockStatus })}
-                                                        scroll={false}
-                                                        className={cn("rounded-full h-10 w-10 p-0 flex items-center justify-center bg-transparent hover:bg-white/10", currentPage <= 1 && "pointer-events-none opacity-50")}
-                                                    />
-                                                </PaginationItem>
-                                                <PaginationItem>
-                                                    <span className="px-6 text-sm font-medium text-white/80">Page {currentPage} of {totalPages}</span>
-                                                </PaginationItem>
-                                                <PaginationItem>
-                                                    <PaginationNext
-                                                        href={buildQueryString({ sortBy, timeFilter, page: currentPage + 1, type: typeFilter, lockStatus })}
-                                                        scroll={false}
-                                                        className={cn("rounded-full h-10 w-10 p-0 flex items-center justify-center bg-transparent hover:bg-white/10", currentPage >= totalPages && "pointer-events-none opacity-50")}
-                                                    />
-                                                </PaginationItem>
-                                            </PaginationContent>
-                                        </Pagination>
+                                {/* Load More Button */}
+                                {hasMore && (
+                                    <div className="mt-12 flex justify-center py-8">
+                                        <Button
+                                            onClick={handleLoadMore}
+                                            disabled={loadingMore}
+                                            variant="secondary"
+                                            className="min-w-[200px] rounded-full h-12 text-base font-medium bg-secondary/50 hover:bg-secondary border border-white/5 transition-all"
+                                        >
+                                            {loadingMore ? (
+                                                <>
+                                                    <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                                                    Loading...
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Load More Movies
+                                                    <ChevronRight className="w-4 h-4 ml-2" />
+                                                </>
+                                            )}
+                                        </Button>
                                     </div>
                                 )}
                             </>
                         )}
                     </div>
+
 
 
                     {/* SECTION 2: Creators */}
@@ -588,8 +650,8 @@ export default function HomePageClient({
 
                 {/* Footer */}
                 <Footer />
-            </div>
-        </TooltipProvider>
+            </div >
+        </TooltipProvider >
     );
 }
 
