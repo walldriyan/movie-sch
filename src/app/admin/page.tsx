@@ -775,6 +775,8 @@ export default function AdminDashboard() {
     );
 }
 
+import SponsoredAdsManager from '@/components/admin/sponsored-ads-manager';
+
 // Ads Tab Wrapper
 function AdsTab() {
     const [ads, setAds] = useState<Awaited<ReturnType<typeof getAdsConfig>>>([]);
@@ -796,5 +798,17 @@ function AdsTab() {
         return <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
     }
 
-    return <AdsManager initialAds={ads} />;
+    return (
+        <div className="space-y-10">
+            <SponsoredAdsManager />
+
+            <div className="pt-10 border-t border-white/5">
+                <div className="mb-6">
+                    <h3 className="text-xl font-bold">Site Ad Slots</h3>
+                    <p className="text-muted-foreground text-sm">Configure static ad units for specific page locations.</p>
+                </div>
+                <AdsManager initialAds={ads} />
+            </div>
+        </div>
+    );
 }

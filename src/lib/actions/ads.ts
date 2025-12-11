@@ -73,6 +73,44 @@ export async function updateAdsConfig(ads: AdUnit[]) {
 // SPONSORED POSTS (Home Page Grid Ads)
 // -----------------------------------------------------------------------------
 
+
+export async function getAdminSponsoredPosts(status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return [];
+    }
+
+    try {
+        const where = status ? { status } : {};
+        const ads = await prisma.sponsoredPost.findMany({
+            where,
+            orderBy: { createdAt: 'desc' },
+            include: { user: true, payment: true }
+        });
+        // Serialize to avoid Date issues in client components
+        return JSON.parse(JSON.stringify(ads));
+    } catch (error) {
+        return [];
+    }
+}
+
+export async function getAdminPayments() {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return [];
+    }
+
+    try {
+        const payments = await prisma.adPayment.findMany({
+            orderBy: { createdAt: 'desc' },
+            include: { usedByUser: true }
+        });
+        return JSON.parse(JSON.stringify(payments));
+    } catch (error) {
+        return [];
+    }
+}
+
 export async function getSponsoredPosts() {
     try {
         // Fetch active ads sorted by priority (higher first)
