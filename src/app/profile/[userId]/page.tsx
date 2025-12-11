@@ -57,6 +57,7 @@ export default async function ProfilePage({
             </Suspense>
         );
     } else if (filter === 'ad_view') {
+        // Fetch all active/approved ads for this user
         const activeAdsRaw = await prisma.sponsoredPost.findMany({
             where: {
                 userId: user.id,
@@ -66,7 +67,24 @@ export default async function ProfilePage({
             orderBy: { createdAt: 'desc' }
         });
 
-        const activeAds = JSON.parse(JSON.stringify(activeAdsRaw));
+        // If specific adId requested, check if in list; if not, fetch it separately
+        let specificAd = null;
+        if (adId) {
+            const foundInList = activeAdsRaw.find(a => a.id === adId);
+            if (!foundInList) {
+                specificAd = await prisma.sponsoredPost.findUnique({
+                    where: { id: adId }
+                });
+            }
+        }
+
+        // Combine: specific ad first (if belongs to this user), then active ads
+        let allAds = [...activeAdsRaw];
+        if (specificAd && specificAd.userId === user.id) {
+            allAds = [specificAd, ...allAds];
+        }
+
+        const activeAds = JSON.parse(JSON.stringify(allAds));
         content = <PublicAdList ads={activeAds} highlightId={adId} />;
     }
     // Simplified: Only implementing Posts and Ads for now to ensure this works. 
