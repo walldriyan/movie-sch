@@ -71,6 +71,8 @@ model User {
   microPostComments MicroPostComment[]
   views             PostView[]
   sponsoredPosts    SponsoredPost[]
+  usedAdPayments    AdPayment[]     @relation("UsedBy")
+  assignedAdPayments AdPayment[]    @relation("AssignedTo")
   followers         User[]          @relation("UserFollows")
   following         User[]          @relation("UserFollows")
 
@@ -825,6 +827,10 @@ model AdPayment {
   isUsed       Boolean  @default(false)
   usedAt       DateTime?
   usedByUserId String?  // ID of user who used it
+  usedByUser   User?    @relation("UsedBy", fields: [usedByUserId], references: [id])
+
+  assignedToUserId String? // User specifically assigned to this code
+  assignedToUser   User?   @relation("AssignedTo", fields: [assignedToUserId], references: [id])
   
   sponsoredPost SponsoredPost?
   

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Check, X, RefreshCw, CreditCard, Ticket, Clock, AlertCircle, Copy } from 'lucide-react';
+import { Loader2, Check, X, RefreshCw, CreditCard, Ticket, AlertCircle, Copy, Trash2, Edit, ChevronsUpDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,19 +18,26 @@ import {
     TableRow
 } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { cn } from '@/lib/utils';
 import {
     getAdminSponsoredPosts,
     getAdminPayments,
     updateSponsoredPostStatus,
     generatePaymentCode,
-    deleteSponsoredPost
+    deleteSponsoredPost,
+    deletePaymentCode,
+    updatePaymentCode
 } from '@/lib/actions/ads';
+import { getUsers } from '@/lib/actions/users';
 import { format } from 'date-fns';
 
 export default function SponsoredAdsManager() {
     const [activeTab, setActiveTab] = useState('requests');
     const [requests, setRequests] = useState<any[]>([]);
     const [payments, setPayments] = useState<any[]>([]);
+    const [users, setUsers] = useState<any[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isActionPending, startActionTransition] = useTransition();
     const { toast } = useToast();
@@ -38,18 +45,26 @@ export default function SponsoredAdsManager() {
     // Generation State
     const [genAmount, setGenAmount] = useState('1000');
     const [genDuration, setGenDuration] = useState('30');
+    const [genUserId, setGenUserId] = useState<string>('');
     const [showGenDialog, setShowGenDialog] = useState(false);
     const [generatedCode, setGeneratedCode] = useState<string | null>(null);
+
+    // Edit State
+    const [editingPayment, setEditingPayment] = useState<any>(null);
+    const [editAmount, setEditAmount] = useState('');
+    const [editDuration, setEditDuration] = useState('');
 
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [adsData, paymentsData] = await Promise.all([
+            const [adsData, paymentsData, usersData] = await Promise.all([
                 getAdminSponsoredPosts(),
-                getAdminPayments()
+                getAdminPayments(),
+                getUsers()
             ]);
             setRequests(adsData);
             setPayments(paymentsData);
+            setUsers(usersData);
         } catch (error) {
             toast({
                 variant: 'destructive',
@@ -92,13 +107,47 @@ export default function SponsoredAdsManager() {
 
     const handleGenerateCode = async () => {
         startActionTransition(async () => {
-            const res = await generatePaymentCode(Number(genAmount), Number(genDuration));
+            // Pass undefined if empty string
+            const res = await generatePaymentCode(Number(genAmount), Number(genDuration), genUserId || undefined);
             if (res.success && res.payment) {
                 setGeneratedCode(res.payment.code);
                 fetchData();
                 toast({ title: 'Code Generated', description: 'New payment code created.' });
             } else {
                 toast({ variant: 'destructive', title: 'Error', description: 'Failed to generate code.' });
+            }
+        });
+    };
+
+    const handleDeletePayment = (id: string) => {
+        if (!confirm('Delete this payment code?')) return;
+        startActionTransition(async () => {
+            const res = await deletePaymentCode(id);
+            if (res.success) {
+                fetchData();
+                toast({ title: 'Deleted', description: 'Payment code deleted.' });
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to delete code.' });
+            }
+        });
+    };
+
+    const handleEditPaymentOpen = (p: any) => {
+        setEditingPayment(p);
+        setEditAmount(p.amount.toString());
+        setEditDuration(p.durationDays.toString());
+    };
+
+    const handleEditPaymentSave = () => {
+        if (!editingPayment) return;
+        startActionTransition(async () => {
+            const res = await updatePaymentCode(editingPayment.id, Number(editAmount), Number(editDuration));
+            if (res.success) {
+                setEditingPayment(null);
+                fetchData();
+                toast({ title: 'Updated', description: 'Payment code updated.' });
+            } else {
+                toast({ variant: 'destructive', title: 'Error', description: 'Failed to update code.' });
             }
         });
     };
@@ -185,13 +234,20 @@ export default function SponsoredAdsManager() {
                                         Generate Code
                                     </Button>
                                 </DialogTrigger>
-                                <DialogContent className="bg-[#111112] border-white/10 text-white">
+                                <DialogContent className="bg-[#111112] border-white/10 text-white sm:max-w-md">
                                     <DialogHeader>
                                         <DialogTitle>Generate Payment Code</DialogTitle>
                                         <DialogDescription>Create a code for a user to pay for an ad.</DialogDescription>
                                     </DialogHeader>
                                     {!generatedCode ? (
                                         <div className="grid gap-4 py-4">
+                                            <div className="grid grid-cols-4 items-center gap-4">
+                                                <Label className="text-right">Assign User</Label>
+                                                <div className="col-span-3">
+                                                    <UserSelect users={users} value={genUserId} onChange={setGenUserId} />
+                                                    <p className='text-[10px] text-muted-foreground mt-1'>Optional: Lock code to specific user.</p>
+                                                </div>
+                                            </div>
                                             <div className="grid grid-cols-4 items-center gap-4">
                                                 <Label className="text-right">Amount (LKR)</Label>
                                                 <Input
@@ -229,7 +285,7 @@ export default function SponsoredAdsManager() {
                                                 <Button variant="outline" className="flex-1" onClick={() => handleCopyCode(generatedCode)}>
                                                     <Copy className="mr-2 h-4 w-4" /> Copy
                                                 </Button>
-                                                <Button className="flex-1" onClick={() => { setGeneratedCode(null); setShowGenDialog(false); }}>
+                                                <Button className="flex-1" onClick={() => { setGeneratedCode(null); setShowGenDialog(false); setGenUserId(''); }}>
                                                     Done
                                                 </Button>
                                             </div>
@@ -245,9 +301,10 @@ export default function SponsoredAdsManager() {
                                         <TableHead className="text-white/50">Code</TableHead>
                                         <TableHead className="text-white/50">Amount</TableHead>
                                         <TableHead className="text-white/50">Duration</TableHead>
+                                        <TableHead className="text-white/50">Assigned To</TableHead>
                                         <TableHead className="text-white/50">Status</TableHead>
-                                        <TableHead className="text-white/50">Used By</TableHead>
                                         <TableHead className="text-right text-white/50">Created</TableHead>
+                                        <TableHead className="text-right text-white/50 w-[100px]">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -257,19 +314,39 @@ export default function SponsoredAdsManager() {
                                             <TableCell>{p.amount} {p.currency}</TableCell>
                                             <TableCell>{p.durationDays} Days</TableCell>
                                             <TableCell>
-                                                <Badge variant={p.isUsed ? 'secondary' : 'default'} className={p.isUsed ? 'bg-white/10 text-muted-foreground' : 'bg-green-500/10 text-green-500 border-green-500/20'}>
-                                                    {p.isUsed ? 'Used' : 'Active'}
-                                                </Badge>
+                                                {p.assignedToUser ? (
+                                                    <span className="text-xs text-blue-400 font-medium">{p.assignedToUser.name}</span>
+                                                ) : <span className="text-muted-foreground text-xs">-</span>}
                                             </TableCell>
                                             <TableCell>
-                                                {p.usedByUser ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs">{p.usedByUser.name}</span>
-                                                    </div>
-                                                ) : '-'}
+                                                <div className="flex flex-col gap-1">
+                                                    <Badge variant={p.isUsed ? 'secondary' : 'default'} className={
+                                                        cn("w-fit", p.isUsed ? 'bg-white/10 text-muted-foreground' : 'bg-green-500/10 text-green-500 border-green-500/20')
+                                                    }>
+                                                        {p.isUsed ? 'Used' : 'Active'}
+                                                    </Badge>
+                                                    {p.usedByUser && <span className="text-[10px] text-muted-foreground">by {p.usedByUser.name}</span>}
+                                                </div>
                                             </TableCell>
                                             <TableCell className="text-right text-muted-foreground text-xs">
                                                 {format(new Date(p.createdAt), 'MMM d')}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                {!p.isUsed && (
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-white/10" onClick={() => handleEditPaymentOpen(p)}>
+                                                            <Edit className="h-4 w-4 text-muted-foreground" />
+                                                        </Button>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-500/10 hover:text-red-400" onClick={() => handleDeletePayment(p.id)}>
+                                                            <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                                {p.isUsed && (
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-red-500/10 hover:text-red-400" onClick={() => handleDeletePayment(p.id)}>
+                                                        <Trash2 className="h-4 w-4 text-muted-foreground" />
+                                                    </Button>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -277,10 +354,110 @@ export default function SponsoredAdsManager() {
                             </Table>
                         </CardContent>
                     </Card>
+
+                    <Dialog open={!!editingPayment} onOpenChange={(open) => !open && setEditingPayment(null)}>
+                        <DialogContent className="bg-[#111112] border-white/10 text-white">
+                            <DialogHeader>
+                                <DialogTitle>Edit Payment Code</DialogTitle>
+                                <DialogDescription>Update amount and duration for {editingPayment?.code}</DialogDescription>
+                            </DialogHeader>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">Amount (LKR)</Label>
+                                    <Input
+                                        value={editAmount}
+                                        onChange={e => setEditAmount(e.target.value)}
+                                        className="col-span-3 bg-white/5 border-white/10"
+                                    />
+                                </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label className="text-right">Days</Label>
+                                    <Input
+                                        value={editDuration}
+                                        onChange={e => setEditDuration(e.target.value)}
+                                        className="col-span-3 bg-white/5 border-white/10"
+                                    />
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                <Button onClick={handleEditPaymentSave} disabled={isActionPending}>
+                                    {isActionPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save Changes
+                                </Button>
+                            </DialogFooter>
+                        </DialogContent>
+                    </Dialog>
                 </TabsContent>
             </Tabs>
         </div>
     );
+}
+
+function UserSelect({ users, value, onChange }: { users: any[], value: string, onChange: (val: string) => void }) {
+    const [open, setOpen] = useState(false);
+    const selectedUser = users.find(u => u.id === value);
+
+    return (
+        <Popover open={open} onOpenChange={setOpen}>
+            <PopoverTrigger asChild>
+                <Button
+                    variant="outline"
+                    role="combobox"
+                    aria-expanded={open}
+                    className="w-full justify-between bg-white/5 border-white/10 hover:bg-white/10 hover:text-white"
+                >
+                    {value
+                        ? selectedUser?.name || "User not found"
+                        : "Select user (Optional)..."}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-[300px] p-0 bg-[#111112] border-white/10">
+                <Command className="bg-[#111112]">
+                    <CommandInput placeholder="Search user..." className="h-9" />
+                    <CommandList>
+                        <CommandEmpty>No user found.</CommandEmpty>
+                        <CommandGroup>
+                            <CommandItem
+                                value="none"
+                                onSelect={() => {
+                                    onChange("");
+                                    setOpen(false);
+                                }}
+                                className="text-muted-foreground"
+                            >
+                                <Check
+                                    className={cn(
+                                        "mr-2 h-4 w-4",
+                                        value === "" ? "opacity-100" : "opacity-0"
+                                    )}
+                                />
+                                No Specific User
+                            </CommandItem>
+                            {users.map((user) => (
+                                <CommandItem
+                                    key={user.id}
+                                    value={user.name || user.username || user.id} // Search value
+                                    onSelect={() => {
+                                        onChange(user.id);
+                                        setOpen(false);
+                                    }}
+                                >
+                                    <Check
+                                        className={cn(
+                                            "mr-2 h-4 w-4",
+                                            value === user.id ? "opacity-100" : "opacity-0"
+                                        )}
+                                    />
+                                    {user.name} <span className="ml-2 text-xs text-muted-foreground truncate max-w-[100px]">{user.email}</span>
+                                </CommandItem>
+                            ))}
+                        </CommandGroup>
+                    </CommandList>
+                </Command>
+            </PopoverContent>
+        </Popover>
+    )
 }
 
 function AdRequestCard({ ad, onConvert, onDelete, isPending, showDelete }: { ad: any, onConvert?: (s: any) => void, onDelete?: () => void, isPending: boolean, showDelete?: boolean }) {

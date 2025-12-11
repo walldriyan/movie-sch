@@ -103,7 +103,10 @@ export async function getAdminPayments() {
     try {
         const payments = await prisma.adPayment.findMany({
             orderBy: { createdAt: 'desc' },
-            include: { usedByUser: true }
+            include: {
+                usedByUser: true,
+                assignedToUser: true
+            }
         });
         return JSON.parse(JSON.stringify(payments));
     } catch (error) {
@@ -146,6 +149,7 @@ export async function createSponsoredPost(data: { title: string; imageUrl: strin
 // Verify Payment Code
 export async function verifyPaymentCode(code: string) {
     try {
+        const session = await auth();
         const payment = await prisma.adPayment.findUnique({
             where: { code }
         });
@@ -156,6 +160,10 @@ export async function verifyPaymentCode(code: string) {
 
         if (payment.isUsed) {
             return { success: false, error: 'Code already used' };
+        }
+
+        if (payment.assignedToUserId && payment.assignedToUserId !== session?.user?.id) {
+            return { success: false, error: 'Code is not assigned to you' };
         }
 
         return { success: true, payment };
@@ -388,7 +396,7 @@ export async function updateSponsoredPostStatus(id: string, status: 'APPROVED' |
     }
 }
 
-export async function generatePaymentCode(amount: number, durationDays: number) {
+export async function generatePaymentCode(amount: number, durationDays: number, assignedToUserId?: string) {
     const session = await auth();
     if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
         return { success: false, error: 'Unauthorized' };
@@ -403,12 +411,44 @@ export async function generatePaymentCode(amount: number, durationDays: number) 
                 code,
                 amount,
                 durationDays,
-                currency: 'LKR'
+                currency: 'LKR',
+                assignedToUserId
             }
         });
         return { success: true, payment };
     } catch (e) {
         return { success: false, error: 'Failed' };
+    }
+}
+
+export async function deletePaymentCode(id: string) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        await prisma.adPayment.delete({ where: { id } });
+        return { success: true };
+    } catch (error) {
+        return { success: false, error: 'Failed to delete code' };
+    }
+}
+
+export async function updatePaymentCode(id: string, amount: number, durationDays: number) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        const payment = await prisma.adPayment.update({
+            where: { id },
+            data: { amount, durationDays }
+        });
+        return { success: true, payment };
+    } catch (error) {
+        return { success: false, error: 'Failed to update code' };
     }
 }
 
