@@ -1,9 +1,10 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Calendar, Clock, Star, Clapperboard, Folder, Lock, Sparkles, TrendingUp, BookOpen, Compass, ArrowRight, RotateCcw, Camera, Loader2, Crown } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Clapperboard, Folder, Lock, Sparkles, TrendingUp, ArrowRight, RotateCcw, Camera, Loader2, Crown } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,71 +25,22 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { TooltipProvider } from '@/components/ui/tooltip';
-import GroupCard from './group-card';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
-import PostGrid from './post-grid';
 import { ROLES } from '@/lib/permissions';
 import { siteConfig } from '@/config/site.config';
-import { FeaturedPromo } from '@/components/home/featured-promo';
 import { PromoData } from '@/lib/actions/promo';
 
-// ========================================
-// 3D FLOATING CARD COMPONENT
-// ========================================
-interface FloatingCardProps {
-    title: string;
-    subtitle?: string;
-    imageUrl?: string;
-    delay?: number;
-    position: 'left' | 'center' | 'right';
-    zIndex?: number;
-}
-
-const FloatingCard = ({ title, subtitle, imageUrl, delay = 0, position, zIndex = 10 }: FloatingCardProps) => {
-    const positionStyles = {
-        left: 'left-0 -translate-x-1/4 rotate-y-[25deg] rotate-z-[-3deg]',
-        center: 'left-1/2 -translate-x-1/2 rotate-y-[0deg]',
-        right: 'right-0 translate-x-1/4 rotate-y-[-25deg] rotate-z-[3deg]',
-    };
-
-    return (
-        <div
-            className={cn(
-                "absolute w-56 h-72 rounded-2xl overflow-hidden shadow-2xl transition-all duration-700 hover:scale-105",
-                "bg-gradient-to-br from-stone-800/90 via-stone-900/95 to-neutral-900/90",
-                "border border-stone-700/50 backdrop-blur-xl",
-                "animate-float cursor-pointer group"
-            )}
-            style={{
-                animationDelay: `${delay}ms`,
-                zIndex,
-                transform: `perspective(1000px) ${position === 'left' ? 'rotateY(15deg) rotateZ(-2deg) translateX(-20%)' : position === 'right' ? 'rotateY(-15deg) rotateZ(2deg) translateX(20%)' : 'rotateY(0)'}`,
-            }}
-        >
-            {/* Card Image */}
-            {imageUrl && (
-                <div className="relative h-40 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-t from-stone-900/90 via-transparent to-transparent z-10" />
-                    <img
-                        src={imageUrl}
-                        alt={title}
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                </div>
-            )}
-            {/* Card Content */}
-            <div className="p-4 space-y-2">
-                <h3 className="font-bold text-white/95 text-base line-clamp-2">{title}</h3>
-                {subtitle && (
-                    <p className="text-xs text-stone-400 line-clamp-2">{subtitle}</p>
-                )}
-            </div>
-            {/* Glow Effect */}
-            <div className="absolute inset-0 bg-gradient-to-tr from-amber-500/5 via-transparent to-amber-600/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-        </div>
-    );
-};
+// Lazy load heavy components
+const GroupCard = dynamic(() => import('./group-card'), {
+    loading: () => <Skeleton className="h-64 rounded-3xl" />
+});
+const PostGrid = dynamic(() => import('./post-grid'), {
+    loading: () => <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <Skeleton key={i} className="aspect-[2/3] rounded-xl" />)}</div>
+});
+const FeaturedPromo = dynamic(() => import('@/components/home/featured-promo').then(mod => ({ default: mod.FeaturedPromo })), {
+    ssr: false
+});
 
 // ========================================
 // HERO SECTION - Suno.com Style with Rounded Banner

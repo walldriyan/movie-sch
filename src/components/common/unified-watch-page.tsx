@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, lazy, Suspense } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -20,14 +21,34 @@ import type { Session } from 'next-auth';
 import type { Series } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
 import MovieInteractionButtons from '@/components/movie/movie-interaction-buttons';
-import ReviewForm from '@/components/review-form';
-import ReviewCard from '@/components/review-card';
-import DOMPurify from 'isomorphic-dompurify';
-import AdManager from '@/components/common/ad-manager';
+
+// Lazy load heavy components to reduce initial bundle
+const ReviewForm = dynamic(() => import('@/components/review-form'), {
+    loading: () => <div className="animate-pulse h-24 bg-white/5 rounded-lg" />,
+    ssr: false
+});
+const ReviewCard = dynamic(() => import('@/components/review-card'), {
+    loading: () => <div className="animate-pulse h-16 bg-white/5 rounded-lg" />,
+    ssr: false
+});
+const AdManager = dynamic(() => import('@/components/common/ad-manager'), { ssr: false });
+
 import type { AdUnit } from '@/lib/actions/ads';
 import { createReview, deleteReview } from '@/lib/actions/reviews';
 import { incrementViewCount } from '@/lib/actions/posts/view';
 import { useToast } from '@/hooks/use-toast';
+
+// Lazy load DOMPurify - it's a heavy library
+let DOMPurify: any = null;
+const sanitizeHTML = (html: string) => {
+    if (typeof window !== 'undefined') {
+        if (!DOMPurify) {
+            DOMPurify = require('isomorphic-dompurify').default;
+        }
+        return DOMPurify.sanitize(html);
+    }
+    return html; // On server, return as-is (server component handles sanitization)
+};
 
 interface UnifiedWatchPageProps {
     type: 'MOVIE' | 'SERIES';
@@ -70,6 +91,7 @@ const SidebarThumbnail = ({ src, alt, className, isActive }: SidebarThumbnailPro
             fill
             className={className}
             onError={() => setError(true)}
+            loading="lazy"
         />
     );
 };
@@ -138,7 +160,7 @@ export default function UnifiedWatchPage({
     };
 
     const videoId = videoLink ? getYouTubeVideoId(videoLink.url) : null;
-    const sanitizedDescription = useMemo(() => DOMPurify.sanitize(post.description || ''), [post.description]);
+    const sanitizedDescription = useMemo(() => sanitizeHTML(post.description || ''), [post.description]);
 
     // Scroll active post into view in sidebar on mount (for Series) - using ref
     useEffect(() => {
