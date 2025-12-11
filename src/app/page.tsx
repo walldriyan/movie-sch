@@ -6,7 +6,7 @@ import HomePageClient from '@/components/home-page-client';
 import { auth } from '@/auth';
 import FeaturedPromo from '@/components/home/featured-promo';
 import { getPromoData } from '@/lib/actions/promo';
-import { getSponsoredPosts, seedAds } from '@/lib/actions/ads';
+import { getSponsoredPosts, seedAds, getRecentApprovedAds } from '@/lib/actions/ads';
 
 export default async function HomePage({
     searchParams,
@@ -26,11 +26,13 @@ export default async function HomePage({
     // Auto-seed ads if none exist (temporary for demo)
     await seedAds();
 
-    const postDataPromise = getPosts({
-        page: currentPage,
-        limit: 12,
-        filters: { timeFilter, sortBy, type: typeFilter, lockStatus },
-    });
+    const postDataPromise = typeFilter === 'sponsored'
+        ? getRecentApprovedAds(currentPage, 12)
+        : getPosts({
+            page: currentPage,
+            limit: 12,
+            filters: { timeFilter, sortBy, type: typeFilter, lockStatus },
+        });
     const usersPromise = getUsers({ limit: 10 });
     const groupsPromise = getPublicGroups();
     const promoDataPromise = getPromoData();

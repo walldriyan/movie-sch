@@ -140,14 +140,38 @@ export async function getSponsoredPosts() {
     try {
         // Fetch active ads sorted by priority (higher first)
         const ads = await prisma.sponsoredPost.findMany({
-            where: { isActive: true },
-            orderBy: { priority: 'desc' },
-            cacheStrategy: { ttl: 60, swr: 60 }
+            where: { isActive: true, status: 'APPROVED' },
+            orderBy: { priority: 'desc' }
         });
         return ads;
     } catch (error) {
         console.error("Failed to fetch sponsored posts:", error);
         return [];
+    }
+}
+
+export async function getRecentApprovedAds(page: number = 1, limit: number = 12) {
+    try {
+        const where: any = { status: 'APPROVED', isActive: true };
+
+        const [ads, total] = await prisma.$transaction([
+            prisma.sponsoredPost.findMany({
+                where,
+                orderBy: { createdAt: 'desc' }, // Last ad first
+                skip: (page - 1) * limit,
+                take: limit
+            }),
+            prisma.sponsoredPost.count({ where })
+        ]);
+
+        return {
+            posts: JSON.parse(JSON.stringify(ads)),
+            totalPages: Math.ceil(total / limit),
+            currentPage: page
+        };
+    } catch (error) {
+        console.error("getRecentApprovedAds Error:", error);
+        return { posts: [], totalPages: 0, currentPage: 1 };
     }
 }
 
@@ -383,15 +407,20 @@ export async function seedAds() {
                     description: 'Explore how AI is changing the landscape of technology.',
                     imageUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=500&q=80',
                     link: 'https://openai.com',
-                    priority: 10
+                    priority: 10,
+                    status: 'APPROVED',
+                    isActive: true
                 },
                 {
                     title: 'Best Coffee in Town',
                     description: 'Start your morning with the perfect brew.',
                     imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=500&q=80',
                     link: 'https://starbucks.com',
-                    priority: 5
+                    priority: 5,
+                    status: 'APPROVED',
+                    isActive: true
                 }
+
             ]
         });
         return { success: true };

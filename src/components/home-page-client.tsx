@@ -4,7 +4,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
-import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Clapperboard, Folder, Lock, Sparkles, TrendingUp, ArrowRight, RotateCcw, Camera, Loader2, Crown } from 'lucide-react';
+import { Film, Globe, Tv, Users, ChevronRight, ListFilter, Clapperboard, Folder, Lock, Sparkles, TrendingUp, ArrowRight, RotateCcw, Camera, Loader2, Crown, Megaphone } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -478,6 +478,18 @@ export default function HomePageClient({
                                         </Link>
                                     </Button>
 
+                                    <Button asChild variant={'ghost'} size="sm" className={cn(
+                                        "rounded-xl px-4 h-10 transition-all text-sm font-medium border",
+                                        typeFilter === 'sponsored'
+                                            ? 'bg-purple-500/20 text-purple-400 border-purple-500/20 shadow-[0_0_15px_rgba(168,85,247,0.2)]'
+                                            : 'bg-white/5 text-muted-foreground border-white/5 hover:text-purple-400 hover:bg-purple-500/10'
+                                    )}>
+                                        <Link href={buildQueryString({ sortBy, timeFilter, page: 1, type: 'sponsored', lockStatus: undefined })} scroll={false} className="flex items-center gap-2">
+                                            <Megaphone className="w-3.5 h-3.5" />
+                                            <span>Sponsored Ads</span>
+                                        </Link>
+                                    </Button>
+
                                     {/* Reset Filter Button (Visible if filters active) */}
                                     {(typeFilter || lockStatus || timeFilter !== 'all' || sortBy !== 'updatedAt-desc') && (
                                         <Button asChild variant="ghost" size="icon" className="h-10 w-10 rounded-xl hover:bg-white/10 hover:text-white text-muted-foreground transition-colors ml-auto md:ml-2" title="Reset Filters">
@@ -533,6 +545,8 @@ export default function HomePageClient({
 
                                 {/* Mix Ads into Posts */}
                                 <PostGrid posts={useMemo(() => {
+                                    if (typeFilter === 'sponsored') return visiblePosts; // Don't mix if already viewing ads
+
                                     const activeAds = initialAds || [];
                                     const mixed: any[] = [];
                                     let adIndex = 0;
@@ -540,8 +554,8 @@ export default function HomePageClient({
                                     visiblePosts.forEach((post, i) => {
                                         mixed.push(post);
 
-                                        // Pattern: 8 Posts + 2 Ad Cards (Total 10 items per cycle)
-                                        if ((i + 1) % 8 === 0) {
+                                        // Pattern: 5 Posts + 2 Ad Cards (Total 7 items per cycle)
+                                        if ((i + 1) % 5 === 0) {
                                             // Slot 1: Sponsored Ad (or Place Ad if no active ads)
                                             if (activeAds.length > 0) {
                                                 const ad = activeAds[adIndex % activeAds.length];
