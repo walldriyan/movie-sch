@@ -76,7 +76,7 @@ const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCov
     return (
         <section className="relative pt-24 md:pt-32 pb-8">
             {/* Suno-style Hero Banner - compact height */}
-            <div className="relative mx-4 md:mx-6 rounded-3xl overflow-hidden h-[500px] shadow-2xl border border-white/5 group/hero">
+            <div className="relative mx-4 md:mx-6 rounded-3xl overflow-hidden h-[400px] shadow-2xl border border-white/5 group/hero">
                 {/* Background Image - music studio style */}
                 <Image
                     key={imageVersion}
