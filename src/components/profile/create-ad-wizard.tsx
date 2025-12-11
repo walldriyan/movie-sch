@@ -278,9 +278,16 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
                         <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 max-w-xl mx-auto">
                             <Alert className="bg-purple-500/10 border-purple-500/20 mb-6">
                                 <AlertCircle className="h-4 w-4 text-purple-400" />
-                                <AlertTitle className="text-purple-400">Payment Required</AlertTitle>
-                                <AlertDescription className="text-purple-400/80">
-                                    You need a valid payment code to publish ads. Contact support to purchase credits.
+                                <AlertTitle className="text-purple-400 font-bold">දැන්වීම පල කිරීමට පෙර දැනුවත් වන්න</AlertTitle>
+                                <AlertDescription className="text-purple-400/80 mt-2 leading-relaxed">
+                                    <p className="mb-2">
+                                        ඔබගේ දැන්වීම පල කිරීම සඳහා වලංගු <span className="font-bold text-white">Payment Code</span> එකක් අවශ්‍ය වේ.
+                                    </p>
+                                    <ul className="list-disc list-inside space-y-1 text-sm opacity-90 ml-1">
+                                        <li>පළමුව Admin හරහා Payment Code එකක් ලබාගන්න.</li>
+                                        <li>එම කේතය පහතින් ඇතුලත් කර verify කරන්න.</li>
+                                        <li>කේතය තහවුරු වූ පසු ඔබේ දැන්වීම පල කළ හැක.</li>
+                                    </ul>
                                 </AlertDescription>
                             </Alert>
 
