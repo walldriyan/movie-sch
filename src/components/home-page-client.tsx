@@ -614,9 +614,9 @@ export default function HomePageClient({
 
 
                     {/* SECTION 2: Creators */}
-                    <div className="relative rounded-[3px] bg-blue-500/[0.03] border border-blue-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
+                    <div className="relative rounded-[3px] bg-slate-800/[0.01] border border-blue-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
                         {/* Decorative background element */}
-                        <div className="absolute top-0 right-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-blue-500/[0.03] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                        <div className="absolute top-0 right-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-blue-500/[0.02] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
 
                         <div className="relative z-10">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
@@ -675,9 +675,9 @@ export default function HomePageClient({
                     </div>
 
                     {/* SECTION 3: Collections */}
-                    <div className="relative rounded-[3px] bg-purple-500/[0.03] border border-purple-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
+                    <div className="relative rounded-[3px] bg-gray-900/[0.01] border border-purple-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
                         {/* Decorative background element */}
-                        <div className="absolute top-0 left-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-500/[0.03] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+                        <div className="absolute top-0 left-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-purple-500/[0.02] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 -translate-x-1/3 pointer-events-none" />
 
                         <div className="relative z-10">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
