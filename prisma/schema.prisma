@@ -71,8 +71,15 @@ model User {
   microPostComments MicroPostComment[]
   views             PostView[]
   sponsoredPosts    SponsoredPost[]
-  usedAdPayments    AdPayment[]     @relation("UsedBy")
-  assignedAdPayments AdPayment[]    @relation("AssignedTo")
+  // New Payment System Relations
+  subscriptions     UserSubscription[]
+  payments          PaymentRecord[]
+  usedKeys          AccessKey[]     @relation("KeyUsedBy")
+  assignedKeys      AccessKey[]     @relation("KeyAssignedTo")
+
+  // Legacy Ad Payment Relations (Can be removed if we fully migrate, or kept if we kept the model)
+  // usedAdPayments    AdPayment[]     @relation("UsedBy")
+  // assignedAdPayments AdPayment[]    @relation("AssignedTo")
   followers         User[]          @relation("UserFollows")
   following         User[]          @relation("UserFollows")
 
@@ -802,9 +809,13 @@ model SponsoredPost {
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  // Payment Details
-  paymentId   String?  @unique
-  payment     AdPayment? @relation(fields: [paymentId], references: [id])
+  // New Payment Integration
+  paymentRecordId String? @unique
+  paymentRecord   PaymentRecord? @relation(fields: [paymentRecordId], references: [id])
+
+  // Legacy support (optional, can be deprecated)
+  // paymentId   String?  @unique
+  // payment     AdPayment? @relation(fields: [paymentId], references: [id])
   
   // Quick Stats
   views       Int      @default(0)
@@ -817,27 +828,128 @@ model SponsoredPost {
   @@map("sponsored_posts")
 }
 
-model AdPayment {
-  id           String   @id @default(cuid())
-  code         String   @unique // The code user enters
-  amount       Float
-  currency     String   @default("LKR")
-  durationDays Int      // How long the ad runs
-  
-  isUsed       Boolean  @default(false)
-  usedAt       DateTime?
-  usedByUserId String?  // ID of user who used it
-  usedByUser   User?    @relation("UsedBy", fields: [usedByUserId], references: [id])
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEW ADVANCED PAYMENT & SUBSCRIPTION SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
 
-  assignedToUserId String? // User specifically assigned to this code
-  assignedToUser   User?   @relation("AssignedTo", fields: [assignedToUserId], references: [id])
+// 1. Subscription Plans (Types of memberships available)
+model SubscriptionPlan {
+  id            String               @id @default(cuid())
+  name          String               // e.g. "Pro Weekly", "Pro Monthly"
+  description   String?              @db.Text
+  price         Float
+  currency      String               @default("LKR")
+  interval      SubscriptionInterval // WEEKLY, MONTHLY, YEARLY
+  durationDays  Int                  // Exact days for calculation (7, 30, 365)
   
-  sponsoredPost SponsoredPost?
+  discountPercent Float              @default(0) // Display purpose: "Save 20%"
+  isArchived      Boolean            @default(false)
+  isFeatured      Boolean            @default(false)
   
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  features      String[]             // UI List of features
 
-  @@map("ad_payments")
+  subscriptions UserSubscription[]
+  keys          AccessKey[]
+  
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@map("subscription_plans")
+}
+
+// 2. User Subscriptions (The actual active/past subscriptions of users)
+model UserSubscription {
+  id            String             @id @default(cuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planId        String?
+  plan          SubscriptionPlan?  @relation(fields: [planId], references: [id])
+  
+  status        SubscriptionStatus @default(ACTIVE)
+  
+  startDate     DateTime           @default(now())
+  endDate       DateTime?          // If null, could mean lifetime or recurring indefinitely until cancel
+  
+  autoRenew     Boolean            @default(false) // For future gateway integration
+  
+  paymentId     String?            @unique
+  payment       PaymentRecord?     @relation(fields: [paymentId], references: [id])
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([endDate])
+  @@map("user_subscriptions")
+}
+
+// 3. Central Payment Records (History of all transactions)
+model PaymentRecord {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  
+  amount        Float
+  currency      String        @default("LKR")
+  
+  method        PaymentMethod @default(MANUAL_KEY)
+  status        PaymentStatus @default(COMPLETED)
+  
+  type          PaymentType   // SUBSCRIPTION or AD_CAMPAIGN
+  
+  // Link to what was purchased
+  subscription  UserSubscription?
+  sponsoredPost SponsoredPost? 
+  
+  // If purchased via Key
+  accessKeyId   String?
+  accessKey     AccessKey?    @relation(fields: [accessKeyId], references: [id])
+  
+  // Gateway Details (Future Proofing)
+  gatewayRefId  String?       // Stripe Session ID, etc.
+  gatewayName   String?       // "STRIPE", "PAYPAL"
+  metadata      Json?         // Store full gateway response
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@map("payment_records")
+}
+
+// 4. Universal Access Keys (For Manual Payments / Gift Cards)
+model AccessKey {
+  id            String        @id @default(cuid())
+  code          String        @unique // The secret code
+  
+  type          AccessKeyType // SUBSCRIPTION_UNLOCK or AD_UNLOCK
+  
+  // If Subscription Key
+  planId        String?
+  plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
+  
+  // Key Constraints
+  assignedToUserId String?    // If set, only this user can use it
+  assignedTo    User?         @relation("KeyAssignedTo", fields: [assignedToUserId], references: [id])
+  
+  expiresAt     DateTime?     // When the key itself expires (not the sub)
+  
+  // Usage State
+  isUsed        Boolean       @default(false)
+  usedAt        DateTime?
+  usedByUserId  String?
+  usedBy        User?         @relation("KeyUsedBy", fields: [usedByUserId], references: [id])
+  
+  payments      PaymentRecord[] // Updated to allow one-to-many logically (though usually one key = one payment)
+
+  createdAt     DateTime      @default(now())
+  createdBy     String?       // Admin ID who generated it
+
+  @@index([code])
+  @@map("access_keys")
 }
 
 model AdAnalytics {
@@ -851,4 +963,43 @@ model AdAnalytics {
   
   @@unique([postId, date])
   @@map("ad_analytics")
+}
+
+// --- NEW ENUMS ---
+
+enum SubscriptionInterval {
+  WEEKLY
+  MONTHLY
+  YEARLY
+  LIFETIME
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum PaymentMethod {
+  MANUAL_KEY
+  ONLINE_GATEWAY
+  ADMIN_GRANT
+}
+
+enum PaymentStatus {
+  COMPLETED
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  AD_CAMPAIGN
+}
+
+enum AccessKeyType {
+  SUBSCRIPTION
+  AD_CAMPAIGN
 }
