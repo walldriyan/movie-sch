@@ -114,8 +114,7 @@ export default function UnifiedWatchPage({
     const isPremium = session?.user && (
         session.user.role === 'SUPER_ADMIN' ||
         session.user.role === 'USER_ADMIN' ||
-        (session.user as any).accountType === 'PREMIUM' ||
-        (session.user as any).accountType === 'HYBRID'
+        (session.user as any).accountType === 'PREMIUM'
     );
 
     // Ref for scrolling active episode into view
@@ -622,6 +621,14 @@ export default function UnifiedWatchPage({
                                 <div className="flex flex-col gap-8">
                                     {/* Reviews Main Content - Full Width */}
                                     <div className="w-full">
+
+                                        {/* AD ABOVE COMMENTS - Visible to Free & Hybrid */}
+                                        {!isPremium && (
+                                            <div className="mb-8 w-full">
+                                                <AdManager initialConfig={legacyAdConfig} userRole={session?.user?.role} />
+                                            </div>
+                                        )}
+
                                         <div className="mb-8 p-6 bg-muted/30 rounded-2xl">
                                             <h3 className="text-lg font-semibold mb-4">Leave a comment</h3>
                                             <ReviewForm
