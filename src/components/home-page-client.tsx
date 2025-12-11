@@ -39,8 +39,9 @@ const GroupCard = dynamic(() => import('./group-card'), {
 const PostGrid = dynamic(() => import('./post-grid'), {
     loading: () => <div className="grid grid-cols-2 md:grid-cols-4 gap-4">{[...Array(8)].map((_, i) => <Skeleton key={i} className="aspect-[2/3] rounded-xl" />)}</div>
 });
-const FeaturedPromo = dynamic(() => import('@/components/home/featured-promo').then(mod => ({ default: mod.FeaturedPromo })), {
-    ssr: false
+const AdvancedAudioPlayer = dynamic(() => import('@/components/media/advanced-audio-player').then(mod => ({ default: mod.AdvancedAudioPlayer })), {
+    ssr: false,
+    loading: () => <div className="h-10 w-40 bg-white/5 rounded-full animate-pulse" />
 });
 
 // ========================================
@@ -75,7 +76,7 @@ const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCov
     return (
         <section className="relative pt-24 md:pt-32 pb-8">
             {/* Suno-style Hero Banner - compact height */}
-            <div className="relative mx-4 md:mx-6 rounded-3xl overflow-hidden h-[400px] shadow-2xl border border-white/5 group/hero">
+            <div className="relative mx-4 md:mx-6 rounded-3xl overflow-hidden h-[500px] shadow-2xl border border-white/5 group/hero">
                 {/* Background Image - music studio style */}
                 <Image
                     key={imageVersion}
@@ -114,55 +115,61 @@ const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCov
                 )}
 
                 {/* Dark overlay for text readability */}
-                <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/40 to-transparent pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/40 to-transparent pointer-events-none" />
 
                 {/* Content overlay */}
                 <div className="absolute inset-0 z-10 p-8 md:p-12 flex flex-col justify-center pointer-events-none">
-                    {/* Badge */}
-                    <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-pink-500 text-white text-xs font-semibold w-fit mb-5 pointer-events-auto">
-                        <Sparkles className="w-3.5 h-3.5" />
-                        <span>NEW PRODUCT</span>
-                    </div>
+                    <div className="max-w-xl pointer-events-auto">
+                        {/* Badge */}
+                        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-pink-500 text-white text-xs font-semibold w-fit mb-5">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>NEW PRODUCT</span>
+                        </div>
 
-                    {/* Headline - bigger and bolder */}
-                    <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white max-w-lg leading-[1.15] mb-4">
-                        {siteConfig.hero.headline}
-                    </h1>
+                        {/* Headline - bigger and bolder */}
+                        <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white leading-[1.1] mb-6 drop-shadow-lg">
+                            {siteConfig.hero.headline}
+                        </h1>
 
-                    {/* Description */}
-                    <p className="text-white/80 text-sm md:text-base max-w-md mb-6 leading-relaxed">
-                        {siteConfig.hero.description}
-                    </p>
+                        {/* Description */}
+                        <p className="text-white/80 text-sm md:text-base mb-8 leading-relaxed max-w-md drop-shadow-md">
+                            {siteConfig.hero.description}
+                        </p>
 
-                    {/* CTA Buttons - like Suno */}
-                    <div className="flex items-center gap-3 pointer-events-auto">
-                        <Button
-                            size="default"
-                            className="bg-white/[0.03] hover:bg-white/[0.06] text-white/70 hover:text-white font-semibold h-10 px-5 text-sm rounded-full border-0"
-                            asChild
-                        >
-                            <Link href={siteConfig.hero.cta.primary.href}>
-                                {siteConfig.hero.cta.primary.text}
-                            </Link>
-                        </Button>
-                        <Button
-                            size="default"
-                            variant="ghost"
-                            className="text-white hover:bg-white/10 font-semibold h-10 px-5 text-sm"
-                            asChild
-                        >
-                            <Link href={siteConfig.hero.cta.secondary.href}>
-                                Learn More
-                            </Link>
-                        </Button>
+                        {/* CTA Buttons - like Suno */}
+                        <div className="flex items-center gap-3 mb-8">
+                            <Button
+                                size="default"
+                                className="bg-white/[0.1] hover:bg-white/[0.2] text-white font-semibold h-10 px-6 text-sm rounded-full backdrop-blur-md border border-white/10"
+                                asChild
+                            >
+                                <Link href={siteConfig.hero.cta.primary.href}>
+                                    {siteConfig.hero.cta.primary.text}
+                                </Link>
+                            </Button>
+                            <Button
+                                size="default"
+                                variant="ghost"
+                                className="text-white hover:bg-white/10 font-semibold h-10 px-6 text-sm rounded-full"
+                                asChild
+                            >
+                                <Link href={siteConfig.hero.cta.secondary.href}>
+                                    Learn More
+                                </Link>
+                            </Button>
+                        </div>
+
+                        {/* ADVANCED AUDIO PLAYER - Integrated here */}
+                        <AdvancedAudioPlayer className="mt-4" canEdit={isPrivileged} />
                     </div>
                 </div>
 
                 {/* User Profile - Absolute Bottom Center - Magnified & Clickable */}
                 {user && (
                     <Link href={`/profile/${user.id}`} className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-4 duration-700 group cursor-pointer">
+                        {/* Same profile code */}
                         <div className="relative">
-                            <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-black/50 shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:border-primary/50 text-3xl font-bold bg-[#1a1a1a]">
+                            <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-black/50 shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:border-primary/50 text-3xl font-bold bg-[#1a1a1a]">
                                 {user.image && <AvatarImage src={user.image} alt={user.name || 'User'} className="object-cover" />}
                                 <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-primary to-purple-600 text-white">
                                     {user.name?.charAt(0).toUpperCase() || 'U'}
@@ -185,29 +192,12 @@ const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCov
                                                 {label}
                                             </div>
                                         </div>
-                                        {/* Mobile Home Hero Badge */}
-                                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 md:hidden z-30">
-                                            <div className="px-2 py-0.5 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-white text-[9px] font-bold tracking-wider uppercase shadow-xl whitespace-nowrap">
-                                                {label}
-                                            </div>
-                                        </div>
                                     </>
                                 );
                             })()}
                         </div>
-
-                        <div className="text-center group-hover:text-primary transition-colors duration-300">
-                            <h3 className="font-bold text-white text-xl md:text-2xl drop-shadow-md flex items-center gap-2 justify-center bg-black/30 backdrop-blur-sm px-4 py-1 rounded-full border border-white/5">
-                                {user.name}
-                            </h3>
-                        </div>
                     </Link>
                 )}
-
-                {/* Scroll up indicator */}
-                <button className="absolute top-4 right-4 w-8 h-8 rounded bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/60 hover:text-white transition-colors pointer-events-auto">
-                    <span className="text-sm">^</span>
-                </button>
             </div>
         </section>
     );
@@ -739,9 +729,6 @@ export default function HomePageClient({
                         </div>
                     </div>
                 </section>
-
-                {/* Featured Promo (Above Footer) */}
-                <FeaturedPromo data={promoData as any} currentUser={session?.user as any} />
 
                 {/* Footer */}
                 <Footer />

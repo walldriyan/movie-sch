@@ -1007,3 +1007,39 @@ enum AccessKeyType {
   SUBSCRIPTION
   AD_CAMPAIGN
 }
+
+// --- PLAYLIST MODELS ---
+
+model Playlist {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(false)
+  isPublic  Boolean  @default(true)
+  
+  items     PlaylistItem[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("playlists")
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  
+  title      String
+  artist     String?
+  url        String
+  type       String // "MP3", "YOUTUBE"
+  duration   Int?   // In seconds
+  image      String? // Cover image for the specific track
+  order      Int      @default(0)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@index([playlistId])
+  @@map("playlist_items")
+}
