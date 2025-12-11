@@ -8,6 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { ChevronRight, ChevronLeft, Upload, CheckCircle2, CreditCard, LayoutTemplate, Loader2, AlertCircle } from 'lucide-react';
 import { submitAd, verifyPaymentCode } from '@/lib/actions/ads';
+import { uploadAdImage } from '@/lib/actions/upload-ad-image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -37,6 +38,7 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
     // Verification State
     const [isCodeVerified, setIsCodeVerified] = useState(false);
     const [paymentDetails, setPaymentDetails] = useState<any>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
@@ -61,6 +63,29 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
             toast({ title: "Error", description: "Verification failed.", variant: "destructive" });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploadingImage(true);
+        const data = new FormData();
+        data.append('file', file);
+
+        try {
+            const res = await uploadAdImage(data);
+            if (res.success && res.url) {
+                setFormData(prev => ({ ...prev, imageUrl: res.url }));
+                toast({ title: "Image Uploaded", description: "Image successfully uploaded." });
+            } else {
+                toast({ title: "Upload Failed", description: res.error as string, variant: "destructive" });
+            }
+        } catch (error) {
+            toast({ title: "Error", description: "Upload failed.", variant: "destructive" });
+        } finally {
+            setUploadingImage(false);
         }
     };
 
@@ -188,13 +213,34 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label className="text-white">Image URL <span className="text-red-400">*</span></Label>
-                                        <Input
-                                            name="imageUrl"
-                                            placeholder="https://..."
-                                            value={formData.imageUrl}
-                                            onChange={handleInputChange}
-                                            className="bg-white/5 border-white/10 focus:border-purple-500/50"
-                                        />
+                                        <div className="flex gap-2">
+                                            <Input
+                                                name="imageUrl"
+                                                placeholder="https://... or upload"
+                                                value={formData.imageUrl}
+                                                onChange={handleInputChange}
+                                                className="bg-white/5 border-white/10 focus:border-purple-500/50 flex-1"
+                                            />
+                                            <Button
+                                                type="button"
+                                                variant="outline"
+                                                disabled={uploadingImage}
+                                                className="bg-white/5 border-white/10 text-white hover:bg-white/10 relative overflow-hidden min-w-[44px]"
+                                            >
+                                                {uploadingImage ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Upload className="w-4 h-4" />
+                                                )}
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    className="absolute inset-0 opacity-0 cursor-pointer"
+                                                    onChange={handleImageUpload}
+                                                    disabled={uploadingImage}
+                                                />
+                                            </Button>
+                                        </div>
                                         <p className="text-xs text-white/40">Recommended size: 600x400 or larger.</p>
                                     </div>
 
