@@ -237,6 +237,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
 import { SponsoredPost } from '@prisma/client';
 import { ExternalLink } from 'lucide-react';
 import { PlaceAdCard } from './home/place-ad-card';
+import { clickAd } from '@/lib/actions/ads';
 
 // Ad Card Component - Mimics MovieCard
 function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
@@ -253,6 +254,11 @@ function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
     setMounted(true);
   }, []);
 
+  const handleAdClick = async () => {
+    // Fire and forget - don't block navigation
+    clickAd(ad.id);
+  };
+
   return (
     <div
       className="relative overflow-hidden cursor-pointer group border border-purple-500/20 bg-[#1a1a1a] hover:border-purple-500/40 transition-all duration-300"
@@ -265,6 +271,7 @@ function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
         href={ad.link}
         target="_blank"
         rel="noopener noreferrer"
+        onClick={handleAdClick}
         className="block h-full w-full"
         aria-label={ad.title}
       >

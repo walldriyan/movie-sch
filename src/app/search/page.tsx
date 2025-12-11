@@ -18,6 +18,7 @@ import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
+import ProfileAdsList from '@/components/profile/profile-ads-list';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -204,6 +205,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         let displayPosts: any[] = [];
         let displaySeries: any[] = [];
         let displayExams: any[] = [];
+        let displayAds: any[] = [];
         let totalSeriesCount = 0;
 
         if (profileFilter === 'posts') {
@@ -219,6 +221,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             if (isOwnProfile || session?.user?.role === ROLES.SUPER_ADMIN) {
                 displayExams = await getExamsForUser(profileUser.id);
             }
+        } else if (profileFilter === 'ads') {
+            if (isOwnProfile || session?.user?.role === ROLES.SUPER_ADMIN) {
+                displayAds = await prisma.sponsoredPost.findMany({
+                    where: { userId: profileUser.id },
+                    orderBy: { createdAt: 'desc' },
+                    include: { payment: true }
+                });
+            }
         }
 
         return (
@@ -232,6 +242,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                     <ProfileSeriesList series={displaySeries} isOwnProfile={isOwnProfile} profileUser={profileUser} totalSeries={totalSeriesCount} />
                                 ) : profileFilter === 'exams' ? (
                                     <ProfileExamList exams={displayExams} isOwnProfile={isOwnProfile} />
+                                ) : profileFilter === 'ads' ? (
+                                    <ProfileAdsList ads={displayAds} isOwnProfile={isOwnProfile} />
                                 ) : (
                                     <ProfilePostList posts={displayPosts} isOwnProfile={isOwnProfile} currentFilter={profileFilter} profileUser={profileUser} />
                                 )}

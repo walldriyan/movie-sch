@@ -71,6 +71,8 @@ model User {
   microPostComments MicroPostComment[]
   views             PostView[]
   sponsoredPosts    SponsoredPost[]
+  followers         User[]          @relation("UserFollows")
+  following         User[]          @relation("UserFollows")
 
   @@index([email])
   @@index([username])
@@ -797,8 +799,50 @@ model SponsoredPost {
 
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  // Payment Details
+  paymentId   String?  @unique
+  payment     AdPayment? @relation(fields: [paymentId], references: [id])
+  
+  // Quick Stats
+  views       Int      @default(0)
+  clicks      Int      @default(0)
+  
+  analytics   AdAnalytics[]
 
   @@index([userId])
   @@index([status])
   @@map("sponsored_posts")
+}
+
+model AdPayment {
+  id           String   @id @default(cuid())
+  code         String   @unique // The code user enters
+  amount       Float
+  currency     String   @default("LKR")
+  durationDays Int      // How long the ad runs
+  
+  isUsed       Boolean  @default(false)
+  usedAt       DateTime?
+  usedByUserId String?  // ID of user who used it
+  
+  sponsoredPost SponsoredPost?
+  
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("ad_payments")
+}
+
+model AdAnalytics {
+  id        String   @id @default(cuid())
+  postId    String
+  post      SponsoredPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  date      String   // Format: YYYY-MM-DD
+  views     Int      @default(0)
+  clicks    Int      @default(0)
+  
+  @@unique([postId, date])
+  @@map("ad_analytics")
 }

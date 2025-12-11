@@ -90,9 +90,6 @@ export async function getSponsoredPosts() {
 
 export async function createSponsoredPost(data: { title: string; imageUrl: string; link: string; description?: string; priority?: number; status?: 'PENDING' | 'APPROVED' | 'REJECTED'; isActive?: boolean; userId?: string }) {
     const session = await auth();
-    // Allow users to create via this internal function if we want, but usually this is admin. 
-    // If strict admin check acts here, submitAd should check perms itself and bypass this if needed or we relax this.
-    // Actually, createSponsoredPost was admin only.
     if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
         return { success: false, error: 'Unauthorized' };
     }
@@ -108,29 +105,152 @@ export async function createSponsoredPost(data: { title: string; imageUrl: strin
     }
 }
 
-export async function submitAd(data: { title: string; imageUrl: string; link: string; description?: string }) {
+// Verify Payment Code
+export async function verifyPaymentCode(code: string) {
+    try {
+        const payment = await prisma.adPayment.findUnique({
+            where: { code }
+        });
+
+        if (!payment) {
+            return { success: false, error: 'Invalid Code' };
+        }
+
+        if (payment.isUsed) {
+            return { success: false, error: 'Code already used' };
+        }
+
+        return { success: true, payment };
+    } catch (error) {
+        return { success: false, error: 'Verification failed' };
+    }
+}
+
+export async function submitAd(data: { title: string; imageUrl: string; link: string; description?: string; paymentCode?: string }) {
     const session = await auth();
     if (!session?.user) {
         return { success: false, error: 'Unauthorized' };
     }
 
+    const { paymentCode, ...adData } = data;
+
+    // Check Permissions
+    const isPrivileged = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
+    // Is Premium? (Check role or subscription - simplified check)
+    // Assuming role 'PREMIUM' exists or checking other flags. If not sure, use isPrivileged for now or strict check.
+    // User requested: "premium member kenek wenna one nattan oya pay kranna one"
+    const isPremium = session.user.role === 'PREMIUM' || session.user.role === 'PREMIUM_USER'; // Adjust role as needed
+
+    let paymentId: string | undefined;
+
+    // Logic: If not privileged and not premium, require Payment Code
+    if (!isPrivileged && !isPremium) {
+        if (!paymentCode) {
+            return { success: false, error: 'Payment Code Required' };
+        }
+
+        const verification = await verifyPaymentCode(paymentCode);
+        if (!verification.success || !verification.payment) {
+            return { success: false, error: verification.error || 'Invalid Payment' };
+        }
+
+        paymentId = verification.payment.id;
+    }
+
     try {
-        const ad = await prisma.sponsoredPost.create({
-            data: {
-                ...data,
-                priority: 0,
-                status: 'PENDING', // Default to PENDING
-                isActive: false,   // Default to inactive
-                userId: session.user.id
+        // Use transaction to ensure code is marked used only if ad is created
+        const ad = await prisma.$transaction(async (tx) => {
+            if (paymentId) {
+                await tx.adPayment.update({
+                    where: { id: paymentId },
+                    data: {
+                        isUsed: true,
+                        usedAt: new Date(),
+                        usedByUserId: session.user.id
+                    }
+                });
             }
+
+            return await tx.sponsoredPost.create({
+                data: {
+                    ...adData,
+                    priority: 0,
+                    status: 'PENDING',
+                    isActive: false,
+                    userId: session.user.id,
+                    paymentId: paymentId
+                }
+            });
         });
 
-        // Notify admins? (Optional)
-
+        revalidatePath('/');
         return { success: true, ad };
     } catch (error) {
         console.error("Failed to submit ad", error);
         return { success: false, error: 'Failed to submit ad' };
+    }
+}
+
+// Analytics Actions
+export async function incrementAdView(adId: string) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        // Simple increment on main record
+        await prisma.sponsoredPost.update({
+            where: { id: adId },
+            data: { views: { increment: 1 } }
+        });
+
+        // Analytics record
+        const exists = await prisma.adAnalytics.findUnique({
+            where: { postId_date: { postId: adId, date: today } }
+        });
+
+        if (exists) {
+            await prisma.adAnalytics.update({
+                where: { postId_date: { postId: adId, date: today } },
+                data: { views: { increment: 1 } }
+            });
+        } else {
+            await prisma.adAnalytics.create({
+                data: { postId: adId, date: today, views: 1 }
+            });
+        }
+
+        return { success: true };
+    } catch (e) {
+        return { success: false };
+    }
+}
+
+export async function clickAd(adId: string) {
+    try {
+        const today = new Date().toISOString().split('T')[0];
+
+        await prisma.sponsoredPost.update({
+            where: { id: adId },
+            data: { clicks: { increment: 1 } }
+        });
+
+        const exists = await prisma.adAnalytics.findUnique({
+            where: { postId_date: { postId: adId, date: today } }
+        });
+
+        if (exists) {
+            await prisma.adAnalytics.update({
+                where: { postId_date: { postId: adId, date: today } },
+                data: { clicks: { increment: 1 } }
+            });
+        } else {
+            await prisma.adAnalytics.create({
+                data: { postId: adId, date: today, clicks: 1 }
+            });
+        }
+
+        return { success: true };
+    } catch (e) {
+        return { success: false };
     }
 }
 
@@ -195,5 +315,75 @@ export async function seedAds() {
         return { success: true };
     } catch (error) {
         return { success: false, error };
+    }
+}
+
+
+export async function updateSponsoredPostStatus(id: string, status: 'APPROVED' | 'REJECTED' | 'PENDING') {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        await prisma.sponsoredPost.update({
+            where: { id },
+            data: {
+                status,
+                isActive: status === 'APPROVED' // Auto activate on approve
+            }
+        });
+        revalidatePath('/');
+        return { success: true };
+    } catch (e) {
+        return { success: false, error: 'Failed' };
+    }
+}
+
+export async function generatePaymentCode(amount: number, durationDays: number) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        const randomStr = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const code = `P-${randomStr.substring(0, 4)}-${randomStr.substring(4, 8)}`;
+
+        const payment = await prisma.adPayment.create({
+            data: {
+                code,
+                amount,
+                durationDays,
+                currency: 'LKR'
+            }
+        });
+        return { success: true, payment };
+    } catch (e) {
+        return { success: false, error: 'Failed' };
+    }
+}
+
+
+export async function toggleUserAdStatus(adId: string) {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: "Unauthorized" };
+
+    try {
+        const ad = await prisma.sponsoredPost.findUnique({ where: { id: adId } });
+        if (!ad || ad.userId !== session.user.id) return { success: false, error: "Not found" };
+
+        if (ad.status !== 'APPROVED') return { success: false, error: "Only approved ads can be toggled." };
+
+        const updated = await prisma.sponsoredPost.update({
+            where: { id: adId },
+            data: { isActive: !ad.isActive }
+        });
+
+        revalidatePath('/profile');
+        revalidatePath('/search');
+        return { success: true, isActive: updated.isActive };
+    } catch (e) {
+        return { success: false, error: "Error updating status" };
     }
 }

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { MoreHorizontal, Grid3x3, Bookmark, Users, Images, Clapperboard, Camera, BookCheck, MapPin, Calendar, ExternalLink, Sparkles } from 'lucide-react';
+import { MoreHorizontal, Grid3x3, Bookmark, Users, Images, Clapperboard, Camera, BookCheck, MapPin, Calendar, ExternalLink, Sparkles, Megaphone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
@@ -31,6 +31,10 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
     { id: 'favorites', label: 'Favorites', icon: Bookmark },
     { id: 'exams', label: 'Exams', icon: BookCheck },
   ];
+
+  if (isOwnProfile) {
+    tabs.push({ id: 'ads', label: 'My Ads', icon: Megaphone });
+  }
 
   return (
     <div className="pt-24 md:pt-32 px-4 md:px-8 max-w-[1600px] mx-auto mb-8">
