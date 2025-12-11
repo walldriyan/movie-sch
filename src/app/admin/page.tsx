@@ -715,8 +715,24 @@ function ExamsTab() {
     );
 }
 
+import { useSearchParams, useRouter, usePathname } from 'next/navigation';
+
 // Main Admin Dashboard
 export default function AdminDashboard() {
+    const searchParams = useSearchParams();
+    const router = useRouter();
+    const pathname = usePathname();
+
+    // Get tab from URL or default to 'users'
+    const currentTab = searchParams.get('tab') || 'users';
+
+    const handleTabChange = (value: string) => {
+        // Update URL to reflect tab change without full reload
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('tab', value);
+        router.push(`${pathname}?${params.toString()}`);
+    };
+
     return (
         <div className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto space-y-8">
             <div className="flex flex-col gap-2">
@@ -727,7 +743,7 @@ export default function AdminDashboard() {
                 <p className="text-muted-foreground">Manage users, groups, content, and system configurations.</p>
             </div>
 
-            <Tabs defaultValue="users" className="space-y-8">
+            <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-8">
                 <TabsList className="bg-white/5 border border-white/10 p-1 rounded-full w-full max-w-2xl h-auto grid grid-cols-5 gap-1">
                     <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
                         <UsersIcon className="h-4 w-4 mr-2" />

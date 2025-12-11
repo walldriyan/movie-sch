@@ -254,14 +254,16 @@ export default function GroupListClient({ groups, userGroups = { joined: [], cre
                                 </div>
                             ))}
 
-                            {/* Create New Group Card */}
-                            <Link href="/admin/groups" className="flex flex-col items-center justify-center h-[280px] rounded-3xl border border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all group">
-                                <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                                    <Plus className="w-8 h-8 text-white/50" />
-                                </div>
-                                <h3 className="text-lg font-bold text-white">Create Group</h3>
-                                <p className="text-sm text-muted-foreground">Start a new community</p>
-                            </Link>
+                            {/* Create New Group Card - Only for Super Admins */}
+                            {currentUser?.role === 'SUPER_ADMIN' && (
+                                <Link href="/admin?tab=groups" className="flex flex-col items-center justify-center h-[280px] rounded-3xl border border-dashed border-white/10 bg-white/[0.02] hover:bg-white/[0.05] transition-all group">
+                                    <div className="h-16 w-16 rounded-full bg-white/5 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                                        <Plus className="w-8 h-8 text-white/50" />
+                                    </div>
+                                    <h3 className="text-lg font-bold text-white">Create Group</h3>
+                                    <p className="text-sm text-muted-foreground">Start a new community</p>
+                                </Link>
+                            )}
                         </div>
                     </TabsContent>
 
