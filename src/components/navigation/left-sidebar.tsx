@@ -201,7 +201,7 @@ export default function LeftSidebar() {
 
 
             {/* Top Right Controls */}
-            <div className="fixed top-6 right-8 z-50 flex items-center gap-3">
+            <div className="fixed top-6 right-8 z-[100] flex items-center gap-3">
                 <div className="hidden md:block">
                     <SearchBar />
                 </div>
