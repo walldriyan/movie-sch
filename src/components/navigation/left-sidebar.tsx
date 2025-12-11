@@ -330,7 +330,7 @@ export default function LeftSidebar() {
 
                             <GroupLabel label="Social" />
                             <NavItem
-                                href={userGroups.length > 0 ? `/groups/${userGroups[0].id}` : "/groups"}
+                                href="/groups"
                                 icon={Users}
                                 label="Groups"
                             />

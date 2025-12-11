@@ -554,6 +554,7 @@ export async function manageGroupJoinRequest(groupId: string, userId: string, ac
     revalidatePath(`/groups/${groupId}`);
 }
 
+
 export async function getUserJoinedGroups() {
     const session = await auth();
     const user = session?.user;
@@ -579,4 +580,92 @@ export async function getUserJoinedGroups() {
     });
 
     return (members as any[]).map(m => m.group);
+}
+
+export async function getUserGroupsExtended() {
+    const session = await auth();
+    const user = session?.user;
+    if (!user) return { joined: [], created: [] };
+
+    const joinedMemberships = await prisma.groupMember.findMany({
+        where: {
+            userId: user.id,
+            status: 'ACTIVE'
+        },
+        include: {
+            group: {
+                include: {
+                    _count: {
+                        select: { members: { where: { status: 'ACTIVE' } } }
+                    }
+                }
+            }
+        },
+        orderBy: {
+            joinedAt: 'desc'
+        }
+    });
+
+    const createdGroups = await prisma.group.findMany({
+        where: {
+            createdById: user.id
+        },
+        include: {
+            _count: {
+                select: { members: { where: { status: 'ACTIVE' } } }
+            }
+        },
+        orderBy: { name: 'asc' }
+    });
+
+    return {
+        joined: joinedMemberships.map(m => ({ ...m.group, joinedAt: m.joinedAt.toISOString(), role: m.role })),
+        created: createdGroups
+    };
+}
+
+export async function getUserGroupFeed(page = 1, limit = 10) {
+    const session = await auth();
+    const user = session?.user;
+    if (!user) return { posts: [], totalPages: 0 };
+
+    // Get IDs of groups user is a member of
+    const memberships = await prisma.groupMember.findMany({
+        where: { userId: user.id, status: 'ACTIVE' },
+        select: { groupId: true }
+    });
+    const groupIds = memberships.map(m => m.groupId);
+
+    if (groupIds.length === 0) return { posts: [], totalPages: 0 };
+
+    const where = {
+        groupId: { in: groupIds },
+        status: 'PUBLISHED',
+    };
+
+    const [posts, total] = await Promise.all([
+        prisma.post.findMany({
+            where,
+            include: {
+                author: true,
+                group: { select: { id: true, name: true, profilePhoto: true } },
+                likedBy: { select: { id: true } },
+                _count: { select: { reviews: true, likedBy: true } }
+            },
+            orderBy: { createdAt: 'desc' },
+            skip: (page - 1) * limit,
+            take: limit,
+        }),
+        prisma.post.count({ where })
+    ]);
+
+    return {
+        posts: posts.map((post: any) => ({
+            ...post,
+            createdAt: post.createdAt.toISOString(),
+            updatedAt: post.updatedAt.toISOString(),
+            isLiked: post.likedBy.some((u: any) => u.id === user.id)
+        })),
+        totalPages: Math.ceil(total / limit)
+    };
 }

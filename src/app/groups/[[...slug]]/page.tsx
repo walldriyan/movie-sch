@@ -1,7 +1,7 @@
 
 import { auth } from '@/auth';
 import { notFound } from 'next/navigation';
-import { getPublicGroups, getGroupForProfile, getPendingGroupRequests } from '@/lib/actions/groups';
+import { getPublicGroups, getGroupForProfile, getPendingGroupRequests, getUserGroupsExtended, getUserGroupFeed } from '@/lib/actions/groups';
 import { ROLES } from '@/lib/permissions';
 import GroupListClient from '@/app/groups/group-list-client';
 import GroupDetailClient from '@/app/groups/group-detail-client';
@@ -14,10 +14,31 @@ export default async function GroupsPage({ params }: { params: Promise<{ slug?: 
     const session = await auth();
     const currentUser = session?.user || null;
 
-    // SCENARIO 1: List View (/groups)
+    // SCENARIO 1: Dashboard View (/groups)
     if (!slug || slug.length === 0) {
-        const groups = await getPublicGroups(50); // Fetch up to 50 public groups
-        return <GroupListClient groups={groups} />;
+        const publicGroups = await getPublicGroups(50); // Fetch up to 50 public groups
+
+        let userGroups = { joined: [] as any[], created: [] as any[] };
+        let initialFeed = { posts: [] as any[], totalPages: 0 };
+
+        if (currentUser) {
+            // Fetch personalized data
+            const [uGroups, feed] = await Promise.all([
+                getUserGroupsExtended(),
+                getUserGroupFeed(1, 10)
+            ]);
+            userGroups = uGroups as any;
+            initialFeed = feed;
+        }
+
+        return (
+            <GroupListClient
+                groups={publicGroups}
+                userGroups={userGroups}
+                initialFeed={initialFeed}
+                currentUser={currentUser}
+            />
+        );
     }
 
     // SCENARIO 2: Detail View (/groups/[id])
