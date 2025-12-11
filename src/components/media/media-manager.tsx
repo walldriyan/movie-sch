@@ -107,7 +107,7 @@ export function MediaManager({ isOpen, onOpenChange, onSelectPlaylist, enableAct
     // --- STEP 2: EDIT PLAYLIST ---
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl bg-[#0a0a0a] border-white/10 text-white h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
+            <DialogContent className="max-w-6xl bg-[#0a0a0a] border-white/10 text-white h-[80vh] flex flex-col p-0 gap-0 overflow-hidden">
                 {/* Header */}
                 <div className="p-6 border-b border-white/10 flex justify-between items-center bg-white/5">
                     <div>
@@ -321,7 +321,7 @@ function EditPlaylistView({ playlist, onUpdate }: { playlist: any, onUpdate: () 
             </div>
 
             {/* Right: Add Tools */}
-            <div className="w-full md:w-[400px] flex flex-col h-[50%] md:h-full bg-white/[0.02]">
+            <div className="flex-1 flex flex-col h-[50%] md:h-full bg-white/[0.02] min-w-0">
                 <div className="flex border-b border-white/10">
                     <button
                         onClick={() => setMode('MANUAL')}
