@@ -158,30 +158,60 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                                     <tr>
                                         <th className="px-4 py-3 rounded-tl-lg">Date</th>
                                         <th className="px-4 py-3">Campaign</th>
-                                        <th className="px-4 py-3">Amount</th>
+                                        <th className="px-4 py-3">Total / Daily</th>
                                         <th className="px-4 py-3">Duration</th>
+                                        <th className="px-4 py-3">Remaining Balance</th>
                                         <th className="px-4 py-3 rounded-tr-lg">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-white/5">
                                     {ads.filter(a => a.payment).length === 0 ? (
                                         <tr>
-                                            <td colSpan={5} className="px-4 py-8 text-center text-white/30">No payment history available.</td>
+                                            <td colSpan={6} className="px-4 py-8 text-center text-white/30">No payment history available.</td>
                                         </tr>
                                     ) : (
-                                        ads.filter(a => a.payment).map(ad => (
-                                            <tr key={ad.payment!.id} className="hover:bg-white/5 transition-colors">
-                                                <td className="px-4 py-3 text-white/70">{new Date(ad.payment!.createdAt).toLocaleDateString()}</td>
-                                                <td className="px-4 py-3 font-medium text-white">{ad.title}</td>
-                                                <td className="px-4 py-3 text-white">{ad.payment!.currency} {ad.payment!.amount}</td>
-                                                <td className="px-4 py-3 text-white/70">{ad.payment!.durationDays} Days</td>
-                                                <td className="px-4 py-3">
-                                                    <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded text-xs font-bold">
-                                                        PAID
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))
+                                        ads.filter(a => a.payment).map(ad => {
+                                            const payment = ad.payment!;
+                                            const dailyCost = payment.amount / payment.durationDays;
+                                            const expiryDate = new Date(new Date(ad.createdAt).getTime() + payment.durationDays * 24 * 60 * 60 * 1000);
+                                            const now = new Date();
+                                            const isExpired = now > expiryDate;
+                                            const daysRemaining = isExpired ? 0 : Math.ceil((expiryDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                                            const remainingBalance = daysRemaining * dailyCost;
+
+                                            return (
+                                                <tr key={payment.id} className="hover:bg-white/5 transition-colors">
+                                                    <td className="px-4 py-3 text-white/70">{new Date(payment.createdAt).toLocaleDateString()}</td>
+                                                    <td className="px-4 py-3 font-medium text-white max-w-[150px] truncate" title={ad.title}>{ad.title}</td>
+                                                    <td className="px-4 py-3 text-white">
+                                                        <div className="flex flex-col">
+                                                            <span className="font-bold">{payment.currency} {payment.amount.toFixed(2)}</span>
+                                                            <span className="text-[10px] text-white/50">{payment.currency} {dailyCost.toFixed(2)} / day</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-white/70">
+                                                        <div className="flex flex-col">
+                                                            <span>{payment.durationDays} Days</span>
+                                                            <span className="text-[10px] text-white/50">{daysRemaining} days left</span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 font-medium text-white/90">
+                                                        {payment.currency} {remainingBalance.toFixed(2)}
+                                                    </td>
+                                                    <td className="px-4 py-3">
+                                                        {isExpired ? (
+                                                            <span className="bg-white/5 text-white/40 border border-white/10 px-2 py-0.5 rounded text-xs font-bold">
+                                                                COMPLETED
+                                                            </span>
+                                                        ) : (
+                                                            <span className="bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded text-xs font-bold">
+                                                                ACTIVE
+                                                            </span>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })
                                     )}
                                 </tbody>
                             </table>
