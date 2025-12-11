@@ -68,3 +68,103 @@ export async function updateAdsConfig(ads: AdUnit[]) {
     revalidatePath('/admin');
     return { success: true };
 }
+
+// -----------------------------------------------------------------------------
+// SPONSORED POSTS (Home Page Grid Ads)
+// -----------------------------------------------------------------------------
+
+export async function getSponsoredPosts() {
+    try {
+        // Fetch active ads sorted by priority (higher first)
+        const ads = await prisma.sponsoredPost.findMany({
+            where: { isActive: true },
+            orderBy: { priority: 'desc' },
+            cacheStrategy: { ttl: 60, swr: 60 }
+        });
+        return ads;
+    } catch (error) {
+        console.error("Failed to fetch sponsored posts:", error);
+        return [];
+    }
+}
+
+export async function createSponsoredPost(data: { title: string; imageUrl: string; link: string; description?: string; priority?: number }) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        const ad = await prisma.sponsoredPost.create({
+            data
+        });
+        revalidatePath('/');
+        return { success: true, ad };
+    } catch (error) {
+        return { success: false, error };
+    }
+}
+
+export async function toggleSponsoredPostStatus(id: string, isActive: boolean) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        await prisma.sponsoredPost.update({ where: { id }, data: { isActive } });
+        revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error };
+    }
+}
+
+export async function deleteSponsoredPost(id: string) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        await prisma.sponsoredPost.delete({ where: { id } });
+        revalidatePath('/');
+        return { success: true };
+    } catch (error) {
+        return { success: false, error };
+    }
+}
+
+// Temporary Seed Function for Testing
+export async function seedAds() {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        // Allow seeding if no ads exist regardless of auth for initial dev setup, or check count
+        const count = await prisma.sponsoredPost.count();
+        if (count > 0) return { success: false, error: 'Already seeded' };
+    }
+
+    try {
+        await prisma.sponsoredPost.createMany({
+            data: [
+                {
+                    title: 'The Future of AI',
+                    description: 'Explore how AI is changing the landscape of technology.',
+                    imageUrl: 'https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=500&q=80',
+                    link: 'https://openai.com',
+                    priority: 10
+                },
+                {
+                    title: 'Best Coffee in Town',
+                    description: 'Start your morning with the perfect brew.',
+                    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=500&q=80',
+                    link: 'https://starbucks.com',
+                    priority: 5
+                }
+            ]
+        });
+        return { success: true };
+    } catch (error) {
+        return { success: false, error };
+    }
+}

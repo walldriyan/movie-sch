@@ -280,7 +280,9 @@ interface HomePageClientProps {
     currentPage: number;
     searchParams?: { timeFilter?: string, page?: string, sortBy?: string, type?: string, lockStatus?: string };
     session: Session | null;
+
     promoData: PromoData;
+    initialAds?: any[];
 }
 
 export default function HomePageClient({
@@ -292,6 +294,7 @@ export default function HomePageClient({
     searchParams,
     session,
     promoData,
+    initialAds = [],
 }: HomePageClientProps) {
 
     // Remove artificial loading delay - data comes from server
@@ -527,7 +530,26 @@ export default function HomePageClient({
                             </div>
                         ) : (
                             <>
-                                <PostGrid posts={visiblePosts} />
+
+                                {/* Mix Ads into Posts */}
+                                <PostGrid posts={useMemo(() => {
+                                    if (!initialAds || initialAds.length === 0) return visiblePosts;
+                                    const mixed: any[] = [];
+                                    let adIndex = 0;
+
+                                    visiblePosts.forEach((post, i) => {
+                                        mixed.push(post);
+                                        // Insert ad after every 10 posts (10th, 20th, etc.)
+                                        if ((i + 1) % 10 === 0) {
+                                            const ad = initialAds[adIndex % initialAds.length];
+                                            if (ad) {
+                                                mixed.push(ad);
+                                                adIndex++;
+                                            }
+                                        }
+                                    });
+                                    return mixed;
+                                }, [visiblePosts, initialAds])} />
 
                                 {/* Load More Button */}
                                 {hasMore && (

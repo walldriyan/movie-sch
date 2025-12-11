@@ -234,19 +234,110 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
   );
 }
 
-export default function PostGrid({ posts }: MovieGridProps) {
+import { SponsoredPost } from '@prisma/client';
+import { ExternalLink } from 'lucide-react';
+
+// Ad Card Component - Mimics MovieCard
+function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  // Deterministic aspect ratio based on ID string length or similar hash
+  const aspectRatio = useMemo(() => {
+    const val = ad.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    return getAspectRatio(val);
+  }, [ad.id]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  return (
+    <div
+      className="relative overflow-hidden cursor-pointer group border border-purple-500/20 bg-[#1a1a1a] hover:border-purple-500/40 transition-all duration-300"
+      style={{
+        boxShadow: '0 2px 4px rgba(168, 85, 247, 0.1)',
+        borderRadius: '3px'
+      }}
+    >
+      <Link
+        href={ad.link}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="block h-full w-full"
+        aria-label={ad.title}
+      >
+        {/* Image Container with dynamic aspect ratio */}
+        <div className={cn("relative w-full overflow-hidden", aspectRatio)}>
+          <Image
+            src={ad.imageUrl}
+            alt={ad.title}
+            fill
+            className={cn(
+              'object-cover transition-all duration-500 group-hover:scale-105',
+              imageLoaded ? 'opacity-100' : 'opacity-0'
+            )}
+            onLoad={() => setImageLoaded(true)}
+            quality={75}
+          />
+
+          {/* Sponsored Badge */}
+          <div className="absolute top-3 left-3 z-30">
+            <div className={cn(
+              "flex items-center gap-1.5 backdrop-blur-md px-2.5 py-1 text-xs font-bold text-white/90 rounded-full border border-purple-500/30 bg-purple-900/80"
+            )}>
+              <Star className="w-3 h-3 text-purple-300 fill-purple-300" />
+              <span className="uppercase tracking-wider text-[10px]">Sponsored</span>
+            </div>
+          </div>
+
+          {/* Link Icon Overlay */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-gradient-to-t from-purple-900/80 via-purple-900/40 to-transparent">
+            <div className="flex flex-col items-center gap-3 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
+              <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-xl shadow-purple-900/30">
+                <ExternalLink className="w-6 h-6 text-purple-700 ml-0.5" />
+              </div>
+              <span className="text-white text-xs font-medium px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
+                Visit Site
+              </span>
+            </div>
+          </div>
+
+          {/* Bottom gradient and info */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
+            <h3 className="font-bold text-base line-clamp-2 text-white mb-1 group-hover:text-purple-300 transition-colors">
+              {ad.title}
+            </h3>
+            {ad.description && (
+              <p className="text-xs text-white/70 line-clamp-1">
+                {ad.description}
+              </p>
+            )}
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+export default function PostGrid({ posts }: { posts: (Movie | any)[] }) {
   if (!posts || posts.length === 0) {
     return null;
   }
 
   return (
     <div className="columns-2 sm:columns-3 lg:columns-4 xl:columns-5 gap-4">
-      {posts.map((movie, index) => (
-        <div key={movie.id} className="break-inside-avoid mb-4">
-          <MovieCard
-            movie={movie as Movie}
-            index={index}
-          />
+      {posts.map((item, index) => (
+        <div key={item.id + '-' + index} className="break-inside-avoid mb-4">
+          {/* Check if it's an Ad (has 'link' and no 'authorId' usually, or check strict type if available) */}
+          {('link' in item && 'priority' in item) ? (
+            <AdCard ad={item as SponsoredPost} index={index} />
+          ) : (
+            <MovieCard
+              movie={item as Movie}
+              index={index}
+            />
+          )}
         </div>
       ))}
     </div>

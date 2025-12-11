@@ -6,6 +6,7 @@ import HomePageClient from '@/components/home-page-client';
 import { auth } from '@/auth';
 import FeaturedPromo from '@/components/home/featured-promo';
 import { getPromoData } from '@/lib/actions/promo';
+import { getSponsoredPosts, seedAds } from '@/lib/actions/ads';
 
 export default async function HomePage({
     searchParams,
@@ -22,6 +23,9 @@ export default async function HomePage({
 
     const session = await auth();
 
+    // Auto-seed ads if none exist (temporary for demo)
+    await seedAds();
+
     const postDataPromise = getPosts({
         page: currentPage,
         limit: 12,
@@ -30,12 +34,14 @@ export default async function HomePage({
     const usersPromise = getUsers({ limit: 10 });
     const groupsPromise = getPublicGroups();
     const promoDataPromise = getPromoData();
+    const adsPromise = getSponsoredPosts();
 
-    const [{ posts, totalPages }, users, groups, promoData] = await Promise.all([
+    const [{ posts, totalPages }, users, groups, promoData, ads] = await Promise.all([
         postDataPromise,
         usersPromise,
         groupsPromise,
-        promoDataPromise
+        promoDataPromise,
+        adsPromise
     ]);
 
     return (
@@ -45,6 +51,7 @@ export default async function HomePage({
                 initialUsers={users}
                 initialGroups={groups}
                 totalPages={totalPages}
+                initialAds={ads}
                 currentPage={currentPage}
                 searchParams={{ timeFilter, page: String(currentPage), sortBy, type: typeFilter, lockStatus }}
                 session={session}
