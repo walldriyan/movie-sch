@@ -235,7 +235,7 @@ function MovieCard({ movie, index }: { movie: Movie; index: number }) {
 }
 
 import { SponsoredPost } from '@prisma/client';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, Info } from 'lucide-react';
 import { PlaceAdCard } from './home/place-ad-card';
 import { clickAd, incrementAdView } from '@/lib/actions/ads';
 
@@ -268,15 +268,15 @@ function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
         borderRadius: '3px'
       }}
     >
+      {/* 1. Main Background Link (Image) */}
       <Link
         href={ad.link}
         target="_blank"
         rel="noopener noreferrer"
         onClick={handleAdClick}
-        className="block h-full w-full"
+        className="block h-full w-full relative z-10"
         aria-label={ad.title}
       >
-        {/* Image Container with dynamic aspect ratio */}
         <div className={cn("relative w-full overflow-hidden", aspectRatio)}>
           <Image
             src={ad.imageUrl}
@@ -300,18 +300,6 @@ function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
             </div>
           </div>
 
-          {/* Link Icon Overlay */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-20 bg-gradient-to-t from-purple-900/80 via-purple-900/40 to-transparent">
-            <div className="flex flex-col items-center gap-3 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-              <div className="w-14 h-14 rounded-full bg-white/95 flex items-center justify-center shadow-xl shadow-purple-900/30">
-                <ExternalLink className="w-6 h-6 text-purple-700 ml-0.5" />
-              </div>
-              <span className="text-white text-xs font-medium px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/20">
-                Visit Site
-              </span>
-            </div>
-          </div>
-
           {/* Bottom gradient and info */}
           <div className="absolute bottom-0 left-0 right-0 p-4 z-10 bg-gradient-to-t from-black/90 via-black/60 to-transparent">
             <h3 className="font-bold text-base line-clamp-2 text-white mb-1 group-hover:text-purple-300 transition-colors">
@@ -325,6 +313,31 @@ function AdCard({ ad, index }: { ad: SponsoredPost; index: number }) {
           </div>
         </div>
       </Link>
+
+      {/* 2. Hover Overlay with Buttons (Absolute on top of Link) */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300 z-40 bg-purple-900/60 backdrop-blur-[2px] pointer-events-none">
+        <div className="flex flex-col gap-3 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 w-[160px]">
+
+          {/* Visit Page */}
+          <Link href={ad.link} target="_blank" onClick={handleAdClick} className="w-full pointer-events-auto">
+            <div className="bg-white text-black h-10 px-4 rounded-full font-bold flex items-center justify-center gap-2 hover:bg-white/90 shadow-lg text-xs">
+              <ExternalLink className="w-3.5 h-3.5" />
+              Visit Page
+            </div>
+          </Link>
+
+          {/* View Details */}
+          {ad.userId && (
+            <Link href={`/profile/${ad.userId}?filter=ad_view&adId=${ad.id}`} className="w-full pointer-events-auto">
+              <div className="bg-black/40 text-white h-10 px-4 rounded-full font-bold flex items-center justify-center gap-2 hover:bg-black/60 border border-white/20 backdrop-blur-md transition-colors text-xs">
+                <Info className="w-3.5 h-3.5" />
+                View Details
+              </div>
+            </Link>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 }

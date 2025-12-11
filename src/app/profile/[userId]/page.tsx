@@ -4,6 +4,7 @@ import prisma from '@/lib/prisma';
 import ProfileHeader from '@/components/profile/profile-header';
 import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
+import PublicAdView from '@/components/profile/public-ad-view';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -13,11 +14,11 @@ export default async function ProfilePage({
     searchParams
 }: {
     params: Promise<{ userId: string }>,
-    searchParams: Promise<{ filter?: string }>
+    searchParams: Promise<{ filter?: string, adId?: string }>
 }) {
     const session = await auth();
     const { userId } = await params;
-    const { filter: filterParam } = await searchParams;
+    const { filter: filterParam, adId } = await searchParams;
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
@@ -38,19 +39,34 @@ export default async function ProfilePage({
     let content;
 
     // Logic to select content
+    // Logic to select content
     if (filter === 'ads' && isOwnProfile) {
         const adsRaw = await prisma.sponsoredPost.findMany({
             where: { userId: user.id },
             orderBy: { createdAt: 'desc' },
             include: { payment: true }
         });
-        // Serialize to avoid "Date object passed to Client Component" warning/error
         const ads = JSON.parse(JSON.stringify(adsRaw));
         content = (
             <Suspense fallback={<div className="w-full h-40 flex items-center justify-center text-white/40">Loading Ads...</div>}>
                 <ProfileAdsList ads={ads} isOwnProfile={isOwnProfile} />
             </Suspense>
         );
+    } else if (filter === 'ad_view' && adId) {
+        const adRaw = await prisma.sponsoredPost.findUnique({ where: { id: adId } });
+
+        const canView = adRaw && (
+            adRaw.status === 'APPROVED' ||
+            (session?.user?.id && adRaw.userId === session.user.id) ||
+            session?.user?.role === 'SUPER_ADMIN'
+        );
+
+        if (canView) {
+            const ad = JSON.parse(JSON.stringify(adRaw));
+            content = <PublicAdView ad={ad} />;
+        } else {
+            content = <div className="text-center py-20 text-white/50">Ad content unavailable.</div>;
+        }
     }
     // Simplified: Only implementing Posts and Ads for now to ensure this works. 
     // Expand for Series/Exams if needed or if components are verified compatible.
