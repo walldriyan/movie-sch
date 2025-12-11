@@ -161,20 +161,54 @@ const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCov
                 {/* User Profile - Absolute Bottom Center - Magnified & Clickable */}
                 {user && (
                     <Link href={`/profile/${user.id}`} className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-4 duration-700 group cursor-pointer">
-                        <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-black/50 shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:border-primary/50">
-                            {user.image && <AvatarImage src={user.image} alt={user.name || 'User'} className="object-cover" />}
-                            <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-primary to-purple-600 text-white">
-                                {user.name?.charAt(0).toUpperCase() || 'U'}
-                            </AvatarFallback>
-                        </Avatar>
+                        <div className="relative">
+                            <Avatar className="w-28 h-28 md:w-36 md:h-36 border-4 border-black/50 shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:border-primary/50 text-3xl font-bold bg-[#1a1a1a]">
+                                {user.image && <AvatarImage src={user.image} alt={user.name || 'User'} className="object-cover" />}
+                                <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-primary to-purple-600 text-white">
+                                    {user.name?.charAt(0).toUpperCase() || 'U'}
+                                </AvatarFallback>
+                            </Avatar>
+
+                            {/* Home Hero Badge */}
+                            {(() => {
+                                let label = 'FREE';
+                                if (user.role === 'SUPER_ADMIN') label = 'ADMIN';
+                                else if (user.subscription?.planName) {
+                                    label = user.subscription.planName;
+                                    if (label.toLowerCase().includes('pro') || label.toLowerCase().includes('premium')) label = 'PRO';
+                                } else if (user.isPro) label = 'PRO'; // Fallback
+
+                                return (
+                                    <>
+                                        <div className="absolute top-1/2 -right-3 md:-right-4 transform translate-x-1/2 -translate-y-1/2 hidden md:block z-30">
+                                            <div className={cn(
+                                                "px-3 py-1 rounded-full border text-xs font-bold tracking-widest uppercase shadow-2xl backdrop-blur-md whitespace-nowrap",
+                                                label === 'FREE'
+                                                    ? "bg-black/60 border-white/10 text-white/70"
+                                                    : "bg-gradient-to-r from-indigo-500/80 to-purple-500/80 border-white/20 text-white"
+                                            )}>
+                                                {label}
+                                            </div>
+                                        </div>
+                                        {/* Mobile Home Hero Badge */}
+                                        <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 md:hidden z-30">
+                                            <div className={cn(
+                                                "px-2 py-0.5 rounded-full border text-[9px] font-bold tracking-wider uppercase shadow-xl backdrop-blur-md whitespace-nowrap",
+                                                label === 'FREE'
+                                                    ? "bg-black/80 border-white/10 text-white/70"
+                                                    : "bg-gradient-to-r from-indigo-600/90 to-purple-600/90 border-white/20 text-white"
+                                            )}>
+                                                {label}
+                                            </div>
+                                        </div>
+                                    </>
+                                );
+                            })()}
+                        </div>
+
                         <div className="text-center group-hover:text-primary transition-colors duration-300">
                             <h3 className="font-bold text-white text-xl md:text-2xl drop-shadow-md flex items-center gap-2 justify-center bg-black/30 backdrop-blur-sm px-4 py-1 rounded-full border border-white/5">
                                 {user.name}
-                                {user.role !== 'USER' && (
-                                    <span className="bg-primary/20 text-primary text-[10px] px-2 py-0.5 rounded border border-primary/20">
-                                        {user.role === 'SUPER_ADMIN' ? 'Admin' : 'Creator'}
-                                    </span>
-                                )}
                             </h3>
                         </div>
                     </Link>

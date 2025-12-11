@@ -208,7 +208,33 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         if (!profileUser) return notFound();
 
         const isOwnProfile = session?.user?.id === profileUser.id;
+
+        // Fetch subscription for badge display
+        const profileSub = await prisma.userSubscription.findFirst({
+            where: {
+                userId: profileUser.id,
+                status: 'ACTIVE',
+                endDate: { gt: new Date() }
+            },
+            include: { plan: true },
+            orderBy: { endDate: 'desc' }
+        });
+
+        // Determine badge label
+        // Determine badge label
+        let planLabel = 'FREE'; // Default to FREE
+
+        if (profileUser.role === 'SUPER_ADMIN') {
+            planLabel = 'ADMIN';
+        } else if ((profileSub as any)?.plan?.name) {
+            planLabel = (profileSub as any).plan.name; // e.g. "Pro Weekly" or "Gold"
+            // Simplify if needed, e.g. just "PRO" if checks out
+            if (planLabel.toLowerCase().includes('pro')) planLabel = 'PRO';
+            else if (planLabel.toLowerCase().includes('premium')) planLabel = 'PRO';
+        }
+
         const stats = await getUserStats(profileUser.id);
+
 
         let displayPosts: any[] = [];
         let displaySeries: any[] = [];
@@ -277,7 +303,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
         return (
             <div className="min-h-screen bg-background">
-                <ProfileHeader user={profileUser} currentFilter={profileFilter} isOwnProfile={isOwnProfile} stats={stats} />
+                <ProfileHeader user={profileUser} currentFilter={profileFilter} isOwnProfile={isOwnProfile} stats={stats} planLabel={planLabel} />
                 <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-16">
                     <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                         <div className="lg:col-span-3">

@@ -18,7 +18,7 @@ interface ProfileStats {
   followingCount: number;
 }
 
-export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats, adId }: { user: User, currentFilter: string, isOwnProfile: boolean, stats: ProfileStats, adId?: string }) {
+export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats, adId, planLabel }: { user: User, currentFilter: string, isOwnProfile: boolean, stats: ProfileStats, adId?: string, planLabel?: string | null }) {
   const coverImage = user.coverImage || 'https://images.unsplash.com/photo-1557682250-33bd709cbe85?w=1920&q=80';
 
   const userAvatar =
@@ -88,8 +88,37 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
                   </AvatarFallback>
                 </Avatar>
               </div>
+
               {/* Online Status */}
               <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-[#0a0a0a] z-20 shadow-lg" />
+
+              {/* === PLAN BADGE === */}
+              {/* === PLAN BADGE === */}
+              {planLabel && (
+                <div className="absolute top-1/2 -right-3 md:-right-4 transform translate-x-1/2 -translate-y-1/2 z-30 hidden md:block">
+                  <div className={cn(
+                    "px-3 py-1 rounded-full border text-xs font-bold tracking-widest uppercase shadow-2xl animate-in fade-in zoom-in duration-500 whitespace-nowrap backdrop-blur-md",
+                    planLabel === 'FREE'
+                      ? "bg-black/60 border-white/10 text-white/70"
+                      : "bg-gradient-to-r from-indigo-500/80 to-purple-500/80 border-white/20 text-white"
+                  )}>
+                    {planLabel}
+                  </div>
+                </div>
+              )}
+              {/* Mobile Badge Position */}
+              {planLabel && (
+                <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 z-30 md:hidden">
+                  <div className={cn(
+                    "px-3 py-0.5 rounded-full border text-[10px] font-bold tracking-wider uppercase shadow-xl whitespace-nowrap backdrop-blur-md",
+                    planLabel === 'FREE'
+                      ? "bg-black/80 border-white/10 text-white/70"
+                      : "bg-gradient-to-r from-indigo-600/90 to-purple-600/90 border-white/20 text-white"
+                  )}>
+                    {planLabel}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* User Info */}

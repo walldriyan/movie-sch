@@ -253,6 +253,7 @@ export const authConfig: NextAuthConfig = {
         token.permissions = user.permissions || [];
 
         try {
+
           const sub = await prisma.userSubscription.findFirst({
             where: {
               userId: user.id!,
@@ -263,15 +264,32 @@ export const authConfig: NextAuthConfig = {
             orderBy: { endDate: 'desc' }
           });
 
-          token.isPro = !!sub;
-          if (sub) {
-            token.subscription = {
+          if (user.role === 'SUPER_ADMIN') {
+            token.isPro = true;
+            token.subscription = sub ? {
               planName: (sub as any).plan?.name,
               endDate: sub.endDate
-            };
+            } : {
+              planName: 'Unlimited Access',
+              endDate: null
+            }
+          } else {
+            token.isPro = !!sub;
+            if (sub) {
+              token.subscription = {
+                planName: (sub as any).plan?.name,
+                endDate: sub.endDate
+              };
+            }
           }
         } catch (e) {
-          token.isPro = false;
+          // Fallback if DB fails, but maintain super admin status if role is known
+          if (user.role === 'SUPER_ADMIN') {
+            token.isPro = true;
+            token.subscription = { planName: 'Unlimited Access', endDate: null };
+          } else {
+            token.isPro = false;
+          }
         }
       }
 
