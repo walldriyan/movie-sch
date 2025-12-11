@@ -20,6 +20,7 @@ import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
 import PublicAdList from '@/components/profile/public-ad-list';
+import PublicAdView from '@/components/profile/public-ad-view';
 import prisma from '@/lib/prisma';
 import { ROLES } from '@/lib/permissions';
 import { Loader2, AlertCircle } from 'lucide-react';
@@ -212,6 +213,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         let displayExams: any[] = [];
         let displayAds: any[] = [];
         let publicAds: any[] = [];
+        let highlightedAd: any = null;
         let totalSeriesCount = 0;
         const adIdParam = params.adId;
 
@@ -253,11 +255,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 },
                 orderBy: { createdAt: 'desc' }
             });
-            if (specificAd && specificAd.userId === profileUser.id) {
-                publicAds = [specificAd, ...activeAdsRaw];
-            } else {
-                publicAds = activeAdsRaw;
-            }
+
+            highlightedAd = specificAd;
+            publicAds = activeAdsRaw;
         }
 
         return (
@@ -274,7 +274,16 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                 ) : profileFilter === 'ads' ? (
                                     <ProfileAdsList ads={displayAds} isOwnProfile={isOwnProfile} />
                                 ) : profileFilter === 'ad_view' ? (
-                                    <PublicAdList ads={publicAds} highlightId={adIdParam} />
+                                    <div className="space-y-12">
+                                        {highlightedAd && (
+                                            <div className="animate-in slide-in-from-top-4 duration-500">
+                                                <PublicAdView ad={highlightedAd} />
+                                                <div className="my-8 border-b border-white/5" />
+                                                <h3 className="text-xl font-bold text-white mb-6 px-4">More from this Creator</h3>
+                                            </div>
+                                        )}
+                                        <PublicAdList ads={publicAds} highlightId={adIdParam} />
+                                    </div>
                                 ) : (
                                     <ProfilePostList posts={displayPosts} isOwnProfile={isOwnProfile} currentFilter={profileFilter} profileUser={profileUser} />
                                 )}
