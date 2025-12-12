@@ -49,7 +49,7 @@ interface FeaturedPromoProps {
         mediaUrl: string;
         title: string;
         description: string;
-        linkUrl: string;
+        linkUrl?: string;
         audioTracks?: AudioTrack[];
         playlistId?: string; // New: Link to DB playlist
     };

@@ -161,43 +161,19 @@ const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCov
                         </div>
 
                         {/* ADVANCED AUDIO PLAYER - Integrated here */}
-                        <AdvancedAudioPlayer className="mt-4" canEdit={isPrivileged} />
+                        {/* ADVANCED AUDIO PLAYER - Removed (Moved to Avatar) */}
                     </div>
                 </div>
 
-                {/* User Profile - Absolute Bottom Center - Magnified & Clickable */}
+                {/* User Profile / Hero Player - Absolute Bottom Center */}
                 {user && (
-                    <Link href={`/profile/${user.id}`} className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-4 duration-700 group cursor-pointer">
-                        {/* Same profile code */}
-                        <div className="relative">
-                            <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-black/50 shadow-2xl transition-transform duration-300 group-hover:scale-105 group-hover:border-primary/50 text-3xl font-bold bg-[#1a1a1a]">
-                                {user.image && <AvatarImage src={user.image} alt={user.name || 'User'} className="object-cover" />}
-                                <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-primary to-purple-600 text-white">
-                                    {user.name?.charAt(0).toUpperCase() || 'U'}
-                                </AvatarFallback>
-                            </Avatar>
-
-                            {/* Home Hero Badge */}
-                            {(() => {
-                                let label = 'FREE';
-                                if (user.role === 'SUPER_ADMIN') label = 'ADMIN';
-                                else if (user.subscription?.planName) {
-                                    label = user.subscription.planName;
-                                    if (label.toLowerCase().includes('pro') || label.toLowerCase().includes('premium')) label = 'PRO';
-                                } else if (user.isPro) label = 'PRO'; // Fallback
-
-                                return (
-                                    <>
-                                        <div className="absolute top-1/2 -right-3 md:-right-4 transform translate-x-1/2 -translate-y-1/2 hidden md:block z-30">
-                                            <div className="px-3 py-1 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-white text-xs font-bold tracking-widest uppercase shadow-2xl whitespace-nowrap">
-                                                {label}
-                                            </div>
-                                        </div>
-                                    </>
-                                );
-                            })()}
-                        </div>
-                    </Link>
+                    <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col items-center gap-3 z-20 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                        <AdvancedAudioPlayer
+                            variant="hero"
+                            user={user}
+                            canEdit={isPrivileged}
+                        />
+                    </div>
                 )}
             </div>
         </section>

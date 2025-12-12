@@ -17,6 +17,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from 'next/image';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { MediaManager } from './media-manager';
 
 // Server Actions
@@ -35,9 +36,11 @@ import { Upload, FileAudio } from 'lucide-react'; // Added icons
 interface AdvancedAudioPlayerProps {
     className?: string;
     canEdit?: boolean; // If user is admin
+    variant?: 'default' | 'hero';
+    user?: any; // For hero avatar
 }
 
-export function AdvancedAudioPlayer({ className, canEdit = false }: AdvancedAudioPlayerProps) {
+export function AdvancedAudioPlayer({ className, canEdit = false, variant = 'default', user }: AdvancedAudioPlayerProps) {
     // Player State
     const [playlist, setPlaylist] = useState<any>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
@@ -140,7 +143,33 @@ export function AdvancedAudioPlayer({ className, canEdit = false }: AdvancedAudi
         loadActivePlaylist();
     };
 
+    // --- RENDER LOGIC ---
+
+    // 1. No Playlist / No Track Active
     if (!playlist || !currentTrack) {
+        if (variant === 'hero' && user) {
+            return (
+                <div className={cn("relative group cursor-pointer", className)}>
+                    <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-black/50 shadow-2xl bg-[#1a1a1a]">
+                        {user.image && <AvatarImage src={user.image} alt={user.name || 'User'} className="object-cover" />}
+                        <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+                            {user.name?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                    </Avatar>
+
+                    {/* Admin Setup Trigger */}
+                    {canEdit && (
+                        <div className="absolute -top-2 -right-2 bg-black/80 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity z-50">
+                            <Button size="icon" variant="ghost" className="h-6 w-6 text-white" onClick={(e) => { e.stopPropagation(); setIsEditOpen(true); }}>
+                                <Edit2 className="w-3 h-3" />
+                            </Button>
+                        </div>
+                    )}
+                    <MediaManager isOpen={isEditOpen} onOpenChange={setIsEditOpen} enableActiveToggle={true} />
+                </div>
+            );
+        }
+
         if (canEdit) {
             return (
                 <div className={cn("inline-flex", className)}>
@@ -151,12 +180,103 @@ export function AdvancedAudioPlayer({ className, canEdit = false }: AdvancedAudi
                     <MediaManager
                         isOpen={isEditOpen}
                         onOpenChange={setIsEditOpen}
-                        enableActiveToggle={true} // Allow setting active for hero
+                        enableActiveToggle={true}
                     />
                 </div>
             );
         }
         return null;
+    }
+
+    // 2. HERO VARIANT (Active)
+    if (variant === 'hero' && user) {
+        const togglePlay = (e: React.MouseEvent) => {
+            e.stopPropagation();
+            setIsPlaying(!isPlaying);
+        };
+
+        return (
+            <div className={cn("relative z-20 pointer-events-auto", className)}>
+                {hasMounted && (
+                    <ReactPlayer
+                        ref={playerRef}
+                        url={currentTrack.url}
+                        playing={isPlaying}
+                        volume={volume}
+                        width="0"
+                        height="0"
+                        onProgress={(state) => setProgress(state.played)}
+                        onDuration={setDuration}
+                        onEnded={handleNext}
+                        style={{ display: 'none' }}
+                    />
+                )}
+
+                <div
+                    onClick={togglePlay}
+                    className="relative group cursor-pointer transform transition-transform duration-300 hover:scale-105 active:scale-95"
+                >
+                    {/* Glow/Blur Effect when playing */}
+                    <div className={cn(
+                        "absolute inset-0 rounded-full bg-gradient-to-r from-pink-500 to-purple-600 blur-xl opacity-0 transition-opacity duration-700",
+                        isPlaying && "opacity-70 animate-pulse"
+                    )} />
+
+                    {/* Spinning Border or Ring */}
+                    <div className={cn(
+                        "absolute -inset-1 rounded-full border-2 border-transparent transition-all duration-700",
+                        isPlaying ? "border-pink-500/50 rotate-180" : "border-transparent"
+                    )} />
+
+                    <Avatar className={cn(
+                        "w-24 h-24 md:w-32 md:h-32 border-4 shadow-2xl transition-all duration-500 bg-[#1a1a1a]",
+                        isPlaying ? "border-pink-500/50 scale-[1.02]" : "border-black/50"
+                    )}>
+                        {user.image && <AvatarImage src={user.image} alt={user.name || 'User'} className="object-cover" />}
+                        <AvatarFallback className="text-4xl font-bold bg-gradient-to-br from-pink-500 to-purple-600 text-white">
+                            {user.name?.charAt(0).toUpperCase() || 'U'}
+                        </AvatarFallback>
+                    </Avatar>
+
+                    {/* Play/Pause Overlay Icon */}
+                    <div className={cn(
+                        "absolute inset-0 flex items-center justify-center rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]",
+                        isPlaying && "opacity-30"
+                    )}>
+                        {isPlaying ? <Pause className="w-10 h-10 text-white fill-white" /> : <Play className="w-10 h-10 text-white fill-white ml-1" />}
+                    </div>
+
+                    {/* Admin Edit Trigger */}
+                    {canEdit && (
+                        <div className="absolute top-0 right-0 z-50 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                                size="icon"
+                                variant="secondary"
+                                className="h-6 w-6 rounded-full bg-black/80 text-white hover:bg-pink-600 border border-white/20"
+                                onClick={() => { setIsEditOpen(true); loadAllPlaylists(); }}
+                            >
+                                <Edit2 className="w-3 h-3" />
+                            </Button>
+                        </div>
+                    )}
+
+                    {/* Status Badge */}
+                    {user.role === 'SUPER_ADMIN' && (
+                        <div className="absolute top-1/2 -right-3 md:-right-4 transform translate-x-1/2 -translate-y-1/2 hidden md:block z-30 pointer-events-none">
+                            <div className="px-3 py-1 rounded-full border border-white/20 bg-white/10 backdrop-blur-md text-white text-xs font-bold tracking-widest uppercase shadow-2xl whitespace-nowrap">
+                                ADMIN
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                <MediaManager
+                    isOpen={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    enableActiveToggle={true}
+                />
+            </div>
+        );
     }
 
     return (
