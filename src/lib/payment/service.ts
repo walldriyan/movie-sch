@@ -161,14 +161,6 @@ export class PaymentService {
             return { success: true, type: 'SUBSCRIPTION', data: result };
 
         } else if (key.type === AccessKeyType.AD_CAMPAIGN) {
-            // Handle Ad Credit Logic here
-            // For now, let's assume it grants a "Credit" or activates a specific pending ad if linked
-            // This part depends on how you want to handle "Ad Keys".
-            // If the key is generic "1000 LKR Credit", store it in a wallet?
-            // Or if the key is "Activate This Specific Ad"?
-
-            // Implementation for now: Just record the payment and mark used. 
-            // User likely needs to 'pay' for an ad specifically.
 
             const payment = await prisma.paymentRecord.create({
                 data: {
@@ -190,7 +182,7 @@ export class PaymentService {
                 }
             });
 
-            return { success: true, type: 'AD_CREDIT', data: payment };
+            return { success: true, type: 'AD_CAMPAIGN', data: payment };
         }
     }
 }

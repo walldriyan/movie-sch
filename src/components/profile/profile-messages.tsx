@@ -162,8 +162,17 @@ export default function ProfileMessages({ user }: { user: User }) {
 
                         {/* 2. Messages List */}
                         <Card className="lg:col-span-2 bg-[#111112] border border-white/[0.02] text-white rounded-sm shadow-sm">
-                            <CardHeader>
+                            <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-white/5 bg-white/[0.02]">
                                 <CardTitle className="text-lg">Conversation History</CardTitle>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={loadMessages}
+                                    disabled={loading}
+                                    className="h-8 w-8 p-0 text-white/50 hover:text-white"
+                                >
+                                    <RotateCw className={cn("w-4 h-4", loading && "animate-spin")} />
+                                </Button>
                             </CardHeader>
                             <CardContent className="p-0">
                                 <ScrollArea className="h-[600px] pr-4">

@@ -62,12 +62,34 @@ export default async function ProfilePage({
             }
         });
 
+        // Fetch Ad Requests/Feedback for this user to display in Access Tab
+        const feedbacksRaw = await prisma.feedback.findMany({
+            where: {
+                userId: user.id,
+                title: { contains: '[AD_REQUEST]' }
+            },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                replies: {
+                    include: { user: true },
+                    orderBy: { createdAt: 'desc' }
+                }
+            },
+            take: 5 // Limit to recent 5 requests
+        });
+
         const ads = JSON.parse(JSON.stringify(adsRaw));
         const history = JSON.parse(JSON.stringify(historyRaw));
+        const adFeedbacks = JSON.parse(JSON.stringify(feedbacksRaw));
 
         content = (
             <Suspense fallback={<div className="w-full h-40 flex items-center justify-center text-white/40">Loading Ads...</div>}>
-                <ProfileAdsList ads={ads} history={history} isOwnProfile={isOwnProfile} />
+                <ProfileAdsList
+                    ads={ads}
+                    history={history}
+                    adFeedbacks={adFeedbacks}
+                    isOwnProfile={isOwnProfile}
+                />
             </Suspense>
         );
     } else if (filter === 'ad_view') {

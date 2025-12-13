@@ -1,9 +1,8 @@
-
 'use client';
 
-import { useState } from 'react';
-import { Feedback, FeedbackReply, User, FeedbackStatus } from '@prisma/client';
-import { Card, CardContent } from '@/components/ui/card';
+import { useState, useEffect } from 'react';
+import { Feedback, FeedbackReply, FeedbackStatus } from '@prisma/client';
+import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +10,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { replyToFeedback, updateFeedbackStatus } from '@/lib/actions/feedback';
 import { generateAdKeyAction } from '@/lib/actions/admin-payment';
-import { Loader2, Send, CheckCircle2, MessageSquare, Key, XCircle } from 'lucide-react';
+import { Loader2, Send, CheckCircle2, MessageSquare, Key, XCircle, RotateCw } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import ClientSideDate from '@/components/manage/client-side-date';
@@ -22,15 +22,28 @@ type ExtendedFeedback = Feedback & {
 };
 
 export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbacks: ExtendedFeedback[] }) {
+    const router = useRouter();
     const [feedbacks, setFeedbacks] = useState(initialFeedbacks);
     const [filter, setFilter] = useState<'ALL' | 'UNREAD' | 'AD_REQUEST'>('ALL');
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [replyMessage, setReplyMessage] = useState('');
     const [isReplying, setIsReplying] = useState(false);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     // Key Gen State
     const [genAmount, setGenAmount] = useState('5000');
     const [isGenerating, setIsGenerating] = useState(false);
+
+    // Sync prop changes (e.g. from refresh) to local state
+    useEffect(() => {
+        setFeedbacks(initialFeedbacks);
+    }, [initialFeedbacks]);
+
+    async function handleRefresh() {
+        setIsRefreshing(true);
+        router.refresh();
+        setTimeout(() => setIsRefreshing(false), 1000);
+    }
 
     const filtered = feedbacks.filter(f => {
         if (filter === 'UNREAD') return f.status === 'UNREAD';
@@ -47,7 +60,6 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
             await replyToFeedback(selectedId, replyMessage);
             toast.success('Reply sent');
             setReplyMessage('');
-            // Optimistic update could happen here but we rely on revalidation or refesh
         } catch (e) {
             toast.error('Failed to reply');
         } finally {
@@ -60,7 +72,6 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
         try {
             await updateFeedbackStatus(selectedId, status);
             toast.success('Status updated');
-            // Update local state
             setFeedbacks(prev => prev.map(f => f.id === selectedId ? { ...f, status } : f));
         } catch (e) {
             toast.error('Failed');
@@ -85,9 +96,9 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
             {/* List */}
             <Card className="md:col-span-1 flex flex-col overflow-hidden">
-                <div className="p-4 border-b space-y-4">
+                <div className="p-4 border-b space-y-4 flex items-center gap-2">
                     <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
-                        <SelectTrigger>
+                        <SelectTrigger className="flex-1">
                             <SelectValue placeholder="Filter" />
                         </SelectTrigger>
                         <SelectContent>
@@ -96,6 +107,15 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
                             <SelectItem value="AD_REQUEST">Ad Requests</SelectItem>
                         </SelectContent>
                     </Select>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={handleRefresh}
+                        disabled={isRefreshing}
+                        title="Refresh Messages"
+                    >
+                        <RotateCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
+                    </Button>
                 </div>
                 <ScrollArea className="flex-1">
                     <div className="divide-y">

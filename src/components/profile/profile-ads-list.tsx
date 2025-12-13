@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { SponsoredPost, PaymentRecord, AccessKey } from '@prisma/client';
+import { SponsoredPost, PaymentRecord, AccessKey, Feedback, FeedbackReply, User } from '@prisma/client';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid, Key, MessageSquare, ShieldCheck, CheckCircle2, Loader2, Lock } from 'lucide-react';
+import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid, Key, MessageSquare, ShieldCheck, CheckCircle2, Loader2, Lock, Copy } from 'lucide-react';
 import { toggleUserAdStatus, deleteSponsoredPost } from '@/lib/actions/ads';
 import { redeemKeyAction } from '@/lib/actions/payment-actions';
 import { createFeedback } from '@/lib/actions/feedback';
@@ -17,11 +17,13 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CreateAdWizard from './create-ad-wizard';
+import ClientSideDate from '../manage/client-side-date';
 
 type AdWithPayment = SponsoredPost & { paymentRecord: PaymentRecord | null, endDate: Date | null };
 type PaymentWithDetails = PaymentRecord & { accessKey: AccessKey | null };
+type ExtendedFeedback = Feedback & { replies: (FeedbackReply & { user: User })[] };
 
-function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: PaymentWithDetails[] }) {
+function AdAccessWizard({ ads, history, adFeedbacks }: { ads: AdWithPayment[], history?: PaymentWithDetails[], adFeedbacks?: ExtendedFeedback[] }) {
     const { toast } = useToast();
     const router = useRouter();
 
@@ -35,6 +37,11 @@ function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: Paym
 
     // Filter relevant "Ad Credit" history
     const adHistory = history ? history.filter(h => h.type === 'AD_CAMPAIGN' || h.accessKey?.type === 'AD_CAMPAIGN') : [];
+
+    const handleCopy = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: "Copied!", description: "Code copied to clipboard." });
+    };
 
     return (
         <div className="space-y-8">
@@ -88,6 +95,7 @@ function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: Paym
                                     if (res.success) {
                                         toast({ title: "Request Sent", description: "Admin will review and reply with a code." });
                                         setRequestMessage('');
+                                        router.refresh();
                                     } else {
                                         toast({ title: "Error", description: "Failed to send.", variant: "destructive" });
                                     }
@@ -98,7 +106,7 @@ function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: Paym
                             className="w-full bg-white text-black hover:bg-white/90"
                         >
                             {isSending ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                            Send Request
+                            Send Request & Refresh
                         </Button>
                     </div>
                 </div>
@@ -121,7 +129,7 @@ function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: Paym
                             <Input
                                 value={code}
                                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                                placeholder="XXXX-YYYY-ZZZZ"
+                                placeholder="AD-XXXX-YYYY"
                                 className="bg-white/5 border-white/10 text-white font-mono tracking-widest text-center uppercase"
                             />
                         </div>
@@ -150,9 +158,65 @@ function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: Paym
                 </div>
             </div>
 
-            {/* 3. History Table (Moved here as requested) */}
+            {/* NEW: Recent Ad Requests Display (To show Codes) */}
+            {adFeedbacks && adFeedbacks.length > 0 && (
+                <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6">
+                    <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">Recent Requests & Messages</h3>
+                    <div className="space-y-4">
+                        {adFeedbacks.map(feedback => {
+                            const lastAdminReply = feedback.replies
+                                ?.filter(r => r.user.role === 'SUPER_ADMIN' || r.user.email?.includes('admin')) // Basic check, ideally check role
+                                .slice(-1)[0];
+
+                            // Try to extract code pattern AD-XXXX-YYYY
+                            const codeMatch = lastAdminReply?.message.match(/AD-[A-Z0-9]{4}-[A-Z0-9]{4}/);
+                            const extractedCode = codeMatch ? codeMatch[0] : null;
+
+                            return (
+                                <div key={feedback.id} className="bg-white/5 border border-white/5 rounded-md p-4">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div>
+                                            <h4 className="font-semibold text-white text-sm">{feedback.title}</h4>
+                                            <p className="text-xs text-white/40"><ClientSideDate date={feedback.createdAt} /></p>
+                                        </div>
+                                        <Badge variant={feedback.status === 'UNREAD' ? 'secondary' : 'outline'} className="text-[10px]">{feedback.status}</Badge>
+                                    </div>
+
+                                    {lastAdminReply ? (
+                                        <div className="mt-3 bg-purple-500/10 border border-purple-500/20 rounded-md p-3 relative">
+                                            <p className="text-xs text-purple-200 font-bold mb-1">Admin Response:</p>
+                                            <p className="text-sm text-white/90 whitespace-pre-wrap">{lastAdminReply.message}</p>
+
+                                            {extractedCode && (
+                                                <div className="mt-2 flex items-center gap-2">
+                                                    <code className="bg-black/40 px-2 py-1 rounded text-green-400 font-mono text-sm border border-white/10">{extractedCode}</code>
+                                                    <Button
+                                                        size="sm"
+                                                        variant="ghost"
+                                                        className="h-6 w-6 p-0 hover:bg-white/10"
+                                                        onClick={() => {
+                                                            handleCopy(extractedCode);
+                                                            setCode(extractedCode);
+                                                        }}
+                                                    >
+                                                        <Copy className="w-3 h-3" />
+                                                    </Button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    ) : (
+                                        <p className="text-xs text-white/30 italic mt-2">Waiting for admin reply...</p>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                </div>
+            )}
+
+            {/* History Table */}
             <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6">
-                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">Access & Key History</h3>
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">Redeemed History</h3>
                 <div className="overflow-hidden rounded-md border border-white/5">
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs text-white/40 uppercase bg-white/5 border-b border-white/5">
@@ -188,7 +252,7 @@ function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: Paym
     );
 }
 
-export default function ProfileAdsList({ ads, isOwnProfile, history }: { ads: AdWithPayment[], isOwnProfile: boolean, history?: PaymentWithDetails[] }) {
+export default function ProfileAdsList({ ads, isOwnProfile, history, adFeedbacks }: { ads: AdWithPayment[], isOwnProfile: boolean, history?: PaymentWithDetails[], adFeedbacks?: ExtendedFeedback[] }) {
     const searchParams = useSearchParams();
     const router = useRouter();
 
@@ -256,7 +320,7 @@ export default function ProfileAdsList({ ads, isOwnProfile, history }: { ads: Ad
                         <TabsList className="bg-[#111112] border border-white/[0.02] p-1 rounded-sm w-full md:w-auto grid grid-cols-4 md:flex">
                             <TabsTrigger value="access" className="rounded-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
                                 <Key className="w-4 h-4 mr-2" />
-                                Access
+                                <AccessTabLabel isAdvertiser={isAdvertiser} />
                             </TabsTrigger>
                             <TabsTrigger value="overview" className="rounded-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
                                 <LayoutGrid className="w-4 h-4 mr-2" />
@@ -293,7 +357,7 @@ export default function ProfileAdsList({ ads, isOwnProfile, history }: { ads: Ad
             {/* Access & Requests Wizard */}
             {activeTab === 'access' && isOwnProfile && (
                 <div className="animate-in slide-in-from-left-4 duration-300">
-                    <AdAccessWizard ads={ads} history={history} />
+                    <AdAccessWizard ads={ads} history={history} adFeedbacks={adFeedbacks} />
                 </div>
             )}
 
@@ -450,6 +514,10 @@ export default function ProfileAdsList({ ads, isOwnProfile, history }: { ads: Ad
             )}
         </div >
     );
+}
+
+function AccessTabLabel({ isAdvertiser }: { isAdvertiser: boolean }) {
+    return <span>Access</span>;
 }
 
 function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean }) {
