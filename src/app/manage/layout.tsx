@@ -187,6 +187,12 @@ export default function ManageLayout({
                 label="Payment Manager"
                 isActive={isActive('/admin/payments')}
               />
+              <NavItem
+                href="/admin/messages"
+                icon={MessageSquareWarning}
+                label="Messages & Requests"
+                isActive={isActive('/admin/messages')}
+              />
             </NavSection>
           )}
         </nav>
