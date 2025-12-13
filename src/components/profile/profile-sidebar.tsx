@@ -80,7 +80,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
   return (
     <div className="space-y-6">
       {/* About Card */}
-      <div className="rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.06] p-5">
+      <div className="rounded-2xl bg-[#111112] border border-white/[0.02] shadow-sm p-5">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Users className="w-5 h-5 text-purple-400" />
           About
@@ -98,7 +98,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
         {/* Social Links */}
         {(profileUser.website || profileUser.twitter || profileUser.linkedin) && (
-          <div className="flex items-center gap-3 pt-3 border-t border-white/[0.06]">
+          <div className="flex items-center gap-3 pt-3 border-t border-white/[0.02]">
             {profileUser.website && (
               <Link
                 href={profileUser.website}
@@ -135,7 +135,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
       {/* My Account Card - Only for own profile */}
       {isOwnProfile && loggedInUser && (
-        <div className="rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.06] p-5">
+        <div className="rounded-2xl bg-[#111112] border border-white/[0.02] shadow-sm p-5">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-green-400" />
             My Account
@@ -169,7 +169,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
             {/* Permissions */}
             {loggedInUser.permissions && loggedInUser.permissions.length > 0 && (
-              <div className="pt-3 border-t border-white/[0.06]">
+              <div className="pt-3 border-t border-white/[0.02]">
                 <p className="text-xs text-white/40 mb-2">Permissions</p>
                 <div className="flex flex-wrap gap-1.5">
                   {loggedInUser.permissions.map(permission => (
@@ -187,7 +187,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
             {/* Request Access */}
             {showRequestAccess && (
-              <div className="pt-4 border-t border-white/[0.06]">
+              <div className="pt-4 border-t border-white/[0.02]">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="w-4 h-4 text-purple-400" />
                   <p className="text-sm font-medium text-white">Become a Creator</p>
@@ -206,7 +206,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
       )}
 
       {/* Achievements Placeholder */}
-      <div className="rounded-2xl bg-gradient-to-br from-white/[0.04] to-transparent border border-white/[0.06] p-5">
+      <div className="rounded-2xl bg-[#111112] border border-white/[0.02] shadow-sm p-5">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Award className="w-5 h-5 text-amber-400" />
           Achievements
