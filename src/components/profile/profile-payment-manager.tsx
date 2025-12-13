@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 
 // Server action imports
-import { redeemKeyAction } from "@/lib/actions/payment-actions";
+import { redeemKeyAction, requestSubscription, cancelSubscriptionRequest } from "@/lib/actions/payment-actions";
 
 type Plan = {
     id: string;
@@ -69,29 +69,54 @@ interface PaymentManagerProps {
 }
 
 export default function PaymentManager({ plans, history, currentSubscription }: PaymentManagerProps) {
-    const [isRedeeming, startRedeemTransition] = useTransition();
+    const [requestingPlanId, setRequestingPlanId] = useState<string | null>(null);
+
     const [redeemCode, setRedeemCode] = useState("");
+    const [isRedeeming, startRedeemTransition] = useTransition();
+    const router = useRouter();
 
-    // Redeem Handler
-    const handleRedeem = () => {
-        if (!redeemCode.trim()) {
-            toast.error("Please enter a valid code");
-            return;
-        }
-
+    async function handleRedeem() {
         startRedeemTransition(async () => {
-            const result = await redeemKeyAction(redeemCode);
-            if (result.success) {
-                toast.success(result.message);
+            const res = await redeemKeyAction(redeemCode);
+            if (res.success) {
+                toast.success("Code Redeemed!", { description: res.message });
                 setRedeemCode("");
-                // Ideally refresh data
+                router.refresh();
             } else {
-                toast.error(result.error);
+                toast.error("Redemption Failed", { description: res.error });
             }
         });
-    };
+    }
+
+    async function handleRequestPlan(planId: string) {
+        setRequestingPlanId(planId);
+        try {
+            const res = await requestSubscription(planId);
+            if (res.success) {
+                toast.success(res.message);
+            } else {
+                toast.error(res.error);
+            }
+        } catch (e) {
+            toast.error("Something went wrong");
+        } finally {
+            setRequestingPlanId(null);
+        }
+    }
+
+    async function handleCancelRequest() {
+        startRedeemTransition(async () => {
+            const res = await cancelSubscriptionRequest();
+            if (res.success) {
+                toast.success(res.message);
+            } else {
+                toast.error(res.error);
+            }
+        });
+    }
 
     const isPro = currentSubscription?.status === 'ACTIVE';
+    const isPending = currentSubscription?.status === 'PENDING';
 
     return (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -101,7 +126,7 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
                 <Card className="md:col-span-2 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex items-center gap-2">
-                            <Crown className={`h-5 w-5 ${isPro ? "text-yellow-400" : "text-muted-foreground"}`} />
+                            <Crown className={`h-5 w-5 ${isPro ? "text-yellow-400" : isPending ? "text-orange-400" : "text-muted-foreground"}`} />
                             Subscription Status
                         </CardTitle>
                         <CardDescription>Your current membership level</CardDescription>
@@ -111,12 +136,24 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
                             <div className="text-3xl font-bold">
                                 {isPro
                                     ? <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">PRO MEMBER</span>
-                                    : "FREE PLAN"}
+                                    : isPending
+                                        ? <span className="text-orange-400">PENDING APPROVAL</span>
+                                        : "FREE PLAN"}
                             </div>
                             {isPro && (
                                 <Badge variant="outline" className="border-green-500 text-green-400 bg-green-950/30">
                                     ACTIVE
                                 </Badge>
+                            )}
+                            {isPending && (
+                                <div className="flex items-center gap-2">
+                                    <Badge variant="outline" className="border-orange-500 text-orange-400 bg-orange-950/30">
+                                        WAITING
+                                    </Badge>
+                                    <Button variant="ghost" size="sm" onClick={handleCancelRequest} disabled={isRedeeming} className="h-6 text-xs text-red-400 hover:text-red-300 hover:bg-red-950/30">
+                                        Cancel Request
+                                    </Button>
+                                </div>
                             )}
                         </div>
                         {isPro && currentSubscription?.endDate && (
@@ -124,9 +161,14 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
                                 Expires on {format(new Date(currentSubscription.endDate), "PP")}
                             </p>
                         )}
-                        {!isPro && (
+                        {!isPro && !isPending && (
                             <p className="text-sm text-muted-foreground mt-2">
                                 Upgrade to unlock premium features and support creators.
+                            </p>
+                        )}
+                        {isPending && (
+                            <p className="text-sm text-muted-foreground mt-2">
+                                Your request has been sent to the admin. You will be notified once approved.
                             </p>
                         )}
                     </CardContent>
@@ -168,7 +210,7 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
             </div>
 
             {/* 2. PLANS */}
-            {!isPro && (
+            {!isPro && !isPending && (
                 <div className="space-y-4">
                     <h3 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                         <Zap className="h-6 w-6 text-yellow-500" /> Available Plans
@@ -202,8 +244,14 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
                                     </ul>
                                 </CardContent>
                                 <CardFooter>
-                                    <Button className="w-full" variant={plan.isFeatured ? "default" : "outline"}>
-                                        Select Plan
+                                    <Button
+                                        className="w-full"
+                                        variant={plan.isFeatured ? "default" : "outline"}
+                                        onClick={() => handleRequestPlan(plan.id)}
+                                        disabled={!!requestingPlanId}
+                                    >
+                                        {requestingPlanId === plan.id ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                                        {requestingPlanId === plan.id ? "Requesting..." : "Select Plan"}
                                     </Button>
                                 </CardFooter>
                             </Card>

@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { ROLES } from "@/lib/permissions";
 import { redirect } from "next/navigation";
 import { getAdminPaymentStats, getAllTransactions, getAllSubscriptions, getSubscriptionPlans } from "@/lib/actions/admin/payments";
+import { getAllSubscriptionRequests } from "@/lib/actions/payment-actions";
 import PaymentDashboard from "@/components/admin/payment-dashboard";
 
 export const metadata = {
@@ -18,11 +19,12 @@ export default async function AdminPaymentsPage() {
     }
 
     // Parallel Data Fetching
-    const [stats, transactions, subscriptions, plans] = await Promise.all([
+    const [stats, transactions, subscriptions, plans, requests] = await Promise.all([
         getAdminPaymentStats(),
         getAllTransactions(1, 20), // Default page 1, 20 items
         getAllSubscriptions(1, 20),
-        getSubscriptionPlans()
+        getSubscriptionPlans(),
+        getAllSubscriptionRequests()
     ]);
 
     return (
@@ -31,6 +33,7 @@ export default async function AdminPaymentsPage() {
                 stats={stats}
                 initialTransactions={transactions}
                 initialSubscriptions={subscriptions}
+                initialRequests={requests}
                 plans={plans}
             />
         </div>

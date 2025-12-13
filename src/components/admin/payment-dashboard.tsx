@@ -27,15 +27,17 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { searchUsers } from "@/lib/actions/admin/payments";
+import { approveSubscriptionRequest, rejectSubscriptionRequest } from "@/lib/actions/payment-actions";
 
 interface PaymentDashboardProps {
     stats: any;
     initialTransactions: any;
     initialSubscriptions: any;
+    initialRequests: any[];
     plans: any[];
 }
 
-export default function PaymentDashboard({ stats, initialTransactions, initialSubscriptions, plans }: PaymentDashboardProps) {
+export default function PaymentDashboard({ stats, initialTransactions, initialSubscriptions, initialRequests, plans }: PaymentDashboardProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
     return (
@@ -52,12 +54,33 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
 
             <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
                 <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
+                    <TabsTrigger value="requests" className="py-2 flex items-center gap-2">
+                        Requests
+                        {initialRequests && initialRequests.length > 0 && (
+                            <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
+                                {initialRequests.length}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
                     <TabsTrigger value="overview" className="py-2">Overview</TabsTrigger>
                     <TabsTrigger value="transactions" className="py-2">Transactions</TabsTrigger>
                     <TabsTrigger value="subscriptions" className="py-2">Active Subs</TabsTrigger>
                     <TabsTrigger value="plans" className="py-2">Manage Plans</TabsTrigger>
                     <TabsTrigger value="ads" className="py-2">Ad Revenue</TabsTrigger>
                 </TabsList>
+
+                {/* REQUESTS TAB */}
+                <TabsContent value="requests" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Pending Requests</CardTitle>
+                            <CardDescription>Review and approve user subscription requests.</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <RequestTable requests={initialRequests} />
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
                 {/* OVERVIEW TAB */}
                 <TabsContent value="overview" className="space-y-4">
@@ -524,5 +547,71 @@ function ManualSubDialog({ plans }: { plans: any[] }) {
                 </form>
             </DialogContent>
         </Dialog>
+    )
+}
+
+function RequestTable({ requests }: { requests: any[] }) {
+    if (!requests || requests.length === 0) {
+        return <div className="text-center py-8 text-muted-foreground">No pending requests.</div>;
+    }
+
+    return (
+        <Table>
+            <TableHeader>
+                <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Requested Plan</TableHead>
+                    <TableHead>Requested On</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {requests.map((req) => (
+                    <TableRow key={req.id}>
+                        <TableCell>
+                            <div className="flex items-center gap-3">
+                                <Avatar className="w-8 h-8">
+                                    <AvatarImage src={req.user.image} />
+                                    <AvatarFallback>{req.user.name?.[0]}</AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col">
+                                    <span className="font-medium text-sm">{req.user.name}</span>
+                                    <span className="text-xs text-muted-foreground">{req.user.email}</span>
+                                </div>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            <div className="flex flex-col">
+                                <Badge variant="outline">{req.plan?.name || "Unknown Plan"}</Badge>
+                                <span className="text-xs text-muted-foreground mt-1">LKR {req.plan?.price}</span>
+                            </div>
+                        </TableCell>
+                        <TableCell>
+                            {format(new Date(req.createdAt), 'PPP')}
+                        </TableCell>
+                        <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                                <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={async () => {
+                                    const res = await approveSubscriptionRequest(req.id);
+                                    if (res.success) toast.success("Request Approved");
+                                    else toast.error("Failed");
+                                }}>
+                                    Approve
+                                </Button>
+                                <Button size="sm" variant="destructive" onClick={async () => {
+                                    if (confirm("Reject this request?")) {
+                                        const res = await rejectSubscriptionRequest(req.id);
+                                        if (res.success) toast.success("Request Rejected");
+                                        else toast.error("Failed");
+                                    }
+                                }}>
+                                    Reject
+                                </Button>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                ))}
+            </TableBody>
+        </Table>
     )
 }

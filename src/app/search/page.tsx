@@ -203,9 +203,20 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
     // ===== PROFILE VIEW =====
     if (profileId) {
-        const allUsers = await getUsers();
-        const profileUser = allUsers.find(u => u.id === profileId) as PrismaUser | undefined;
-        if (!profileUser) return notFound();
+        const rawProfileUser = await prisma.user.findUnique({
+            where: { id: profileId }
+        });
+
+        if (!rawProfileUser) return notFound();
+
+        // Serialize dates to strings (Client Component compatibility)
+        const profileUser = {
+            ...rawProfileUser,
+            createdAt: rawProfileUser.createdAt.toISOString(),
+            updatedAt: rawProfileUser.updatedAt.toISOString(),
+            emailVerified: rawProfileUser.emailVerified ? rawProfileUser.emailVerified.toISOString() : null,
+            subscriptionEndDate: rawProfileUser.subscriptionEndDate ? rawProfileUser.subscriptionEndDate.toISOString() : null,
+        } as unknown as PrismaUser;
 
         const isOwnProfile = session?.user?.id === profileUser.id;
 

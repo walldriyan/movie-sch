@@ -113,7 +113,8 @@ export default function UnifiedWatchPage({
 
     const isPremium = session?.user && (
         session.user.role === 'SUPER_ADMIN' ||
-        (session.user as any).accountType === 'PREMIUM'
+        (session.user as any).accountType === 'PREMIUM' ||
+        (session.user as any).isPro === true
     );
 
     // Ref for scrolling active episode into view
