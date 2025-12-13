@@ -48,9 +48,13 @@ export default function LeftSidebar() {
     const [userGroups, setUserGroups] = useState<{ id: string; name: string; profilePhoto: string | null }[]>([]);
 
     useEffect(() => {
+        let isMounted = true;
         if (status === 'authenticated') {
-            getUserJoinedGroups().then(setUserGroups).catch(console.error);
+            getUserJoinedGroups().then(groups => {
+                if (isMounted) setUserGroups(groups);
+            }).catch(console.error);
         }
+        return () => { isMounted = false; };
     }, [status]);
 
     const user = session?.user;
@@ -108,6 +112,16 @@ export default function LeftSidebar() {
             main.style.display = '';
             main.style.justifyContent = '';
         }
+
+        // Cleanup: reset styles on unmount
+        return () => {
+            if (main) {
+                main.style.marginLeft = '';
+                main.style.marginRight = '';
+                main.style.display = '';
+                main.style.justifyContent = '';
+            }
+        };
     }, [isLoggedIn, isCollapsed, shouldHideSidebar, isHidden]);
 
     if (!isLoggedIn) {

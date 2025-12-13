@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -39,21 +39,29 @@ export function AdPackagesManager() {
         isActive: true
     });
 
-    const fetchPackages = async () => {
+    const fetchPackages = useCallback(async (isMounted: boolean = true) => {
         setLoading(true);
         try {
             const res = await getAllAdPackagesInternal();
-            setPackages(res);
+            if (isMounted) {
+                setPackages(res);
+            }
         } catch (error) {
-            toast({ title: "Error", description: "Failed to load packages", variant: "destructive" });
+            if (isMounted) {
+                toast({ title: "Error", description: "Failed to load packages", variant: "destructive" });
+            }
         } finally {
-            setLoading(false);
+            if (isMounted) {
+                setLoading(false);
+            }
         }
-    };
+    }, [toast]);
 
     useEffect(() => {
-        fetchPackages();
-    }, []);
+        let isMounted = true;
+        fetchPackages(isMounted);
+        return () => { isMounted = false; };
+    }, [fetchPackages]);
 
     const resetForm = () => {
         setFormData({

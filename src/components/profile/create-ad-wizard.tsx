@@ -47,8 +47,9 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
     const [uploadingImage, setUploadingImage] = useState(false);
 
     useEffect(() => {
+        let isMounted = true;
         getUserAdCreationConfig().then(res => {
-            if (res) {
+            if (isMounted && res) {
                 setConfig(res);
                 if (res.packages.length > 0) {
                     setSelectedPkgId(res.packages[0].id);
@@ -56,6 +57,7 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
                 }
             }
         });
+        return () => { isMounted = false; };
     }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
