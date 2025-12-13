@@ -93,9 +93,9 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
     }
 
     return (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full pb-0">
             {/* List */}
-            <Card className="md:col-span-1 flex flex-col overflow-hidden bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl">
+            <Card className="lg:col-span-4 flex flex-col overflow-hidden bg-black/20 backdrop-blur-2xl border-white/10 shadow-2xl rounded-3xl">
                 <div className="p-4 border-b space-y-4 flex items-center gap-2">
                     <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
                         <SelectTrigger className="flex-1">
@@ -113,30 +113,31 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
                         onClick={handleRefresh}
                         disabled={isRefreshing}
                         title="Refresh Messages"
+                        className="rounded-full bg-white/5 border-white/10 hover:bg-white/10 backdrop-blur-md"
                     >
                         <RotateCw className={cn("h-4 w-4", isRefreshing && "animate-spin")} />
                     </Button>
                 </div>
                 <ScrollArea className="flex-1">
-                    <div className="divide-y">
+                    <div className="space-y-1 px-2 py-2">
                         {filtered.map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => setSelectedId(item.id)}
                                 className={cn(
-                                    "w-full text-left p-4 hover:bg-muted/50 transition-colors",
-                                    selectedId === item.id ? "bg-muted" : "",
+                                    "w-full text-left p-3 rounded-xl transition-all duration-200 border border-transparent mx-auto",
+                                    selectedId === item.id ? "bg-primary/10 border-primary/20 shadow-sm scale-[0.98]" : "hover:bg-white/5 hover:scale-[0.99]",
                                     item.status === 'UNREAD' ? "font-semibold" : ""
                                 )}
                             >
                                 <div className="flex justify-between items-start mb-1">
-                                    <span className="truncate max-w-[150px]">{item.user.name || 'User'}</span>
+                                    <span className="truncate max-w-[150px] font-medium">{item.user.name || 'User'}</span>
                                     <span className="text-xs text-muted-foreground whitespace-nowrap"><ClientSideDate date={item.createdAt} formatString="MM/dd" /></span>
                                 </div>
-                                <h4 className="text-sm truncate mb-1">{item.title}</h4>
+                                <h4 className="text-sm truncate mb-1.5 opacity-90">{item.title}</h4>
                                 <div className="flex gap-2">
-                                    <Badge variant={item.status === 'UNREAD' ? 'default' : 'secondary'} className="text-[10px] h-5">{item.status}</Badge>
-                                    {item.title.includes('[AD_REQUEST]') && <Badge variant="outline" className="text-[10px] h-5 border-purple-500 text-purple-500">AD</Badge>}
+                                    <Badge variant={item.status === 'UNREAD' ? 'default' : 'secondary'} className="text-[10px] h-5 px-2 rounded-full shadow-none">{item.status}</Badge>
+                                    {item.title.includes('[AD_REQUEST]') && <Badge variant="outline" className="text-[10px] h-5 px-2 rounded-full border-purple-500 text-purple-400 bg-purple-500/10">AD</Badge>}
                                 </div>
                             </button>
                         ))}
@@ -145,10 +146,10 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
             </Card>
 
             {/* Detail */}
-            <Card className="md:col-span-2 flex flex-col overflow-hidden bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl">
+            <Card className="lg:col-span-8 flex flex-col overflow-hidden bg-black/20 backdrop-blur-2xl border-white/10 shadow-2xl rounded-3xl">
                 {selectedFeedback ? (
                     <div className="flex flex-col h-full">
-                        <div className="p-6 border-b border-white/10 bg-white/5">
+                        <div className="p-6 border-b border-white/10">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <h2 className="text-xl font-bold">{selectedFeedback.title}</h2>
@@ -232,9 +233,12 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
                         </div>
                     </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
-                        <MessageSquare className="w-12 h-12 mb-4 opacity-20" />
-                        <p>Select a message to view conversation</p>
+                    <div className="flex flex-col items-center justify-center h-full text-muted-foreground p-8 text-center">
+                        <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mb-6 ring-1 ring-white/10 shadow-2xl backdrop-blur-sm">
+                            <MessageSquare className="w-10 h-10 opacity-40 text-white" />
+                        </div>
+                        <h3 className="text-xl font-bold text-white mb-2">No Message Selected</h3>
+                        <p className="max-w-xs mx-auto text-white/50">Choose a conversation from the sidebar to view details and reply.</p>
                     </div>
                 )}
             </Card>
