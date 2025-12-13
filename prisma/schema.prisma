@@ -827,6 +827,8 @@ model SponsoredPost {
 
   @@index([userId])
   @@index([status])
+  @@index([endDate])
+  @@index([isActive, status, endDate])
   @@map("sponsored_posts")
 }
 

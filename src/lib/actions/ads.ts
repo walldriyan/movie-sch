@@ -138,10 +138,22 @@ export async function getAdminPayments(page: number = 1, limit: number = 10) {
 
 export async function getSponsoredPosts() {
     try {
-        // Fetch active ads sorted by priority (higher first)
+        const now = new Date();
+        // Fetch active ads that haven't expired, sorted by priority (higher first)
         const ads = await prisma.sponsoredPost.findMany({
-            where: { isActive: true, status: 'APPROVED' },
-            orderBy: { createdAt: 'desc' } // Newest ad first
+            where: {
+                isActive: true,
+                status: 'APPROVED',
+                // Only show ads that haven't expired (or have no endDate set)
+                OR: [
+                    { endDate: null },
+                    { endDate: { gt: now } }
+                ]
+            },
+            orderBy: [
+                { priority: 'desc' },
+                { createdAt: 'desc' }
+            ]
         });
         return ads;
     } catch (error) {
@@ -152,12 +164,24 @@ export async function getSponsoredPosts() {
 
 export async function getRecentApprovedAds(page: number = 1, limit: number = 12) {
     try {
-        const where: any = { status: 'APPROVED', isActive: true };
+        const now = new Date();
+        const where: any = {
+            status: 'APPROVED',
+            isActive: true,
+            // Only show non-expired ads
+            OR: [
+                { endDate: null },
+                { endDate: { gt: now } }
+            ]
+        };
 
         const [ads, total] = await prisma.$transaction([
             prisma.sponsoredPost.findMany({
                 where,
-                orderBy: { createdAt: 'desc' }, // Last ad first
+                orderBy: [
+                    { priority: 'desc' },
+                    { createdAt: 'desc' }
+                ],
                 skip: (page - 1) * limit,
                 take: limit
             }),
@@ -227,7 +251,6 @@ export async function submitAd(data: { title: string; imageUrl: string; link: st
     const { paymentCode, ...adData } = data;
 
     // Check Permissions
-    // Check Permissions
     const isPrivileged = [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role);
 
     // Check Premium Status
@@ -238,6 +261,7 @@ export async function submitAd(data: { title: string; imageUrl: string; link: st
     const isPremium = String(dbUser?.accountType) === 'PREMIUM';
 
     let paymentId: string | undefined;
+    let paymentDurationDays: number = 30; // Default duration
 
     // Logic: If not privileged and not premium, require Payment Code
     if (!isPrivileged && !isPremium) {
@@ -251,7 +275,12 @@ export async function submitAd(data: { title: string; imageUrl: string; link: st
         }
 
         paymentId = verification.payment.id;
+        paymentDurationDays = verification.payment.durationDays || 30;
     }
+
+    // Calculate end date
+    const endDate = new Date();
+    endDate.setDate(endDate.getDate() + paymentDurationDays);
 
     try {
         // Use transaction to ensure code is marked used only if ad is created
@@ -274,12 +303,14 @@ export async function submitAd(data: { title: string; imageUrl: string; link: st
                     status: 'PENDING',
                     isActive: false,
                     userId: session.user.id,
-                    paymentId: paymentId
+                    paymentId: paymentId,
+                    endDate: endDate // ✅ Now saving endDate!
                 }
             });
         });
 
         revalidatePath('/');
+        revalidatePath('/profile');
         return { success: true, ad };
     } catch (error) {
         console.error("Failed to submit ad", error);
@@ -287,35 +318,27 @@ export async function submitAd(data: { title: string; imageUrl: string; link: st
     }
 }
 
-// Analytics Actions
+// Analytics Actions - Optimized with upsert pattern
 export async function incrementAdView(adId: string) {
     try {
         const today = new Date().toISOString().split('T')[0];
 
-        // Simple increment on main record
-        await prisma.sponsoredPost.update({
-            where: { id: adId },
-            data: { views: { increment: 1 } }
-        });
-
-        // Analytics record
-        const exists = await prisma.adAnalytics.findUnique({
-            where: { postId_date: { postId: adId, date: today } }
-        });
-
-        if (exists) {
-            await prisma.adAnalytics.update({
-                where: { postId_date: { postId: adId, date: today } },
+        // Use transaction with upsert for atomic, efficient operation
+        await prisma.$transaction([
+            prisma.sponsoredPost.update({
+                where: { id: adId },
                 data: { views: { increment: 1 } }
-            });
-        } else {
-            await prisma.adAnalytics.create({
-                data: { postId: adId, date: today, views: 1 }
-            });
-        }
+            }),
+            prisma.adAnalytics.upsert({
+                where: { postId_date: { postId: adId, date: today } },
+                update: { views: { increment: 1 } },
+                create: { postId: adId, date: today, views: 1 }
+            })
+        ]);
 
         return { success: true };
     } catch (e) {
+        console.error('incrementAdView error:', e);
         return { success: false };
     }
 }
@@ -324,25 +347,18 @@ export async function clickAd(adId: string) {
     try {
         const today = new Date().toISOString().split('T')[0];
 
-        await prisma.sponsoredPost.update({
-            where: { id: adId },
-            data: { clicks: { increment: 1 } }
-        });
-
-        const exists = await prisma.adAnalytics.findUnique({
-            where: { postId_date: { postId: adId, date: today } }
-        });
-
-        if (exists) {
-            await prisma.adAnalytics.update({
-                where: { postId_date: { postId: adId, date: today } },
+        // Use transaction with upsert for atomic, efficient operation
+        await prisma.$transaction([
+            prisma.sponsoredPost.update({
+                where: { id: adId },
                 data: { clicks: { increment: 1 } }
-            });
-        } else {
-            await prisma.adAnalytics.create({
-                data: { postId: adId, date: today, clicks: 1 }
-            });
-        }
+            }),
+            prisma.adAnalytics.upsert({
+                where: { postId_date: { postId: adId, date: today } },
+                update: { clicks: { increment: 1 } },
+                create: { postId: adId, date: today, clicks: 1 }
+            })
+        ]);
 
         return { success: true };
     } catch (e) {
@@ -437,17 +453,39 @@ export async function updateSponsoredPostStatus(id: string, status: 'APPROVED' |
     }
 
     try {
+        // Get ad with payment info to determine duration
+        const ad = await prisma.sponsoredPost.findUnique({
+            where: { id },
+            include: { payment: true }
+        });
+
+        if (!ad) return { success: false, error: 'Ad not found' };
+
+        const updateData: any = {
+            status,
+            isActive: status === 'APPROVED'
+        };
+
+        // If approving and no endDate set, calculate it
+        if (status === 'APPROVED' && !ad.endDate) {
+            const durationDays = ad.payment?.durationDays || 30; // Default 30 days
+            const endDate = new Date();
+            endDate.setDate(endDate.getDate() + durationDays);
+            updateData.endDate = endDate;
+        }
+
         await prisma.sponsoredPost.update({
             where: { id },
-            data: {
-                status,
-                isActive: status === 'APPROVED' // Auto activate on approve
-            }
+            data: updateData
         });
+
         revalidatePath('/');
+        revalidatePath('/profile');
+        revalidatePath('/admin');
         return { success: true };
     } catch (e) {
-        return { success: false, error: 'Failed' };
+        console.error('updateSponsoredPostStatus error:', e);
+        return { success: false, error: 'Failed to update status' };
     }
 }
 
@@ -559,32 +597,55 @@ export async function submitAdWithPackage(data: { title: string, imageUrl: strin
     const pkg = await prisma.adPackage.findUnique({ where: { id: data.packageId } });
     if (!pkg) return { success: false, error: 'Invalid Package' };
 
-    if (data.days < pkg.minDays || data.days > pkg.maxDays) {
+    // Determine actual duration - use code's duration if available, otherwise user's input
+    let actualDays = data.days;
+    let adPaymentRecord: any = null;
+
+    // Pre-check payment code to get duration
+    if (data.paymentCode) {
+        adPaymentRecord = await prisma.adPayment.findUnique({ where: { code: data.paymentCode } });
+        if (!adPaymentRecord) return { success: false, error: 'Invalid Payment Code' };
+        if (adPaymentRecord.isUsed) return { success: false, error: 'Payment Code Already Used' };
+
+        // Use the pre-defined duration from the payment code if it exists
+        if (adPaymentRecord.durationDays && adPaymentRecord.durationDays > 0) {
+            actualDays = adPaymentRecord.durationDays;
+        }
+    }
+
+    // Validate duration against package limits
+    if (actualDays < pkg.minDays || actualDays > pkg.maxDays) {
         return { success: false, error: `Duration must be between ${pkg.minDays} and ${pkg.maxDays} days` };
     }
 
-    const cost = pkg.pricePerDay * data.days;
+    const cost = pkg.pricePerDay * actualDays;
+
+    // Calculate end date
+    const startDate = new Date();
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + actualDays);
 
     try {
         await prisma.$transaction(async (tx) => {
             let paymentRecordId = '';
+            let adPaymentId: string | undefined = undefined;
 
-            if (data.paymentCode) {
-                // Verify Code
-                const adPayment = await tx.adPayment.findUnique({ where: { code: data.paymentCode } });
-                if (!adPayment) throw new Error('Invalid Payment Code');
-                if (adPayment.isUsed) throw new Error('Payment Code Already Used');
-                if (adPayment.amount < cost) throw new Error(`Insufficient Code Value. Required: ${cost}, Code: ${adPayment.amount}`);
+            if (data.paymentCode && adPaymentRecord) {
+                // Validate code value
+                if (adPaymentRecord.amount < cost) {
+                    throw new Error(`Insufficient Code Value. Required: LKR ${cost}, Code: LKR ${adPaymentRecord.amount}`);
+                }
 
                 // Mark Used
                 await tx.adPayment.update({
-                    where: { id: adPayment.id },
+                    where: { id: adPaymentRecord.id },
                     data: {
                         isUsed: true,
                         usedByUserId: session.user.id,
                         usedAt: new Date()
                     }
                 });
+                adPaymentId = adPaymentRecord.id;
 
                 // Create Payment Record
                 const pr = await tx.paymentRecord.create({
@@ -602,7 +663,7 @@ export async function submitAdWithPackage(data: { title: string, imageUrl: strin
                 // Deduct Balance (Legacy/Fallback)
                 const user = await tx.user.findUnique({ where: { id: session.user.id } });
                 if (!user || (user.adBalance || 0) < cost) {
-                    throw new Error('Insufficient Balance');
+                    throw new Error('Insufficient Balance. Please use a payment code or top up your balance.');
                 }
 
                 await tx.user.update({
@@ -622,7 +683,7 @@ export async function submitAdWithPackage(data: { title: string, imageUrl: strin
                 paymentRecordId = pr.id;
             }
 
-            // Create Sponsored Post
+            // Create Sponsored Post with calculated endDate
             await tx.sponsoredPost.create({
                 data: {
                     title: data.title,
@@ -634,14 +695,17 @@ export async function submitAdWithPackage(data: { title: string, imageUrl: strin
                     isActive: false,
                     userId: session.user.id,
                     paymentRecordId: paymentRecordId,
+                    paymentId: adPaymentId,
+                    endDate: endDate, // ✅ Now saving the calculated end date!
                 }
             });
         });
 
         revalidatePath('/');
+        revalidatePath('/profile');
         return { success: true };
     } catch (e: any) {
-        console.error(e);
+        console.error('submitAdWithPackage Error:', e);
         return { success: false, error: e.message || 'Transaction Failed' };
     }
 }
@@ -677,7 +741,7 @@ export async function requestAdKey(packageId: string) {
 
         // Find Admins
         const admins = await prisma.user.findMany({
-            where: { role: ROLES.SUPER_ADMIN },
+            where: { role: ROLES.SUPER_ADMIN as any },
             select: { id: true }
         });
 
@@ -725,4 +789,187 @@ export async function getUserAdRequests() {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// ADMIN: Ad Access Request Management
+// ═══════════════════════════════════════════════════════════════════════════════
 
+export async function getAdminAdAccessRequests(status?: 'PENDING' | 'APPROVED' | 'REJECTED') {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, data: [], error: 'Unauthorized' };
+    }
+
+    try {
+        const where = status ? { status } : {};
+        const requests = await prisma.adAccessRequest.findMany({
+            where,
+            include: {
+                user: { select: { id: true, name: true, email: true, image: true } },
+                package: true,
+                assignedKey: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        return { success: true, data: JSON.parse(JSON.stringify(requests)) };
+    } catch (e) {
+        console.error('getAdminAdAccessRequests error:', e);
+        return { success: false, data: [], error: 'Failed to fetch requests' };
+    }
+}
+
+export async function approveAdAccessRequest(requestId: string, durationDays: number = 30, amount?: number) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        // Find the request with package info
+        const request = await prisma.adAccessRequest.findUnique({
+            where: { id: requestId },
+            include: { package: true, user: true }
+        });
+
+        if (!request) return { success: false, error: 'Request not found' };
+        if (request.status !== 'PENDING') return { success: false, error: 'Request is not pending' };
+        if (!request.package) return { success: false, error: 'Package not found' };
+
+        // Calculate amount based on package price and duration
+        const calculatedAmount = amount ?? (request.package.pricePerDay * durationDays);
+
+        // Generate a unique payment code
+        const randomStr = Math.random().toString(36).substring(2, 10).toUpperCase();
+        const code = `P-${randomStr.substring(0, 4)}-${randomStr.substring(4, 8)}`;
+
+        // Create AdPayment and link to request in a transaction
+        const result = await prisma.$transaction(async (tx) => {
+            // Create the AdPayment code
+            const adPayment = await tx.adPayment.create({
+                data: {
+                    code,
+                    amount: calculatedAmount,
+                    durationDays,
+                    currency: 'LKR',
+                    assignedToUserId: request.userId,
+                }
+            });
+
+            // Update the request to APPROVED and link the key
+            await tx.adAccessRequest.update({
+                where: { id: requestId },
+                data: {
+                    status: 'APPROVED',
+                    assignedKeyId: adPayment.id,
+                    adminNote: `Approved by ${session.user.name}. Code: ${code}, Duration: ${durationDays} days.`
+                }
+            });
+
+            // Notify the user
+            await tx.notification.create({
+                data: {
+                    title: '🎉 Ad Access Approved!',
+                    message: `Your request for "${request.package.name}" has been approved! Your access code is: ${code}. Valid for ${durationDays} days.`,
+                    type: 'CUSTOM' as any,
+                    senderId: session.user.id,
+                    users: {
+                        create: {
+                            userId: request.userId,
+                            status: 'UNREAD' as any
+                        }
+                    }
+                }
+            });
+
+            return adPayment;
+        });
+
+        revalidatePath('/admin');
+        revalidatePath('/profile');
+        return { success: true, code: result.code, amount: calculatedAmount, durationDays };
+    } catch (e: any) {
+        console.error('approveAdAccessRequest error:', e);
+        return { success: false, error: e.message || 'Failed to approve request' };
+    }
+}
+
+export async function rejectAdAccessRequest(requestId: string, reason?: string) {
+    const session = await auth();
+    if (!session?.user || ![ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(session.user.role)) {
+        return { success: false, error: 'Unauthorized' };
+    }
+
+    try {
+        const request = await prisma.adAccessRequest.findUnique({
+            where: { id: requestId },
+            include: { package: true, user: true }
+        });
+
+        if (!request) return { success: false, error: 'Request not found' };
+        if (request.status !== 'PENDING') return { success: false, error: 'Request is not pending' };
+
+        await prisma.$transaction(async (tx) => {
+            // Update status to REJECTED
+            await tx.adAccessRequest.update({
+                where: { id: requestId },
+                data: {
+                    status: 'REJECTED',
+                    adminNote: reason || `Rejected by ${session.user.name}`
+                }
+            });
+
+            // Notify the user
+            await tx.notification.create({
+                data: {
+                    title: '❌ Ad Access Request Rejected',
+                    message: `Your request for "${request.package?.name || 'Ad Package'}" was not approved.${reason ? ` Reason: ${reason}` : ''}`,
+                    type: 'CUSTOM' as any,
+                    senderId: session.user.id,
+                    users: {
+                        create: {
+                            userId: request.userId,
+                            status: 'UNREAD' as any
+                        }
+                    }
+                }
+            });
+        });
+
+        revalidatePath('/admin');
+        revalidatePath('/profile');
+        return { success: true };
+    } catch (e: any) {
+        console.error('rejectAdAccessRequest error:', e);
+        return { success: false, error: e.message || 'Failed to reject request' };
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// AUTO-EXPIRE ADS UTILITY (Can be called via cron job or scheduled task)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+export async function deactivateExpiredAds() {
+    try {
+        const now = new Date();
+
+        // Find and deactivate all expired ads
+        const result = await prisma.sponsoredPost.updateMany({
+            where: {
+                isActive: true,
+                status: 'APPROVED',
+                endDate: {
+                    not: null,
+                    lt: now
+                }
+            },
+            data: {
+                isActive: false
+            }
+        });
+
+        console.log(`Deactivated ${result.count} expired ads`);
+        return { success: true, deactivatedCount: result.count };
+    } catch (e) {
+        console.error('deactivateExpiredAds error:', e);
+        return { success: false, error: 'Failed to deactivate expired ads' };
+    }
+}
