@@ -1,8 +1,8 @@
-﻿// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// -------------------------------------------------------------------------------
 // CINEVERSE - PRODUCTION SCHEMA FOR SUPABASE POSTGRESQL
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// -------------------------------------------------------------------------------
 // Use this schema for production deployment with Supabase
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// -------------------------------------------------------------------------------
 
 generator client {
   provider = "prisma-client-js"
@@ -38,6 +38,8 @@ model User {
   accountType AccountType @default(FREE)
   subscriptionEndDate DateTime?
 
+  // Wallet for Ad Credits
+  adBalance         Float           @default(0.0)
 
   accounts          Account[]
   sessions          Session[]
@@ -71,16 +73,14 @@ model User {
   microPostComments MicroPostComment[]
   views             PostView[]
   sponsoredPosts    SponsoredPost[]
+  
   // New Payment System Relations
   subscriptions     UserSubscription[]
   payments          PaymentRecord[]
   usedKeys          AccessKey[]     @relation("KeyUsedBy")
   assignedKeys      AccessKey[]     @relation("KeyAssignedTo")
-  
-  // Wallet
-  adBalance         Float           @default(0.0)
 
-  // Legacy Ad Payment Relations (Can be removed if we fully migrate, or kept if we kept the model)
+  // Legacy Ad Payment Relations
   usedAdPayments    AdPayment[]     @relation("UsedBy")
   assignedAdPayments AdPayment[]    @relation("AssignedTo")
   followers         User[]          @relation("UserFollows")
@@ -435,7 +435,7 @@ model UserNotification {
 model GroupPermission {
   id          String    @id @default(cuid())
   role        GroupRole
-  permissions Json      // Using native JSON for PostgreSQL
+  permissions Json
 
   groupId String
   group   Group  @relation(fields: [groupId], references: [id])
@@ -691,7 +691,6 @@ model FeedbackReply {
   @@map("feedback_replies")
 }
 
-
 model MicroPost {
   id        String   @id @default(cuid())
   content   String   @db.Text
@@ -806,17 +805,17 @@ model SponsoredPost {
   
   status      AdStatus @default(PENDING)
   isActive    Boolean  @default(false)
-  
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   endDate     DateTime?
-  
+
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
   paymentRecordId String? @unique
   paymentRecord   PaymentRecord? @relation(fields: [paymentRecordId], references: [id])
-  
+
   paymentId   String?  @unique
   payment     AdPayment? @relation(fields: [paymentId], references: [id])
   
@@ -830,25 +829,24 @@ model SponsoredPost {
   @@map("sponsored_posts")
 }
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 // NEW ADVANCED PAYMENT & SUBSCRIPTION SYSTEM
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ═══════════════════════════════════════════════════════════════════════════════
 
-// 1. Subscription Plans (Types of memberships available)
 model SubscriptionPlan {
   id            String               @id @default(cuid())
-  name          String               // e.g. "Pro Weekly", "Pro Monthly"
+  name          String
   description   String?              @db.Text
   price         Float
   currency      String               @default("LKR")
-  interval      SubscriptionInterval // WEEKLY, MONTHLY, YEARLY
-  durationDays  Int                  // Exact days for calculation (7, 30, 365)
+  interval      SubscriptionInterval
+  durationDays  Int
   
-  discountPercent Float              @default(0) // Display purpose: "Save 20%"
+  discountPercent Float              @default(0)
   isArchived      Boolean            @default(false)
   isFeatured      Boolean            @default(false)
   
-  features      String[]             // UI List of features
+  features      String[]
 
   subscriptions UserSubscription[]
   keys          AccessKey[]
@@ -859,7 +857,6 @@ model SubscriptionPlan {
   @@map("subscription_plans")
 }
 
-// 2. User Subscriptions (The actual active/past subscriptions of users)
 model UserSubscription {
   id            String             @id @default(cuid())
   userId        String
@@ -871,9 +868,9 @@ model UserSubscription {
   status        SubscriptionStatus @default(ACTIVE)
   
   startDate     DateTime           @default(now())
-  endDate       DateTime?          // If null, could mean lifetime or recurring indefinitely until cancel
+  endDate       DateTime?
   
-  autoRenew     Boolean            @default(false) // For future gateway integration
+  autoRenew     Boolean            @default(false)
   
   paymentId     String?            @unique
   payment       PaymentRecord?     @relation(fields: [paymentId], references: [id])
@@ -887,7 +884,6 @@ model UserSubscription {
   @@map("user_subscriptions")
 }
 
-// 3. Central Payment Records (History of all transactions)
 model PaymentRecord {
   id            String        @id @default(cuid())
   userId        String
@@ -899,20 +895,17 @@ model PaymentRecord {
   method        PaymentMethod @default(MANUAL_KEY)
   status        PaymentStatus @default(COMPLETED)
   
-  type          PaymentType   // SUBSCRIPTION or AD_CAMPAIGN
+  type          PaymentType
   
-  // Link to what was purchased
   subscription  UserSubscription?
   sponsoredPost SponsoredPost? 
   
-  // If purchased via Key
   accessKeyId   String?
   accessKey     AccessKey?    @relation(fields: [accessKeyId], references: [id])
   
-  // Gateway Details (Future Proofing)
-  gatewayRefId  String?       // Stripe Session ID, etc.
-  gatewayName   String?       // "STRIPE", "PAYPAL"
-  metadata      Json?         // Store full gateway response
+  gatewayRefId  String?
+  gatewayName   String?
+  metadata      Json?
 
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
@@ -922,36 +915,31 @@ model PaymentRecord {
   @@map("payment_records")
 }
 
-// 4. Universal Access Keys (For Manual Payments / Gift Cards)
 model AccessKey {
   id            String        @id @default(cuid())
-  code          String        @unique // The secret code
+  code          String        @unique
   
-  type          AccessKeyType // SUBSCRIPTION_UNLOCK or AD_UNLOCK
+  type          AccessKeyType
   
-  // If Subscription Key
   planId        String?
   plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
   
-  // Key Constraints
-  assignedToUserId String?    // If set, only this user can use it
+  assignedToUserId String?
   assignedTo    User?         @relation("KeyAssignedTo", fields: [assignedToUserId], references: [id])
   
-  expiresAt     DateTime?     // When the key itself expires (not the sub)
+  expiresAt     DateTime?
   
-  // Value for Ad Credits
-  creditAmount  Float?        // If type is AD_CAMPAIGN, this is the value
+  creditAmount  Float?
   
-  // Usage State
   isUsed        Boolean       @default(false)
   usedAt        DateTime?
   usedByUserId  String?
   usedBy        User?         @relation("KeyUsedBy", fields: [usedByUserId], references: [id])
   
-  payments      PaymentRecord[] // Updated to allow one-to-many logically (though usually one key = one payment)
+  payments      PaymentRecord[]
 
   createdAt     DateTime      @default(now())
-  createdBy     String?       // Admin ID who generated it
+  createdBy     String?
 
   @@index([code])
   @@map("access_keys")
@@ -962,7 +950,7 @@ model AdAnalytics {
   postId    String
   post      SponsoredPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   
-  date      String   // Format: YYYY-MM-DD
+  date      String
   views     Int      @default(0)
   clicks    Int      @default(0)
   
@@ -1035,9 +1023,9 @@ model PlaylistItem {
   title      String
   artist     String?
   url        String
-  type       String // "MP3", "YOUTUBE"
-  duration   Int?   // In seconds
-  image      String? // Cover image for the specific track
+  type       String
+  duration   Int?
+  image      String?
   order      Int      @default(0)
   
   createdAt  DateTime @default(now())
