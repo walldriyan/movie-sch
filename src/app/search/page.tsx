@@ -19,6 +19,7 @@ import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
+import ProfileMessages from '@/components/profile/profile-messages';
 import PublicAdList from '@/components/profile/public-ad-list';
 import PublicAdView from '@/components/profile/public-ad-view';
 import prisma from '@/lib/prisma';
@@ -339,6 +340,8 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                         )}
                                         <PublicAdList ads={publicAds} highlightId={adIdParam} />
                                     </div>
+                                ) : profileFilter === 'messages' && isOwnProfile ? (
+                                    <ProfileMessages user={profileUser} />
                                 ) : profileFilter === 'payments' && isOwnProfile ? (
                                     <ProfilePaymentManager
                                         plans={(global as any).paymentData?.plans || []}
