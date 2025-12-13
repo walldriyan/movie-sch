@@ -1,7 +1,7 @@
 import { auth } from '@/auth';
 import { ROLES } from '@/lib/permissions';
 import { redirect } from 'next/navigation';
-import ManageLayout from '../manage/layout';
+import AdminSidebar from '@/components/admin/admin-sidebar';
 
 export default async function AdminLayout({
     children,
@@ -15,6 +15,14 @@ export default async function AdminLayout({
         redirect('/');
     }
 
-    // Use the shared ManageLayout for sidebar
-    return <ManageLayout>{children}</ManageLayout>;
+    return (
+        <div className="min-h-screen bg-background">
+            <AdminSidebar />
+            <main className="lg:pl-64 pt-20 pb-12 px-4 sm:px-6 lg:px-8">
+                <div className="max-w-7xl mx-auto">
+                    {children}
+                </div>
+            </main>
+        </div>
+    );
 }
