@@ -52,10 +52,22 @@ export default async function ProfilePage({
             orderBy: { createdAt: 'desc' },
             include: { paymentRecord: true }
         });
+        const historyRaw = await prisma.paymentRecord.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            include: {
+                subscription: { include: { plan: true } },
+                accessKey: true,
+                sponsoredPost: true
+            }
+        });
+
         const ads = JSON.parse(JSON.stringify(adsRaw));
+        const history = JSON.parse(JSON.stringify(historyRaw));
+
         content = (
             <Suspense fallback={<div className="w-full h-40 flex items-center justify-center text-white/40">Loading Ads...</div>}>
-                <ProfileAdsList ads={ads} isOwnProfile={isOwnProfile} />
+                <ProfileAdsList ads={ads} history={history} isOwnProfile={isOwnProfile} />
             </Suspense>
         );
     } else if (filter === 'ad_view') {

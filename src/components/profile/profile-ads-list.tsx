@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { SponsoredPost, PaymentRecord } from '@prisma/client';
+import { SponsoredPost, PaymentRecord, AccessKey } from '@prisma/client';
 import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid, Key, MessageSquare, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
+import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid, Key, MessageSquare, ShieldCheck, CheckCircle2, Loader2, Lock } from 'lucide-react';
 import { toggleUserAdStatus, deleteSponsoredPost } from '@/lib/actions/ads';
 import { redeemKeyAction } from '@/lib/actions/payment-actions';
 import { createFeedback } from '@/lib/actions/feedback';
@@ -19,8 +19,9 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import CreateAdWizard from './create-ad-wizard';
 
 type AdWithPayment = SponsoredPost & { paymentRecord: PaymentRecord | null, endDate: Date | null };
+type PaymentWithDetails = PaymentRecord & { accessKey: AccessKey | null };
 
-function AdAccessWizard({ ads }: { ads: AdWithPayment[] }) {
+function AdAccessWizard({ ads, history }: { ads: AdWithPayment[], history?: PaymentWithDetails[] }) {
     const { toast } = useToast();
     const router = useRouter();
 
@@ -31,6 +32,9 @@ function AdAccessWizard({ ads }: { ads: AdWithPayment[] }) {
     // Code State
     const [code, setCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
+
+    // Filter relevant "Ad Credit" history
+    const adHistory = history ? history.filter(h => h.type === 'AD_CAMPAIGN' || h.accessKey?.type === 'AD_CAMPAIGN') : [];
 
     return (
         <div className="space-y-8">
@@ -146,45 +150,68 @@ function AdAccessWizard({ ads }: { ads: AdWithPayment[] }) {
                 </div>
             </div>
 
-            {/* 3. Helper Info */}
+            {/* 3. History Table (Moved here as requested) */}
             <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6">
-                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">How it works</h3>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-muted-foreground">
-                    <div className="p-4 bg-white/5 rounded-sm">
-                        <span className="block font-bold text-white mb-1">1. Contact</span>
-                        Send a request explaining your ad needs and budget.
-                    </div>
-                    <div className="p-4 bg-white/5 rounded-sm">
-                        <span className="block font-bold text-white mb-1">2. Payment</span>
-                        Admin will contact you for payment details.
-                    </div>
-                    <div className="p-4 bg-white/5 rounded-sm">
-                        <span className="block font-bold text-white mb-1">3. Receive Code</span>
-                        Once paid, Admin sends a unique Access Key via reply.
-                    </div>
-                    <div className="p-4 bg-white/5 rounded-sm">
-                        <span className="block font-bold text-white mb-1">4. Create Ad</span>
-                        Enter the code to unlock ad creation credits.
-                    </div>
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">Access & Key History</h3>
+                <div className="overflow-hidden rounded-md border border-white/5">
+                    <table className="w-full text-sm text-left">
+                        <thead className="text-xs text-white/40 uppercase bg-white/5 border-b border-white/5">
+                            <tr>
+                                <th className="px-4 py-3">Date</th>
+                                <th className="px-4 py-3">Key Used</th>
+                                <th className="px-4 py-3">Amount</th>
+                                <th className="px-4 py-3">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {adHistory.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-4 py-8 text-center text-white/30">No history found.</td>
+                                </tr>
+                            ) : (
+                                adHistory.map((h: any) => (
+                                    <tr key={h.id} className="group hover:bg-white/5">
+                                        <td className="px-4 py-3 text-white/60">{new Date(h.createdAt).toLocaleDateString()}</td>
+                                        <td className="px-4 py-3 font-mono text-white/80">{h.accessKey?.code || 'N/A'}</td>
+                                        <td className="px-4 py-3 text-white font-bold">{h.currency} {h.amount}</td>
+                                        <td className="px-4 py-3">
+                                            <Badge variant="outline" className="border-green-500/20 text-green-500 bg-green-500/10">Active</Badge>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     );
 }
 
-export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayment[], isOwnProfile: boolean }) {
+export default function ProfileAdsList({ ads, isOwnProfile, history }: { ads: AdWithPayment[], isOwnProfile: boolean, history?: PaymentWithDetails[] }) {
     const searchParams = useSearchParams();
     const router = useRouter();
 
     // Determine initial tab from URL or default
     const initialTab = searchParams.get('action') === 'create' ? 'create' : 'overview';
+
+    // Check if user is allowed to create ("Active Advertiser")
+    // Definition: Has at least 1 ad created OR has redeemed ad credits in history.
+    const hasAdHistory = history && history.some(h => h.type === 'AD_CAMPAIGN' || h.accessKey?.type === 'AD_CAMPAIGN');
+    const isAdvertiser = ads.length > 0 || hasAdHistory;
+
     const [activeTab, setActiveTab] = useState(initialTab);
 
     // Sync state with URL param changes
     useEffect(() => {
         const action = searchParams.get('action');
         if (action === 'create') {
-            setActiveTab('create');
+            // If trying to access create but not allowed, redirect to access
+            if (!isAdvertiser && isOwnProfile) {
+                setActiveTab('access');
+            } else {
+                setActiveTab('create');
+            }
         } else if (action === 'payments') {
             setActiveTab('payments');
         } else if (action === 'access') {
@@ -192,9 +219,15 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
         } else if (!action) {
             setActiveTab('overview');
         }
-    }, [searchParams]);
+    }, [searchParams, isAdvertiser, isOwnProfile]);
 
     const handleTabChange = (val: string) => {
+        if (val === 'create' && !isAdvertiser) {
+            toast({ title: "Access Restricted", description: "You must redeem an access key before creating ads.", variant: "destructive" });
+            setActiveTab('access');
+            return;
+        }
+
         setActiveTab(val);
         const newParams = new URLSearchParams(searchParams.toString());
         if (val === 'overview') newParams.delete('action');
@@ -206,6 +239,8 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
     const totalViews = ads.reduce((acc, ad) => acc + ad.views, 0);
     const totalClicks = ads.reduce((acc, ad) => acc + ad.clicks, 0);
     const activeAdsCount = ads.filter(ad => ad.isActive && ad.status === 'APPROVED').length;
+
+    const { toast } = useToast();
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
@@ -227,10 +262,25 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                                 <LayoutGrid className="w-4 h-4 mr-2" />
                                 Ads
                             </TabsTrigger>
-                            <TabsTrigger value="create" className="rounded-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white text-white/60">
-                                <Plus className="w-4 h-4 mr-2" />
+
+                            {/* Create Tab - Disabled Visual if no access */}
+                            <TabsTrigger
+                                value="create"
+                                disabled={!isAdvertiser}
+                                className={cn(
+                                    "rounded-sm text-white/60 relative group",
+                                    !isAdvertiser ? "opacity-50 cursor-not-allowed data-[state=active]:bg-transparent" : "data-[state=active]:bg-purple-500 data-[state=active]:text-white"
+                                )}
+                            >
+                                {!isAdvertiser ? <Lock className="w-3 h-3 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
                                 Create
+                                {!isAdvertiser && (
+                                    <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-black text-white text-[10px] px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                                        Requires Access
+                                    </span>
+                                )}
                             </TabsTrigger>
+
                             <TabsTrigger value="payments" className="rounded-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
                                 <CreditCard className="w-4 h-4 mr-2" />
                                 Finance
@@ -243,7 +293,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
             {/* Access & Requests Wizard */}
             {activeTab === 'access' && isOwnProfile && (
                 <div className="animate-in slide-in-from-left-4 duration-300">
-                    <AdAccessWizard ads={ads} />
+                    <AdAccessWizard ads={ads} history={history} />
                 </div>
             )}
 
@@ -292,9 +342,14 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                             <p className="text-muted-foreground max-w-sm mb-6 px-4">
                                 {isOwnProfile ? "You haven't launched any ad campaigns yet. Start promoting your content today!" : "This user hasn't posted any ads."}
                             </p>
-                            {isOwnProfile && (
+                            {isOwnProfile && isAdvertiser && (
                                 <Button onClick={() => handleTabChange('create')} className="bg-white text-black hover:bg-white/90">
                                     Create Your First Ad
+                                </Button>
+                            )}
+                            {isOwnProfile && !isAdvertiser && (
+                                <Button onClick={() => handleTabChange('access')} className="bg-purple-600 text-white hover:bg-purple-700 mt-2">
+                                    Request Ad Access
                                 </Button>
                             )}
                         </div>
@@ -306,7 +361,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                 </div>
             )}
 
-            {activeTab === 'create' && isOwnProfile && (
+            {activeTab === 'create' && isOwnProfile && isAdvertiser && (
                 <div className="animate-in zoom-in-95 duration-300">
                     <CreateAdWizard
                         onCancel={() => handleTabChange('overview')}
