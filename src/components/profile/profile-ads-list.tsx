@@ -86,7 +86,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                     {/* Quick Stats Row */}
                     {isOwnProfile && ads.length > 0 && (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+                            <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-4 flex items-center gap-4">
                                 <div className="p-3 rounded-full bg-blue-500/10 text-blue-400">
                                     <Eye className="w-6 h-6" />
                                 </div>
@@ -95,7 +95,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                                     <p className="text-2xl font-bold text-white">{totalViews.toLocaleString()}</p>
                                 </div>
                             </div>
-                            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+                            <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-4 flex items-center gap-4">
                                 <div className="p-3 rounded-full bg-green-500/10 text-green-400">
                                     <MousePointer2 className="w-6 h-6" />
                                 </div>
@@ -104,7 +104,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                                     <p className="text-2xl font-bold text-white">{totalClicks.toLocaleString()}</p>
                                 </div>
                             </div>
-                            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-4 flex items-center gap-4">
+                            <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-4 flex items-center gap-4">
                                 <div className="p-3 rounded-full bg-purple-500/10 text-purple-400">
                                     <TrendingUp className="w-6 h-6" />
                                 </div>
@@ -150,7 +150,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
 
             {activeTab === 'payments' && isOwnProfile && (
                 <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                    <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-6">
+                    <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6">
                         <h3 className="text-lg font-bold text-white mb-4">Transaction History</h3>
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm text-left">
@@ -312,7 +312,7 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
     };
 
     return (
-        <div className="group bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden flex flex-col hover:border-white/20 transition-all duration-300 shadow-xl relative">
+        <div className="group bg-[#111112] border border-white/[0.02] rounded-sm overflow-hidden flex flex-col hover:border-white/[0.1] transition-all duration-300 shadow-sm relative">
             <div className="relative h-40 w-full bg-black/50 overflow-hidden">
                 {ad.imageUrl ? (
                     <Image

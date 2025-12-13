@@ -123,7 +123,7 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
 
             {/* 1. STATUS HEADER */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="md:col-span-2 bg-gradient-to-br from-indigo-500/10 to-purple-500/10 border-indigo-500/20">
+                <Card className="rounded-sm md:col-span-2 bg-[#111112] border border-white/[0.02] bg-gradient-to-br from-indigo-500/5 to-purple-500/5">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex items-center gap-2">
                             <Crown className={`h-5 w-5 ${isPro ? "text-yellow-400" : isPending ? "text-orange-400" : "text-muted-foreground"}`} />
@@ -174,7 +174,7 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
                     </CardContent>
                 </Card>
 
-                <Card className="md:col-span-2 lg:col-span-2">
+                <Card className="rounded-sm md:col-span-2 lg:col-span-2 bg-[#111112] border border-white/[0.02]">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-lg flex items-center gap-2">
                             <Gift className="h-5 w-5 text-pink-400" />
@@ -217,7 +217,7 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
                     </h3>
                     <div className="grid gap-6 md:grid-cols-3">
                         {plans.map((plan) => (
-                            <Card key={plan.id} className={`relative flex flex-col ${plan.isFeatured ? 'border-primary/50 shadow-lg shadow-primary/10 bg-primary/5' : ''}`}>
+                            <Card key={plan.id} className={`rounded-sm relative flex flex-col bg-[#111112] border-white/[0.02] ${plan.isFeatured ? 'border-primary/30 shadow-lg shadow-primary/5 bg-primary/5' : 'border'}`}>
                                 {plan.isFeatured && (
                                     <div className="absolute -top-3 left-1/2 -translate-x-1/2 ">
                                         <Badge className="bg-gradient-to-r from-yellow-600 to-orange-600 border-none text-white px-3">MOST POPULAR</Badge>
@@ -265,7 +265,7 @@ export default function PaymentManager({ plans, history, currentSubscription }: 
                 <h3 className="text-xl font-bold tracking-tight flex items-center gap-2">
                     <History className="h-5 w-5 text-muted-foreground" /> Payment History
                 </h3>
-                <Card>
+                <Card className="rounded-sm bg-[#111112] border border-white/[0.02]">
                     {!history || history.length === 0 ? (
                         <div className="p-8 text-center text-muted-foreground">
                             No payment history found.

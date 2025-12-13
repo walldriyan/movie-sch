@@ -80,7 +80,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
   return (
     <div className="space-y-6">
       {/* About Card */}
-      <div className="rounded-2xl bg-[#111112] border border-white/[0.02] shadow-sm p-5">
+      <div className="rounded-sm bg-[#111112] border border-white/[0.02] shadow-sm p-5">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Users className="w-5 h-5 text-purple-400" />
           About
@@ -135,7 +135,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
       {/* My Account Card - Only for own profile */}
       {isOwnProfile && loggedInUser && (
-        <div className="rounded-2xl bg-[#111112] border border-white/[0.02] shadow-sm p-5">
+        <div className="rounded-sm bg-[#111112] border border-white/[0.02] shadow-sm p-5">
           <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
             <ShieldCheck className="w-5 h-5 text-green-400" />
             My Account
@@ -206,7 +206,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
       )}
 
       {/* Achievements Placeholder */}
-      <div className="rounded-2xl bg-[#111112] border border-white/[0.02] shadow-sm p-5">
+      <div className="rounded-sm bg-[#111112] border border-white/[0.02] shadow-sm p-5">
         <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
           <Award className="w-5 h-5 text-amber-400" />
           Achievements

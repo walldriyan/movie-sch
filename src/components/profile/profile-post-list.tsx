@@ -22,7 +22,7 @@ function PostGridCard({ post }: { post: Post }) {
 
   return (
     <Link href={`/movies/${post.id}`} className="group block">
-      <div className="relative overflow-hidden rounded-xl border border-white/[0.06] bg-[#1a1a1a] hover:border-white/[0.12] transition-all duration-300">
+      <div className="relative overflow-hidden rounded-sm border border-white/[0.02] bg-[#111112] hover:border-white/[0.1] transition-all duration-300">
         {/* Image Container */}
         <div className="aspect-[16/9] relative overflow-hidden">
           {hasValidImage ? (

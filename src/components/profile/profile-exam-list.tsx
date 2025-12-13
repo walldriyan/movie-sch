@@ -82,7 +82,7 @@ function ExamResultsDialog({ submissionId, children }: { submissionId: number, c
 }
 
 const StatsCard = ({ icon, label, value, subtext }: { icon: React.ReactNode, label: string, value: string, subtext?: string }) => (
-  <Card className="flex flex-col justify-between overflow-hidden relative bg-card/60 backdrop-blur-md border-primary/10 hover:border-primary/30 transition-all">
+  <Card className="flex flex-col justify-between overflow-hidden relative bg-[#111112] backdrop-blur-md border border-white/[0.02] rounded-sm hover:border-white/[0.1] transition-all">
     <div className="absolute right-2 top-2 opacity-5 scale-150 transform">{icon}</div><CardHeader className="p-4 pb-2"><CardTitle className="text-sm font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">{icon} {label}</CardTitle></CardHeader><CardContent className="p-4 pt-0"><div className="text-2xl font-bold">{value}</div>{subtext && <p className="text-xs text-muted-foreground mt-1">{subtext}</p>}</CardContent>
   </Card>
 );
@@ -174,7 +174,7 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
             const attemptsLeft = exam.attemptsAllowed === 0 ? 'Unlimited' : exam.attemptsAllowed - attemptsMade;
 
             return (
-              <Card key={exam.id} className="flex flex-col border-none shadow-lg bg-card/50 backdrop-blur-sm hover:bg-card/80 transition-all duration-300">
+              <Card key={exam.id} className="flex flex-col border border-white/[0.02] rounded-sm shadow-sm bg-[#111112] backdrop-blur-sm hover:border-white/[0.1] transition-all duration-300">
                 <CardHeader>
                   <CardTitle className="line-clamp-1">{exam.title}</CardTitle>
                   <CardDescription className="flex items-center gap-2 pt-2 line-clamp-1">
@@ -221,7 +221,7 @@ export default function ProfileExamList({ exams, isOwnProfile }: ProfileExamList
       </section>
 
       {historyList.length > 0 && (
-        <section className="bg-card/40 rounded-xl border border-white/5 p-6 backdrop-blur-sm">
+        <section className="bg-[#111112] rounded-sm border border-white/[0.02] p-6 backdrop-blur-sm shadow-sm">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-bold flex items-center gap-2 text-foreground/90"><History className="h-5 w-5 text-primary" /> Recent Activity</h3>
             <Badge variant="outline">{historyList.length} Records</Badge>

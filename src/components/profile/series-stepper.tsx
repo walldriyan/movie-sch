@@ -18,14 +18,14 @@ const Step = ({ post, isLast }: { post: Post; isLast: boolean }) => {
   return (
     <li className="relative flex items-start gap-4 pb-8">
       {!isLast && <div className="absolute left-4 top-4 -ml-px mt-0.5 h-full w-0.5 bg-border" />}
-      
+
       <div className="relative flex h-8 w-8 flex-none items-center justify-center bg-background">
         <div className="h-2 w-2 rounded-full bg-primary ring-1 ring-primary" />
       </div>
 
       <div className="flex-grow">
         <div className="flex items-start gap-4">
-          <Link href={`/movies/${post.id}`} className="block flex-shrink-0 relative w-20 aspect-[2/3] rounded-md overflow-hidden">
+          <Link href={`/movies/${post.id}`} className="block flex-shrink-0 relative w-20 aspect-[2/3] rounded-sm overflow-hidden">
             {postImage && (
               <Image
                 src={postImage}
@@ -57,7 +57,7 @@ export default function SeriesStepper({ series }: { series: Series }) {
   if (!series.posts || series.posts.length === 0) {
     return null;
   }
-  
+
   const displayedPosts = series.posts.slice(0, 3);
   const totalPosts = series._count?.posts ?? series.posts.length;
 
@@ -66,11 +66,11 @@ export default function SeriesStepper({ series }: { series: Series }) {
       <div className="flex justify-between items-center mb-6">
         <h3 className="text-2xl font-bold font-serif">{series.title}</h3>
         {totalPosts > 3 && (
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/series/${series.id}`}>
-                View All {totalPosts} Posts <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href={`/series/${series.id}`}>
+              View All {totalPosts} Posts <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         )}
       </div>
 
