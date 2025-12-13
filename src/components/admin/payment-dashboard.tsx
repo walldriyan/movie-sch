@@ -48,34 +48,37 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
         <div className="space-y-6">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Payment & Subscription Manager</h2>
-                    <p className="text-muted-foreground">Advanced control center for all financial operations.</p>
+                    <h2 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white/80 to-white/60">Payment & Subscription Manager</h2>
+                    <p className="text-lg text-muted-foreground/80 font-medium">Advanced control center for all financial operations.</p>
                 </div>
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={() => window.location.reload()}>Refresh Data</Button>
+                    <Button variant="outline" className="rounded-full bg-white/5 border-white/10 hover:bg-white/10 backdrop-blur-md transition-all shadow-sm" onClick={() => window.location.reload()}>
+                        <Activity className="w-4 h-4 mr-2 text-primary" />
+                        Refresh Data
+                    </Button>
                 </div>
             </div>
 
             <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="grid w-full grid-cols-2 lg:grid-cols-5 h-auto">
-                    <TabsTrigger value="requests" className="py-2 flex items-center gap-2">
+                <TabsList className="bg-white/5 border border-white/10 p-1.5 h-auto w-full rounded-2xl backdrop-blur-xl shadow-lg flex flex-wrap gap-2">
+                    <TabsTrigger value="requests" className="h-10 px-4 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium border border-transparent hover:bg-white/5 flex items-center gap-2">
                         Requests
                         {initialRequests && initialRequests.length > 0 && (
-                            <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px]">
+                            <Badge variant="destructive" className="h-5 w-5 rounded-full p-0 flex items-center justify-center text-[10px] shadow-sm border-white/20">
                                 {initialRequests.length}
                             </Badge>
                         )}
                     </TabsTrigger>
-                    <TabsTrigger value="overview" className="py-2">Overview</TabsTrigger>
-                    <TabsTrigger value="transactions" className="py-2">Transactions</TabsTrigger>
-                    <TabsTrigger value="subscriptions" className="py-2">Active Subs</TabsTrigger>
-                    <TabsTrigger value="plans" className="py-2">Manage Plans</TabsTrigger>
-                    <TabsTrigger value="ads" className="py-2">Ads Management</TabsTrigger>
+                    <TabsTrigger value="overview" className="h-10 px-4 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium border border-transparent hover:bg-white/5">Overview</TabsTrigger>
+                    <TabsTrigger value="transactions" className="h-10 px-4 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium border border-transparent hover:bg-white/5">Transactions</TabsTrigger>
+                    <TabsTrigger value="subscriptions" className="h-10 px-4 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium border border-transparent hover:bg-white/5">Active Subs</TabsTrigger>
+                    <TabsTrigger value="plans" className="h-10 px-4 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium border border-transparent hover:bg-white/5">Manage Plans</TabsTrigger>
+                    <TabsTrigger value="ads" className="h-10 px-4 rounded-xl data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium border border-transparent hover:bg-white/5">Ads Management</TabsTrigger>
                 </TabsList>
 
                 {/* REQUESTS TAB */}
                 <TabsContent value="requests" className="space-y-4">
-                    <Card>
+                    <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden">
                         <CardHeader>
                             <CardTitle>Pending Requests</CardTitle>
                             <CardDescription>Review and approve user subscription requests.</CardDescription>
@@ -95,7 +98,7 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
                         <StatsCard title="Recent Transactions" value={initialTransactions.transactions.length} icon={CreditCard} desc="Last 20 records fetched" />
                     </div>
 
-                    <Card>
+                    <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden">
                         <CardHeader>
                             <CardTitle>Recent Activity</CardTitle>
                             <CardDescription>Latest financial movements across the platform.</CardDescription>
@@ -108,7 +111,7 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
 
                 {/* TRANSACTIONS TAB */}
                 <TabsContent value="transactions" className="space-y-4">
-                    <Card>
+                    <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden">
                         <CardHeader>
                             <CardTitle>All Transactions</CardTitle>
                             <CardDescription>Search and filter through payment history.</CardDescription>
@@ -121,7 +124,7 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
 
                 {/* SUBSCRIPTIONS TAB */}
                 <TabsContent value="subscriptions" className="space-y-4">
-                    <Card>
+                    <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden">
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <div>
@@ -139,7 +142,7 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
 
                 {/* PLANS TAB */}
                 <TabsContent value="plans" className="space-y-4">
-                    <Card>
+                    <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden">
                         <CardHeader>
                             <div className="flex justify-between items-center">
                                 <div>
@@ -177,7 +180,7 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
                         </div>
 
                         <div className="pt-10 border-t border-white/5">
-                            <Card>
+                            <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden">
                                 <CardHeader>
                                     <CardTitle>Ad Payments History</CardTitle>
                                     <CardDescription>Revenue specifically from Sponsored Ads.</CardDescription>
@@ -201,7 +204,7 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
 
 function StatsCard({ title, value, icon: Icon, desc }: any) {
     return (
-        <Card>
+        <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20 backdrop-blur-xl shadow-lg rounded-2xl overflow-hidden transition-all hover:scale-[1.02]">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">{title}</CardTitle>
                 <Icon className="h-4 w-4 text-muted-foreground" />
@@ -241,7 +244,7 @@ function TransactionTable({ transactions, compact }: { transactions: any[], comp
             </TableHeader>
             <TableBody>
                 {transactions.map((tx) => (
-                    <TableRow key={tx.id}>
+                    <TableRow key={tx.id} className="border-white/5 hover:bg-white/5 transition-colors">
                         <TableCell>
                             <div className="flex items-center gap-3">
                                 <Avatar className="w-8 h-8">
@@ -289,7 +292,7 @@ function SubscriptionManager({ initialData }: any) {
             </TableHeader>
             <TableBody>
                 {initialData.subscriptions.map((sub: any) => (
-                    <TableRow key={sub.id}>
+                    <TableRow key={sub.id} className="border-white/5 hover:bg-white/5 transition-colors">
                         <TableCell>
                             <div className="flex items-center gap-3">
                                 <Avatar className="w-8 h-8">
@@ -325,7 +328,7 @@ function SubscriptionManager({ initialData }: any) {
 
 function PlanCard({ plan }: any) {
     return (
-        <Card className="relative group">
+        <Card className="relative group bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden hover:border-white/20 transition-all hover:scale-[1.01]">
             <CardHeader>
                 <CardTitle className="flex justify-between items-center">
                     {plan.name}
@@ -368,7 +371,7 @@ function PlanDialog({ plan, trigger }: { plan?: any, trigger?: any }) {
             <DialogTrigger asChild>
                 {trigger || <Button><Plus className="w-4 h-4 mr-2" /> Create Plan</Button>}
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-[#0a0a0b]/95 backdrop-blur-2xl border-white/10 text-white sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>{isEditing ? 'Edit Plan' : 'Create New Plan'}</DialogTitle>
                     <DialogDescription>Configure the subscription tier details.</DialogDescription>
@@ -459,7 +462,7 @@ function ManualSubDialog({ plans }: { plans: any[] }) {
             <DialogTrigger asChild>
                 <Button variant="outline"><Plus className="w-4 h-4 mr-2" /> Add Manual Sub</Button>
             </DialogTrigger>
-            <DialogContent className="overflow-visible sm:max-w-[500px]">
+            <DialogContent className="bg-[#0a0a0b]/95 backdrop-blur-2xl border-white/10 text-white overflow-visible sm:max-w-[500px]">
                 <DialogHeader>
                     <DialogTitle>Grant Subscription</DialogTitle>
                     <DialogDescription>Manually give a user a subscription (bypassing payment).</DialogDescription>
@@ -589,7 +592,7 @@ function RequestTable({ requests }: { requests: any[] }) {
             </TableHeader>
             <TableBody>
                 {requests.map((req) => (
-                    <TableRow key={req.id}>
+                    <TableRow key={req.id} className="border-white/5 hover:bg-white/5 transition-colors">
                         <TableCell>
                             <div className="flex items-center gap-3">
                                 <Avatar className="w-8 h-8">
