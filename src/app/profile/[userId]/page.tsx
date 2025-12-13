@@ -6,6 +6,7 @@ import ProfilePostList from '@/components/profile/profile-post-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
 import PublicAdList from '@/components/profile/public-ad-list';
 import PaymentManager from '@/components/profile/profile-payment-manager';
+import ProfileMessages from '@/components/profile/profile-messages';
 import { notFound } from 'next/navigation';
 
 export const dynamic = 'force-dynamic';
@@ -126,6 +127,8 @@ export default async function ProfilePage({
             />
         );
 
+    } else if (filter === 'messages' && isOwnProfile) {
+        content = <ProfileMessages user={user} />;
     } else {
         // Fetch posts
         const posts = await prisma.post.findMany({

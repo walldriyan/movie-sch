@@ -1,6 +1,6 @@
 'use client';
 
-import { MoreHorizontal, Grid3x3, Bookmark, BookCheck, Clapperboard, Camera, Megaphone, Sparkles, MapPin, Globe, Calendar, Link as LinkIcon, ExternalLink } from 'lucide-react';
+import { MoreHorizontal, Grid3x3, Bookmark, BookCheck, Clapperboard, Camera, Megaphone, Sparkles, MapPin, Globe, Calendar, Link as LinkIcon, ExternalLink, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
@@ -34,6 +34,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
   ];
 
   if (isOwnProfile) {
+    tabs.push({ id: 'messages', label: 'Messages', icon: MessageSquare });
     tabs.push({ id: 'ads', label: 'My Ads', icon: Megaphone });
     tabs.push({ id: 'payments', label: 'Payments', icon: Sparkles });
   }

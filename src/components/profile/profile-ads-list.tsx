@@ -6,9 +6,13 @@ import Image from 'next/image';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid, Key, MessageSquare, ShieldCheck, CheckCircle2, Loader2 } from 'lucide-react';
 import { toggleUserAdStatus, deleteSponsoredPost } from '@/lib/actions/ads';
+import { redeemKeyAction } from '@/lib/actions/payment-actions';
+import { createFeedback } from '@/lib/actions/feedback';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -16,30 +20,182 @@ import CreateAdWizard from './create-ad-wizard';
 
 type AdWithPayment = SponsoredPost & { paymentRecord: PaymentRecord | null, endDate: Date | null };
 
+function AdAccessWizard({ ads }: { ads: AdWithPayment[] }) {
+    const { toast } = useToast();
+    const router = useRouter();
+
+    // Request State
+    const [requestMessage, setRequestMessage] = useState('');
+    const [isSending, setIsSending] = useState(false);
+
+    // Code State
+    const [code, setCode] = useState('');
+    const [isRedeeming, setIsRedeeming] = useState(false);
+
+    return (
+        <div className="space-y-8">
+            {/* Status Overview */}
+            <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6 flex justify-between items-center shadow-sm">
+                <div className="flex items-center gap-4">
+                    <div className="p-3 bg-blue-500/10 rounded-full text-blue-400">
+                        <ShieldCheck className="w-6 h-6" />
+                    </div>
+                    <div>
+                        <h3 className="font-bold text-white text-lg">Ad Account Status</h3>
+                        <p className="text-white/40 text-xs">
+                            {ads.length > 0 ? 'Active Advertiser' : 'Standard User'}
+                        </p>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <p className="text-xs text-muted-foreground uppercase">Active Campaigns</p>
+                    <p className="text-2xl font-bold text-white">{ads.filter(a => a.status === 'APPROVED').length}</p>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* 1. Request Access Section */}
+                <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-purple-500/10 rounded-full text-purple-400">
+                            <MessageSquare className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-white text-lg">Step 1: Request Access</h3>
+                            <p className="text-white/40 text-xs">Contact admin to purchase ad credits.</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-xs text-white/60 uppercase font-bold">Message to Admin</label>
+                            <Textarea
+                                value={requestMessage}
+                                onChange={(e) => setRequestMessage(e.target.value)}
+                                placeholder="I would like to purchase the 'Gold Package' for 5000 LKR..."
+                                className="bg-white/5 border-white/10 text-white h-32"
+                            />
+                        </div>
+                        <Button
+                            onClick={async () => {
+                                setIsSending(true);
+                                try {
+                                    const res = await createFeedback('[AD_REQUEST] New Ad Campaign Request', requestMessage);
+                                    if (res.success) {
+                                        toast({ title: "Request Sent", description: "Admin will review and reply with a code." });
+                                        setRequestMessage('');
+                                    } else {
+                                        toast({ title: "Error", description: "Failed to send.", variant: "destructive" });
+                                    }
+                                } catch (e) { toast({ title: "Error", description: "Failed.", variant: "destructive" }); }
+                                finally { setIsSending(false); }
+                            }}
+                            disabled={isSending || !requestMessage}
+                            className="w-full bg-white text-black hover:bg-white/90"
+                        >
+                            {isSending ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                            Send Request
+                        </Button>
+                    </div>
+                </div>
+
+                {/* 2. Redeem Code Section */}
+                <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6 shadow-sm">
+                    <div className="flex items-center gap-3 mb-4">
+                        <div className="p-2 bg-green-500/10 rounded-full text-green-400">
+                            <Key className="w-5 h-5" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-white text-lg">Step 2: Redeem Code</h3>
+                            <p className="text-white/40 text-xs">Enter the code provided by admin.</p>
+                        </div>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-xs text-white/60 uppercase font-bold">Access Key</label>
+                            <Input
+                                value={code}
+                                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                                placeholder="XXXX-YYYY-ZZZZ"
+                                className="bg-white/5 border-white/10 text-white font-mono tracking-widest text-center uppercase"
+                            />
+                        </div>
+                        <Button
+                            onClick={async () => {
+                                setIsRedeeming(true);
+                                try {
+                                    const res = await redeemKeyAction(code);
+                                    if (res.success) {
+                                        toast({ title: "Success!", description: "Code redeemed. You can now create ads.", className: "bg-green-500 text-white" });
+                                        setCode('');
+                                        router.refresh();
+                                    } else {
+                                        toast({ title: "Invalid Code", description: res.error as string, variant: "destructive" });
+                                    }
+                                } catch (e) { toast({ title: "Error", description: "Something went wrong.", variant: "destructive" }); }
+                                finally { setIsRedeeming(false); }
+                            }}
+                            disabled={isRedeeming || !code}
+                            className="w-full bg-green-600 hover:bg-green-700 text-white"
+                        >
+                            {isRedeeming ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
+                            Verify & Redeem
+                        </Button>
+                    </div>
+                </div>
+            </div>
+
+            {/* 3. Helper Info */}
+            <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6">
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">How it works</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs text-muted-foreground">
+                    <div className="p-4 bg-white/5 rounded-sm">
+                        <span className="block font-bold text-white mb-1">1. Contact</span>
+                        Send a request explaining your ad needs and budget.
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-sm">
+                        <span className="block font-bold text-white mb-1">2. Payment</span>
+                        Admin will contact you for payment details.
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-sm">
+                        <span className="block font-bold text-white mb-1">3. Receive Code</span>
+                        Once paid, Admin sends a unique Access Key via reply.
+                    </div>
+                    <div className="p-4 bg-white/5 rounded-sm">
+                        <span className="block font-bold text-white mb-1">4. Create Ad</span>
+                        Enter the code to unlock ad creation credits.
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+}
+
 export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayment[], isOwnProfile: boolean }) {
     const searchParams = useSearchParams();
     const router = useRouter();
-    const { toast } = useToast();
 
     // Determine initial tab from URL or default
     const initialTab = searchParams.get('action') === 'create' ? 'create' : 'overview';
     const [activeTab, setActiveTab] = useState(initialTab);
 
-    // Sync state with URL param changes - ONLY depend on searchParams, not activeTab
+    // Sync state with URL param changes
     useEffect(() => {
         const action = searchParams.get('action');
         if (action === 'create') {
             setActiveTab('create');
         } else if (action === 'payments') {
             setActiveTab('payments');
+        } else if (action === 'access') {
+            setActiveTab('access');
         } else if (!action) {
             setActiveTab('overview');
         }
-    }, [searchParams]); // Removed activeTab to prevent infinite loop
+    }, [searchParams]);
 
     const handleTabChange = (val: string) => {
         setActiveTab(val);
-        // Optional: Update URL without full refresh to keep bookmarkable state
         const newParams = new URLSearchParams(searchParams.toString());
         if (val === 'overview') newParams.delete('action');
         else newParams.set('action', val);
@@ -62,16 +218,20 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
 
                 {isOwnProfile && (
                     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full md:w-auto">
-                        <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl w-full md:w-auto grid grid-cols-3 md:flex">
-                            <TabsTrigger value="overview" className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
+                        <TabsList className="bg-[#111112] border border-white/[0.02] p-1 rounded-sm w-full md:w-auto grid grid-cols-4 md:flex">
+                            <TabsTrigger value="access" className="rounded-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
+                                <Key className="w-4 h-4 mr-2" />
+                                Access
+                            </TabsTrigger>
+                            <TabsTrigger value="overview" className="rounded-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
                                 <LayoutGrid className="w-4 h-4 mr-2" />
                                 Ads
                             </TabsTrigger>
-                            <TabsTrigger value="create" className="rounded-lg data-[state=active]:bg-purple-500 data-[state=active]:text-white text-white/60">
+                            <TabsTrigger value="create" className="rounded-sm data-[state=active]:bg-purple-500 data-[state=active]:text-white text-white/60">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Create
                             </TabsTrigger>
-                            <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
+                            <TabsTrigger value="payments" className="rounded-sm data-[state=active]:bg-white/10 data-[state=active]:text-white text-white/60">
                                 <CreditCard className="w-4 h-4 mr-2" />
                                 Finance
                             </TabsTrigger>
@@ -79,6 +239,13 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                     </Tabs>
                 )}
             </div>
+
+            {/* Access & Requests Wizard */}
+            {activeTab === 'access' && isOwnProfile && (
+                <div className="animate-in slide-in-from-left-4 duration-300">
+                    <AdAccessWizard ads={ads} />
+                </div>
+            )}
 
             {/* Content Views */}
             {activeTab === 'overview' && (
@@ -226,7 +393,7 @@ export default function ProfileAdsList({ ads, isOwnProfile }: { ads: AdWithPayme
                     </div>
                 </div>
             )}
-        </div>
+        </div >
     );
 }
 
@@ -238,12 +405,10 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
     const [isActive, setIsActive] = useState(ad.isActive);
 
     const expiryDate = useMemo(() => {
-        // If endDate exists, use it. Else fallback to 30 days if payment exists.
         if (ad.endDate) return new Date(ad.endDate);
         return ad.paymentRecord ? new Date(new Date(ad.createdAt).getTime() + 30 * 24 * 60 * 60 * 1000) : null;
     }, [ad.createdAt, ad.paymentRecord, ad.endDate]);
 
-    // Client-side state for time-dependent values
     const [progress, setProgress] = useState(0);
     const [isExpired, setIsExpired] = useState(false);
 
@@ -252,7 +417,6 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
             const now = Date.now();
             const created = new Date(ad.createdAt).getTime();
             const expiry = expiryDate.getTime();
-
             const p = Math.min(100, Math.max(0, ((now - created) / (expiry - created)) * 100));
             setProgress(p);
             setIsExpired(now > expiry);
@@ -274,13 +438,12 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
         }
 
         setLoading(true);
-        // Optimistic
         setIsActive(checked);
 
         try {
             const res = await toggleUserAdStatus(ad.id);
             if (!res.success) {
-                setIsActive(!checked); // Revert
+                setIsActive(!checked);
                 toast({ title: "Error", description: res.error as string, variant: "destructive" });
             } else {
                 toast({ title: checked ? "Ad Enabled" : "Ad Disabled", description: "Status updated.", className: "bg-green-500 text-white border-none" });
@@ -327,7 +490,6 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
                 <div className="absolute top-3 right-3 shadow-lg flex gap-2 z-10">
                     <StatusBadge status={ad.status} />
                 </div>
-                {/* Overlay Statuses */}
                 {(!isActive && ad.status === 'APPROVED') && (
                     <div className="absolute inset-0 flex items-center justify-center bg-black/60 backdrop-blur-[1px] z-0">
                         <span className="font-bold text-white uppercase tracking-widest border border-white/50 px-2 py-1 text-xs rounded bg-black/40 backdrop-blur-sm">Paused</span>
@@ -338,8 +500,6 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
                         <span className="font-bold text-red-500 uppercase tracking-widest border border-red-500/50 p-2 rounded bg-black/60">Expired</span>
                     </div>
                 )}
-
-                {/* Duration Progress Bar */}
                 {expiryDate && (
                     <div className="absolute bottom-0 left-0 w-full h-1 bg-white/10">
                         <div className="h-full bg-purple-500" style={{ width: `${progress}%` }} />
@@ -361,7 +521,6 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
                 )}
 
                 <div className="mt-auto space-y-3">
-                    {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-2">
                         <div className="bg-white/5 rounded-lg p-2 text-center border border-white/5 group-hover:bg-white/10 transition-colors">
                             <span className="block text-lg font-bold text-white">{ad.views}</span>
@@ -373,7 +532,6 @@ function AdItem({ ad, isOwnProfile }: { ad: AdWithPayment, isOwnProfile: boolean
                         </div>
                     </div>
 
-                    {/* Controls */}
                     {isOwnProfile && (
                         <div className="flex items-center justify-between pt-2 border-t border-white/5">
                             <Button
