@@ -530,3 +530,85 @@ export async function toggleUserAdStatus(adId: string) {
         return { success: false, error: "Error updating status" };
     }
 }
+
+export async function getUserAdCreationConfig() {
+    const session = await auth();
+    if (!session?.user) return null;
+
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { adBalance: true }
+    });
+
+    const packages = await prisma.adPackage.findMany({
+        where: { isActive: true },
+        orderBy: { pricePerDay: 'asc' }
+    });
+
+    return {
+        balance: user?.adBalance || 0,
+        packages
+    };
+}
+
+export async function submitAdWithPackage(data: { title: string, imageUrl: string, link: string, description?: string, packageId: string, days: number }) {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: 'Unauthorized' };
+
+    // Validation
+    const pkg = await prisma.adPackage.findUnique({ where: { id: data.packageId } });
+    if (!pkg) return { success: false, error: 'Invalid Package' };
+
+    if (data.days < pkg.minDays || data.days > pkg.maxDays) {
+        return { success: false, error: `Duration must be between ${pkg.minDays} and ${pkg.maxDays} days` };
+    }
+
+    const cost = pkg.pricePerDay * data.days;
+
+    // Check Balance
+    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+    if (!user || (user.adBalance || 0) < cost) {
+        return { success: false, error: 'Insufficient Balance' };
+    }
+
+    try {
+        await prisma.$transaction(async (tx) => {
+            // Deduct Balance
+            await tx.user.update({
+                where: { id: session.user.id },
+                data: { adBalance: { decrement: cost } }
+            });
+
+            // Create Payment Record (Internal)
+            const payment = await tx.paymentRecord.create({
+                data: {
+                    userId: session.user.id,
+                    amount: cost,
+                    method: 'ADMIN_GRANT', // Using existing enum, semantically 'Internal Transfer'
+                    type: 'AD_CAMPAIGN',
+                    status: 'COMPLETED'
+                }
+            });
+
+            await tx.sponsoredPost.create({
+                data: {
+                    title: data.title,
+                    imageUrl: data.imageUrl,
+                    link: data.link,
+                    description: data.description,
+                    priority: Math.floor(pkg.pricePerDay / 10), // Example priority logic
+                    status: 'PENDING',
+                    isActive: false,
+                    userId: session.user.id,
+                    paymentRecordId: payment.id,
+                }
+            });
+        });
+
+        revalidatePath('/');
+        return { success: true };
+    } catch (e) {
+        console.error(e);
+        return { success: false, error: 'Transaction Failed' };
+    }
+}

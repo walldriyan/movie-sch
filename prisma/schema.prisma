@@ -1,8 +1,8 @@
-// ═══════════════════════════════════════════════════════════════════════════════
+﻿// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // CINEVERSE - PRODUCTION SCHEMA FOR SUPABASE POSTGRESQL
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // Use this schema for production deployment with Supabase
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 generator client {
   provider = "prisma-client-js"
@@ -76,6 +76,9 @@ model User {
   payments          PaymentRecord[]
   usedKeys          AccessKey[]     @relation("KeyUsedBy")
   assignedKeys      AccessKey[]     @relation("KeyAssignedTo")
+  
+  // Wallet
+  adBalance         Float           @default(0.0)
 
   // Legacy Ad Payment Relations (Can be removed if we fully migrate, or kept if we kept the model)
   usedAdPayments    AdPayment[]     @relation("UsedBy")
@@ -688,6 +691,7 @@ model FeedbackReply {
   @@map("feedback_replies")
 }
 
+
 model MicroPost {
   id        String   @id @default(cuid())
   content   String   @db.Text
@@ -801,24 +805,21 @@ model SponsoredPost {
   priority    Int      @default(0)
   
   status      AdStatus @default(PENDING)
-  isActive    Boolean  @default(false) // Can be used to pause approved ads
-
+  isActive    Boolean  @default(false)
+  
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  endDate     DateTime? // When the ad campaign expires
-
+  endDate     DateTime?
+  
   userId      String?
   user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   
-  // New Payment Integration
   paymentRecordId String? @unique
   paymentRecord   PaymentRecord? @relation(fields: [paymentRecordId], references: [id])
-
-  // Legacy support (restored for compatibility)
+  
   paymentId   String?  @unique
   payment     AdPayment? @relation(fields: [paymentId], references: [id])
   
-  // Quick Stats
   views       Int      @default(0)
   clicks      Int      @default(0)
   
@@ -829,9 +830,9 @@ model SponsoredPost {
   @@map("sponsored_posts")
 }
 
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 // NEW ADVANCED PAYMENT & SUBSCRIPTION SYSTEM
-// ═══════════════════════════════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 // 1. Subscription Plans (Types of memberships available)
 model SubscriptionPlan {
@@ -1004,6 +1005,8 @@ enum PaymentType {
 }
 
 enum AccessKeyType {
+  SUBSCRIPTION_UNLOCK
+  AD_UNLOCK
   SUBSCRIPTION
   AD_CAMPAIGN
 }
@@ -1065,4 +1068,18 @@ model AdPayment {
   updatedAt        DateTime @updatedAt
 
   @@map("ad_payments")
+}
+
+model AdPackage {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  pricePerDay Float
+  minDays     Int      @default(1)
+  maxDays     Int      @default(365)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ad_packages")
 }

@@ -182,6 +182,16 @@ export class PaymentService {
                 }
             });
 
+            // Increment User Balance
+            if (key.creditAmount && key.creditAmount > 0) {
+                await prisma.user.update({
+                    where: { id: userId },
+                    data: {
+                        adBalance: { increment: key.creditAmount }
+                    }
+                });
+            }
+
             return { success: true, type: 'AD_CAMPAIGN', data: payment };
         }
     }

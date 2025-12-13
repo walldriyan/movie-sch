@@ -58,6 +58,10 @@ import { ROLES } from '../../lib/permissions';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { SponsoredAdsManager } from '../../components/admin/sponsored-ads-manager';
+import { AdsManager } from '../../components/admin/ads-manager';
+import { getAdsConfig } from '@/lib/actions/ads';
+import { AdPackagesManager } from '@/components/admin/ad-packages-manager';
 import {
     Form,
     FormControl,
@@ -816,7 +820,11 @@ function AdsTab() {
 
     return (
         <div className="space-y-10">
-            <SponsoredAdsManager />
+            <AdPackagesManager />
+
+            <div className="pt-10 border-t border-white/5">
+                <SponsoredAdsManager />
+            </div>
 
             <div className="pt-10 border-t border-white/5">
                 <div className="mb-6">

@@ -1,19 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
-import { ChevronRight, ChevronLeft, Upload, CheckCircle2, CreditCard, LayoutTemplate, Loader2, AlertCircle } from 'lucide-react';
-import { submitAd, verifyPaymentCode } from '@/lib/actions/ads';
+import { Slider } from "@/components/ui/slider"
+import { ChevronRight, ChevronLeft, Upload, CheckCircle2, DollarSign, Wallet, Loader2, AlertCircle, ShoppingCart } from 'lucide-react';
+import { getUserAdCreationConfig, submitAdWithPackage } from '@/lib/actions/ads';
 import { uploadAdImage } from '@/lib/actions/upload-ad-image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+
+interface SetupConfig {
+    balance: number;
+    packages: any[];
+}
 
 interface CreateAdWizardProps {
     onCancel: () => void;
@@ -23,6 +29,7 @@ interface CreateAdWizardProps {
 export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardProps) {
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
+    const [config, setConfig] = useState<SetupConfig | null>(null);
     const { toast } = useToast();
     const router = useRouter();
 
@@ -32,38 +39,28 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
         description: '',
         imageUrl: '',
         link: '',
-        paymentCode: ''
     });
 
-    // Verification State
-    const [isCodeVerified, setIsCodeVerified] = useState(false);
-    const [paymentDetails, setPaymentDetails] = useState<any>(null);
+    // Package Selection
+    const [selectedPkgId, setSelectedPkgId] = useState<string>('');
+    const [days, setDays] = useState<number>(3);
     const [uploadingImage, setUploadingImage] = useState(false);
+
+    useEffect(() => {
+        getUserAdCreationConfig().then(res => {
+            if (res) {
+                setConfig(res);
+                if (res.packages.length > 0) {
+                    setSelectedPkgId(res.packages[0].id);
+                    setDays(Math.max(res.packages[0].minDays, 3));
+                }
+            }
+        });
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
-    };
-
-    const handleVerifyCode = async () => {
-        if (!formData.paymentCode) return;
-        setLoading(true);
-        try {
-            const res = await verifyPaymentCode(formData.paymentCode);
-            if (res.success) {
-                setIsCodeVerified(true);
-                setPaymentDetails(res.payment);
-                toast({ title: "Code Verified", description: "Payment code is valid." });
-            } else {
-                setIsCodeVerified(false);
-                setPaymentDetails(null);
-                toast({ title: "Invalid Code", description: res.error as string, variant: "destructive" });
-            }
-        } catch (error) {
-            toast({ title: "Error", description: "Verification failed.", variant: "destructive" });
-        } finally {
-            setLoading(false);
-        }
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -90,29 +87,18 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
     };
 
     const handleSubmit = async () => {
-        if (!formData.title || !formData.imageUrl || !formData.link) {
-            toast({ title: "Missing Fields", description: "Please fill in all required fields.", variant: "destructive" });
-            return;
-        }
-
-        // Validate Step 2 if not skipped (assuming implementation requires code unless privileged, but we'll stick to basic flow)
-        if (step === 2 && !isCodeVerified) {
-            toast({ title: "Payment Required", description: "Please verify a valid payment code.", variant: "destructive" });
-            return;
-        }
+        if (!selectedPkgId) return;
 
         setLoading(true);
         try {
-            const res = await submitAd({
-                title: formData.title,
-                description: formData.description,
-                imageUrl: formData.imageUrl,
-                link: formData.link,
-                paymentCode: formData.paymentCode
+            const res = await submitAdWithPackage({
+                ...formData,
+                packageId: selectedPkgId,
+                days
             });
 
             if (res.success) {
-                toast({ title: "Success!", description: "Your ad has been submitted for approval." });
+                toast({ title: "Success!", description: "Ad submitted successfully." });
                 router.refresh();
                 onSuccess();
             } else {
@@ -137,247 +123,262 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
 
     const prevStep = () => setStep(prev => prev - 1);
 
+    const checkBalance = () => {
+        if (!config || !selectedPkgId) return { sufficient: false, cost: 0, remaining: 0 };
+        const pkg = config.packages.find(p => p.id === selectedPkgId);
+        if (!pkg) return { sufficient: false, cost: 0, remaining: 0 };
+
+        const cost = pkg.pricePerDay * days;
+        return {
+            sufficient: config.balance >= cost,
+            cost,
+            remaining: config.balance - cost
+        };
+    };
+
+    const calculation = checkBalance();
+    const selectedPkg = config?.packages.find(p => p.id === selectedPkgId);
+
     return (
         <Card className="bg-[#1a1a1a] border-white/10 overflow-hidden relative">
-            {/* Progress Bar */}
-            <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
-                <div
-                    className="h-full bg-purple-500 transition-all duration-300"
-                    style={{ width: `${(step / 3) * 100}%` }}
-                />
+            {/* Simple Header */}
+            <div className="p-6 border-b border-white/5 space-y-1">
+                <h2 className="text-xl font-bold text-white">Ad Campaign Wizard</h2>
+                <div className="flex gap-2 text-xs">
+                    <span className={cn("px-2 py-0.5 rounded-full transition-colors", step >= 1 ? "bg-purple-500/20 text-purple-300" : "bg-white/5 text-white/30")}>1. Details</span>
+                    <span className={cn("px-2 py-0.5 rounded-full transition-colors", step >= 2 ? "bg-purple-500/20 text-purple-300" : "bg-white/5 text-white/30")}>2. Budget & Duration</span>
+                </div>
             </div>
 
-            <div className="p-6 md:p-8">
-                {/* Header */}
-                <div className="mb-8">
-                    <h2 className="text-2xl font-bold text-white mb-2">Create New Advertisement</h2>
-                    <p className="text-white/60">Follow the steps to launch your campaign.</p>
-                </div>
-
-                {/* Steps */}
-                <div className="flex items-center gap-4 mb-8 text-sm">
-                    <div className={cn("flex items-center gap-2", step >= 1 ? "text-purple-400 font-bold" : "text-white/40")}>
-                        <div className={cn("w-6 h-6 rounded-full flex items-center justify-center border", step >= 1 ? "border-purple-400 bg-purple-400/20" : "border-white/20")}>1</div>
-                        Ad Details
-                    </div>
-                    <div className="h-[1px] w-8 bg-white/10" />
-                    <div className={cn("flex items-center gap-2", step >= 2 ? "text-purple-400 font-bold" : "text-white/40")}>
-                        <div className={cn("w-6 h-6 rounded-full flex items-center justify-center border", step >= 2 ? "border-purple-400 bg-purple-400/20" : "border-white/20")}>2</div>
-                        Payment & Duration
-                    </div>
-                    <div className="h-[1px] w-8 bg-white/10" />
-                    <div className={cn("flex items-center gap-2", step >= 3 ? "text-purple-400 font-bold" : "text-white/40")}>
-                        <div className={cn("w-6 h-6 rounded-full flex items-center justify-center border", step >= 3 ? "border-purple-400 bg-purple-400/20" : "border-white/20")}>3</div>
-                        Review
-                    </div>
-                </div>
-
-                {/* Content */}
-                <div className="min-h-[400px]">
-                    {step === 1 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300">
-                            <div className="grid gap-6 md:grid-cols-2">
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Headline <span className="text-red-400">*</span></Label>
-                                        <Input
-                                            name="title"
-                                            placeholder="e.g. Best Coffee in Town"
-                                            value={formData.title}
-                                            onChange={handleInputChange}
-                                            className="bg-white/5 border-white/10 focus:border-purple-500/50"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Description</Label>
-                                        <Textarea
-                                            name="description"
-                                            placeholder="Tell people about your product..."
-                                            value={formData.description}
-                                            onChange={handleInputChange}
-                                            className="bg-white/5 border-white/10 focus:border-purple-500/50 min-h-[100px]"
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Target Link <span className="text-red-400">*</span></Label>
-                                        <Input
-                                            name="link"
-                                            placeholder="https://yourwebsite.com"
-                                            value={formData.link}
-                                            onChange={handleInputChange}
-                                            className="bg-white/5 border-white/10 focus:border-purple-500/50"
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label className="text-white">Image URL <span className="text-red-400">*</span></Label>
-                                        <div className="flex gap-2">
-                                            <Input
-                                                name="imageUrl"
-                                                placeholder="https://... or upload"
-                                                value={formData.imageUrl}
-                                                onChange={handleInputChange}
-                                                className="bg-white/5 border-white/10 focus:border-purple-500/50 flex-1"
-                                            />
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                disabled={uploadingImage}
-                                                className="bg-white/5 border-white/10 text-white hover:bg-white/10 relative overflow-hidden min-w-[44px]"
-                                            >
-                                                {uploadingImage ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <Upload className="w-4 h-4" />
-                                                )}
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    className="absolute inset-0 opacity-0 cursor-pointer"
-                                                    onChange={handleImageUpload}
-                                                    disabled={uploadingImage}
-                                                />
-                                            </Button>
-                                        </div>
-                                        <p className="text-xs text-white/40">Recommended size: 600x400 or larger.</p>
-                                    </div>
-
-                                    {/* Preview */}
-                                    <div className="rounded-xl border border-dashed border-white/20 bg-black/20 overflow-hidden aspect-video flex items-center justify-center relative group">
-                                        {formData.imageUrl ? (
-                                            <>
-                                                <Image
-                                                    src={formData.imageUrl}
-                                                    alt="Preview"
-                                                    fill
-                                                    className="object-cover"
-                                                    onError={(e) => {
-                                                        // Fallback handled by parent usually but here we just show error visual if broken
-                                                        (e.target as HTMLImageElement).style.display = 'none';
-                                                    }}
-                                                />
-                                                <div className="hidden group-hover:flex absolute inset-0 bg-black/50 items-center justify-center text-white">
-                                                    Preview
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <div className="flex flex-col items-center text-white/30">
-                                                <LayoutTemplate className="w-8 h-8 mb-2" />
-                                                <span className="text-sm">Image Preview</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
+            <div className="p-6 md:p-8 min-h-[400px]">
+                {step === 1 && (
+                    <div className="grid gap-6 md:grid-cols-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-white">Headline <span className="text-red-400">*</span></Label>
+                                <Input
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleInputChange}
+                                    className="bg-white/5 border-white/10 focus:border-purple-500/50"
+                                    placeholder="Enter ad title"
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-white">Description</Label>
+                                <Textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    className="bg-white/5 border-white/10 focus:border-purple-500/50 min-h-[100px]"
+                                    placeholder="Ad details..."
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-white">Target URL <span className="text-red-400">*</span></Label>
+                                <Input
+                                    name="link"
+                                    value={formData.link}
+                                    onChange={handleInputChange}
+                                    className="bg-white/5 border-white/10 focus:border-purple-500/50"
+                                    placeholder="https://..."
+                                />
                             </div>
                         </div>
-                    )}
 
-                    {step === 2 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 max-w-xl mx-auto">
-                            <Alert className="bg-purple-500/10 border-purple-500/20 mb-6">
-                                <AlertCircle className="h-4 w-4 text-purple-400" />
-                                <AlertTitle className="text-purple-400 font-bold">දැන්වීම පල කිරීමට පෙර දැනුවත් වන්න</AlertTitle>
-                                <AlertDescription className="text-purple-400/80 mt-2 leading-relaxed">
-                                    <p className="mb-2">
-                                        ඔබගේ දැන්වීම පල කිරීම සඳහා වලංගු <span className="font-bold text-white">Payment Code</span> එකක් අවශ්‍ය වේ.
-                                    </p>
-                                    <ul className="list-disc list-inside space-y-1 text-sm opacity-90 ml-1">
-                                        <li>පළමුව Admin හරහා Payment Code එකක් ලබාගන්න.</li>
-                                        <li>එම කේතය පහතින් ඇතුලත් කර verify කරන්න.</li>
-                                        <li>කේතය තහවුරු වූ පසු ඔබේ දැන්වීම පල කළ හැක.</li>
-                                    </ul>
-                                </AlertDescription>
-                            </Alert>
-
-                            <div className="space-y-4">
-                                <Label className="text-white">Enter Payment Code</Label>
-                                <div className="flex gap-2">
-                                    <Input
-                                        name="paymentCode"
-                                        placeholder="P-XXXX-XXXX"
-                                        value={formData.paymentCode}
-                                        onChange={handleInputChange}
-                                        className="bg-white/5 border-white/10 tracking-widest uppercase font-mono"
-                                    />
-                                    <Button
-                                        onClick={handleVerifyCode}
-                                        disabled={loading || !formData.paymentCode}
-                                        className="bg-purple-600 hover:bg-purple-700"
-                                    >
-                                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify'}
-                                    </Button>
-                                </div>
+                        <div className="space-y-4">
+                            <Label className="text-white">Ad Creative <span className="text-red-400">*</span></Label>
+                            <div className="aspect-video bg-black/40 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden group">
+                                {formData.imageUrl ? (
+                                    <>
+                                        <Image src={formData.imageUrl} alt="Preview" fill className="object-cover" />
+                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                            <Button variant="outline" className="text-xs" onClick={() => setFormData(p => ({ ...p, imageUrl: '' }))}>Change Image</Button>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-center p-4">
+                                        <Button
+                                            disabled={uploadingImage}
+                                            className="relative"
+                                            variant="secondary"
+                                        >
+                                            {uploadingImage ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                                            Upload Image
+                                            <input type="file" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                        </Button>
+                                        <p className="text-white/30 text-xs mt-2">1200x628 Recommended</p>
+                                    </div>
+                                )}
                             </div>
 
-                            {isCodeVerified && paymentDetails && (
-                                <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-4 animate-in fade-in zoom-in-95">
-                                    <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center text-green-400">
-                                        <CheckCircle2 className="w-5 h-5" />
-                                    </div>
-                                    <div>
-                                        <h4 className="text-green-400 font-bold">Code Verified</h4>
-                                        <p className="text-green-400/70 text-sm">
-                                            Valid for <span className="font-bold text-white">{paymentDetails.durationDays} Days</span> campaign.
-                                            <br />
-                                            Amount: {paymentDetails.currency} {paymentDetails.amount}
-                                        </p>
+                            {/* Preview Card */}
+                            {formData.title && (
+                                <div className="bg-[#111] p-3 rounded-lg border border-white/5">
+                                    <div className="flex gap-3">
+                                        <div className="w-16 h-16 bg-white/10 rounded-md overflow-hidden relative flex-shrink-0">
+                                            {formData.imageUrl && <Image src={formData.imageUrl} alt="T" fill className="object-cover" />}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-white font-medium text-sm truncate">{formData.title}</p>
+                                            <p className="text-white/50 text-xs truncate">{formData.description || 'No description'}</p>
+                                            <p className="text-purple-400 text-[10px] mt-1">SPONSORED</p>
+                                        </div>
                                     </div>
                                 </div>
                             )}
                         </div>
-                    )}
+                    </div>
+                )}
 
-                    {step === 3 && (
-                        <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-300 text-center max-w-2xl mx-auto">
-                            <div className="bg-white/5 rounded-2xl p-6 border border-white/10">
-                                <div className="aspect-[2/1] relative w-full rounded-xl overflow-hidden mb-4 bg-black">
-                                    {formData.imageUrl && <Image src={formData.imageUrl} alt="Ad" fill className="object-cover" />}
-                                    <div className="absolute top-3 left-3 bg-purple-600 text-white text-xs font-bold px-2 py-1 rounded">SPONSORED</div>
+                {step === 2 && config && (
+                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="grid gap-8 md:grid-cols-[1fr,300px]">
+                            <div className="space-y-8">
+                                {/* Packages */}
+                                <div>
+                                    <Label className="text-white mb-4 block">Select Ad Type</Label>
+                                    <div className="grid gap-4 sm:grid-cols-2">
+                                        {config.packages.map((pkg) => (
+                                            <div
+                                                key={pkg.id}
+                                                onClick={() => {
+                                                    setSelectedPkgId(pkg.id);
+                                                    setDays(Math.max(days, pkg.minDays));
+                                                }}
+                                                className={cn(
+                                                    "p-4 rounded-xl border cursor-pointer transition-all relative",
+                                                    selectedPkgId === pkg.id
+                                                        ? "bg-purple-500/10 border-purple-500 ring-1 ring-purple-500"
+                                                        : "bg-white/5 border-white/10 hover:border-white/20"
+                                                )}
+                                            >
+                                                {selectedPkgId === pkg.id && (
+                                                    <div className="absolute top-2 right-2 text-purple-400">
+                                                        <CheckCircle2 className="w-5 h-5 fill-purple-500/20" />
+                                                    </div>
+                                                )}
+                                                <h3 className="text-white font-bold">{pkg.name}</h3>
+                                                <p className="text-white/60 text-sm mt-1">{pkg.description}</p>
+                                                <div className="mt-4 flex items-baseline gap-1 text-purple-300">
+                                                    <span className="text-lg font-bold">LKR {pkg.pricePerDay}</span>
+                                                    <span className="text-xs">/Day</span>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
-                                <h3 className="text-xl font-bold text-white mb-2">{formData.title}</h3>
-                                <p className="text-white/60 text-sm mb-4">{formData.description}</p>
-                                <Button className="w-full bg-white/10 border border-white/10 text-white hover:bg-white/20">
-                                    Visit Website
-                                </Button>
+
+                                {/* Duration Slider */}
+                                {selectedPkg && (
+                                    <div className="bg-white/5 p-6 rounded-xl border border-white/10 space-y-6">
+                                        <div className="flex justify-between items-center">
+                                            <Label className="text-white">Duration</Label>
+                                            <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/10">
+                                                <span className="text-xl font-bold text-white font-mono">{days}</span>
+                                                <span className="text-xs text-white/40">DAYS</span>
+                                            </div>
+                                        </div>
+
+                                        <Slider
+                                            value={[days]}
+                                            onValueChange={(v) => setDays(v[0])}
+                                            min={selectedPkg.minDays}
+                                            max={selectedPkg.maxDays}
+                                            step={1}
+                                            className="cursor-pointer"
+                                        />
+
+                                        <div className="flex justify-between text-xs text-white/40">
+                                            <span>Min: {selectedPkg.minDays} Days</span>
+                                            <span>Max: {selectedPkg.maxDays} Days</span>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className="text-left bg-white/5 rounded-xl p-4 border border-white/5 text-sm space-y-2">
-                                <div className="flex justify-between">
-                                    <span className="text-white/50">Duration:</span>
-                                    <span className="text-white">{paymentDetails?.durationDays || 0} Days</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-white/50">Target URL:</span>
-                                    <span className="text-white truncate max-w-[200px]">{formData.link}</span>
-                                </div>
+                            {/* Summary & Checkout */}
+                            <div className="space-y-6">
+                                <Card className="p-6 bg-black/40 border-white/10 space-y-6">
+                                    <h3 className="text-white font-semibold flex items-center gap-2">
+                                        <ShoppingCart className="w-4 h-4" /> Order Summary
+                                    </h3>
+
+                                    <div className="space-y-2 text-sm">
+                                        <div className="flex justify-between text-white/60">
+                                            <span>Price per day</span>
+                                            <span>{selectedPkg?.pricePerDay} LKR</span>
+                                        </div>
+                                        <div className="flex justify-between text-white/60">
+                                            <span>Duration</span>
+                                            <span>{days} Days</span>
+                                        </div>
+                                        <div className="h-px bg-white/10 my-2" />
+                                        <div className="flex justify-between text-white font-bold text-lg">
+                                            <span>Total Cost</span>
+                                            <span>{calculation.cost.toLocaleString()} LKR</span>
+                                        </div>
+                                    </div>
+
+                                    <div className={cn("rounded-lg p-3 text-sm flex items-start gap-3", calculation.sufficient ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300")}>
+                                        <Wallet className="w-5 h-5 shrink-0 mt-0.5" />
+                                        <div>
+                                            <p className="font-semibold">Wallet Balance: {config.balance.toLocaleString()} LKR</p>
+                                            {!calculation.sufficient && (
+                                                <p className="text-xs opacity-80 mt-1">Insufficient funds. Need {Math.abs(calculation.remaining).toLocaleString()} LKR more.</p>
+                                            )}
+                                            {calculation.sufficient && (
+                                                <p className="text-xs opacity-80 mt-1">Balance after: {calculation.remaining.toLocaleString()} LKR</p>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    <Button
+                                        onClick={handleSubmit}
+                                        disabled={loading || !calculation.sufficient}
+                                        className={cn("w-full", calculation.sufficient ? "bg-purple-600 hover:bg-purple-700" : "bg-white/10 hover:bg-white/10 text-white/40 cursor-not-allowed")}
+                                    >
+                                        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                        {calculation.sufficient ? 'Pay & Create Ad' : 'Insufficient Balance'}
+                                    </Button>
+
+                                    {!calculation.sufficient && (
+                                        <p className="text-xs text-center text-white/40">
+                                            Please request ad credits from Admin to proceed.
+                                        </p>
+                                    )}
+                                </Card>
                             </div>
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
 
-                {/* Footer Controls */}
-                <div className="flex justify-between mt-8 pt-6 border-t border-white/10">
-                    <Button
-                        variant="ghost"
-                        onClick={step === 1 ? onCancel : prevStep}
-                        className="text-white/60 hover:text-white"
-                    >
-                        {step === 1 ? 'Cancel' : 'Back'}
-                    </Button>
-
-                    <Button
-                        onClick={step === 3 ? handleSubmit : nextStep}
-                        disabled={loading || (step === 2 && !isCodeVerified)}
-                        className="bg-white text-black hover:bg-white/90"
-                    >
-                        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                        {step === 3 ? 'Publish Ad' : 'Next Step'}
-                        {step !== 3 && <ChevronRight className="w-4 h-4 ml-2" />}
-                    </Button>
-                </div>
+                {/* Empty State / Loading */}
+                {step === 2 && !config && (
+                    <div className="flex flex-col items-center justify-center py-12 text-white/40">
+                        <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                        <p>Loading configurations...</p>
+                    </div>
+                )}
             </div>
+
+            {/* Footer */}
+            {step === 1 && (
+                <div className="p-6 border-t border-white/5 flex justify-between">
+                    <Button variant="ghost" onClick={onCancel} className="text-white/60">Cancel</Button>
+                    <Button onClick={nextStep} className="bg-white text-black hover:bg-white/90">
+                        Next Step <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                </div>
+            )}
+
+            {step === 2 && (
+                <div className="p-6 border-t border-white/5 flex justify-start">
+                    <Button variant="ghost" onClick={prevStep} className="text-white/60">
+                        <ChevronLeft className="w-4 h-4 mr-2" /> Back
+                    </Button>
+                </div>
+            )}
         </Card>
     );
 }

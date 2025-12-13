@@ -1,0 +1,392 @@
+
+model MicroPost {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id], onDelete: Cascade)
+
+  images MicroPostImage[]
+  links  MicroPostLink[]
+
+  viewCount Int                @default(0)
+  likes     MicroPostLike[]
+  comments  MicroPostComment[]
+
+  categories Category[]
+  tags       Tag[]
+
+  @@index([authorId])
+  @@index([createdAt])
+  @@map("micro_posts")
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+
+  posts MicroPost[]
+
+  @@map("categories")
+}
+
+model Tag {
+  id   String @id @default(cuid())
+  name String @unique
+
+  posts MicroPost[]
+
+  @@map("tags")
+}
+
+model MicroPostImage {
+  id          String    @id @default(cuid())
+  url         String
+  microPostId String
+  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  @@index([microPostId])
+  @@map("micro_post_images")
+}
+
+model MicroPostLink {
+  id          String    @id @default(cuid())
+  url         String
+  title       String?
+  microPostId String
+  microPost   MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  @@index([microPostId])
+  @@map("micro_post_links")
+}
+
+model MicroPostLike {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  userId      String
+  microPostId String
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  microPost MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, microPostId])
+  @@index([microPostId])
+  @@map("micro_post_likes")
+}
+
+model MicroPostComment {
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  microPostId String
+  post        MicroPost @relation(fields: [microPostId], references: [id], onDelete: Cascade)
+
+  parentId String?
+  parent   MicroPostComment?  @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  MicroPostComment[] @relation("CommentReplies")
+
+  @@index([microPostId])
+  @@index([userId])
+  @@map("micro_post_comments")
+}
+
+enum AdStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model SponsoredPost {
+  id          String   @id @default(cuid())
+  title       String
+  description String?  @db.Text
+  imageUrl    String
+  link        String
+  priority    Int      @default(0)
+  
+  status      AdStatus @default(PENDING)
+  isActive    Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  endDate     DateTime?
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  
+  paymentRecordId String? @unique
+  paymentRecord   PaymentRecord? @relation(fields: [paymentRecordId], references: [id])
+  
+  paymentId   String?  @unique
+  payment     AdPayment? @relation(fields: [paymentId], references: [id])
+  
+  views       Int      @default(0)
+  clicks      Int      @default(0)
+  
+  analytics   AdAnalytics[]
+
+  @@index([userId])
+  @@index([status])
+  @@map("sponsored_posts")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// NEW ADVANCED PAYMENT & SUBSCRIPTION SYSTEM
+// ═══════════════════════════════════════════════════════════════════════════════
+
+// 1. Subscription Plans (Types of memberships available)
+model SubscriptionPlan {
+  id            String               @id @default(cuid())
+  name          String               // e.g. "Pro Weekly", "Pro Monthly"
+  description   String?              @db.Text
+  price         Float
+  currency      String               @default("LKR")
+  interval      SubscriptionInterval // WEEKLY, MONTHLY, YEARLY
+  durationDays  Int                  // Exact days for calculation (7, 30, 365)
+  
+  discountPercent Float              @default(0) // Display purpose: "Save 20%"
+  isArchived      Boolean            @default(false)
+  isFeatured      Boolean            @default(false)
+  
+  features      String[]             // UI List of features
+
+  subscriptions UserSubscription[]
+  keys          AccessKey[]
+  
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@map("subscription_plans")
+}
+
+// 2. User Subscriptions (The actual active/past subscriptions of users)
+model UserSubscription {
+  id            String             @id @default(cuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  planId        String?
+  plan          SubscriptionPlan?  @relation(fields: [planId], references: [id])
+  
+  status        SubscriptionStatus @default(ACTIVE)
+  
+  startDate     DateTime           @default(now())
+  endDate       DateTime?          // If null, could mean lifetime or recurring indefinitely until cancel
+  
+  autoRenew     Boolean            @default(false) // For future gateway integration
+  
+  paymentId     String?            @unique
+  payment       PaymentRecord?     @relation(fields: [paymentId], references: [id])
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([endDate])
+  @@map("user_subscriptions")
+}
+
+// 3. Central Payment Records (History of all transactions)
+model PaymentRecord {
+  id            String        @id @default(cuid())
+  userId        String
+  user          User          @relation(fields: [userId], references: [id])
+  
+  amount        Float
+  currency      String        @default("LKR")
+  
+  method        PaymentMethod @default(MANUAL_KEY)
+  status        PaymentStatus @default(COMPLETED)
+  
+  type          PaymentType   // SUBSCRIPTION or AD_CAMPAIGN
+  
+  // Link to what was purchased
+  subscription  UserSubscription?
+  sponsoredPost SponsoredPost? 
+  
+  // If purchased via Key
+  accessKeyId   String?
+  accessKey     AccessKey?    @relation(fields: [accessKeyId], references: [id])
+  
+  // Gateway Details (Future Proofing)
+  gatewayRefId  String?       // Stripe Session ID, etc.
+  gatewayName   String?       // "STRIPE", "PAYPAL"
+  metadata      Json?         // Store full gateway response
+
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@map("payment_records")
+}
+
+// 4. Universal Access Keys (For Manual Payments / Gift Cards)
+model AccessKey {
+  id            String        @id @default(cuid())
+  code          String        @unique // The secret code
+  
+  type          AccessKeyType // SUBSCRIPTION_UNLOCK or AD_UNLOCK
+  
+  // If Subscription Key
+  planId        String?
+  plan          SubscriptionPlan? @relation(fields: [planId], references: [id])
+  
+  // Key Constraints
+  assignedToUserId String?    // If set, only this user can use it
+  assignedTo    User?         @relation("KeyAssignedTo", fields: [assignedToUserId], references: [id])
+  
+  expiresAt     DateTime?     // When the key itself expires (not the sub)
+  
+  // Value for Ad Credits
+  creditAmount  Float?        // If type is AD_CAMPAIGN, this is the value
+  
+  // Usage State
+  isUsed        Boolean       @default(false)
+  usedAt        DateTime?
+  usedByUserId  String?
+  usedBy        User?         @relation("KeyUsedBy", fields: [usedByUserId], references: [id])
+  
+  payments      PaymentRecord[] // Updated to allow one-to-many logically (though usually one key = one payment)
+
+  createdAt     DateTime      @default(now())
+  createdBy     String?       // Admin ID who generated it
+
+  @@index([code])
+  @@map("access_keys")
+}
+
+model AdAnalytics {
+  id        String   @id @default(cuid())
+  postId    String
+  post      SponsoredPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  
+  date      String   // Format: YYYY-MM-DD
+  views     Int      @default(0)
+  clicks    Int      @default(0)
+  
+  @@unique([postId, date])
+  @@map("ad_analytics")
+}
+
+// --- NEW ENUMS ---
+
+enum SubscriptionInterval {
+  WEEKLY
+  MONTHLY
+  YEARLY
+  LIFETIME
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PENDING
+}
+
+enum PaymentMethod {
+  MANUAL_KEY
+  ONLINE_GATEWAY
+  ADMIN_GRANT
+}
+
+enum PaymentStatus {
+  COMPLETED
+  PENDING
+  FAILED
+  REFUNDED
+}
+
+enum PaymentType {
+  SUBSCRIPTION
+  AD_CAMPAIGN
+}
+
+enum AccessKeyType {
+  SUBSCRIPTION_UNLOCK
+  AD_UNLOCK
+  SUBSCRIPTION
+  AD_CAMPAIGN
+}
+
+// --- PLAYLIST MODELS ---
+
+model Playlist {
+  id        String   @id @default(cuid())
+  name      String
+  isActive  Boolean  @default(false)
+  isPublic  Boolean  @default(true)
+  
+  items     PlaylistItem[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("playlists")
+}
+
+model PlaylistItem {
+  id         String   @id @default(cuid())
+  playlistId String
+  playlist   Playlist @relation(fields: [playlistId], references: [id], onDelete: Cascade)
+  
+  title      String
+  artist     String?
+  url        String
+  type       String // "MP3", "YOUTUBE"
+  duration   Int?   // In seconds
+  image      String? // Cover image for the specific track
+  order      Int      @default(0)
+  
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  
+  @@index([playlistId])
+  @@map("playlist_items")
+}
+
+model AdPayment {
+  id               String   @id @default(cuid())
+  code             String   @unique
+  amount           Float
+  currency         String   @default("LKR")
+  durationDays     Int      @default(30)
+  
+  assignedToUserId String?
+  assignedToUser   User?    @relation("AssignedTo", fields: [assignedToUserId], references: [id])
+  
+  isUsed           Boolean  @default(false)
+  usedAt           DateTime?
+  usedByUserId     String?
+  usedByUser       User?    @relation("UsedBy", fields: [usedByUserId], references: [id])
+  
+  sponsoredPost    SponsoredPost?
+
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("ad_payments")
+}
+
+model AdPackage {
+  id          String   @id @default(cuid())
+  name        String
+  description String?  @db.Text
+  pricePerDay Float
+  minDays     Int      @default(1)
+  maxDays     Int      @default(365)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("ad_packages")
+}
