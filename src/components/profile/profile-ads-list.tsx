@@ -261,7 +261,7 @@ export default function ProfileAdsList({ ads, isOwnProfile, history, adFeedbacks
 
     // Check if user is allowed to create ("Active Advertiser")
     // Definition: Has at least 1 ad created OR has redeemed ad credits in history.
-    const hasAdHistory = history && history.some(h => h.type === 'AD_CAMPAIGN' || h.accessKey?.type === 'AD_CAMPAIGN');
+    const hasAdHistory = history?.some(h => h.type === 'AD_CAMPAIGN' || h.accessKey?.type === 'AD_CAMPAIGN') || false;
     const isAdvertiser = ads.length > 0 || hasAdHistory;
 
     const [activeTab, setActiveTab] = useState(initialTab);

@@ -11,7 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { createFeedback, getFeedbackForUser } from '@/lib/actions/feedback'; // We will create these actions
-import { MessageSquare, Bell, Send, AlertCircle, CheckCircle2, Clock } from 'lucide-react';
+import { MessageSquare, Bell, Send, AlertCircle, CheckCircle2, Clock, RotateCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -43,7 +43,7 @@ export default function ProfileMessages({ user }: { user: User }) {
         try {
             const res = await getFeedbackForUser(user.id);
             if (res.success && res.data) {
-                setFeedbacks(res.data);
+                setFeedbacks(res.data as ExtendedFeedback[]);
             }
         } catch (error) {
             console.error(error);

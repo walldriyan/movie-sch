@@ -52,7 +52,7 @@ export default async function MoviePage({ params }: Props) {
         redirect('/');
     }
 
-    const subtitlesWithPermissions = (post.subtitles || []).map((sub: any) => ({
+    const subtitlesWithPermissions = ((post as any).subtitles || []).map((sub: any) => ({
         ...sub,
         canDownload: !!user
     }));

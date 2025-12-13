@@ -155,7 +155,7 @@ export default async function SeriesDetailPage({ params, searchParams }: SeriesD
         };
     });
 
-    const subtitles = (activePostData.subtitles || []).map((s: any) => ({
+    const subtitles = ((activePostData as any).subtitles || []).map((s: any) => ({
         ...s,
         createdAt: serializeDate(s.createdAt),
         updatedAt: serializeDate(s.updatedAt),

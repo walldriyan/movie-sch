@@ -56,5 +56,5 @@ export default async function ExamResultsPage({
         orderBy: { submittedAt: 'desc' }
     });
 
-    return <ExamResultsClient exam={exam} initialSubmissions={submissions} />;
+    return <ExamResultsClient exam={exam as any} initialSubmissions={submissions as any} />;
 }

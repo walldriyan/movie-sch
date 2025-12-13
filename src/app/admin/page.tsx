@@ -58,8 +58,8 @@ import { ROLES } from '../../lib/permissions';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { SponsoredAdsManager } from '../../components/admin/sponsored-ads-manager';
-import { AdsManager } from '../../components/admin/ads-manager';
+import SponsoredAdsManager from '../../components/admin/sponsored-ads-manager';
+import AdsManager from '../../components/admin/ads-manager';
 import { getAdsConfig } from '@/lib/actions/ads';
 import { AdPackagesManager } from '@/components/admin/ad-packages-manager';
 import {
@@ -82,8 +82,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { cn } from '@/lib/utils';
 import GroupsClient from '@/components/admin/groups-client';
 import ExamsClient from '@/components/admin/exams-client';
-import AdsManager from '@/components/admin/ads-manager';
-import { getAdsConfig } from '@/lib/actions/ads';
 
 import type { GroupWithCount } from '@/lib/types';
 
@@ -794,8 +792,6 @@ export default function AdminDashboard() {
         </div>
     );
 }
-
-import SponsoredAdsManager from '@/components/admin/sponsored-ads-manager';
 
 // Ads Tab Wrapper
 function AdsTab() {
