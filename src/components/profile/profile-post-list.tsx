@@ -128,7 +128,7 @@ export default function ProfilePostList({ posts, isOwnProfile, currentFilter, pr
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
       {posts.map((post: any) => (
         <PostGridCard
           key={`${currentFilter}-${post.id}`}

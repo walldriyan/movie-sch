@@ -15,11 +15,11 @@ import UnifiedWatchPage from '@/components/common/unified-watch-page';
 import ExamTaker from '@/components/exam-taker';
 import ProfileHeader from '@/components/profile/profile-header';
 import ProfilePostList from '@/components/profile/profile-post-list';
-import ProfileSidebar from '@/components/profile/profile-sidebar';
 import ProfileSeriesList from '@/components/profile/profile-series-list';
 import ProfileExamList from '@/components/profile/profile-exam-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
 import ProfileMessages from '@/components/profile/profile-messages';
+import ProfileAbout from '@/components/profile/profile-about';
 import PublicAdList from '@/components/profile/public-ad-list';
 import PublicAdView from '@/components/profile/public-ad-view';
 import prisma from '@/lib/prisma';
@@ -318,7 +318,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                 <ProfileHeader user={profileUser} currentFilter={profileFilter} isOwnProfile={isOwnProfile} stats={stats} planLabel={planLabel} />
                 <div className="w-full max-w-6xl mx-auto px-4 md:px-8 pb-16">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2">
+                        <div className="lg:col-span-3">
                             <div key={profileFilter} className="space-y-6 animate-in fade-in zoom-in-95 duration-500">
                                 {profileFilter === 'series' ? (
                                     <ProfileSeriesList series={displaySeries} isOwnProfile={isOwnProfile} profileUser={profileUser} totalSeries={totalSeriesCount} />
@@ -348,16 +348,13 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                         history={(global as any).paymentData?.paymentHistory || []}
                                         currentSubscription={(global as any).paymentData?.activeSub}
                                     />
+                                ) : profileFilter === 'about' ? (
+                                    <ProfileAbout profileUser={profileUser} loggedInUser={session?.user} />
                                 ) : (
                                     <ProfilePostList posts={displayPosts} isOwnProfile={isOwnProfile} currentFilter={profileFilter} profileUser={profileUser} />
                                 )}
                             </div>
                         </div>
-                        <aside className="lg:col-span-1">
-                            <div className="sticky top-24">
-                                <ProfileSidebar profileUser={profileUser} loggedInUser={session?.user} />
-                            </div>
-                        </aside>
                     </div>
                 </div>
             </div>

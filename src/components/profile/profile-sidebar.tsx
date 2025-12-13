@@ -1,27 +1,22 @@
 
 'use client';
 
-import Link from 'next/link';
+
 import {
-  Link as LinkIcon,
-  Twitter,
-  Linkedin,
   ShieldCheck,
   Hourglass,
   CheckCircle2,
   XCircle,
-  Globe,
   Mail,
   Award,
   TrendingUp,
-  Users,
 } from 'lucide-react';
 import type { User } from '@prisma/client';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
 import RequestAccessDialog from '@/components/request-access-dialog';
 import { ROLES } from '@/lib/permissions';
-import EditProfileDialog from '../edit-profile-dialog';
+
 import { Button } from '../ui/button';
 import { cn } from '@/lib/utils';
 
@@ -79,59 +74,7 @@ export default function ProfileSidebar({ profileUser, loggedInUser }: ProfileSid
 
   return (
     <div className="space-y-6">
-      {/* About Card */}
-      <div className="rounded-sm bg-[#111112] border border-white/[0.02] shadow-sm p-5">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-purple-400" />
-          About
-        </h3>
 
-        {profileUser.bio ? (
-          <p className="text-white/60 text-sm leading-relaxed mb-4">
-            {profileUser.bio}
-          </p>
-        ) : (
-          <p className="text-white/40 text-sm italic mb-4">
-            No bio added yet.
-          </p>
-        )}
-
-        {/* Social Links */}
-        {(profileUser.website || profileUser.twitter || profileUser.linkedin) && (
-          <div className="flex items-center gap-3 pt-3 border-t border-white/[0.02]">
-            {profileUser.website && (
-              <Link
-                href={profileUser.website}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
-              >
-                <Globe className="w-4 h-4" />
-              </Link>
-            )}
-            {profileUser.twitter && (
-              <Link
-                href={profileUser.twitter}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
-              >
-                <Twitter className="w-4 h-4" />
-              </Link>
-            )}
-            {profileUser.linkedin && (
-              <Link
-                href={profileUser.linkedin}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-white/50 hover:text-white transition-all"
-              >
-                <Linkedin className="w-4 h-4" />
-              </Link>
-            )}
-          </div>
-        )}
-      </div>
 
       {/* My Account Card - Only for own profile */}
       {isOwnProfile && loggedInUser && (
