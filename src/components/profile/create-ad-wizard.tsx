@@ -7,8 +7,9 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Slider } from "@/components/ui/slider"
-import { ChevronRight, ChevronLeft, Upload, CheckCircle2, DollarSign, Wallet, Loader2, AlertCircle, ShoppingCart } from 'lucide-react';
-import { getUserAdCreationConfig, submitAdWithPackage } from '@/lib/actions/ads';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ChevronRight, ChevronLeft, Upload, CheckCircle2, DollarSign, Wallet, Loader2, AlertCircle, ShoppingCart, Ticket } from 'lucide-react';
+import { getUserAdCreationConfig, submitAdWithPackage, requestAdKey } from '@/lib/actions/ads';
 import { uploadAdImage } from '@/lib/actions/upload-ad-image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -45,6 +46,8 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
     const [selectedPkgId, setSelectedPkgId] = useState<string>('');
     const [days, setDays] = useState<number>(3);
     const [uploadingImage, setUploadingImage] = useState(false);
+    const [paymentCode, setPaymentCode] = useState('');
+    const [requesting, setRequesting] = useState(false);
 
     useEffect(() => {
         let isMounted = true;
@@ -96,7 +99,8 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
             const res = await submitAdWithPackage({
                 ...formData,
                 packageId: selectedPkgId,
-                days
+                days,
+                paymentCode: paymentCode || undefined
             });
 
             if (res.success) {
@@ -110,6 +114,25 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
             toast({ title: "Error", description: "Something went wrong.", variant: "destructive" });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleRequestKey = async (pkgId?: string) => {
+        const targetId = pkgId || selectedPkgId;
+        if (!targetId) return;
+
+        setRequesting(true);
+        try {
+            const res = await requestAdKey(targetId);
+            if (res.success) {
+                toast({ title: 'Request Sent', description: 'Admin has been notified. You will receive a key soon.' });
+            } else {
+                toast({ title: 'Error', description: res.error as string, variant: 'destructive' });
+            }
+        } catch (e) {
+            toast({ title: 'Error', description: 'Failed to send request.', variant: 'destructive' });
+        } finally {
+            setRequesting(false);
         }
     };
 
@@ -143,244 +166,307 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
 
     return (
         <Card className="bg-[#1a1a1a] border-white/10 overflow-hidden relative">
-            {/* Simple Header */}
-            <div className="p-6 border-b border-white/5 space-y-1">
-                <h2 className="text-xl font-bold text-white">Ad Campaign Wizard</h2>
-                <div className="flex gap-2 text-xs">
-                    <span className={cn("px-2 py-0.5 rounded-full transition-colors", step >= 1 ? "bg-purple-500/20 text-purple-300" : "bg-white/5 text-white/30")}>1. Details</span>
-                    <span className={cn("px-2 py-0.5 rounded-full transition-colors", step >= 2 ? "bg-purple-500/20 text-purple-300" : "bg-white/5 text-white/30")}>2. Budget & Duration</span>
+            <Tabs defaultValue="request" className="w-full">
+                <div className="p-6 border-b border-white/5 bg-black/20 space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h2 className="text-xl font-bold text-white">Ad Campaign Manager</h2>
+                    </div>
+                    <TabsList className="grid w-full grid-cols-2 bg-white/5 border border-white/10">
+                        <TabsTrigger value="request">Request Access</TabsTrigger>
+                        <TabsTrigger value="create">Create Campaign</TabsTrigger>
+                    </TabsList>
                 </div>
-            </div>
 
-            <div className="p-6 md:p-8 min-h-[400px]">
-                {step === 1 && (
-                    <div className="grid gap-6 md:grid-cols-2 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Label className="text-white">Headline <span className="text-red-400">*</span></Label>
-                                <Input
-                                    name="title"
-                                    value={formData.title}
-                                    onChange={handleInputChange}
-                                    className="bg-white/5 border-white/10 focus:border-purple-500/50"
-                                    placeholder="Enter ad title"
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-white">Description</Label>
-                                <Textarea
-                                    name="description"
-                                    value={formData.description}
-                                    onChange={handleInputChange}
-                                    className="bg-white/5 border-white/10 focus:border-purple-500/50 min-h-[100px]"
-                                    placeholder="Ad details..."
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label className="text-white">Target URL <span className="text-red-400">*</span></Label>
-                                <Input
-                                    name="link"
-                                    value={formData.link}
-                                    onChange={handleInputChange}
-                                    className="bg-white/5 border-white/10 focus:border-purple-500/50"
-                                    placeholder="https://..."
-                                />
-                            </div>
+                <TabsContent value="request" className="p-6 md:p-8 min-h-[400px]">
+                    {!config ? (
+                        <div className="flex flex-col items-center justify-center py-12 text-white/40">
+                            <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                            <p>Loading packages...</p>
                         </div>
-
-                        <div className="space-y-4">
-                            <Label className="text-white">Ad Creative <span className="text-red-400">*</span></Label>
-                            <div className="aspect-video bg-black/40 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden group">
-                                {formData.imageUrl ? (
-                                    <>
-                                        <Image src={formData.imageUrl} alt="Preview" fill className="object-cover" />
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                            <Button variant="outline" className="text-xs" onClick={() => setFormData(p => ({ ...p, imageUrl: '' }))}>Change Image</Button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center p-4">
-                                        <Button
-                                            disabled={uploadingImage}
-                                            className="relative"
-                                            variant="secondary"
-                                        >
-                                            {uploadingImage ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
-                                            Upload Image
-                                            <input type="file" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
-                                        </Button>
-                                        <p className="text-white/30 text-xs mt-2">1200x628 Recommended</p>
+                    ) : (
+                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                            {config.packages.map((pkg) => (
+                                <div key={pkg.id} className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4 hover:border-purple-500/50 transition-colors flex flex-col justify-between">
+                                    <div className="space-y-2">
+                                        <h3 className="text-white font-bold text-lg">{pkg.name}</h3>
+                                        <p className="text-white/60 text-sm line-clamp-3">{pkg.description}</p>
                                     </div>
-                                )}
-                            </div>
-
-                            {/* Preview Card */}
-                            {formData.title && (
-                                <div className="bg-[#111] p-3 rounded-lg border border-white/5">
-                                    <div className="flex gap-3">
-                                        <div className="w-16 h-16 bg-white/10 rounded-md overflow-hidden relative flex-shrink-0">
-                                            {formData.imageUrl && <Image src={formData.imageUrl} alt="T" fill className="object-cover" />}
+                                    <div className="space-y-4 pt-4">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-2xl font-bold text-purple-400">LKR {pkg.pricePerDay.toLocaleString()}</span>
+                                            <span className="text-xs text-white/40">Per Day</span>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-white font-medium text-sm truncate">{formData.title}</p>
-                                            <p className="text-white/50 text-xs truncate">{formData.description || 'No description'}</p>
-                                            <p className="text-purple-400 text-[10px] mt-1">SPONSORED</p>
-                                        </div>
+                                        <Button
+                                            onClick={() => handleRequestKey(pkg.id)}
+                                            disabled={requesting}
+                                            variant="outline"
+                                            className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200"
+                                        >
+                                            {requesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Ticket className="w-4 h-4 mr-2" />}
+                                            Request Access Key
+                                        </Button>
                                     </div>
                                 </div>
-                            )}
+                            ))}
                         </div>
-                    </div>
-                )}
+                    )}
+                </TabsContent>
 
-                {step === 2 && config && (
-                    <div className="animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="grid gap-8 md:grid-cols-[1fr,300px]">
-                            <div className="space-y-8">
-                                {/* Packages */}
-                                <div>
-                                    <Label className="text-white mb-4 block">Select Ad Type</Label>
-                                    <div className="grid gap-4 sm:grid-cols-2">
-                                        {config.packages.map((pkg) => (
-                                            <div
-                                                key={pkg.id}
-                                                onClick={() => {
-                                                    setSelectedPkgId(pkg.id);
-                                                    setDays(Math.max(days, pkg.minDays));
-                                                }}
-                                                className={cn(
-                                                    "p-4 rounded-xl border cursor-pointer transition-all relative",
-                                                    selectedPkgId === pkg.id
-                                                        ? "bg-purple-500/10 border-purple-500 ring-1 ring-purple-500"
-                                                        : "bg-white/5 border-white/10 hover:border-white/20"
-                                                )}
-                                            >
-                                                {selectedPkgId === pkg.id && (
-                                                    <div className="absolute top-2 right-2 text-purple-400">
-                                                        <CheckCircle2 className="w-5 h-5 fill-purple-500/20" />
-                                                    </div>
-                                                )}
-                                                <h3 className="text-white font-bold">{pkg.name}</h3>
-                                                <p className="text-white/60 text-sm mt-1">{pkg.description}</p>
-                                                <div className="mt-4 flex items-baseline gap-1 text-purple-300">
-                                                    <span className="text-lg font-bold">LKR {pkg.pricePerDay}</span>
-                                                    <span className="text-xs">/Day</span>
+                <TabsContent value="create" className="space-y-0 mt-0">
+                    <div className="px-6 py-4 border-b border-white/5 flex gap-2 text-xs bg-white/5">
+                        <span className={cn("px-2 py-0.5 rounded-full transition-colors", step >= 1 ? "bg-purple-500/20 text-purple-300" : "bg-white/5 text-white/30")}>1. Details</span>
+                        <span className={cn("px-2 py-0.5 rounded-full transition-colors", step >= 2 ? "bg-purple-500/20 text-purple-300" : "bg-white/5 text-white/30")}>2. Payment & Setup</span>
+                    </div>
+
+                    <div className="p-6 md:p-8 min-h-[400px]">
+                        {step === 1 && (
+                            <div className="grid gap-6 md:grid-cols-2 animate-in fade-in slide-in-from-right-4 duration-300">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label className="text-white">Headline <span className="text-red-400">*</span></Label>
+                                        <Input
+                                            name="title"
+                                            value={formData.title}
+                                            onChange={handleInputChange}
+                                            className="bg-white/5 border-white/10 focus:border-purple-500/50"
+                                            placeholder="Enter ad title"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-white">Description</Label>
+                                        <Textarea
+                                            name="description"
+                                            value={formData.description}
+                                            onChange={handleInputChange}
+                                            className="bg-white/5 border-white/10 focus:border-purple-500/50 min-h-[100px]"
+                                            placeholder="Ad details..."
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label className="text-white">Target URL <span className="text-red-400">*</span></Label>
+                                        <Input
+                                            name="link"
+                                            value={formData.link}
+                                            onChange={handleInputChange}
+                                            className="bg-white/5 border-white/10 focus:border-purple-500/50"
+                                            placeholder="https://..."
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <Label className="text-white">Ad Creative <span className="text-red-400">*</span></Label>
+                                    <div className="aspect-video bg-black/40 rounded-xl border border-dashed border-white/20 flex flex-col items-center justify-center relative overflow-hidden group">
+                                        {formData.imageUrl ? (
+                                            <>
+                                                <Image src={formData.imageUrl} alt="Preview" fill className="object-cover" />
+                                                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <Button variant="outline" className="text-xs" onClick={() => setFormData(p => ({ ...p, imageUrl: '' }))}>Change Image</Button>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="text-center p-4">
+                                                <Button disabled={uploadingImage} className="relative" variant="secondary">
+                                                    {uploadingImage ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <Upload className="w-4 h-4 mr-2" />}
+                                                    Upload Image
+                                                    <input type="file" onChange={handleImageUpload} className="absolute inset-0 opacity-0 cursor-pointer" />
+                                                </Button>
+                                                <p className="text-white/30 text-xs mt-2">1200x628 Recommended</p>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {formData.title && (
+                                        <div className="bg-[#111] p-3 rounded-lg border border-white/5">
+                                            <div className="flex gap-3">
+                                                <div className="w-16 h-16 bg-white/10 rounded-md overflow-hidden relative flex-shrink-0">
+                                                    {formData.imageUrl && <Image src={formData.imageUrl} alt="T" fill className="object-cover" />}
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-white font-medium text-sm truncate">{formData.title}</p>
+                                                    <p className="text-white/50 text-xs truncate">{formData.description || 'No description'}</p>
+                                                    <p className="text-purple-400 text-[10px] mt-1">SPONSORED</p>
                                                 </div>
                                             </div>
-                                        ))}
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
+                            </div>
+                        )}
 
-                                {/* Duration Slider */}
-                                {selectedPkg && (
-                                    <div className="bg-white/5 p-6 rounded-xl border border-white/10 space-y-6">
-                                        <div className="flex justify-between items-center">
-                                            <Label className="text-white">Duration</Label>
-                                            <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/10">
-                                                <span className="text-xl font-bold text-white font-mono">{days}</span>
-                                                <span className="text-xs text-white/40">DAYS</span>
+                        {step === 2 && config && (
+                            <div className="animate-in fade-in slide-in-from-right-4 duration-300">
+                                <div className="grid gap-8 md:grid-cols-[1fr,300px]">
+                                    <div className="space-y-8">
+                                        <div>
+                                            <Label className="text-white mb-4 block">Select Ad Type</Label>
+                                            <div className="grid gap-4 sm:grid-cols-2">
+                                                {config.packages.map((pkg) => (
+                                                    <div
+                                                        key={pkg.id}
+                                                        onClick={() => {
+                                                            setSelectedPkgId(pkg.id);
+                                                            setDays(Math.max(days, pkg.minDays));
+                                                        }}
+                                                        className={cn(
+                                                            "p-4 rounded-xl border cursor-pointer transition-all relative",
+                                                            selectedPkgId === pkg.id
+                                                                ? "bg-purple-500/10 border-purple-500 ring-1 ring-purple-500"
+                                                                : "bg-white/5 border-white/10 hover:border-white/20"
+                                                        )}
+                                                    >
+                                                        {selectedPkgId === pkg.id && (
+                                                            <div className="absolute top-2 right-2 text-purple-400">
+                                                                <CheckCircle2 className="w-5 h-5 fill-purple-500/20" />
+                                                            </div>
+                                                        )}
+                                                        <h3 className="text-white font-bold">{pkg.name}</h3>
+                                                        <p className="text-white/60 text-sm mt-1">{pkg.description}</p>
+                                                        <div className="mt-4 flex items-baseline gap-1 text-purple-300">
+                                                            <span className="text-lg font-bold">LKR {pkg.pricePerDay}</span>
+                                                            <span className="text-xs">/Day</span>
+                                                        </div>
+                                                    </div>
+                                                ))}
                                             </div>
                                         </div>
 
-                                        <Slider
-                                            value={[days]}
-                                            onValueChange={(v) => setDays(v[0])}
-                                            min={selectedPkg.minDays}
-                                            max={selectedPkg.maxDays}
-                                            step={1}
-                                            className="cursor-pointer"
-                                        />
+                                        {selectedPkg && (
+                                            <div className="bg-white/5 p-6 rounded-xl border border-white/10 space-y-6">
+                                                <div className="flex justify-between items-center">
+                                                    <Label className="text-white">Duration</Label>
+                                                    <div className="flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/10">
+                                                        <span className="text-xl font-bold text-white font-mono">{days}</span>
+                                                        <span className="text-xs text-white/40">DAYS</span>
+                                                    </div>
+                                                </div>
 
-                                        <div className="flex justify-between text-xs text-white/40">
-                                            <span>Min: {selectedPkg.minDays} Days</span>
-                                            <span>Max: {selectedPkg.maxDays} Days</span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                                                <Slider
+                                                    value={[days]}
+                                                    onValueChange={(v) => setDays(v[0])}
+                                                    min={selectedPkg.minDays}
+                                                    max={selectedPkg.maxDays}
+                                                    step={1}
+                                                    className="cursor-pointer"
+                                                />
 
-                            {/* Summary & Checkout */}
-                            <div className="space-y-6">
-                                <Card className="p-6 bg-black/40 border-white/10 space-y-6">
-                                    <h3 className="text-white font-semibold flex items-center gap-2">
-                                        <ShoppingCart className="w-4 h-4" /> Order Summary
-                                    </h3>
-
-                                    <div className="space-y-2 text-sm">
-                                        <div className="flex justify-between text-white/60">
-                                            <span>Price per day</span>
-                                            <span>{selectedPkg?.pricePerDay} LKR</span>
-                                        </div>
-                                        <div className="flex justify-between text-white/60">
-                                            <span>Duration</span>
-                                            <span>{days} Days</span>
-                                        </div>
-                                        <div className="h-px bg-white/10 my-2" />
-                                        <div className="flex justify-between text-white font-bold text-lg">
-                                            <span>Total Cost</span>
-                                            <span>{calculation.cost.toLocaleString()} LKR</span>
-                                        </div>
+                                                <div className="flex justify-between text-xs text-white/40">
+                                                    <span>Min: {selectedPkg.minDays} Days</span>
+                                                    <span>Max: {selectedPkg.maxDays} Days</span>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    <div className={cn("rounded-lg p-3 text-sm flex items-start gap-3", calculation.sufficient ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300")}>
-                                        <Wallet className="w-5 h-5 shrink-0 mt-0.5" />
-                                        <div>
-                                            <p className="font-semibold">Wallet Balance: {config.balance.toLocaleString()} LKR</p>
-                                            {!calculation.sufficient && (
-                                                <p className="text-xs opacity-80 mt-1">Insufficient funds. Need {Math.abs(calculation.remaining).toLocaleString()} LKR more.</p>
+                                    <div className="space-y-6">
+                                        <Card className="p-6 bg-black/40 border-white/10 space-y-6">
+                                            <h3 className="text-white font-semibold flex items-center gap-2">
+                                                <ShoppingCart className="w-4 h-4" /> Order Summary
+                                            </h3>
+
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between text-white/60">
+                                                    <span>Price per day</span>
+                                                    <span>{selectedPkg?.pricePerDay} LKR</span>
+                                                </div>
+                                                <div className="flex justify-between text-white/60">
+                                                    <span>Duration</span>
+                                                    <span>{days} Days</span>
+                                                </div>
+                                                <div className="h-px bg-white/10 my-2" />
+                                                <div className="flex justify-between text-white font-bold text-lg">
+                                                    <span>Total Cost</span>
+                                                    <span>{calculation.cost.toLocaleString()} LKR</span>
+                                                </div>
+                                            </div>
+
+                                            <div className={cn("rounded-lg p-3 text-sm flex items-start gap-3", calculation.sufficient ? "bg-green-500/10 text-green-300" : "bg-red-500/10 text-red-300")}>
+                                                <Wallet className="w-5 h-5 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <p className="font-semibold">Wallet Balance: {config.balance.toLocaleString()} LKR</p>
+                                                    {!calculation.sufficient && (
+                                                        <p className="text-xs opacity-80 mt-1">Insufficient funds. Need {Math.abs(calculation.remaining).toLocaleString()} LKR more.</p>
+                                                    )}
+                                                    {calculation.sufficient && (
+                                                        <p className="text-xs opacity-80 mt-1">Balance after: {calculation.remaining.toLocaleString()} LKR</p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-black/20 p-4 rounded-lg border border-white/5 space-y-3">
+                                                <div className="flex items-center gap-2 text-white/80 text-sm">
+                                                    <Ticket className="w-4 h-4 text-green-400" />
+                                                    <span>Or pay with Code</span>
+                                                </div>
+                                                <Input
+                                                    placeholder="Enter Payment Code..."
+                                                    className="bg-black/40 border-white/10 font-mono text-center uppercase tracking-widest placeholder:normal-case placeholder:tracking-normal"
+                                                    value={paymentCode}
+                                                    onChange={(e) => setPaymentCode(e.target.value.toUpperCase())}
+                                                />
+                                                <div className="flex justify-between items-center px-1 pt-1">
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        Don't have a code?
+                                                    </p>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        className="h-6 text-[10px] text-purple-400 hover:text-purple-300 px-2 hover:bg-purple-500/10"
+                                                        onClick={() => handleRequestKey()}
+                                                        disabled={requesting}
+                                                    >
+                                                        {requesting ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
+                                                        {requesting ? 'Requesting...' : 'Request Key'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+
+                                            <Button
+                                                onClick={handleSubmit}
+                                                disabled={loading || (!calculation.sufficient && !paymentCode)}
+                                                className={cn("w-full", (calculation.sufficient || paymentCode) ? "bg-purple-600 hover:bg-purple-700" : "bg-white/10 hover:bg-white/10 text-white/40 cursor-not-allowed")}
+                                            >
+                                                {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                                                {paymentCode ? 'Redeem & Create' : (calculation.sufficient ? 'Pay & Create Ad' : 'Insufficient Balance')}
+                                            </Button>
+
+                                            {!calculation.sufficient && !paymentCode && (
+                                                <p className="text-xs text-center text-white/40">
+                                                    Add balance or use a payment code.
+                                                </p>
                                             )}
-                                            {calculation.sufficient && (
-                                                <p className="text-xs opacity-80 mt-1">Balance after: {calculation.remaining.toLocaleString()} LKR</p>
-                                            )}
-                                        </div>
+                                        </Card>
                                     </div>
-
-                                    <Button
-                                        onClick={handleSubmit}
-                                        disabled={loading || !calculation.sufficient}
-                                        className={cn("w-full", calculation.sufficient ? "bg-purple-600 hover:bg-purple-700" : "bg-white/10 hover:bg-white/10 text-white/40 cursor-not-allowed")}
-                                    >
-                                        {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                                        {calculation.sufficient ? 'Pay & Create Ad' : 'Insufficient Balance'}
-                                    </Button>
-
-                                    {!calculation.sufficient && (
-                                        <p className="text-xs text-center text-white/40">
-                                            Please request ad credits from Admin to proceed.
-                                        </p>
-                                    )}
-                                </Card>
+                                </div>
                             </div>
-                        </div>
+                        )}
+
+                        {step === 2 && !config && (
+                            <div className="flex flex-col items-center justify-center py-12 text-white/40">
+                                <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                                <p>Loading configurations...</p>
+                            </div>
+                        )}
                     </div>
-                )}
 
-                {/* Empty State / Loading */}
-                {step === 2 && !config && (
-                    <div className="flex flex-col items-center justify-center py-12 text-white/40">
-                        <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                        <p>Loading configurations...</p>
+                    <div className="p-6 border-t border-white/5 flex gap-4">
+                        {step === 1 ? (
+                            <div className="flex justify-between w-full">
+                                <Button variant="ghost" onClick={onCancel} className="text-white/60">Cancel</Button>
+                                <Button onClick={nextStep} className="bg-white text-black hover:bg-white/90">
+                                    Next Step <ChevronRight className="w-4 h-4 ml-2" />
+                                </Button>
+                            </div>
+                        ) : (
+                            <div className="flex justify-start w-full">
+                                <Button variant="ghost" onClick={prevStep} className="text-white/60">
+                                    <ChevronLeft className="w-4 h-4 mr-2" /> Back
+                                </Button>
+                            </div>
+                        )}
                     </div>
-                )}
-            </div>
-
-            {/* Footer */}
-            {step === 1 && (
-                <div className="p-6 border-t border-white/5 flex justify-between">
-                    <Button variant="ghost" onClick={onCancel} className="text-white/60">Cancel</Button>
-                    <Button onClick={nextStep} className="bg-white text-black hover:bg-white/90">
-                        Next Step <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                </div>
-            )}
-
-            {step === 2 && (
-                <div className="p-6 border-t border-white/5 flex justify-start">
-                    <Button variant="ghost" onClick={prevStep} className="text-white/60">
-                        <ChevronLeft className="w-4 h-4 mr-2" /> Back
-                    </Button>
-                </div>
-            )}
+                </TabsContent>
+            </Tabs>
         </Card>
     );
 }

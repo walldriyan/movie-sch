@@ -28,6 +28,9 @@ import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { searchUsers } from "@/lib/actions/admin/payments";
 import { approveSubscriptionRequest, rejectSubscriptionRequest } from "@/lib/actions/payment-actions";
+import { AdPackagesManager } from '@/components/admin/ad-packages-manager';
+import AdsManager from '@/components/admin/ads-manager';
+import SponsoredAdsManager from '@/components/admin/sponsored-ads-manager';
 
 interface PaymentDashboardProps {
     stats: any;
@@ -35,9 +38,10 @@ interface PaymentDashboardProps {
     initialSubscriptions: any;
     initialRequests: any[];
     plans: any[];
+    adsConfig: any;
 }
 
-export default function PaymentDashboard({ stats, initialTransactions, initialSubscriptions, initialRequests, plans }: PaymentDashboardProps) {
+export default function PaymentDashboard({ stats, initialTransactions, initialSubscriptions, initialRequests, plans, adsConfig }: PaymentDashboardProps) {
     const [activeTab, setActiveTab] = useState('overview');
 
     return (
@@ -66,7 +70,7 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
                     <TabsTrigger value="transactions" className="py-2">Transactions</TabsTrigger>
                     <TabsTrigger value="subscriptions" className="py-2">Active Subs</TabsTrigger>
                     <TabsTrigger value="plans" className="py-2">Manage Plans</TabsTrigger>
-                    <TabsTrigger value="ads" className="py-2">Ad Revenue</TabsTrigger>
+                    <TabsTrigger value="ads" className="py-2">Ads Management</TabsTrigger>
                 </TabsList>
 
                 {/* REQUESTS TAB */}
@@ -157,18 +161,36 @@ export default function PaymentDashboard({ stats, initialTransactions, initialSu
 
                 {/* ADS TAB */}
                 <TabsContent value="ads" className="space-y-4">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Ad Payments</CardTitle>
-                            <CardDescription>Revenue specifically from Sponsored Ads.</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <TransactionManager initialData={{
-                                ...initialTransactions,
-                                transactions: initialTransactions.transactions.filter((t: any) => t.type === 'AD_CAMPAIGN')
-                            }} />
-                        </CardContent>
-                    </Card>
+                    <div className="space-y-10">
+                        <AdPackagesManager />
+
+                        <div className="pt-10 border-t border-white/5">
+                            <SponsoredAdsManager />
+                        </div>
+
+                        <div className="pt-10 border-t border-white/5">
+                            <div className="mb-6">
+                                <h3 className="text-xl font-bold">Site Ad Slots</h3>
+                                <p className="text-muted-foreground text-sm">Configure static ad units for specific page locations.</p>
+                            </div>
+                            <AdsManager initialAds={adsConfig} />
+                        </div>
+
+                        <div className="pt-10 border-t border-white/5">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>Ad Payments History</CardTitle>
+                                    <CardDescription>Revenue specifically from Sponsored Ads.</CardDescription>
+                                </CardHeader>
+                                <CardContent>
+                                    <TransactionManager initialData={{
+                                        ...initialTransactions,
+                                        transactions: initialTransactions.transactions.filter((t: any) => t.type === 'AD_CAMPAIGN')
+                                    }} />
+                                </CardContent>
+                            </Card>
+                        </div>
+                    </div>
                 </TabsContent>
             </Tabs>
         </div>

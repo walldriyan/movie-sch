@@ -551,7 +551,7 @@ export async function getUserAdCreationConfig() {
     };
 }
 
-export async function submitAdWithPackage(data: { title: string, imageUrl: string, link: string, description?: string, packageId: string, days: number }) {
+export async function submitAdWithPackage(data: { title: string, imageUrl: string, link: string, description?: string, packageId: string, days: number, paymentCode?: string }) {
     const session = await auth();
     if (!session?.user) return { success: false, error: 'Unauthorized' };
 
@@ -565,50 +565,122 @@ export async function submitAdWithPackage(data: { title: string, imageUrl: strin
 
     const cost = pkg.pricePerDay * data.days;
 
-    // Check Balance
-    const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-    if (!user || (user.adBalance || 0) < cost) {
-        return { success: false, error: 'Insufficient Balance' };
-    }
-
     try {
         await prisma.$transaction(async (tx) => {
-            // Deduct Balance
-            await tx.user.update({
-                where: { id: session.user.id },
-                data: { adBalance: { decrement: cost } }
-            });
+            let paymentRecordId = '';
 
-            // Create Payment Record (Internal)
-            const payment = await tx.paymentRecord.create({
-                data: {
-                    userId: session.user.id,
-                    amount: cost,
-                    method: 'ADMIN_GRANT', // Using existing enum, semantically 'Internal Transfer'
-                    type: 'AD_CAMPAIGN',
-                    status: 'COMPLETED'
+            if (data.paymentCode) {
+                // Verify Code
+                const adPayment = await tx.adPayment.findUnique({ where: { code: data.paymentCode } });
+                if (!adPayment) throw new Error('Invalid Payment Code');
+                if (adPayment.isUsed) throw new Error('Payment Code Already Used');
+                if (adPayment.amount < cost) throw new Error(`Insufficient Code Value. Required: ${cost}, Code: ${adPayment.amount}`);
+
+                // Mark Used
+                await tx.adPayment.update({
+                    where: { id: adPayment.id },
+                    data: {
+                        isUsed: true,
+                        usedByUserId: session.user.id,
+                        usedAt: new Date()
+                    }
+                });
+
+                // Create Payment Record
+                const pr = await tx.paymentRecord.create({
+                    data: {
+                        userId: session.user.id,
+                        amount: cost,
+                        method: 'MANUAL_KEY',
+                        type: 'AD_CAMPAIGN',
+                        status: 'COMPLETED'
+                    }
+                });
+                paymentRecordId = pr.id;
+
+            } else {
+                // Deduct Balance (Legacy/Fallback)
+                const user = await tx.user.findUnique({ where: { id: session.user.id } });
+                if (!user || (user.adBalance || 0) < cost) {
+                    throw new Error('Insufficient Balance');
                 }
-            });
 
+                await tx.user.update({
+                    where: { id: session.user.id },
+                    data: { adBalance: { decrement: cost } }
+                });
+
+                const pr = await tx.paymentRecord.create({
+                    data: {
+                        userId: session.user.id,
+                        amount: cost,
+                        method: 'ADMIN_GRANT',
+                        type: 'AD_CAMPAIGN',
+                        status: 'COMPLETED'
+                    }
+                });
+                paymentRecordId = pr.id;
+            }
+
+            // Create Sponsored Post
             await tx.sponsoredPost.create({
                 data: {
                     title: data.title,
                     imageUrl: data.imageUrl,
                     link: data.link,
                     description: data.description,
-                    priority: Math.floor(pkg.pricePerDay / 10), // Example priority logic
+                    priority: Math.floor(pkg.pricePerDay / 10),
                     status: 'PENDING',
                     isActive: false,
                     userId: session.user.id,
-                    paymentRecordId: payment.id,
+                    paymentRecordId: paymentRecordId,
                 }
             });
         });
 
         revalidatePath('/');
         return { success: true };
-    } catch (e) {
+    } catch (e: any) {
         console.error(e);
-        return { success: false, error: 'Transaction Failed' };
+        return { success: false, error: e.message || 'Transaction Failed' };
     }
 }
+
+export async function requestAdKey(packageId: string) {
+    const session = await auth();
+    if (!session?.user) return { success: false, error: 'Unauthorized' };
+
+    const pkg = await prisma.adPackage.findUnique({ where: { id: packageId } });
+    if (!pkg) return { success: false, error: 'Package not found' };
+
+    // Find Admins
+    const admins = await prisma.user.findMany({
+        where: { role: ROLES.SUPER_ADMIN },
+        select: { id: true }
+    });
+
+    if (admins.length === 0) return { success: false, error: 'No admins found' };
+
+    try {
+        await prisma.notification.create({
+            data: {
+                title: 'Ad Key Request',
+                message: `User ${session.user.name} (${session.user.email}) requested a key for package: ${pkg.name} (${pkg.pricePerDay} LKR/Day).`,
+                type: 'CUSTOM' as any,
+                senderId: session.user.id,
+                users: {
+                    create: admins.map(admin => ({
+                        userId: admin.id,
+                        status: 'UNREAD' as any
+                    }))
+                }
+            }
+        });
+        return { success: true };
+    } catch (e) {
+        console.error(e);
+        return { success: false, error: 'Failed to send request' };
+    }
+}
+
+

@@ -20,6 +20,7 @@ import ProfileExamList from '@/components/profile/profile-exam-list';
 import ProfileAdsList from '@/components/profile/profile-ads-list';
 import ProfileMessages from '@/components/profile/profile-messages';
 import ProfileAbout from '@/components/profile/profile-about';
+import CreateAdWizard from '@/components/profile/create-ad-wizard';
 import PublicAdList from '@/components/profile/public-ad-list';
 import PublicAdView from '@/components/profile/public-ad-view';
 import prisma from '@/lib/prisma';
@@ -339,6 +340,17 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
                                             </div>
                                         )}
                                         <PublicAdList ads={publicAds} highlightId={adIdParam} />
+                                    </div>
+                                ) : profileFilter === 'ads' && (isOwnProfile || session?.user?.role === ROLES.SUPER_ADMIN) ? (
+                                    <div className="space-y-8">
+                                        <CreateAdWizard
+                                            onCancel={() => { }}
+                                            onSuccess={() => { }}
+                                        />
+                                        <div className="border-t border-white/10 pt-8 opacity-80">
+                                            <h3 className="text-lg font-bold text-white mb-4">Your Active Campaigns</h3>
+                                            <ProfileAdsList ads={displayAds} isOwnProfile={isOwnProfile} />
+                                        </div>
                                     </div>
                                 ) : profileFilter === 'messages' && isOwnProfile ? (
                                     <ProfileMessages user={profileUser} />

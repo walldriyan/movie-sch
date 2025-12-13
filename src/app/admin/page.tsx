@@ -58,10 +58,7 @@ import { ROLES } from '../../lib/permissions';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import SponsoredAdsManager from '../../components/admin/sponsored-ads-manager';
-import AdsManager from '../../components/admin/ads-manager';
-import { getAdsConfig } from '@/lib/actions/ads';
-import { AdPackagesManager } from '@/components/admin/ad-packages-manager';
+
 import {
     Form,
     FormControl,
@@ -763,10 +760,7 @@ export default function AdminDashboard() {
                         <SettingsIcon className="h-4 w-4 mr-2" />
                         <span className="hidden sm:inline">Settings</span>
                     </TabsTrigger>
-                    <TabsTrigger value="ads" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
-                        <FileText className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">Ads</span>
-                    </TabsTrigger>
+
                 </TabsList>
 
                 <TabsContent value="users" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -785,50 +779,11 @@ export default function AdminDashboard() {
                     <SettingsTab />
                 </TabsContent>
 
-                <TabsContent value="ads" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <AdsTab />
-                </TabsContent>
+
             </Tabs>
         </div>
     );
 }
 
 // Ads Tab Wrapper
-function AdsTab() {
-    const [ads, setAds] = useState<Awaited<ReturnType<typeof getAdsConfig>>>([]);
-    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        async function fetchAds() {
-            try {
-                const data = await getAdsConfig();
-                setAds(data);
-            } finally {
-                setIsLoading(false);
-            }
-        }
-        fetchAds();
-    }, []);
-
-    if (isLoading) {
-        return <div className="flex justify-center py-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
-    }
-
-    return (
-        <div className="space-y-10">
-            <AdPackagesManager />
-
-            <div className="pt-10 border-t border-white/5">
-                <SponsoredAdsManager />
-            </div>
-
-            <div className="pt-10 border-t border-white/5">
-                <div className="mb-6">
-                    <h3 className="text-xl font-bold">Site Ad Slots</h3>
-                    <p className="text-muted-foreground text-sm">Configure static ad units for specific page locations.</p>
-                </div>
-                <AdsManager initialAds={ads} />
-            </div>
-        </div>
-    );
-}
