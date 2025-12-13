@@ -137,7 +137,7 @@ export default function AdAccessRequestsManager({ initialRequests }: Props) {
         <div className="space-y-6">
             {/* Stats Cards */}
             <div className="grid gap-4 md:grid-cols-3">
-                <Card className="bg-gradient-to-br from-yellow-500/10 to-yellow-500/5 border-yellow-500/20">
+                <Card className="bg-gradient-to-br from-yellow-500/10 via-yellow-500/5 to-transparent border-yellow-500/20 backdrop-blur-xl shadow-lg rounded-2xl">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-yellow-500">Pending Requests</CardTitle>
                     </CardHeader>
@@ -145,7 +145,7 @@ export default function AdAccessRequestsManager({ initialRequests }: Props) {
                         <div className="text-3xl font-bold text-yellow-500">{pendingCount}</div>
                     </CardContent>
                 </Card>
-                <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+                <Card className="bg-gradient-to-br from-green-500/10 via-green-500/5 to-transparent border-green-500/20 backdrop-blur-xl shadow-lg rounded-2xl">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-green-500">Approved</CardTitle>
                     </CardHeader>
@@ -153,7 +153,7 @@ export default function AdAccessRequestsManager({ initialRequests }: Props) {
                         <div className="text-3xl font-bold text-green-500">{approvedCount}</div>
                     </CardContent>
                 </Card>
-                <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20 backdrop-blur-xl shadow-lg rounded-2xl">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-primary">Total Requests</CardTitle>
                     </CardHeader>
@@ -164,7 +164,7 @@ export default function AdAccessRequestsManager({ initialRequests }: Props) {
             </div>
 
             {/* Requests Table */}
-            <Card className="bg-[#111112] border-white/5">
+            <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl overflow-hidden">
                 <CardHeader className="border-b border-white/5">
                     <div className="flex items-center justify-between">
                         <div>
@@ -288,7 +288,7 @@ export default function AdAccessRequestsManager({ initialRequests }: Props) {
 
             {/* Approve Dialog */}
             <Dialog open={approveDialogOpen} onOpenChange={setApproveDialogOpen}>
-                <DialogContent className="bg-[#111112] border-white/10">
+                <DialogContent className="bg-[#0a0a0b]/95 backdrop-blur-2xl border-white/10 text-white shadow-2xl rounded-2xl p-6">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                             <Check className="h-5 w-5 text-green-500" />
@@ -353,7 +353,7 @@ export default function AdAccessRequestsManager({ initialRequests }: Props) {
 
             {/* Reject Dialog */}
             <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
-                <DialogContent className="bg-[#111112] border-white/10">
+                <DialogContent className="bg-[#0a0a0b]/95 backdrop-blur-2xl border-white/10 text-white shadow-2xl rounded-2xl p-6">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2 text-red-500">
                             <X className="h-5 w-5" />

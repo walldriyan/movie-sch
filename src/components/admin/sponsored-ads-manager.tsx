@@ -197,10 +197,10 @@ export default function SponsoredAdsManager() {
             </div>
 
             <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-                <TabsList className="bg-white/5 border border-white/10">
-                    <TabsTrigger value="requests">Requests</TabsTrigger>
-                    <TabsTrigger value="active">Active Ads</TabsTrigger>
-                    <TabsTrigger value="payments">Payment Codes</TabsTrigger>
+                <TabsList className="bg-white/5 border border-white/10 p-1 rounded-xl h-auto">
+                    <TabsTrigger value="requests" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium transition-all">Requests</TabsTrigger>
+                    <TabsTrigger value="active" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium transition-all">Active Ads</TabsTrigger>
+                    <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-primary/20 data-[state=active]:text-primary font-medium transition-all">Payment Codes</TabsTrigger>
                 </TabsList>
 
                 {/* AD REQUESTS TAB */}
@@ -260,7 +260,7 @@ export default function SponsoredAdsManager() {
 
                 {/* PAYMENTS TAB */}
                 <TabsContent value="payments" className="space-y-4">
-                    <Card className="bg-[#111112] border-white/5">
+                    <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl">
                         <CardHeader className="flex flex-row items-center justify-between pb-2">
                             <div>
                                 <CardTitle>Payment Codes</CardTitle>
@@ -442,7 +442,7 @@ export default function SponsoredAdsManager() {
 // Compact Ad Card Component
 function CompactAdCard({ ad, onConvert, onDelete, isPending, showDelete }: { ad: any, onConvert?: (s: any) => void, onDelete?: () => void, isPending: boolean, showDelete?: boolean }) {
     return (
-        <Card className="bg-[#111112] border-white/5 overflow-hidden flex flex-row h-[140px] group transition-colors hover:border-white/10">
+        <Card className="bg-card/40 backdrop-blur-md border-white/10 overflow-hidden flex flex-row h-[140px] group transition-all hover:border-white/20 hover:bg-white/5 hover:shadow-lg hover:scale-[1.01] rounded-2xl">
             <div className="w-[180px] h-full relative bg-black/50 shrink-0">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={ad.imageUrl} alt={ad.title} className="w-full h-full object-cover" />

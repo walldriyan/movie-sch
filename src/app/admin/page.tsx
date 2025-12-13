@@ -186,7 +186,7 @@ function ManageSubscriptionDialog({ user, isOpen, onClose, onUpdate }: { user: U
 
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[425px] bg-[#111112] border-white/10 text-white">
+            <DialogContent className="sm:max-w-[425px] bg-[#0a0a0b]/95 backdrop-blur-xl border-white/10 text-white">
                 <DialogHeader>
                     <DialogTitle>Manage Subscription</DialogTitle>
                     <DialogDescription>
@@ -202,7 +202,7 @@ function ManageSubscriptionDialog({ user, isOpen, onClose, onUpdate }: { user: U
                             <SelectTrigger className="w-[280px] bg-white/5 border-white/10">
                                 <SelectValue placeholder="Select type" />
                             </SelectTrigger>
-                            <SelectContent className="bg-[#111112] border-white/10 text-white z-[100]">
+                            <SelectContent className="bg-[#0a0a0b]/95 backdrop-blur-xl border-white/10 text-white z-[100]">
                                 <SelectItem value="FREE">Free</SelectItem>
                                 <SelectItem value="PREMIUM">Premium</SelectItem>
                                 <SelectItem value="HYBRID">Hybrid</SelectItem>
@@ -226,13 +226,13 @@ function ManageSubscriptionDialog({ user, isOpen, onClose, onUpdate }: { user: U
                                     {date ? format(date, "PPP") : <span>Pick a date</span>}
                                 </Button>
                             </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 bg-[#111112] border-white/10 z-[100]" align="start">
+                            <PopoverContent className="w-auto p-0 bg-[#0a0a0b]/95 backdrop-blur-xl border-white/10 z-[100]" align="start">
                                 <Calendar
                                     mode="single"
                                     selected={date}
                                     onSelect={setDate}
                                     initialFocus
-                                    className="bg-[#111112] text-white"
+                                    className="bg-[#0a0a0b]/95 backdrop-blur-xl text-white"
                                 />
                             </PopoverContent>
                         </Popover>
@@ -312,7 +312,7 @@ function UsersTab() {
 
     return (
         <div className="space-y-4">
-            <Card className="bg-[#111112] border-white/5 shadow-2xl overflow-hidden">
+            <Card className="bg-[#0a0a0b]/95 backdrop-blur-xl border-white/5 shadow-2xl overflow-hidden">
                 <CardHeader className="bg-white/[0.02] border-b border-white/5 pb-6">
                     <div className="flex items-center justify-between">
                         <div>
@@ -417,12 +417,12 @@ function UsersTab() {
                                                         <span className="sr-only">Toggle menu</span>
                                                     </Button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="bg-[#111112] border-white/10 z-50">
+                                                <DropdownMenuContent align="end" className="bg-[#0a0a0b]/95 backdrop-blur-xl border-white/10 z-50">
                                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                                     <DropdownMenuSub>
                                                         <DropdownMenuSubTrigger>Change Role</DropdownMenuSubTrigger>
                                                         <DropdownMenuPortal>
-                                                            <DropdownMenuSubContent className="bg-[#111112] border-white/10">
+                                                            <DropdownMenuSubContent className="bg-[#0a0a0b]/95 backdrop-blur-xl border-white/10">
                                                                 <DropdownMenuRadioGroup
                                                                     value={user.role}
                                                                     onValueChange={(newRole) => handleRoleChange(user, newRole as Role)}
@@ -437,7 +437,7 @@ function UsersTab() {
                                                     <DropdownMenuSub>
                                                         <DropdownMenuSubTrigger>Change Permission Status</DropdownMenuSubTrigger>
                                                         <DropdownMenuPortal>
-                                                            <DropdownMenuSubContent className="bg-[#111112] border-white/10">
+                                                            <DropdownMenuSubContent className="bg-[#0a0a0b]/95 backdrop-blur-xl border-white/10">
                                                                 <DropdownMenuRadioGroup
                                                                     value={user.permissionRequestStatus || 'NONE'}
                                                                     onValueChange={(newStatus) => handleStatusChange(user, newStatus)}
@@ -562,7 +562,7 @@ function SettingsTab() {
         <div className="space-y-6">
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-                    <Card className="bg-[#111112] border-white/5 shadow-md">
+                    <Card className="bg-[#0a0a0b]/95 backdrop-blur-xl border-white/5 shadow-md">
                         <CardHeader className="border-b border-white/5 pb-4">
                             <CardTitle className="flex items-center gap-2 text-lg">
                                 <FileText className="h-5 w-5 text-primary" />
@@ -596,7 +596,7 @@ function SettingsTab() {
                         </CardContent>
                     </Card>
 
-                    <Card className="bg-[#111112] border-white/5 shadow-md">
+                    <Card className="bg-[#0a0a0b]/95 backdrop-blur-xl border-white/5 shadow-md">
                         <CardHeader className="border-b border-white/5 pb-4">
                             <CardTitle className="flex items-center gap-2 text-lg">
                                 <UsersIcon className="h-5 w-5 text-primary" />
@@ -733,35 +733,46 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="min-h-screen bg-background pt-24 pb-12 px-4 sm:px-6 lg:px-8 max-w-[1600px] mx-auto space-y-8">
-            <div className="flex flex-col gap-2">
-                <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-                    <ShieldQuestion className="h-8 w-8 text-primary" />
+        <div className="space-y-8">
+            <div className="flex flex-col gap-1 items-start">
+                <h1 className="text-4xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-white/80 to-white/60 flex items-center gap-3">
+                    <ShieldQuestion className="h-10 w-10 text-primary" />
                     Admin Dashboard
                 </h1>
-                <p className="text-muted-foreground">Manage users, groups, content, and system configurations.</p>
+                <p className="text-lg text-muted-foreground/80 font-medium">
+                    Overview and management center
+                </p>
             </div>
 
             <Tabs value={currentTab} onValueChange={handleTabChange} className="space-y-8">
-                <TabsList className="bg-white/5 border border-white/10 p-1 rounded-full w-full max-w-2xl h-auto grid grid-cols-5 gap-1">
-                    <TabsTrigger value="users" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
-                        <UsersIcon className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">Users</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="groups" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
-                        <UsersRound className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">Groups</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="exams" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">Exams</span>
-                    </TabsTrigger>
-                    <TabsTrigger value="settings" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground py-2 transition-all">
-                        <SettingsIcon className="h-4 w-4 mr-2" />
-                        <span className="hidden sm:inline">Settings</span>
-                    </TabsTrigger>
-
-                </TabsList>
+                <div className="sticky top-0 z-30 pt-2 pb-4 bg-background/80 backdrop-blur-md -mx-4 px-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8 transition-all">
+                    <TabsList className="bg-white/5 border border-white/10 p-1 h-12 w-full sm:w-auto rounded-xl backdrop-blur-xl shadow-lg inline-flex">
+                        <TabsTrigger
+                            value="users"
+                            className="h-10 px-6 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-indigo-500 data-[state=active]:to-purple-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
+                        >
+                            <UsersIcon className="h-4 w-4 mr-2" /> Users
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="groups"
+                            className="h-10 px-6 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-500 data-[state=active]:to-cyan-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
+                        >
+                            <UsersRound className="h-4 w-4 mr-2" /> Groups
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="exams"
+                            className="h-10 px-6 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-emerald-500 data-[state=active]:to-teal-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
+                        >
+                            <BookOpen className="h-4 w-4 mr-2" /> Exams
+                        </TabsTrigger>
+                        <TabsTrigger
+                            value="settings"
+                            className="h-10 px-6 rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-orange-500 data-[state=active]:to-pink-600 data-[state=active]:text-white data-[state=active]:shadow-md transition-all font-medium"
+                        >
+                            <SettingsIcon className="h-4 w-4 mr-2" /> Settings
+                        </TabsTrigger>
+                    </TabsList>
+                </div>
 
                 <TabsContent value="users" className="animate-in fade-in slide-in-from-bottom-4 duration-500">
                     <UsersTab />

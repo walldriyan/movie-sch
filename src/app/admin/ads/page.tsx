@@ -16,14 +16,7 @@ export default async function AdminAdsPage() {
     }
 
     return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-3xl font-bold tracking-tight">Sponsored Ads Management</h1>
-                <p className="text-muted-foreground">
-                    View, approve, and manage all sponsored advertisements and payment codes.
-                </p>
-            </div>
-
+        <div className="max-w-[1600px] mx-auto">
             <SponsoredAdsManager />
         </div>
     );

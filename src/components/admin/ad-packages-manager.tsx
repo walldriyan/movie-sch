@@ -131,7 +131,7 @@ export function AdPackagesManager() {
     };
 
     return (
-        <Card className="bg-black/20 border-white/5">
+        <Card className="bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl">
             <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                     <CardTitle>Ad Packages</CardTitle>
@@ -144,7 +144,7 @@ export function AdPackagesManager() {
             <CardContent>
                 {/* Form Dialog */}
                 <Dialog open={isCreating} onOpenChange={(v) => !v && resetForm()}>
-                    <DialogContent className="bg-[#1a1a1a] border-white/10 text-white">
+                    <DialogContent className="bg-[#0a0a0b]/95 backdrop-blur-2xl border-white/10 text-white shadow-2xl rounded-2xl p-6">
                         <DialogHeader>
                             <DialogTitle>{isEditing ? 'Edit Package' : 'Create Package'}</DialogTitle>
                         </DialogHeader>
@@ -193,7 +193,7 @@ export function AdPackagesManager() {
                     <div className="space-y-3">
                         {packages.length === 0 && <p className="text-white/40 text-sm text-center py-4">No packages defined.</p>}
                         {packages.map(pkg => (
-                            <div key={pkg.id} className="flex items-center justify-between p-4 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 transition-colors">
+                            <div key={pkg.id} className="flex items-center justify-between p-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 transition-all hover:scale-[1.01] hover:shadow-lg">
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <h4 className="font-bold text-white">{pkg.name}</h4>

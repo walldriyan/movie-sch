@@ -95,7 +95,7 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
     return (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-200px)]">
             {/* List */}
-            <Card className="md:col-span-1 flex flex-col overflow-hidden">
+            <Card className="md:col-span-1 flex flex-col overflow-hidden bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl">
                 <div className="p-4 border-b space-y-4 flex items-center gap-2">
                     <Select value={filter} onValueChange={(v: any) => setFilter(v)}>
                         <SelectTrigger className="flex-1">
@@ -145,10 +145,10 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
             </Card>
 
             {/* Detail */}
-            <Card className="md:col-span-2 flex flex-col overflow-hidden">
+            <Card className="md:col-span-2 flex flex-col overflow-hidden bg-card/40 backdrop-blur-xl border-white/10 shadow-xl rounded-2xl">
                 {selectedFeedback ? (
                     <div className="flex flex-col h-full">
-                        <div className="p-6 border-b bg-card">
+                        <div className="p-6 border-b border-white/10 bg-white/5">
                             <div className="flex justify-between items-start mb-4">
                                 <div>
                                     <h2 className="text-xl font-bold">{selectedFeedback.title}</h2>
@@ -193,7 +193,7 @@ export default function AdminFeedbackList({ initialFeedbacks }: { initialFeedbac
                             </div>
                         </ScrollArea>
 
-                        <div className="p-4 border-t bg-card mt-auto">
+                        <div className="p-4 border-t border-white/10 bg-white/5 mt-auto">
                             {/* Ad Key Helper */}
                             {selectedFeedback.title.includes('[AD_REQUEST]') && (
                                 <div className="mb-4 p-3 bg-purple-500/10 border border-purple-500/20 rounded-md flex items-center gap-4">
