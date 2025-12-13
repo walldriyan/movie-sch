@@ -50,7 +50,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
     <div className="pt-24 w-[90%] mx-auto mb-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
       {/* 1. BANNER & HEADER CONTAINER */}
-      <div className="relative rounded-sm overflow-hidden bg-[#111112] border border-white/5 shadow-sm h-[380px] flex flex-col">
+      <div className="relative rounded-sm overflow-hidden bg-[#111112] border border-white/[0.02] shadow-sm h-[380px] flex flex-col">
 
         {/* Banner with Gradient Overlay */}
         {/* Banner with Gradient Overlay */}
@@ -139,7 +139,7 @@ export default function ProfileHeader({ user, currentFilter, isOwnProfile, stats
           </div>
 
           {/* TABS NAVIGATION Bar - Pushed to bottom */}
-          <div className="border-t border-white/5 w-full bg-[#111112]/50 mt-auto shrink-0">
+          <div className="border-t border-white/[0.02] w-full bg-[#111112]/50 mt-auto shrink-0">
             <div className="flex items-center justify-center h-12">
               <div className="flex items-center gap-2 md:gap-6 overflow-x-auto scrollbar-none w-full md:w-auto justify-start md:justify-center px-4 h-full">
                 {tabs.map((tab) => {
