@@ -9,7 +9,7 @@ import { Card } from '@/components/ui/card';
 import { Slider } from "@/components/ui/slider"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ChevronRight, ChevronLeft, Upload, CheckCircle2, DollarSign, Wallet, Loader2, AlertCircle, ShoppingCart, Ticket } from 'lucide-react';
-import { getUserAdCreationConfig, submitAdWithPackage, requestAdKey } from '@/lib/actions/ads';
+import { getUserAdCreationConfig, submitAdWithPackage, requestAdKey, getUserAdRequests } from '@/lib/actions/ads';
 import { uploadAdImage } from '@/lib/actions/upload-ad-image';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
@@ -28,9 +28,11 @@ interface CreateAdWizardProps {
 }
 
 export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardProps) {
+    const [activeTab, setActiveTab] = useState("request");
     const [step, setStep] = useState(1);
     const [loading, setLoading] = useState(false);
     const [config, setConfig] = useState<SetupConfig | null>(null);
+    const [requests, setRequests] = useState<any[]>([]);
     const { toast } = useToast();
     const router = useRouter();
 
@@ -51,6 +53,7 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
 
     useEffect(() => {
         let isMounted = true;
+
         getUserAdCreationConfig().then(res => {
             if (isMounted && res) {
                 setConfig(res);
@@ -60,6 +63,13 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
                 }
             }
         });
+
+        getUserAdRequests().then(res => {
+            if (isMounted && res) {
+                setRequests(res);
+            }
+        });
+
         return () => { isMounted = false; };
     }, []);
 
@@ -126,6 +136,7 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
             const res = await requestAdKey(targetId);
             if (res.success) {
                 toast({ title: 'Request Sent', description: 'Admin has been notified. You will receive a key soon.' });
+                getUserAdRequests().then(setRequests); // Refresh requests
             } else {
                 toast({ title: 'Error', description: res.error as string, variant: 'destructive' });
             }
@@ -134,6 +145,17 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
         } finally {
             setRequesting(false);
         }
+    };
+
+    const copyToClipboard = (text: string) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: "Copied!", description: "Code copied to clipboard." });
+    };
+
+    const redeemCode = (code: string) => {
+        setPaymentCode(code);
+        setActiveTab("create");
+        setStep(2); // Jump to payment step
     };
 
     const nextStep = () => {
@@ -164,9 +186,13 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
     const calculation = checkBalance();
     const selectedPkg = config?.packages.find(p => p.id === selectedPkgId);
 
+    // Filter out already requested active/pending packages to disable button if needed, 
+    // but user might want multiple keys, so maybe just show status.
+    // We already check on server side, but visual feedback is good.
+
     return (
         <Card className="bg-[#1a1a1a] border-white/10 overflow-hidden relative">
-            <Tabs defaultValue="request" className="w-full">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                 <div className="p-6 border-b border-white/5 bg-black/20 space-y-4">
                     <div className="flex items-center justify-between">
                         <h2 className="text-xl font-bold text-white">Ad Campaign Manager</h2>
@@ -177,38 +203,99 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
                     </TabsList>
                 </div>
 
-                <TabsContent value="request" className="p-6 md:p-8 min-h-[400px]">
+                <TabsContent value="request" className="p-6 md:p-8 min-h-[400px] space-y-8">
                     {!config ? (
                         <div className="flex flex-col items-center justify-center py-12 text-white/40">
                             <Loader2 className="w-8 h-8 animate-spin mb-4" />
                             <p>Loading packages...</p>
                         </div>
                     ) : (
-                        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-                            {config.packages.map((pkg) => (
-                                <div key={pkg.id} className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4 hover:border-purple-500/50 transition-colors flex flex-col justify-between">
-                                    <div className="space-y-2">
-                                        <h3 className="text-white font-bold text-lg">{pkg.name}</h3>
-                                        <p className="text-white/60 text-sm line-clamp-3">{pkg.description}</p>
-                                    </div>
-                                    <div className="space-y-4 pt-4">
-                                        <div className="flex flex-col gap-1">
-                                            <span className="text-2xl font-bold text-purple-400">LKR {pkg.pricePerDay.toLocaleString()}</span>
-                                            <span className="text-xs text-white/40">Per Day</span>
-                                        </div>
-                                        <Button
-                                            onClick={() => handleRequestKey(pkg.id)}
-                                            disabled={requesting}
-                                            variant="outline"
-                                            className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200"
-                                        >
-                                            {requesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Ticket className="w-4 h-4 mr-2" />}
-                                            Request Access Key
-                                        </Button>
-                                    </div>
+                        <>
+                            {/* Available Packages */}
+                            <div className="space-y-4">
+                                <h3 className="text-white font-semibold flex items-center gap-2">
+                                    <ShoppingCart className="w-4 h-4 text-purple-400" /> Available Packages
+                                </h3>
+                                <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                    {config.packages.map((pkg) => {
+                                        const pendingReq = requests.find(r => r.packageId === pkg.id && r.status === 'PENDING');
+                                        return (
+                                            <div key={pkg.id} className="bg-white/5 border border-white/10 rounded-xl p-6 space-y-4 hover:border-purple-500/50 transition-colors flex flex-col justify-between">
+                                                <div className="space-y-2">
+                                                    <h3 className="text-white font-bold text-lg">{pkg.name}</h3>
+                                                    <p className="text-white/60 text-sm line-clamp-3">{pkg.description}</p>
+                                                </div>
+                                                <div className="space-y-4 pt-4">
+                                                    <div className="flex flex-col gap-1">
+                                                        <span className="text-2xl font-bold text-purple-400">LKR {pkg.pricePerDay.toLocaleString()}</span>
+                                                        <span className="text-xs text-white/40">Per Day</span>
+                                                    </div>
+                                                    <Button
+                                                        onClick={() => handleRequestKey(pkg.id)}
+                                                        disabled={requesting || !!pendingReq}
+                                                        variant="outline"
+                                                        className="w-full border-purple-500/30 text-purple-300 hover:bg-purple-500/10 hover:text-purple-200"
+                                                    >
+                                                        {requesting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Ticket className="w-4 h-4 mr-2" />}
+                                                        {pendingReq ? 'Request Pending' : 'Request Access Key'}
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+
+                            {/* Request History */}
+                            <div className="space-y-4 border-t border-white/10 pt-8">
+                                <h3 className="text-white font-semibold flex items-center gap-2">
+                                    <Ticket className="w-4 h-4 text-green-400" /> Your Requests & Keys
+                                </h3>
+                                {requests.length === 0 ? (
+                                    <div className="text-center py-8 bg-white/5 rounded-xl border border-white/10 border-dashed">
+                                        <p className="text-white/40 text-sm">No requests found. Select a package above to get started.</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {requests.map((req) => (
+                                            <div key={req.id} className="bg-white/5 border border-white/10 rounded-lg p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                                                <div className="space-y-1">
+                                                    <p className="text-white font-medium text-sm">{req.package.name}</p>
+                                                    <div className="flex items-center gap-2">
+                                                        <span className={cn("text-[10px] px-2 py-0.5 rounded-full border",
+                                                            req.status === 'APPROVED' ? "bg-green-500/20 text-green-300 border-green-500/30" :
+                                                                req.status === 'REJECTED' ? "bg-red-500/20 text-red-300 border-red-500/30" :
+                                                                    "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+                                                        )}>
+                                                            {req.status}
+                                                        </span>
+                                                        <span className="text-white/30 text-xs">
+                                                            {new Date(req.createdAt).toLocaleDateString()}
+                                                        </span>
+                                                    </div>
+                                                </div>
+
+                                                {req.status === 'APPROVED' && req.assignedKey ? (
+                                                    <div className="flex items-center gap-2 w-full sm:w-auto bg-black/40 p-1.5 rounded-lg border border-white/10">
+                                                        <code className="flex-1 sm:flex-none text-purple-300 font-mono text-sm px-2">{req.assignedKey.code}</code>
+                                                        <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => copyToClipboard(req.assignedKey.code)}>
+                                                            <CheckCircle2 className="w-3.5 h-3.5" />
+                                                        </Button>
+                                                        <Button size="sm" className="h-7 text-xs bg-purple-600 hover:bg-purple-700" onClick={() => redeemCode(req.assignedKey.code)}>
+                                                            Redeem
+                                                        </Button>
+                                                    </div>
+                                                ) : req.status === 'PENDING' ? (
+                                                    <p className="text-white/30 text-xs italic">Waiting for admin approval...</p>
+                                                ) : (
+                                                    <p className="text-red-400/50 text-xs">Request rejected.</p>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </>
                     )}
                 </TabsContent>
 
@@ -412,11 +499,9 @@ export default function CreateAdWizard({ onCancel, onSuccess }: CreateAdWizardPr
                                                         variant="ghost"
                                                         size="sm"
                                                         className="h-6 text-[10px] text-purple-400 hover:text-purple-300 px-2 hover:bg-purple-500/10"
-                                                        onClick={() => handleRequestKey()}
-                                                        disabled={requesting}
+                                                        onClick={() => setActiveTab('request')}
                                                     >
-                                                        {requesting ? <Loader2 className="w-3 h-3 animate-spin mr-1" /> : null}
-                                                        {requesting ? 'Requesting...' : 'Request Key'}
+                                                        Request Key
                                                     </Button>
                                                 </div>
                                             </div>

@@ -653,33 +653,75 @@ export async function requestAdKey(packageId: string) {
     const pkg = await prisma.adPackage.findUnique({ where: { id: packageId } });
     if (!pkg) return { success: false, error: 'Package not found' };
 
-    // Find Admins
-    const admins = await prisma.user.findMany({
-        where: { role: ROLES.SUPER_ADMIN },
-        select: { id: true }
+    // Check for existing pending request
+    const existing = await prisma.adAccessRequest.findFirst({
+        where: {
+            userId: session.user.id,
+            packageId: packageId,
+            status: 'PENDING'
+        }
     });
 
-    if (admins.length === 0) return { success: false, error: 'No admins found' };
+    if (existing) {
+        return { success: false, error: 'You already have a pending request for this package.' };
+    }
 
     try {
-        await prisma.notification.create({
+        await prisma.adAccessRequest.create({
             data: {
-                title: 'Ad Key Request',
-                message: `User ${session.user.name} (${session.user.email}) requested a key for package: ${pkg.name} (${pkg.pricePerDay} LKR/Day).`,
-                type: 'CUSTOM' as any,
-                senderId: session.user.id,
-                users: {
-                    create: admins.map(admin => ({
-                        userId: admin.id,
-                        status: 'UNREAD' as any
-                    }))
-                }
+                userId: session.user.id,
+                packageId: packageId,
+                status: 'PENDING'
             }
         });
+
+        // Find Admins
+        const admins = await prisma.user.findMany({
+            where: { role: ROLES.SUPER_ADMIN },
+            select: { id: true }
+        });
+
+        if (admins.length > 0) {
+            await prisma.notification.create({
+                data: {
+                    title: 'Ad Key Request',
+                    message: `User ${session.user.name} (${session.user.email}) requested a key for package: ${pkg.name} (${pkg.pricePerDay} LKR/Day).`,
+                    type: 'CUSTOM' as any,
+                    senderId: session.user.id,
+                    users: {
+                        create: admins.map(admin => ({
+                            userId: admin.id,
+                            status: 'UNREAD' as any
+                        }))
+                    }
+                }
+            });
+        }
+
+        revalidatePath('/profile');
         return { success: true };
     } catch (e) {
         console.error(e);
         return { success: false, error: 'Failed to send request' };
+    }
+}
+
+export async function getUserAdRequests() {
+    const session = await auth();
+    if (!session?.user) return [];
+
+    try {
+        const requests = await prisma.adAccessRequest.findMany({
+            where: { userId: session.user.id },
+            include: {
+                package: true,
+                assignedKey: true
+            },
+            orderBy: { createdAt: 'desc' }
+        });
+        return requests;
+    } catch (e) {
+        return [];
     }
 }
 

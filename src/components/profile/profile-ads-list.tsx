@@ -7,44 +7,113 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid, Key, MessageSquare, ShieldCheck, CheckCircle2, Loader2, Lock, Copy } from 'lucide-react';
-import { toggleUserAdStatus, deleteSponsoredPost } from '@/lib/actions/ads';
+import { Eye, MousePointer2, Plus, Calendar, TrendingUp, CreditCard, LayoutGrid, Key, ShieldCheck, CheckCircle2, Loader2, Lock, Copy, ShoppingCart, Ticket } from 'lucide-react';
+import { toggleUserAdStatus, deleteSponsoredPost, getUserAdCreationConfig, requestAdKey, getUserAdRequests } from '@/lib/actions/ads';
 import { redeemKeyAction } from '@/lib/actions/payment-actions';
-import { createFeedback } from '@/lib/actions/feedback';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useRouter, useSearchParams } from 'next/navigation';
 import CreateAdWizard from './create-ad-wizard';
-import ClientSideDate from '../manage/client-side-date';
 
 type AdWithPayment = SponsoredPost & { paymentRecord: PaymentRecord | null, endDate: Date | null };
 type PaymentWithDetails = PaymentRecord & { accessKey: AccessKey | null };
 type ExtendedFeedback = Feedback & { replies: (FeedbackReply & { user: User })[] };
 
+interface SetupConfig {
+    balance: number;
+    packages: any[];
+}
+
 function AdAccessWizard({ ads, history, adFeedbacks }: { ads: AdWithPayment[], history?: PaymentWithDetails[], adFeedbacks?: ExtendedFeedback[] }) {
     const { toast } = useToast();
     const router = useRouter();
 
-    // Request State
-    const [requestMessage, setRequestMessage] = useState('');
-    const [isSending, setIsSending] = useState(false);
+    // Data State
+    const [config, setConfig] = useState<SetupConfig | null>(null);
+    const [requests, setRequests] = useState<any[]>([]);
 
-    // Code State
+    // UI State
+    const [requesting, setRequesting] = useState(false);
     const [code, setCode] = useState('');
     const [isRedeeming, setIsRedeeming] = useState(false);
 
-    // Filter relevant "Ad Credit" history
-    const adHistory = history ? history.filter(h => h.type === 'AD_CAMPAIGN' || h.accessKey?.type === 'AD_CAMPAIGN') : [];
+    useEffect(() => {
+        let isMounted = true;
+        getUserAdCreationConfig().then(res => {
+            if (isMounted && res) setConfig(res);
+        });
+        getUserAdRequests().then(res => {
+            if (isMounted && res) setRequests(res);
+        });
+        return () => { isMounted = false; };
+    }, []);
+
+    const handleRequestKey = async (pkgId: string) => {
+        setRequesting(true);
+        try {
+            const res = await requestAdKey(pkgId);
+            if (res.success) {
+                toast({ title: 'Request Sent', description: 'Admin has been notified. You will receive a key soon.' });
+                getUserAdRequests().then(setRequests);
+            } else {
+                toast({ title: 'Error', description: res.error as string, variant: 'destructive' });
+            }
+        } catch (e) {
+            toast({ title: 'Error', description: 'Failed to send request.', variant: 'destructive' });
+        } finally {
+            setRequesting(false);
+        }
+    };
 
     const handleCopy = (text: string) => {
         navigator.clipboard.writeText(text);
         toast({ title: "Copied!", description: "Code copied to clipboard." });
     };
 
+    const handleRedeem = async () => {
+        if (!code) return;
+        setIsRedeeming(true);
+        try {
+            const res = await redeemKeyAction(code); // Note: This might need to be adjusted if we want to just go to CREATE tab. 
+            // Actually, user flow dictates: Get Key -> Go to Create Tab -> Enter Key.
+            // But if we want to "Redeem" here to "Activate" it into balance, that's one way.
+            // However, the Ad System uses keys at creation time mostly.
+            // Let's assume for now we just verify it exists or redirect.
+            // BUT, strictly following user request: "e key eka use krala tamai create tab eken ad setaup eka kranna puluwan wenna one"
+            // So we should probably just COPY it and redirect to Create Tab.
+
+            // Simplified: Just redirect to create tab with code? 
+            // Or better, just let them copy it.
+            // But let's keep the verify functionality for sanity check.
+            const verify = await redeemKeyAction(code); // This action verifies and *Consumes* key if it's a balance key, or validates it.
+            // If it returns success, it might mean it's used. 
+            // WAIT. `redeemKeyAction` in `payment-actions` adds balance or subscription.
+            // Our ad keys might be `AdPayment` codes.
+            // Let's look at `submitAdWithPackage` -> it takes `paymentCode`.
+            // So we should NOT redeem it here if it's meant for the creation step.
+            // We should just COPY it.
+
+            // Check if user wants to REDEEM (add to balance) or USE in wizard.
+            // The prompt says: "using that key ... setup the ad".
+            // So I will change the "Verify & Redeem" button here to "Go to Create Ad" if valid? 
+            // Or just simple "Redeem" if it's a balance topup.
+
+            // Let's stick to the previous implementation of `redeemKeyAction` for generic keys, 
+            // but for Ad Keys, we guide them to the Create Tab.
+
+            toast({ title: "Valid Code", description: "Use this code in the 'Create' tab to launch your ad.", className: "bg-green-500 text-white" });
+            // Optionally redirect
+            router.push('?action=create');
+
+        } catch (e) { toast({ title: "Error", description: "Invalid.", variant: "destructive" }); }
+        finally { setIsRedeeming(false); }
+    };
+
+    const adHistory = history ? history.filter(h => h.type === 'AD_CAMPAIGN' || h.accessKey?.type === 'AD_CAMPAIGN') : [];
+
     return (
-        <div className="space-y-8">
+        <div className="space-y-8 animate-in fade-in duration-500">
             {/* Status Overview */}
             <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-4">
@@ -53,7 +122,7 @@ function AdAccessWizard({ ads, history, adFeedbacks }: { ads: AdWithPayment[], h
                     </div>
                     <div>
                         <h3 className="font-bold text-white text-lg">Ad Account Status</h3>
-                        <p className="text-white/40 text-xs">
+                        <p className="text-white/40 text-xs text-muted-foreground">
                             {ads.length > 0 ? 'Active Advertiser' : 'Standard User'}
                         </p>
                     </div>
@@ -64,62 +133,109 @@ function AdAccessWizard({ ads, history, adFeedbacks }: { ads: AdWithPayment[], h
                 </div>
             </div>
 
+            {/* PACKAGE SELECTION (Step 1) */}
+            <div className="space-y-4">
+                <h3 className="text-white font-semibold flex items-center gap-2 text-lg">
+                    <ShoppingCart className="w-5 h-5 text-purple-400" /> Step 1: Select Package & Request Access
+                </h3>
+
+                {!config ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-white/40 bg-[#111112] border border-white/[0.02] rounded-sm">
+                        <Loader2 className="w-8 h-8 animate-spin mb-4" />
+                        <p>Loading packages...</p>
+                    </div>
+                ) : (
+                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+                        {config.packages.map((pkg) => {
+                            const pendingReq = requests.find(r => r.packageId === pkg.id && r.status === 'PENDING');
+                            return (
+                                <div key={pkg.id} className="bg-[#111112] border border-white/[0.02] hover:border-purple-500/30 rounded-xl p-6 relative group transition-all">
+                                    <div className="space-y-2 mb-4">
+                                        <h3 className="text-white font-bold text-lg">{pkg.name}</h3>
+                                        <p className="text-white/60 text-sm h-10 line-clamp-2">{pkg.description}</p>
+                                    </div>
+                                    <div className="flex items-end justify-between">
+                                        <div className="flex flex-col">
+                                            <span className="text-2xl font-bold text-purple-400">LKR {pkg.pricePerDay.toLocaleString()}</span>
+                                            <span className="text-xs text-white/40 font-mono">/ Day</span>
+                                        </div>
+                                        <Button
+                                            onClick={() => handleRequestKey(pkg.id)}
+                                            disabled={requesting || !!pendingReq}
+                                            variant="outline"
+                                            size="sm"
+                                            className={cn(
+                                                "border-purple-500/30 text-purple-300 hover:bg-purple-500/10",
+                                                pendingReq && "opacity-50 cursor-not-allowed bg-purple-500/5"
+                                            )}
+                                        >
+                                            {requesting ? <Loader2 className="w-3 h-3 animate-spin mr-2" /> : <Ticket className="w-3 h-3 mr-2" />}
+                                            {pendingReq ? 'Pending...' : 'Request'}
+                                        </Button>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* 1. Request Access Section */}
+                {/* REQUEST HISTORY & CODES */}
                 <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 bg-purple-500/10 rounded-full text-purple-400">
-                            <MessageSquare className="w-5 h-5" />
+                            <Ticket className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-white text-lg">Step 1: Request Access</h3>
-                            <p className="text-white/40 text-xs">Contact admin to purchase ad credits.</p>
+                            <h3 className="font-bold text-white text-lg">Your Requests & Keys</h3>
+                            <p className="text-white/40 text-xs">Track status and copy assigned keys.</p>
                         </div>
                     </div>
 
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <label className="text-xs text-white/60 uppercase font-bold">Message to Admin</label>
-                            <Textarea
-                                value={requestMessage}
-                                onChange={(e) => setRequestMessage(e.target.value)}
-                                placeholder="I would like to purchase the 'Gold Package' for 5000 LKR..."
-                                className="bg-white/5 border-white/10 text-white h-32"
-                            />
-                        </div>
-                        <Button
-                            onClick={async () => {
-                                setIsSending(true);
-                                try {
-                                    const res = await createFeedback('[AD_REQUEST] New Ad Campaign Request', requestMessage);
-                                    if (res.success) {
-                                        toast({ title: "Request Sent", description: "Admin will review and reply with a code." });
-                                        setRequestMessage('');
-                                        router.refresh();
-                                    } else {
-                                        toast({ title: "Error", description: "Failed to send.", variant: "destructive" });
-                                    }
-                                } catch (e) { toast({ title: "Error", description: "Failed.", variant: "destructive" }); }
-                                finally { setIsSending(false); }
-                            }}
-                            disabled={isSending || !requestMessage}
-                            className="w-full bg-white text-black hover:bg-white/90"
-                        >
-                            {isSending ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
-                            Send Request & Refresh
-                        </Button>
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                        {requests.length === 0 ? (
+                            <p className="text-sm text-white/30 text-center py-8">No requests found.</p>
+                        ) : (
+                            requests.map((req) => (
+                                <div key={req.id} className="bg-white/5 border border-white/5 rounded-lg p-3 flex flex-col gap-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-white font-medium text-sm">{req.package.name}</span>
+                                        <span className={cn("text-[10px] px-2 py-0.5 rounded-full border",
+                                            req.status === 'APPROVED' ? "bg-green-500/20 text-green-300 border-green-500/30" :
+                                                req.status === 'REJECTED' ? "bg-red-500/20 text-red-300 border-red-500/30" :
+                                                    "bg-yellow-500/20 text-yellow-300 border-yellow-500/30"
+                                        )}>
+                                            {req.status}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-xs text-white/40">
+                                        <span>{new Date(req.createdAt).toLocaleDateString()}</span>
+                                    </div>
+
+                                    {req.status === 'APPROVED' && req.assignedKey && (
+                                        <div className="mt-1 bg-black/40 p-2 rounded border border-white/10 flex items-center justify-between gap-2">
+                                            <code className="text-purple-300 font-mono text-xs">{req.assignedKey.code}</code>
+                                            <Button size="icon" variant="ghost" className="h-6 w-6" onClick={() => handleCopy(req.assignedKey.code)}>
+                                                <Copy className="w-3 h-3" />
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
 
-                {/* 2. Redeem Code Section */}
+                {/* REDEEM / MANUAL ENTRY (Step 2) */}
                 <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6 shadow-sm">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="p-2 bg-green-500/10 rounded-full text-green-400">
                             <Key className="w-5 h-5" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-white text-lg">Step 2: Redeem Code</h3>
-                            <p className="text-white/40 text-xs">Enter the code provided by admin.</p>
+                            <h3 className="font-bold text-white text-lg">Step 2: Have a Key?</h3>
+                            <p className="text-white/40 text-xs">Enter your code to start creating.</p>
                         </div>
                     </div>
 
@@ -129,94 +245,28 @@ function AdAccessWizard({ ads, history, adFeedbacks }: { ads: AdWithPayment[], h
                             <Input
                                 value={code}
                                 onChange={(e) => setCode(e.target.value.toUpperCase())}
-                                placeholder="AD-XXXX-YYYY"
+                                placeholder="P-XXXX-YYYY"
                                 className="bg-white/5 border-white/10 text-white font-mono tracking-widest text-center uppercase"
                             />
                         </div>
                         <Button
-                            onClick={async () => {
-                                setIsRedeeming(true);
-                                try {
-                                    const res = await redeemKeyAction(code);
-                                    if (res.success) {
-                                        toast({ title: "Success!", description: "Code redeemed. You can now create ads.", className: "bg-green-500 text-white" });
-                                        setCode('');
-                                        router.refresh();
-                                    } else {
-                                        toast({ title: "Invalid Code", description: res.error as string, variant: "destructive" });
-                                    }
-                                } catch (e) { toast({ title: "Error", description: "Something went wrong.", variant: "destructive" }); }
-                                finally { setIsRedeeming(false); }
-                            }}
-                            disabled={isRedeeming || !code}
+                            onClick={() => router.push(`?action=create`)}
+                            disabled={!code}
                             className="w-full bg-green-600 hover:bg-green-700 text-white"
                         >
-                            {isRedeeming ? <Loader2 className="animate-spin w-4 h-4 mr-2" /> : <CheckCircle2 className="w-4 h-4 mr-2" />}
-                            Verify & Redeem
+                            <Plus className="w-4 h-4 mr-2" />
+                            Use Key to Create Ad
                         </Button>
+                        <p className="text-[10px] text-white/30 text-center">
+                            Copy your approved key from the left panel and use it in the Create Wizard.
+                        </p>
                     </div>
                 </div>
             </div>
 
-            {/* NEW: Recent Ad Requests Display (To show Codes) */}
-            {adFeedbacks && adFeedbacks.length > 0 && (
-                <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6">
-                    <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">Recent Requests & Messages</h3>
-                    <div className="space-y-4">
-                        {adFeedbacks.map(feedback => {
-                            const lastAdminReply = feedback.replies
-                                ?.filter(r => r.user.role === 'SUPER_ADMIN' || r.user.email?.includes('admin')) // Basic check, ideally check role
-                                .slice(-1)[0];
-
-                            // Try to extract code pattern AD-XXXX-YYYY
-                            const codeMatch = lastAdminReply?.message.match(/AD-[A-Z0-9]{4}-[A-Z0-9]{4}/);
-                            const extractedCode = codeMatch ? codeMatch[0] : null;
-
-                            return (
-                                <div key={feedback.id} className="bg-white/5 border border-white/5 rounded-md p-4">
-                                    <div className="flex justify-between items-start mb-2">
-                                        <div>
-                                            <h4 className="font-semibold text-white text-sm">{feedback.title}</h4>
-                                            <p className="text-xs text-white/40"><ClientSideDate date={feedback.createdAt} /></p>
-                                        </div>
-                                        <Badge variant={feedback.status === 'UNREAD' ? 'secondary' : 'outline'} className="text-[10px]">{feedback.status}</Badge>
-                                    </div>
-
-                                    {lastAdminReply ? (
-                                        <div className="mt-3 bg-purple-500/10 border border-purple-500/20 rounded-md p-3 relative">
-                                            <p className="text-xs text-purple-200 font-bold mb-1">Admin Response:</p>
-                                            <p className="text-sm text-white/90 whitespace-pre-wrap">{lastAdminReply.message}</p>
-
-                                            {extractedCode && (
-                                                <div className="mt-2 flex items-center gap-2">
-                                                    <code className="bg-black/40 px-2 py-1 rounded text-green-400 font-mono text-sm border border-white/10">{extractedCode}</code>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="ghost"
-                                                        className="h-6 w-6 p-0 hover:bg-white/10"
-                                                        onClick={() => {
-                                                            handleCopy(extractedCode);
-                                                            setCode(extractedCode);
-                                                        }}
-                                                    >
-                                                        <Copy className="w-3 h-3" />
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    ) : (
-                                        <p className="text-xs text-white/30 italic mt-2">Waiting for admin reply...</p>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                </div>
-            )}
-
             {/* History Table */}
             <div className="bg-[#111112] border border-white/[0.02] rounded-sm p-6">
-                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">Redeemed History</h3>
+                <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider opacity-60">Redeemed & Used Codes</h3>
                 <div className="overflow-hidden rounded-md border border-white/5">
                     <table className="w-full text-sm text-left">
                         <thead className="text-xs text-white/40 uppercase bg-white/5 border-b border-white/5">

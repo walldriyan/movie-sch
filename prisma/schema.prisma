@@ -79,6 +79,7 @@ model User {
   payments          PaymentRecord[]
   usedKeys          AccessKey[]     @relation("KeyUsedBy")
   assignedKeys      AccessKey[]     @relation("KeyAssignedTo")
+  adAccessRequests  AdAccessRequest[]
 
   // Legacy Ad Payment Relations
   usedAdPayments    AdPayment[]     @relation("UsedBy")
@@ -1051,6 +1052,7 @@ model AdPayment {
   usedByUser       User?    @relation("UsedBy", fields: [usedByUserId], references: [id])
   
   sponsoredPost    SponsoredPost?
+  accessRequest    AdAccessRequest?
 
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -1069,5 +1071,29 @@ model AdPackage {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  requests    AdAccessRequest[]
+
   @@map("ad_packages")
+}
+
+model AdAccessRequest {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  packageId String
+  package   AdPackage @relation(fields: [packageId], references: [id])
+
+  status    AdStatus @default(PENDING)
+  
+  adminNote String? @db.Text
+  
+  assignedKeyId String? @unique 
+  assignedKey   AdPayment? @relation(fields: [assignedKeyId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@map("ad_access_requests")
 }
