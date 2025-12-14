@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { createClient } from '@supabase/supabase-js';
 import { STORAGE_CONFIG } from '../storage-config';
 import { randomUUID } from 'crypto';
+import { auth } from '@/auth';
+import { ROLES } from '@/lib/permissions';
 
 // Helper function to create Supabase client with appropriate key
 function getSupabaseClient() {
@@ -13,6 +15,12 @@ function getSupabaseClient() {
 
 export async function uploadHeroImage(formData: FormData) {
     try {
+        // Only SUPER_ADMIN can upload hero image
+        const session = await auth();
+        if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+            return { success: false, error: 'Unauthorized: Only Super Admin can change the hero image' };
+        }
+
         const file = formData.get('file') as File;
         if (!file) {
             throw new Error('No file uploaded');

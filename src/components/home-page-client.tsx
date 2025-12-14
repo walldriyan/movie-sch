@@ -55,7 +55,8 @@ const HeroSection = ({ user, initialHeroCoverUrl }: { user?: any; initialHeroCov
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [imageVersion, setImageVersion] = useState(Date.now());
 
-    const isPrivileged = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
+    // Only SUPER_ADMIN can change hero cover image
+    const isPrivileged = user && user.role === ROLES.SUPER_ADMIN;
 
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
