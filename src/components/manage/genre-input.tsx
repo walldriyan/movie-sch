@@ -48,8 +48,14 @@ export function GenreInput({ value: selectedGenres, onChange, placeholder }: Gen
       if (e.key === 'Escape') {
         input.blur();
       }
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        if (inputValue.trim() && !selectedGenres.includes(inputValue.trim())) {
+          handleSelect(inputValue.trim());
+        }
+      }
     }
-  }, [selectedGenres, onChange]);
+  }, [selectedGenres, onChange, inputValue, handleSelect]);
 
   const handleUnselect = React.useCallback((genre: string) => {
     onChange(selectedGenres.filter((s) => s !== genre));

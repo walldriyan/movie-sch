@@ -91,6 +91,7 @@ interface PostFormProps {
   onBack: () => void;
   isSubmitting: boolean;
   debugError?: { message: string } | null;
+  user?: { role?: string; id?: string } | null;
 }
 
 // --- Icons & Helpers ---
@@ -242,7 +243,7 @@ function SeriesCombobox({ field, seriesList, onSeriesCreated }: any) {
 }
 
 // --- Main Form Component ---
-export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitting, debugError }: PostFormProps) {
+export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitting, debugError, user }: PostFormProps) {
   const session = useSession();
   const posterFileInputRef = useRef<HTMLInputElement>(null);
   const [seriesList, setSeriesList] = useState<any[]>([]);
@@ -572,22 +573,25 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                       </div>
 
                       {/* Row 2: Year & Duration */}
-                      <div className="grid grid-cols-2 gap-6">
-                        <FormField
-                          control={control}
-                          name="year"
-                          render={({ field }) => (
-                            <FormItem><FormLabel>Year Released</FormLabel><Input type="number" placeholder="2024" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={control}
-                          name="duration"
-                          render={({ field }) => (
-                            <FormItem><FormLabel>Duration</FormLabel><Input placeholder="2h 15m" {...field} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
-                          )}
-                        />
-                      </div>
+                      {/* Row 2: Year & Duration */}
+                      {contentType !== 'OTHER' && (
+                        <div className="grid grid-cols-2 gap-6 animate-in fade-in slide-in-from-top-2">
+                          <FormField
+                            control={control}
+                            name="year"
+                            render={({ field }) => (
+                              <FormItem><FormLabel>Year Released</FormLabel><Input type="number" placeholder="2024" {...field} value={field.value ?? ''} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={control}
+                            name="duration"
+                            render={({ field }) => (
+                              <FormItem><FormLabel>Duration</FormLabel><Input placeholder="2h 15m" {...field} className="bg-black/20 border-white/10 rounded-xl h-12" /></FormItem>
+                            )}
+                          />
+                        </div>
+                      )}
 
                       {/* Sections Conditional on Type (MOVIE or TV_SERIES) */}
                       {showRatingsAndCast && (
@@ -695,29 +699,31 @@ export default function PostForm({ editingPost, onFormSubmit, onBack, isSubmitti
                           )}
                         </div>
 
-                        <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-4">
-                          <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Restrictions</h4>
-                          <FormField
-                            control={control}
-                            name="isLockedByDefault"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center justify-between">
-                                <div><FormLabel className="text-base font-normal">Lock Content</FormLabel><FormDescription>Requires premium unlock</FormDescription></div>
-                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={control}
-                            name="requiresExamToUnlock"
-                            render={({ field }) => (
-                              <FormItem className="flex items-center justify-between">
-                                <div><FormLabel className="text-base font-normal">Exam Required</FormLabel><FormDescription>Must pass exam first</FormDescription></div>
-                                <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                        {user?.role === ROLES.SUPER_ADMIN && (
+                          <div className="p-6 rounded-2xl border border-white/10 bg-white/[0.02] space-y-4">
+                            <h4 className="font-semibold text-sm uppercase tracking-wider text-muted-foreground">Restrictions</h4>
+                            <FormField
+                              control={control}
+                              name="isLockedByDefault"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-between">
+                                  <div><FormLabel className="text-base font-normal">Lock Content</FormLabel><FormDescription>Requires premium unlock</FormDescription></div>
+                                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={control}
+                              name="requiresExamToUnlock"
+                              render={({ field }) => (
+                                <FormItem className="flex items-center justify-between">
+                                  <div><FormLabel className="text-base font-normal">Exam Required</FormLabel><FormDescription>Must pass exam first</FormDescription></div>
+                                  <FormControl><Switch checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Right Column: Tags & Media */}

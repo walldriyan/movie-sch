@@ -268,6 +268,7 @@ export default function ManagePostsClient({
           onBack={handleBackFromForm}
           isSubmitting={isSubmitting}
           debugError={undefined}
+          user={user}
         />
       )}
     </>
