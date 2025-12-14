@@ -1,15 +1,17 @@
 'use client';
 
 import { useState, useTransition, useEffect } from 'react';
-import { updatePostStatus, updatePostLockSettings } from '@/lib/actions/posts/update';
+import { updatePostStatus, updatePostLockSettings, updatePostAdminFeedback } from '@/lib/actions/posts/update';
 import { getExamsForAdmin, assignExamToPost } from '@/lib/actions/exams';
 import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, ShieldCheck, Lock, Unlock, FileText } from 'lucide-react';
+import { Loader2, ShieldCheck, Lock, Unlock, FileText, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button';
 
 interface AdminPostControlsProps {
     postId: number;
@@ -19,6 +21,7 @@ interface AdminPostControlsProps {
     isLocked?: boolean;
     hasExam?: boolean;
     currentExamId?: number;
+    currentFeedback?: string;
 }
 
 const STATUS_OPTIONS = [
@@ -36,13 +39,15 @@ export default function AdminPostControls({
     className,
     isLocked = false,
     hasExam = false,
-    currentExamId = undefined
+    currentExamId = undefined,
+    currentFeedback = ''
 }: AdminPostControlsProps) {
     const [status, setStatus] = useState(currentStatus);
     const [locked, setLocked] = useState(isLocked);
     const [exam, setExam] = useState(hasExam);
     const [selectedExamId, setSelectedExamId] = useState<string>(currentExamId ? String(currentExamId) : 'none');
     const [availableExams, setAvailableExams] = useState<any[]>([]);
+    const [feedback, setFeedback] = useState(currentFeedback || '');
     const [isPending, startTransition] = useTransition();
     const { toast } = useToast();
 
@@ -60,7 +65,8 @@ export default function AdminPostControls({
         setLocked(isLocked);
         setExam(hasExam);
         setSelectedExamId(currentExamId ? String(currentExamId) : 'none');
-    }, [isLocked, hasExam, currentExamId]);
+        setFeedback(currentFeedback || '');
+    }, [isLocked, hasExam, currentExamId, currentFeedback]);
 
     if (currentUserRole !== 'SUPER_ADMIN') return null;
 
@@ -135,6 +141,25 @@ export default function AdminPostControls({
                     description: "Could not update exam link."
                 });
                 setSelectedExamId(currentExamId ? String(currentExamId) : 'none');
+            }
+        });
+    };
+
+    const handleFeedbackSave = () => {
+        startTransition(async () => {
+            try {
+                await updatePostAdminFeedback(postId, feedback);
+                toast({
+                    title: "Feedback Saved",
+                    description: "Admin feedback has been updated.",
+                });
+            } catch (error) {
+                console.error(error);
+                toast({
+                    variant: "destructive",
+                    title: "Save Failed",
+                    description: "Could not save feedback."
+                });
             }
         });
     };
@@ -232,9 +257,32 @@ export default function AdminPostControls({
                                     />
                                 </div>
                             </div>
+
+                            {/* Feedback Section */}
+                            <div className="space-y-3 p-3 bg-black/20 rounded-xl border border-white/5">
+                                <Label className="text-xs font-medium flex items-center gap-2 text-orange-400">
+                                    <AlertTriangle className="w-3 h-3" />
+                                    Admin Feedback / Reason
+                                </Label>
+                                <Textarea
+                                    placeholder="Enter reason for rejection or changes required..."
+                                    className="bg-zinc-900/50 border-white/10 min-h-[60px] text-xs resize-none placeholder:text-muted-foreground/50"
+                                    value={feedback}
+                                    onChange={(e) => setFeedback(e.target.value)}
+                                    disabled={isPending}
+                                />
+                                <Button
+                                    size="sm"
+                                    variant="secondary"
+                                    className="w-full h-7 text-xs bg-white/5 hover:bg-white/10 text-zinc-300 border border-white/5"
+                                    onClick={handleFeedbackSave}
+                                    disabled={isPending}
+                                >
+                                    {isPending ? <Loader2 className="w-3 h-3 animate-spin" /> : "Save Feedback"}
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                    {isPending && <div className="flex items-center justify-center text-xs text-muted-foreground"><Loader2 className="w-3 h-3 mr-1 animate-spin" /> Saving changes...</div>}
                 </div>
             </CardContent>
         </Card>

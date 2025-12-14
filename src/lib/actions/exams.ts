@@ -972,7 +972,6 @@ export async function assignExamToPost(postId: number, examId: number | null) {
             where: { id: examId },
             data: {
                 postId: postId,
-                assignmentType: 'POST',
                 groupId: null
             }
         });

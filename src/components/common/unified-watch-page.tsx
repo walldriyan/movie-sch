@@ -279,6 +279,10 @@ export default function UnifiedWatchPage({
         return html.replace(/<[^>]*>?/gm, '');
     };
 
+    const adminFeedback = useMemo(() => {
+        return post.metaData?.find((m: any) => m.key === 'admin_feedback')?.value;
+    }, [post.metaData]);
+
     return (
         <div className="min-h-screen bg-background pt-24 pb-12">
             <div className="max-w-[1600px] mx-auto px-4 md:px-6">
@@ -309,6 +313,32 @@ export default function UnifiedWatchPage({
                         {post.title}
                     </span>
                 </nav>
+
+                {/* ADMIN FEEDBACK NOTICE */}
+                {adminFeedback && post.status !== 'PUBLISHED' && (session?.user?.role === 'SUPER_ADMIN' || session?.user?.id === post.authorId) && (
+                    <div className="mb-8 rounded-2xl border border-zinc-800 bg-[#111112] p-6 shadow-xl relative overflow-hidden group">
+                        <div className="absolute top-0 left-0 w-1 h-full bg-zinc-700" />
+                        <div className="relative z-10 flex flex-col md:flex-row items-start gap-5">
+                            <div className="p-3 rounded-xl bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 shrink-0 mt-1">
+                                <AlertCircle className="w-6 h-6" />
+                            </div>
+                            <div className="flex-1 space-y-3">
+                                <div>
+                                    <h3 className="font-bold text-zinc-200 text-lg flex items-center gap-2">
+                                        Modification Required
+                                        <span className="text-sm font-normal text-zinc-500">/ වෙනස්කම් අවශ්‍යයි</span>
+                                    </h3>
+                                    <p className="text-sm text-zinc-500 mt-1">
+                                        This post cannot be published yet. Please address the following issues:
+                                    </p>
+                                </div>
+                                <div className="p-4 rounded-xl bg-black/40 border border-white/5 text-zinc-300 font-medium whitespace-pre-wrap leading-relaxed">
+                                    {adminFeedback}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
@@ -737,6 +767,7 @@ export default function UnifiedWatchPage({
                             isLocked={post.isLockedByDefault}
                             hasExam={post.requiresExamToUnlock}
                             currentExamId={post.exam?.id}
+                            currentFeedback={adminFeedback}
                         />
 
                     </div>

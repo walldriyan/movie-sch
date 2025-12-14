@@ -127,3 +127,36 @@ export async function updatePostLockSettings(postId: number, isLockedByDefault: 
     revalidatePath(`/manage`);
     if (post.seriesId) revalidatePath(`/series/${post.seriesId}`);
 }
+
+export async function updatePostAdminFeedback(postId: number, feedback: string) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+
+    const existing = await prisma.metaData.findFirst({
+        where: { postId, key: 'admin_feedback' }
+    });
+
+    if (existing) {
+        if (!feedback.trim()) {
+            await prisma.metaData.delete({ where: { id: existing.id } });
+        } else {
+            await prisma.metaData.update({
+                where: { id: existing.id },
+                data: { value: feedback }
+            });
+        }
+    } else if (feedback.trim()) {
+        await prisma.metaData.create({
+            data: {
+                postId,
+                key: 'admin_feedback',
+                value: feedback
+            }
+        });
+    }
+
+    revalidatePath(`/movies/${postId}`);
+    revalidatePath(`/search`);
+}
