@@ -217,27 +217,26 @@ export default function LeftSidebar() {
         <>
 
 
-            {/* Top Right Controls - Toggle Button + Conditional Content */}
+            {/* Top Right Controls - Profile Image Toggles Search */}
             <div className="fixed top-6 right-8 z-[100] flex items-center gap-3">
-                {/* Toggle Button */}
-                <button
-                    onClick={() => setShowTopControls(!showTopControls)}
-                    className="p-2 rounded-full bg-card/60 backdrop-blur-md border border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all"
-                    title={showTopControls ? 'Hide Search & Profile' : 'Show Search & Profile'}
-                >
-                    {showTopControls ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </button>
-
-                {/* Conditionally Rendered Controls */}
+                {/* Conditionally Rendered Controls (Search & Create) */}
                 {showTopControls && (
-                    <>
-                        <div className="hidden md:block animate-in fade-in slide-in-from-right-2 duration-300">
+                    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <div className="hidden md:block w-64">
                             <SearchBar />
                         </div>
                         {canManage && <CreateButton />}
-                        <UserButton />
-                    </>
+                    </div>
                 )}
+
+                {/* Profile Image (Acts as Toggle) */}
+                <div
+                    onClick={() => setShowTopControls(!showTopControls)}
+                    className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
+                    title={showTopControls ? "Hide Search" : "Show Search"}
+                >
+                    <UserButton />
+                </div>
             </div>
 
             {/* Mobile menu button */}
