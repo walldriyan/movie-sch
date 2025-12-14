@@ -36,9 +36,10 @@ type RequestFormValues = z.infer<typeof requestFormSchema>;
 
 interface RequestAccessDialogProps {
   user: User;
+  children?: React.ReactNode;
 }
 
-export default function RequestAccessDialog({ user }: RequestAccessDialogProps) {
+export default function RequestAccessDialog({ user, children }: RequestAccessDialogProps) {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = React.useState(false);
 
@@ -52,7 +53,7 @@ export default function RequestAccessDialog({ user }: RequestAccessDialogProps) 
   const onSubmit = async (data: RequestFormValues) => {
     try {
       await requestAdminAccess(user.id, data.message);
-      
+
       toast({
         title: 'Request Sent',
         description: 'Your request for admin access has been sent for review.',
@@ -74,10 +75,12 @@ export default function RequestAccessDialog({ user }: RequestAccessDialogProps) 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button disabled={isRequestSent}>
-          <ShieldQuestion className="mr-2 h-4 w-4" />
-          {isRequestSent ? 'Request Already Sent' : 'Request Admin Access'}
-        </Button>
+        {children ? children : (
+          <Button disabled={isRequestSent}>
+            <ShieldQuestion className="mr-2 h-4 w-4" />
+            {isRequestSent ? 'Request Already Sent' : 'Request Admin Access'}
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>

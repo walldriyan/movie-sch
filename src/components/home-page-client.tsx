@@ -32,6 +32,7 @@ import { ROLES } from '@/lib/permissions';
 import { siteConfig } from '@/config/site.config';
 import { PromoData } from '@/lib/actions/promo';
 import { FeaturedPromo } from './home/featured-promo';
+import RequestAccessDialog from '@/components/request-access-dialog';
 
 // Lazy load heavy components
 const GroupCard = dynamic(() => import('./group-card'), {
@@ -432,6 +433,41 @@ export default function HomePageClient({
             <div className="w-full bg-background text-foreground">
                 {/* Hero Section */}
                 <HeroSection user={session?.user} initialHeroCoverUrl={heroCoverUrl} />
+
+                {/* Admin Request Banner (Only for Normal Users) */}
+                {session?.user && session.user.role === 'USER' && (
+                    <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 mt-6 -mb-6 relative z-20">
+                        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900/40 via-blue-900/40 to-pink-900/40 border border-white/10 p-0.5 shadow-2xl">
+                            <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
+                            <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-black/60 backdrop-blur-xl rounded-[14px]">
+                                <div className="space-y-2 text-center md:text-left flex-1">
+                                    <div className="flex items-center justify-center md:justify-start gap-2">
+                                        <div className="p-1.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
+                                            <Crown className="w-4 h-4 text-yellow-500" />
+                                        </div>
+                                        <h3 className="text-lg font-bold text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
+                                            Become a Creator / නිර්මාණකරුවෙකු වන්න
+                                        </h3>
+                                    </div>
+                                    <p className="text-sm text-gray-300 leading-relaxed">
+                                        Unlock the ability to <span className="text-purple-400 font-medium">create posts</span>, <span className="text-pink-400 font-medium">manage subtitles</span>, and access exclusive features.
+                                        <br />
+                                        <span className="text-gray-400 md:text-xs block mt-1">ඔබට නව Posts නිර්මාණය කිරීමට, උපසිරැසි සැකසීමට සහ විශේෂාංග රැසක් ලබා ගැනීමට Admin අවසරය ඉල්ලා සිටින්න.</span>
+                                    </p>
+                                </div>
+
+                                <div className="flex-shrink-0">
+                                    <RequestAccessDialog user={session.user as any}>
+                                        <Button size="lg" className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg border-0 transition-all hover:scale-105">
+                                            Request Permission
+                                            <span className="ml-2 text-[10px] opacity-80 uppercase tracking-wider font-semibold border-l border-white/20 pl-2">ඉල්ලුම් කරන්න</span>
+                                        </Button>
+                                    </RequestAccessDialog>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Main Content Area - Aligned with Hero */}
                 <section className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-12 relative z-10 space-y-16">

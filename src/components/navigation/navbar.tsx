@@ -137,8 +137,8 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Search Bar (Placeholder - can be implemented later) */}
-        <div className="hidden md:flex flex-1 max-w-md mx-4">
+        {/* Search Bar (Placeholder) - Hidden on Home Page */}
+        <div className={cn("hidden md:flex flex-1 max-w-md mx-4", pathname === '/' && "hidden")}>
           {/* Future search implementation */}
         </div>
 
