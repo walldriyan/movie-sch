@@ -241,7 +241,7 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
     const activeTrack = currentTracks[currentTrackIndex];
 
     return (
-        <section className="container max-w-7xl mx-auto px-4 md:px-8 mb-24 relative group/promo">
+        <section className="w-full max-w-[1800px] mx-auto px-4 md:px-8 mb-24 relative group/promo">
             {/* Section Header */}
             <div className="flex items-center gap-3 mb-8">
                 <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">

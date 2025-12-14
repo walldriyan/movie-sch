@@ -25,7 +25,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import type { Session } from 'next-auth';
 import { Skeleton } from './ui/skeleton';
 import { ROLES } from '@/lib/permissions';
@@ -671,27 +671,43 @@ export default function HomePageClient({
                                     ))}
                                 </div>
                             ) : users.length > 0 ? (
-                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6 md:gap-8">
-                                    {users.map(user => {
-                                        const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
-                                        return (
-                                            <Link href={`/profile/${user.id}`} key={user.id} className="group flex flex-col items-center p-4 rounded-3xl hover:bg-blue-500/[0.08] transition-all duration-300 border border-transparent hover:border-blue-500/10">
-                                                <div className="relative mb-5 transform group-hover:-translate-y-1 transition-transform duration-300">
-                                                    <Avatar className="w-24 h-24 md:w-28 md:h-28 border-4 border-white/[0.03] group-hover:border-blue-500/30 group-hover:shadow-[0_0_25px_rgba(59,130,246,0.3)] transition-all duration-300 shadow-xl">
-                                                        {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} className="object-cover" />}
-                                                        <AvatarFallback className="text-3xl bg-[#1a1a1a]">{user.name?.charAt(0) || 'U'}</AvatarFallback>
-                                                    </Avatar>
-                                                    {user.role !== 'USER' && (
-                                                        <div className="absolute -bottom-1 -right-1 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full border-4 border-[#0F0F10] shadow-lg">
-                                                            PRO
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <h3 className="font-bold text-lg text-center truncate w-full group-hover:text-blue-400 transition-colors">{user.name}</h3>
-                                                <p className="text-xs font-medium text-white/40 group-hover:text-white/60 transition-colors mt-1">{user.role === 'USER' ? 'Member' : 'Creator'}</p>
-                                            </Link>
-                                        )
-                                    })}
+                                <div className="flex flex-col items-start justify-start py-4">
+                                    <div className="flex -space-x-5 hover:space-x-1 transition-all duration-300 py-8 px-2 justify-start">
+                                        {users.slice(0, 10).map((user, i) => {
+                                            const userAvatarUrl = user.image || userAvatarPlaceholder?.imageUrl;
+                                            return (
+                                                <Tooltip key={user.id}>
+                                                    <TooltipTrigger asChild>
+                                                        <Link
+                                                            href={`/profile/${user.id}`}
+                                                            className="relative hover:z-50 hover:scale-110 transition-all duration-300 group"
+                                                            style={{ zIndex: 20 - i }}
+                                                        >
+                                                            <div className="relative">
+                                                                <Avatar className="w-16 h-16 md:w-24 md:h-24 border-4 border-background shadow-2xl ring-1 ring-white/10 group-hover:ring-primary/50 group-hover:shadow-[0_0_30px_rgba(255,255,255,0.1)] transition-all">
+                                                                    {userAvatarUrl && <AvatarImage src={userAvatarUrl} alt={user.name || 'User'} className="object-cover" />}
+                                                                    <AvatarFallback className="text-xl bg-card text-muted-foreground font-bold">{user.name?.charAt(0) || 'U'}</AvatarFallback>
+                                                                </Avatar>
+
+                                                                {user.role !== 'USER' && (
+                                                                    <div className="absolute bottom-0 right-0 w-5 h-5 bg-primary rounded-full border-4 border-background" />
+                                                                )}
+                                                            </div>
+                                                        </Link>
+                                                    </TooltipTrigger>
+                                                    <TooltipContent side="bottom" className="bg-card border-white/10 text-foreground">
+                                                        <p className="font-bold">{user.name}</p>
+                                                        <p className="text-xs text-muted-foreground capitalize">{user.role.replace('_', ' ').toLowerCase()}</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            )
+                                        })}
+                                        {users.length > 10 && (
+                                            <div className="relative z-0 w-16 h-16 md:w-24 md:h-24 rounded-full bg-card border-4 border-background flex items-center justify-center shadow-xl">
+                                                <span className="text-lg font-bold text-muted-foreground">+{users.length - 10}</span>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             ) : (
                                 <div className="text-center py-20 bg-transparent rounded-3xl">
@@ -722,11 +738,11 @@ export default function HomePageClient({
                             </div>
 
                             {loading ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {[...Array(3)].map((_, i) => <Skeleton key={i} className="h-64 rounded-3xl" />)}
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+                                    {[...Array(5)].map((_, i) => <Skeleton key={i} className="aspect-video rounded-3xl" />)}
                                 </div>
                             ) : groups.length > 0 ? (
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6 justify-start">
                                     {groups.map((group) => (
                                         <div key={group.id} className="transform hover:scale-[1.02] transition-transform duration-300">
                                             <GroupCard group={group} />
