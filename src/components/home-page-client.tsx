@@ -431,12 +431,9 @@ export default function HomePageClient({
     return (
         <TooltipProvider>
             <div className="w-full bg-background text-foreground">
-                {/* Hero Section */}
-                <HeroSection user={session?.user} initialHeroCoverUrl={heroCoverUrl} />
-
                 {/* Admin Request Banner (Only for Normal Users) */}
                 {session?.user && session.user.role === 'USER' && (
-                    <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 mt-6 -mb-6 relative z-20">
+                    <div className="w-full max-w-[1800px] mx-auto px-4 md:px-8 mt-24 -mb-20 relative z-50">
                         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-purple-900/40 via-blue-900/40 to-pink-900/40 border border-white/10 p-0.5 shadow-2xl">
                             <div className="absolute inset-0 bg-grid-white/[0.02] bg-[size:20px_20px]" />
                             <div className="relative flex flex-col md:flex-row items-center justify-between gap-6 p-6 bg-black/60 backdrop-blur-xl rounded-[14px]">
@@ -468,6 +465,9 @@ export default function HomePageClient({
                         </div>
                     </div>
                 )}
+
+                {/* Hero Section */}
+                <HeroSection user={session?.user} initialHeroCoverUrl={heroCoverUrl} />
 
                 {/* Main Content Area - Aligned with Hero */}
                 <section className="w-full max-w-[1800px] mx-auto px-4 md:px-8 pb-12 relative z-10 space-y-16">

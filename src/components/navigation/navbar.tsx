@@ -13,6 +13,8 @@ import {
   MessageSquare,
   Activity,
   Menu,
+  Eye,
+  EyeOff,
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -38,6 +40,8 @@ export default function Navbar() {
   const { withLoading } = useLoading();
   const [mobileMenuOpen, setMobileMenuOpen] = React.useState(false);
   const [showWall, setShowWall] = React.useState(false);
+  // Toggle state for showing/hiding profile & search. User controls this.
+  const [showProfile, setShowProfile] = React.useState(false);
   const user = session?.user;
   const canManage = user && [ROLES.SUPER_ADMIN, ROLES.USER_ADMIN].includes(user.role);
 
@@ -126,25 +130,40 @@ export default function Navbar() {
     <header className="fixed top-0 w-full bg-background/95 backdrop-blur-md border-b border-transparent z-header">
       <div className="px-4 flex h-16 items-center justify-between gap-4">
         {/* Logo */}
-        <Link
-          href="/"
-          onClick={(e) => { e.preventDefault(); handleNavigation('/'); }}
-          className="flex items-center space-x-2 flex-shrink-0"
-        >
-          <Image src="/logo.png" alt="Logo" width={38} height={38} />
-          <span className="font-bold text-lg hidden sm:inline bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-            {siteConfig.name}
-          </span>
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            onClick={(e) => { e.preventDefault(); handleNavigation('/'); }}
+            className="flex items-center space-x-2 flex-shrink-0"
+          >
+            <Image src="/logo.png" alt="Logo" width={38} height={38} />
+            <span className="font-bold text-lg hidden sm:inline bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+              {siteConfig.name}
+            </span>
+          </Link>
 
-        {/* Search Bar (Placeholder) - Hidden on Home Page */}
-        <div className={cn("hidden md:flex flex-1 max-w-md mx-4", pathname === '/' && "hidden")}>
-          {/* Future search implementation */}
+          {/* Toggle Visibility Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 ml-2 text-muted-foreground/50 hover:text-foreground"
+            onClick={() => setShowProfile(!showProfile)}
+            title={showProfile ? "Hide Profile & Search" : "Show Profile & Search"}
+          >
+            {showProfile ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+          </Button>
         </div>
 
-        {/* Right side - User menu */}
+        {/* Search Bar (Placeholder) - Toggled visibility */}
+        {showProfile && (
+          <div className="hidden md:flex flex-1 max-w-md mx-4 transition-all duration-300 animate-in fade-in">
+            {/* Future search implementation */}
+          </div>
+        )}
+
+        {/* Right side - User menu - Toggled visibility */}
         <div className="flex items-center justify-end space-x-2 flex-shrink-0">
-          {renderUserMenu()}
+          {showProfile && renderUserMenu()}
 
           {/* Mobile menu button */}
           <div className="md:hidden">

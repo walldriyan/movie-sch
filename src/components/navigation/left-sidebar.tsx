@@ -22,7 +22,9 @@ import {
     Users,
     PanelLeftClose,
     PanelLeftOpen,
-    Minimize2
+    Minimize2,
+    Eye,
+    EyeOff
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
@@ -45,6 +47,7 @@ export default function LeftSidebar() {
     const [mobileOpen, setMobileOpen] = useState(false);
     const [isCollapsed, setIsCollapsed] = useState(false);
     const [isHidden, setIsHidden] = useState(false); // Default open, logo-only mode off
+    const [showTopControls, setShowTopControls] = useState(false); // Toggle for top right search/profile
     const [userGroups, setUserGroups] = useState<{ id: string; name: string; profilePhoto: string | null }[]>([]);
 
     useEffect(() => {
@@ -214,13 +217,27 @@ export default function LeftSidebar() {
         <>
 
 
-            {/* Top Right Controls */}
+            {/* Top Right Controls - Toggle Button + Conditional Content */}
             <div className="fixed top-6 right-8 z-[100] flex items-center gap-3">
-                <div className="hidden md:block">
-                    <SearchBar />
-                </div>
-                {canManage && <CreateButton />}
-                <UserButton />
+                {/* Toggle Button */}
+                <button
+                    onClick={() => setShowTopControls(!showTopControls)}
+                    className="p-2 rounded-full bg-card/60 backdrop-blur-md border border-white/10 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-all"
+                    title={showTopControls ? 'Hide Search & Profile' : 'Show Search & Profile'}
+                >
+                    {showTopControls ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+
+                {/* Conditionally Rendered Controls */}
+                {showTopControls && (
+                    <>
+                        <div className="hidden md:block animate-in fade-in slide-in-from-right-2 duration-300">
+                            <SearchBar />
+                        </div>
+                        {canManage && <CreateButton />}
+                        <UserButton />
+                    </>
+                )}
             </div>
 
             {/* Mobile menu button */}
