@@ -40,6 +40,7 @@ import SearchBar from './search-bar';
 import Image from 'next/image';
 import { getUserJoinedGroups } from '@/lib/actions/groups';
 import { Separator } from '@/components/ui/separator';
+import { doSignOut } from '@/lib/actions';
 
 export default function LeftSidebar() {
     const { data: session, status } = useSession();
@@ -217,26 +218,16 @@ export default function LeftSidebar() {
         <>
 
 
+
+
+
             {/* Top Right Controls */}
             <div className="fixed top-6 right-8 z-[100] flex items-center gap-3">
-                {/* Search Bar (Conditionally Rendered) */}
-                {showTopControls && (
-                    <div className="hidden md:block w-64 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <SearchBar />
-                    </div>
-                )}
-
                 {/* Create Button (Always Visible if Admin) */}
                 {canManage && <CreateButton />}
 
-                {/* Profile Image (Acts as Toggle for Search) */}
-                <div
-                    onClick={() => setShowTopControls(!showTopControls)}
-                    className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
-                    title={showTopControls ? "Hide Search" : "Show Search"}
-                >
-                    <UserButton />
-                </div>
+                {/* Profile Button (Menu) */}
+                <UserButton />
             </div>
 
             {/* Mobile menu button */}
@@ -414,7 +405,7 @@ export default function LeftSidebar() {
                                 onClick={() => setIsHidden(true)}
                                 className={cn(
                                     "group flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 w-full text-left",
-                                    "text-muted-foreground hover:bg-red-500/10 hover:text-red-400",
+                                    "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
                                     isCollapsed && "justify-center px-0 w-12 h-12 mx-auto"
                                 )}
                                 title="Hide Sidebar"

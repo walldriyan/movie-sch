@@ -9,6 +9,9 @@ import {
   LogOut,
   Loader2,
   MessageSquareWarning,
+  Activity,
+  Heart,
+  Shield,
 } from 'lucide-react';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -123,44 +126,91 @@ export default function UserButton() {
           </div>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56 p-2 bg-[#111112] border-white/[0.08] rounded-2xl text-white/90">
-        <DropdownMenuLabel>
-          <p>My Account</p>
-          <p className="text-xs text-muted-foreground font-normal truncate">
+      <DropdownMenuContent align="end" className="w-64 p-2 bg-black/80 backdrop-blur-xl border-white/10 rounded-2xl text-white shadow-2xl animate-in fade-in zoom-in-95 data-[side=bottom]:slide-in-from-top-2">
+        <DropdownMenuLabel className="px-3 py-2">
+          <p className="font-semibold text-sm">My Account</p>
+          <p className="text-xs text-muted-foreground font-normal truncate mt-0.5">
             {user.email}
           </p>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem asChild>
-          <Link href={`/profile/${user.id}`}>
-            <UserIcon className="mr-2 h-4 w-4" />
-            <span>Profile</span>
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Link href="/activity">
-            <Bookmark className="mr-2 h-4 w-4" />
-            <span>Activity Hub</span>
-          </Link>
-        </DropdownMenuItem>
-        {canManage && (
-          <DropdownMenuItem asChild>
-            <Link href="/manage">
-              <LayoutGrid className="mr-2 h-4 w-4" />
-              <span>Manage Posts</span>
+
+        <DropdownMenuSeparator className="bg-white/10 my-1" />
+
+        <div className="space-y-1">
+          <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white rounded-xl cursor-pointer">
+            <Link href={`/profile/${user.id}`} className="flex items-center">
+              <div className="bg-purple-500/10 p-1 rounded-lg mr-3 text-purple-400">
+                <UserIcon className="h-4 w-4" />
+              </div>
+              <span>Profile</span>
             </Link>
           </DropdownMenuItem>
-        )}
-        {user.role === ROLES.SUPER_ADMIN && (
-          <DropdownMenuItem asChild>
-            <Link href="/admin">
-              <Users className="mr-2 h-4 w-4" />
-              <span>Admin Dashboard</span>
+
+          <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white rounded-xl cursor-pointer">
+            <Link href="/activity" className="flex items-center">
+              <div className="bg-blue-500/10 p-1 rounded-lg mr-3 text-blue-400">
+                <Activity className="h-4 w-4" />
+              </div>
+              <span>Activity Hub</span>
             </Link>
           </DropdownMenuItem>
+
+          <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white rounded-xl cursor-pointer">
+            <Link href="/favorites" className="flex items-center">
+              <div className="bg-red-500/10 p-1 rounded-lg mr-3 text-red-400">
+                <Heart className="h-4 w-4" />
+              </div>
+              <span>My Favorites</span>
+            </Link>
+          </DropdownMenuItem>
+
+          <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white rounded-xl cursor-pointer">
+            <Link href="/groups?v=1" className="flex items-center">
+              <div className="bg-indigo-500/10 p-1 rounded-lg mr-3 text-indigo-400">
+                <Users className="h-4 w-4" />
+              </div>
+              <span>My Groups</span>
+            </Link>
+          </DropdownMenuItem>
+        </div>
+
+        {(canManage || user.role === ROLES.SUPER_ADMIN) && (
+          <>
+            <DropdownMenuSeparator className="bg-white/10 my-1" />
+            <div className="space-y-1">
+              <p className="px-2 py-1.5 text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
+                Management
+              </p>
+              {canManage && (
+                <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white rounded-xl cursor-pointer">
+                  <Link href="/manage" className="flex items-center">
+                    <div className="bg-orange-500/10 p-1 rounded-lg mr-3 text-orange-400">
+                      <LayoutGrid className="h-4 w-4" />
+                    </div>
+                    <span>Manage Posts</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+              {user.role === ROLES.SUPER_ADMIN && (
+                <DropdownMenuItem asChild className="focus:bg-white/10 focus:text-white rounded-xl cursor-pointer">
+                  <Link href="/admin" className="flex items-center">
+                    <div className="bg-green-500/10 p-1 rounded-lg mr-3 text-green-400">
+                      <Shield className="h-4 w-4" />
+                    </div>
+                    <span>Admin Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+              )}
+            </div>
+          </>
         )}
-        <DropdownMenuSeparator />
-        <LogoutMenuItem />
+
+        <DropdownMenuSeparator className="bg-white/10 my-1" />
+
+        <div className="pt-1">
+          <LogoutMenuItem />
+        </div>
+
       </DropdownMenuContent>
     </DropdownMenu>
   );
