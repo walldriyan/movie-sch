@@ -642,22 +642,21 @@ export default function HomePageClient({
 
 
                     {/* SECTION 2: Creators */}
-                    <div className="relative rounded-[3px] bg-slate-800/[0.01] border border-blue-500/[0.05] p-6 md:p-12 backdrop-blur-sm overflow-hidden">
-                        {/* Decorative background element */}
-                        <div className="absolute top-0 right-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-blue-500/[0.02] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 translate-x-1/3 pointer-events-none" />
+                    <div className="relative py-8">
+                        <Separator className="mb-12 bg-white/5" />
 
                         <div className="relative z-10">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                                 <div className="flex items-center gap-4">
-                                    <div className="p-3.5 rounded-2xl bg-blue-500/[0.05] border border-blue-500/[0.08] shadow-[0_0_20px_rgba(59,130,246,0.1)]">
-                                        <Users className="w-6 h-6 text-blue-400" />
+                                    <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 bg-card/50 shadow-sm">
+                                        <Users className="w-6 h-6 text-primary" />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{siteConfig.sections.creators.title}</h2>
+                                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{siteConfig.sections.creators.title}</h2>
                                         <p className="text-muted-foreground mt-1 text-sm md:text-base">{siteConfig.sections.creators.subtitle}</p>
                                     </div>
                                 </div>
-                                <Button variant="outline" className="rounded-full border-blue-500/20 text-blue-400 hover:bg-blue-500/10 hover:text-blue-300 transition-colors" asChild>
+                                <Button variant="outline" className="rounded-full border-primary/20 text-primary hover:bg-primary/10 hover:text-primary transition-colors" asChild>
                                     <Link href="/search?view=creators">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
                                 </Button>
                             </div>
@@ -695,30 +694,29 @@ export default function HomePageClient({
                                     })}
                                 </div>
                             ) : (
-                                <div className="text-center py-20 bg-blue-500/[0.02] rounded-3xl border border-dashed border-blue-500/10">
-                                    <div className="text-blue-500/40 text-sm font-medium">No creators available right now.</div>
+                                <div className="text-center py-20 bg-transparent rounded-3xl">
+                                    <div className="text-muted-foreground text-sm font-medium">No creators available right now.</div>
                                 </div>
                             )}
                         </div>
                     </div>
 
                     {/* SECTION 3: Collections */}
-                    <div className="relative rounded-[3px] bg-gray-900/2 border border-gray-900/2 p-6 md:p-12 backdrop-blur-sm overflow-hidden">
-                        {/* Decorative background element */}
-                        <div className="absolute top-0 left-0 w-[300px] h-[300px] md:w-[500px] md:h-[500px] bg-gray-500/[0.02] rounded-full blur-[80px] md:blur-[120px] -translate-y-1/2 -translate-x-1/3 pointer-events-none" />
+                    <div className="relative py-8">
+                        <Separator className="mb-12 bg-white/5" />
 
                         <div className="relative z-10">
                             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
                                 <div className="flex items-center gap-4">
-                                    <div className="p-3.5 rounded-2xl bg-gray-900/1 border border-red-300/7 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                                        <Folder className="w-6 h-6 text-purple-400" />
+                                    <div className="p-3.5 rounded-2xl bg-primary/10 border border-primary/20 bg-card/50 shadow-sm">
+                                        <Folder className="w-6 h-6 text-primary" />
                                     </div>
                                     <div>
-                                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-white">{siteConfig.sections.collections.title}</h2>
+                                        <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-foreground">{siteConfig.sections.collections.title}</h2>
                                         <p className="text-muted-foreground mt-1 text-sm md:text-base">{siteConfig.sections.collections.subtitle}</p>
                                     </div>
                                 </div>
-                                <Button variant="outline" className="rounded-full border-purple-500/20 text-purple-400 hover:bg-purple-500/10 hover:text-purple-300 transition-colors" asChild>
+                                <Button variant="outline" className="rounded-full border-primary/20 text-primary hover:bg-primary/10 hover:text-primary transition-colors" asChild>
                                     <Link href="/groups">View All <ArrowRight className="w-4 h-4 ml-2" /></Link>
                                 </Button>
                             </div>
@@ -736,8 +734,8 @@ export default function HomePageClient({
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-20 bg-purple-500/[0.02] rounded-3xl border border-dashed border-purple-500/10">
-                                    <div className="text-purple-500/40 text-sm font-medium">No collections available right now.</div>
+                                <div className="text-center py-20 bg-transparent rounded-3xl">
+                                    <div className="text-muted-foreground text-sm font-medium">No collections available right now.</div>
                                 </div>
                             )}
                         </div>

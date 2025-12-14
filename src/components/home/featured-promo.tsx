@@ -244,8 +244,8 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
         <section className="container max-w-7xl mx-auto px-4 md:px-8 mb-24 relative group/promo">
             {/* Section Header */}
             <div className="flex items-center gap-3 mb-8">
-                <div className="p-2.5 rounded-xl bg-pink-500/10 border border-pink-500/20">
-                    <Mic2 className="w-6 h-6 text-pink-400" />
+                <div className="p-2.5 rounded-xl bg-primary/10 border border-primary/20">
+                    <Mic2 className="w-6 h-6 text-primary" />
                 </div>
                 <div>
                     <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Featured Content</h2>
@@ -256,7 +256,7 @@ export function FeaturedPromo({ data, currentUser }: FeaturedPromoProps) {
             <div className={cn(
                 "relative w-full rounded-3xl overflow-hidden shadow-2xl transition-all duration-500 border border-white/5",
                 "aspect-video md:aspect-[21/9] lg:aspect-[24/9] max-h-[500px]",
-                isGradientFallback ? "bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900" : "bg-[#0a0a0a]"
+                "bg-[#0a0a0a]"
             )}>
 
                 {/* Media Content */}

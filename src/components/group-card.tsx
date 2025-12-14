@@ -16,7 +16,7 @@ export default function GroupCard({ group }: GroupCardProps) {
 
   return (
     <Link href={`/groups/${group.id}`} className="group block">
-      <Card className="overflow-hidden transition-all duration-300 group-hover:shadow-md group-hover:-translate-y-1 h-full flex flex-col">
+      <Card className="overflow-hidden transition-all duration-300 group-hover:-translate-y-1 h-full flex flex-col bg-transparent border-0 shadow-none">
         <div className="aspect-video relative">
           {groupImage && (
             <Image
