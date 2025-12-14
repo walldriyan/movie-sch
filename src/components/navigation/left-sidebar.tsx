@@ -217,19 +217,19 @@ export default function LeftSidebar() {
         <>
 
 
-            {/* Top Right Controls - Profile Image Toggles Search */}
+            {/* Top Right Controls */}
             <div className="fixed top-6 right-8 z-[100] flex items-center gap-3">
-                {/* Conditionally Rendered Controls (Search & Create) */}
+                {/* Search Bar (Conditionally Rendered) */}
                 {showTopControls && (
-                    <div className="flex items-center gap-3 animate-in fade-in slide-in-from-right-4 duration-300">
-                        <div className="hidden md:block w-64">
-                            <SearchBar />
-                        </div>
-                        {canManage && <CreateButton />}
+                    <div className="hidden md:block w-64 animate-in fade-in slide-in-from-right-4 duration-300">
+                        <SearchBar />
                     </div>
                 )}
 
-                {/* Profile Image (Acts as Toggle) */}
+                {/* Create Button (Always Visible if Admin) */}
+                {canManage && <CreateButton />}
+
+                {/* Profile Image (Acts as Toggle for Search) */}
                 <div
                     onClick={() => setShowTopControls(!showTopControls)}
                     className="cursor-pointer transition-transform hover:scale-105 active:scale-95"
