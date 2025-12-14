@@ -35,17 +35,25 @@ export async function getUsers(options: { page?: number; limit?: number } = {}):
 }
 
 export async function getPostsByUserId(userId: string, includePrivate: boolean = false) {
+  const session = await auth();
+  const currentUserRole = session?.user?.role;
+  const currentUserId = session?.user?.id;
+
+  // Only SUPER_ADMIN can see non-published posts, and only their own or when managing
+  const canSeeAllStatuses = currentUserRole === ROLES.SUPER_ADMIN;
+
   let where: any = {
     authorId: userId,
-    status: {
-      not: MovieStatus.PENDING_DELETION
-    }
   };
 
-  if (!includePrivate) {
-    where.status = {
-      in: [MovieStatus.PUBLISHED]
-    }
+  // For profile page views: only show PUBLISHED posts
+  // Even USER_ADMIN cannot see PENDING_APPROVAL posts on public pages
+  if (canSeeAllStatuses && includePrivate) {
+    // SUPER_ADMIN viewing with includePrivate flag
+    where.status = { not: MovieStatus.PENDING_DELETION };
+  } else {
+    // Everyone else (including USER_ADMIN) sees only PUBLISHED
+    where.status = { in: [MovieStatus.PUBLISHED] };
   }
 
   const userPosts = await prisma.post.findMany({

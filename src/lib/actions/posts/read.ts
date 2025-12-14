@@ -20,12 +20,15 @@ async function fetchPostsFromDB(options: { page?: number; limit?: number, filter
     const { sortBy, genres, yearRange, ratingRange, timeFilter, authorId, includePrivate, type, lockStatus, search } = filters;
 
 
-    if (userRole === ROLES.SUPER_ADMIN || userRole === ROLES.USER_ADMIN) {
+    // SUPER_ADMIN only can see all posts (for admin management)
+    // Everyone else (including USER_ADMIN) sees ONLY PUBLISHED posts on public pages
+    if (userRole === ROLES.SUPER_ADMIN) {
         whereClause.status = { not: MovieStatus.PENDING_DELETION };
         if (lockStatus === 'locked') whereClause.isLockedByDefault = true;
         else if (lockStatus === 'premium') whereClause.group = { isPremiumOnly: true };
         else if (lockStatus === 'unlocked') whereClause.isLockedByDefault = false;
     } else {
+        // USER_ADMIN and regular users see only PUBLISHED posts
         whereClause.status = MovieStatus.PUBLISHED;
         const publicCriteria: Prisma.PostWhereInput = { visibility: 'PUBLIC' };
 

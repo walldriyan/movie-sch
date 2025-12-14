@@ -52,12 +52,19 @@ export async function getSeriesById(id: number): Promise<Series | null> {
 }
 
 export async function getPostsBySeriesId(seriesId: number) {
+  const session = await auth();
+  const userRole = session?.user?.role;
+
+  // Only SUPER_ADMIN can see non-published posts
+  const isSuperAdmin = userRole === 'SUPER_ADMIN';
+
   const posts = await prisma.post.findMany({
     where: {
       seriesId,
-      status: {
-        not: MovieStatus.PENDING_DELETION
-      }
+      // SUPER_ADMIN sees all except pending deletion, others see only PUBLISHED
+      status: isSuperAdmin
+        ? { not: MovieStatus.PENDING_DELETION }
+        : MovieStatus.PUBLISHED
     },
     orderBy: {
       orderInSeries: 'asc'
