@@ -953,3 +953,31 @@ export async function gradeCustomAnswer(submissionId: number, questionId: number
 
     return { success: true, newTotalScore };
 }
+
+export async function assignExamToPost(postId: number, examId: number | null) {
+    const session = await auth();
+    if (!session?.user || session.user.role !== ROLES.SUPER_ADMIN) {
+        throw new Error('Not authorized');
+    }
+
+    // 1. Clear any existing exam linked to this post
+    await prisma.exam.updateMany({
+        where: { postId: postId },
+        data: { postId: null }
+    });
+
+    if (examId) {
+        // 2. Connect the selected exam
+        await prisma.exam.update({
+            where: { id: examId },
+            data: {
+                postId: postId,
+                assignmentType: 'POST',
+                groupId: null
+            }
+        });
+    }
+
+    revalidatePath(`/search`);
+    revalidatePath(`/movies/${postId}`);
+}

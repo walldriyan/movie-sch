@@ -734,6 +734,9 @@ export default function UnifiedWatchPage({
                             postId={post.id}
                             currentStatus={post.status || 'DRAFT'}
                             currentUserRole={session?.user?.role}
+                            isLocked={post.isLockedByDefault}
+                            hasExam={post.requiresExamToUnlock}
+                            currentExamId={post.exam?.id}
                         />
 
                     </div>
